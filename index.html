@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Betika - World Bingo, Fast Games, Aviator & More. Play and win real money.">
+  <title>Betika Games</title>
+
+  <!-- Font Awesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/index.css">
+  <link rel="stylesheet" href="css/header.css">
+  <link rel="stylesheet" href="css/games.css">
+  <link rel="stylesheet" href="css/wallet.css">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/bingo.css">
+  <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- =============================================
+       PAGE: WELCOME / LANDING SCREEN (Screen 1)
+       ============================================= -->
+  <div class="page active" id="page-landing">
+    <!-- Top Navbar for Landing Screen -->
+    <header class="landing-navbar">
+      <!-- Left: Colorful B I N G O balls logo with crowns -->
+      <div class="landing-nav-logo">
+        <div class="nav-ball ball-purple"><span class="ball-crown">👑</span><span>B</span></div>
+        <div class="nav-ball ball-pink"><span class="ball-crown">👑</span><span>I</span></div>
+        <div class="nav-ball ball-gold"><span>N</span></div>
+        <div class="nav-ball ball-lime"><span>G</span></div>
+        <div class="nav-ball ball-magenta"><span>O</span></div>
+      </div>
+
+      <!-- Center: Nav links -->
+      <nav class="landing-nav-links">
+        <a href="#" class="nav-link active">Bingo <i class="fa-solid fa-chevron-down nav-chevron"></i></a>
+        <a href="#" class="nav-link">Slots</a>
+        <a href="#" class="nav-link">Games</a>
+        <a href="#" class="nav-link">Promotions</a>
+        <a href="#" class="nav-link">Winners</a>
+      </nav>
+
+      <!-- Right: Help, Login, Join Now -->
+      <div class="landing-nav-actions">
+        <button class="nav-help-btn" title="Help">
+          <i class="fa-regular fa-circle-question"></i>
+          <span>Help</span>
+        </button>
+        <div class="nav-actions-sep"></div>
+        <button class="nav-login-btn" id="nav-login-btn">Login</button>
+        <button class="nav-join-btn" id="nav-join-btn">Join Now</button>
+      </div>
+    </header>
+
+    <div class="landing-ambient-rays"></div>
+    <div class="landing-content">
+      <h2 class="landing-pretitle">WELCOME TO</h2>
+      <div class="landing-title-wrapper">
+        <h1 class="landing-hero-title">BINGO</h1>
+        <span class="landing-crown">👑</span>
+      </div>
+      <p class="landing-subtitle">ETHIOPIA'S FAVOURITE BINGO SITE</p>
+
+      <div class="landing-offer-box">
+        <span class="landing-offer-label">Deposit in ETB and get</span>
+        <span class="landing-bonus-amount">200% BONUS MONEY</span>
+        <span class="landing-spins-amount">+ 30 FREE SPINS</span>
+      </div>
+
+      <button class="landing-join-btn" id="landing-join-btn">
+        Join Now &amp; Claim 200%
+      </button>
+
+      <div class="landing-hero-visual">
+        <img src="assets/images/landing-hero.jpg" alt="Bingo Cards and 3D Balls" class="landing-hero-img">
+      </div>
+
+      <!-- Trust Footer Bar -->
+      <div class="trust-footer-bar">
+        <div class="trust-item">
+          <div class="trust-icon-circle icon-shield">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="trust-text">
+            <span class="trust-title">100% SECURE</span>
+            <span class="trust-desc">Your data is safe with us</span>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon-circle icon-support">
+            <i class="fa-solid fa-headset"></i>
+          </div>
+          <div class="trust-text">
+            <span class="trust-title">24/7 SUPPORT</span>
+            <span class="trust-desc">We're here to help anytime</span>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon-circle icon-offers">
+            <i class="fa-solid fa-gift"></i>
+          </div>
+          <div class="trust-text">
+            <span class="trust-title">AMAZING OFFERS</span>
+            <span class="trust-desc">New deals every day</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- =============================================
+       PAGE: LOGIN / AUTH SCREEN (Screen 2)
+       ============================================= -->
+  <div class="page" id="page-login">
+    <div class="login-top-bar">
+      <button class="login-back-btn" id="login-back-btn">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </div>
+
+    <div class="login-container">
+      <h1 class="login-heading">Welcome Back!</h1>
+      <p class="login-subheading">Log in to continue playing</p>
+
+      <form class="login-form" id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-username">Username or Email</label>
+          <div class="input-box">
+            <i class="fa-regular fa-user input-icon"></i>
+            <input type="text" id="login-username" placeholder="Enter your username or email" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <div class="input-box">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="login-password" placeholder="Enter your password" required>
+            <i class="fa-regular fa-eye eye-toggle" id="pwd-toggle"></i>
+          </div>
+        </div>
+
+        <div class="login-options-row">
+          <div class="remember-label" id="remember-row">
+            <div class="remember-checkbox" id="remember-checkbox">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <span>Remember me</span>
+          </div>
+          <a href="#" class="forgot-link" id="forgot-pwd-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="login-submit-btn" id="login-btn">
+          Login
+        </button>
+
+        <div class="login-divider">
+          <span>OR</span>
+        </div>
+
+        <button type="button" class="social-btn facebook-btn" id="facebook-login-btn">
+          <i class="fa-brands fa-facebook-f"></i>
+          <span>Continue with Facebook</span>
+        </button>
+
+        <button type="button" class="social-btn google-btn" id="google-login-btn">
+          <svg class="google-icon-svg" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+
+        <div class="auth-switch-text">
+          <span>Don't have an account?</span>
+          <a href="#" id="goto-signup-btn" class="auth-highlight-link">Sign up</a>
+        </div>
+      </form>
+
+      <!-- Trust Footer Bar -->
+      <div class="trust-footer-bar">
+        <div class="trust-item">
+          <div class="trust-icon-circle icon-shield">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="trust-text">
+            <span class="trust-title">100% SECURE</span>
+            <span class="trust-desc">Your data is safe with us</span>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon-circle icon-support">
+            <i class="fa-solid fa-headset"></i>
+          </div>
+          <div class="trust-text">
+            <span class="trust-title">24/7 SUPPORT</span>
+            <span class="trust-desc">We're here to help anytime</span>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon-circle icon-offers">
+            <i class="fa-solid fa-gift"></i>
+          </div>
+          <div class="trust-text">
+            <span class="trust-title">AMAZING OFFERS</span>
+            <span class="trust-desc">New deals every day</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- =============================================
+       PAGE: SIGN UP / REGISTER SCREEN (Screen 3)
+       ============================================= -->
+  <div class="page" id="page-signup">
+    <div class="login-top-bar">
+      <button class="login-back-btn" id="signup-back-btn">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </div>
+
+    <div class="login-container">
+      <div style="text-align: center;">
+        <span class="signup-badge-promo">🎁 200% BONUS MONEY + 30 FREE SPINS</span>
+      </div>
+      <h1 class="login-heading">Create Account</h1>
+      <p class="login-subheading">Deposit in ETB &amp; get 200% bonus money instantly</p>
+
+      <form class="login-form" id="signup-form">
+        <!-- Phone Number Section -->
+        <div class="form-group">
+          <label class="form-label" for="signup-phone">Phone Number (ETB)</label>
+          <div class="phone-input-wrapper">
+            <div class="country-code-picker" id="country-code-picker">
+              <span class="country-flag" id="selected-flag">🇪🇹</span>
+              <span class="country-dial-code" id="selected-dial-code">+251</span>
+              <i class="fa-solid fa-chevron-down country-chevron"></i>
+              
+              <!-- Dropdown Options -->
+              <div class="country-dropdown" id="country-dropdown">
+                <div class="country-option" data-flag="🇪🇹" data-code="+251">
+                  <span class="country-flag">🇪🇹</span>
+                  <span class="country-option-name">Ethiopia (+251)</span>
+                </div>
+                <div class="country-option" data-flag="🇬🇧" data-code="+44">
+                  <span class="country-flag">🇬🇧</span>
+                  <span class="country-option-name">United Kingdom (+44)</span>
+                </div>
+                <div class="country-option" data-flag="🇰🇪" data-code="+254">
+                  <span class="country-flag">🇰🇪</span>
+                  <span class="country-option-name">Kenya (+254)</span>
+                </div>
+                <div class="country-option" data-flag="🇳🇬" data-code="+234">
+                  <span class="country-flag">🇳🇬</span>
+                  <span class="country-option-name">Nigeria (+234)</span>
+                </div>
+                <div class="country-option" data-flag="🇺🇸" data-code="+1">
+                  <span class="country-flag">🇺🇸</span>
+                  <span class="country-option-name">United States (+1)</span>
+                </div>
+              </div>
+            </div>
+            <div class="input-box phone-box">
+              <i class="fa-solid fa-phone input-icon"></i>
+              <input type="tel" id="signup-phone" placeholder="911 234567" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Username -->
+        <div class="form-group">
+          <label class="form-label" for="signup-username">Username</label>
+          <div class="input-box">
+            <i class="fa-regular fa-user input-icon"></i>
+            <input type="text" id="signup-username" placeholder="Choose a username" required>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label class="form-label" for="signup-email">Email Address</label>
+          <div class="input-box">
+            <i class="fa-regular fa-envelope input-icon"></i>
+            <input type="email" id="signup-email" placeholder="name@example.com" required>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label class="form-label" for="signup-password">Create Password</label>
+          <div class="input-box">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="signup-password" placeholder="At least 8 characters" required>
+            <i class="fa-regular fa-eye eye-toggle" id="signup-pwd-toggle"></i>
+          </div>
+        </div>
+
+        <!-- Promo Code (Optional) -->
+        <div class="form-group">
+          <label class="form-label" for="signup-promo">Promo Code (Optional)</label>
+          <div class="input-box">
+            <i class="fa-solid fa-ticket input-icon"></i>
+            <input type="text" id="signup-promo" placeholder="Enter promo code if you have one">
+          </div>
+        </div>
+
+        <!-- Age & Terms Agreement -->
+        <div class="signup-terms-row" id="signup-terms-row">
+          <div class="remember-checkbox" id="terms-checkbox">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <span class="terms-text">I am 18+ and agree to the <a href="#">Terms &amp; Conditions</a> and <a href="#">Privacy Policy</a></span>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="login-submit-btn" id="signup-submit-btn">
+          Create Account &amp; Claim 200% Bonus
+        </button>
+
+        <div class="auth-switch-text">
+          <span>Already have an account?</span>
+          <a href="#" id="goto-login-btn" class="auth-highlight-link">Log in</a>
+        </div>
+
+        <div class="login-divider">
+          <span>OR</span>
+        </div>
+
+        <button type="button" class="social-btn facebook-btn" id="signup-facebook-btn">
+          <i class="fa-brands fa-facebook-f"></i>
+          <span>Sign up with Facebook</span>
+        </button>
+
+        <button type="button" class="social-btn google-btn" id="signup-google-btn">
+          <svg class="google-icon-svg" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <span>Sign up with Google</span>
+        </button>
+      </form>
+
+      <!-- Trust Footer Bar -->
+      <div class="trust-footer-bar">
+        <div class="trust-item">
+          <div class="trust-icon-circle icon-shield">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="trust-text">
+            <span class="trust-title">100% SECURE</span>
+            <span class="trust-desc">Your data is safe with us</span>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon-circle icon-support">
+            <i class="fa-solid fa-headset"></i>
+          </div>
+          <div class="trust-text">
+            <span class="trust-title">24/7 SUPPORT</span>
+            <span class="trust-desc">We're here to help anytime</span>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon-circle icon-offers">
+            <i class="fa-solid fa-gift"></i>
+          </div>
+          <div class="trust-text">
+            <span class="trust-title">AMAZING OFFERS</span>
+            <span class="trust-desc">New deals every day</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ========== TOP HEADER (shared) ========== -->
+  <header class="top-header">
+    <button class="close-btn" id="close-btn">
+      <i class="fa-solid fa-xmark"></i>
+      <span>Close</span>
+    </button>
+    <div class="header-actions">
+      <button id="chevron-btn"><i class="fa-solid fa-chevron-down"></i></button>
+      <button id="menu-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+    </div>
+  </header>
+
+  <!-- ========== BALANCE BAR (shared) ========== -->
+  <div class="balance-bar">
+    <div class="balance-logo">
+      <i class="fa-solid fa-globe"></i>
+    </div>
+    <div class="balance-info">
+      <i class="fa-solid fa-rotate refresh-icon" id="refresh-balance"></i>
+      <span class="balance-text">•••• ETB</span>
+      <i class="fa-solid fa-eye eye-icon" id="toggle-balance"></i>
+    </div>
+    <button class="deposit-btn" id="header-deposit">
+      <i class="fa-solid fa-credit-card"></i>
+      Deposit
+    </button>
+  </div>
+
+  <!-- =============================================
+       PAGE: GAMES
+       ============================================= -->
+  <div class="page" id="page-games">
+
+    <!-- Promo Banner -->
+    <div class="promo-banner">
+      <div class="promo-card" id="promo-code-btn">
+        <img src="assets/images/promo-gift.jpg" alt="" class="promo-icon-img">
+        <div class="promo-text-group">
+          <span class="promo-text">Promo Code</span>
+          <span class="promo-subtext">Use code & get bonus</span>
+        </div>
+        <i class="fa-solid fa-chevron-right promo-arrow"></i>
+      </div>
+      <div class="promo-card promo-orange" id="promotions-btn">
+        <img src="assets/images/promo-megaphone.jpg" alt="" class="promo-icon-img">
+        <div class="promo-text-group">
+          <span class="promo-text">Promotions</span>
+          <span class="promo-subtext">View all offers</span>
+        </div>
+        <i class="fa-solid fa-chevron-right promo-arrow"></i>
+      </div>
+    </div>
+
+    <!-- World Bingo Section -->
+    <div class="section-header">
+      <h1 class="section-title">
+        <div class="bingo-title-icon">B</div>
+        <span>World Bingo</span>
+      </h1>
+      <button class="info-badge" id="info-btn">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Info</span>
+      </button>
+    </div>
+
+    <!-- Tab Switcher -->
+    <div class="tab-switcher">
+      <button class="tab-btn active" id="tab-quick" data-tab="quick">
+        <i class="fa-solid fa-bolt"></i>
+        <span>QUICK</span>
+      </button>
+      <button class="tab-btn" id="tab-event" data-tab="event">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span>EVENT</span>
+        <span class="new-badge">NEW</span>
+      </button>
+    </div>
+
+    <!-- Game Room Cards -->
+    <div class="game-rooms" id="game-rooms">
+
+      <!-- Room 1: 10 BIRR - Playing -->
+      <div class="game-room-card room-10">
+        <div class="birr-visual">
+          <img src="assets/images/ball-10.jpg" alt="10 BIRR" class="birr-img">
+        </div>
+        <div class="room-info">
+          <div class="room-players players-teal">
+            <i class="fa-solid fa-users"></i>
+            <span class="count">173 / 500</span>
+            <span class="label">Players</span>
+          </div>
+          <div class="room-prize">
+            <span class="room-prize-label">PRIZE POOL</span>
+            <span class="room-prize-value val-green">
+              <i class="fa-solid fa-trophy"></i>
+              <span>1384 Birr</span>
+            </span>
+          </div>
+        </div>
+        <div class="room-actions">
+          <div class="status-badge playing">
+            <span class="status-dot"></span>
+            <span>PLAYING</span>
+          </div>
+          <button class="room-action-btn watch">
+            <span>Watch Game</span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Room 2: 20 BIRR - Starts in 00:47 -->
+      <div class="game-room-card room-20">
+        <div class="birr-visual">
+          <img src="assets/images/ball-20.jpg" alt="20 BIRR" class="birr-img">
+        </div>
+        <div class="room-info">
+          <div class="room-players players-orange">
+            <i class="fa-solid fa-users"></i>
+            <span class="count">21 / 500</span>
+            <span class="label">Players</span>
+          </div>
+          <div class="room-prize">
+            <span class="room-prize-label">PRIZE POOL</span>
+            <span class="room-prize-value val-orange">
+              <i class="fa-solid fa-trophy"></i>
+              <span>336 Birr</span>
+            </span>
+          </div>
+        </div>
+        <div class="room-actions">
+          <div class="status-starts starts-orange">
+            <span class="starts-label">STARTS IN</span>
+            <span class="countdown-pill pill-orange" data-seconds="47">
+              <span class="timer-num">0:00</span>
+              <i class="fa-regular fa-clock"></i>
+            </span>
+          </div>
+          <button class="room-action-btn join join-orange">
+            <span>Join Game</span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Room 3: 50 BIRR - Starts in 1:00 -->
+      <div class="game-room-card room-50">
+        <div class="birr-visual">
+          <img src="assets/images/ball-50.jpg" alt="50 BIRR" class="birr-img">
+        </div>
+        <div class="room-info">
+          <div class="room-players players-purple">
+            <i class="fa-solid fa-users"></i>
+            <span class="count">0 / 500</span>
+            <span class="label">Players</span>
+          </div>
+          <div class="room-prize">
+            <span class="room-prize-label">PRIZE POOL</span>
+            <span class="room-prize-value val-purple">
+              <i class="fa-solid fa-trophy"></i>
+              <span>0 Birr</span>
+            </span>
+          </div>
+        </div>
+        <div class="room-actions">
+          <div class="status-starts starts-purple">
+            <span class="starts-label">STARTS IN</span>
+            <span class="countdown-pill pill-purple" data-seconds="60">
+              <span class="timer-num">0:00</span>
+              <i class="fa-regular fa-clock"></i>
+            </span>
+          </div>
+          <button class="room-action-btn join join-purple">
+            <span>Join Game</span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Games Footer Banner -->
+    <div class="games-footer-banner">
+      <img src="assets/images/footer-banner.jpg" alt="" class="footer-banner-img">
+      <div class="footer-text-overlay">
+        <div class="footer-title">More fun, More wins!</div>
+        <div class="footer-subtitle">Play, Win &amp; Enjoy Big Rewards</div>
+      </div>
+    </div>
+
+    <!-- More Games -->
+    <div class="section-header" style="margin-top: 8px;">
+      <h2 class="section-title">
+        <i class="fa-solid fa-gamepad"></i>
+        More Games
+      </h2>
+    </div>
+
+    <div class="more-games-grid">
+      <!-- Fast Bingo -->
+      <div class="game-card fast-bingo" id="card-fast-bingo">
+        <img src="assets/images/fast-bingo.jpg" alt="Fast Bingo" class="game-card-img">
+        <span class="game-card-name">Fast Bingo</span>
+      </div>
+
+      <!-- Fast Keno -->
+      <div class="game-card fast-keno" id="card-fast-keno">
+        <img src="assets/images/fast-keno.jpg" alt="Fast Keno" class="game-card-img">
+        <span class="check-badge"><i class="fa-solid fa-check"></i></span>
+        <span class="game-card-name">Fast Keno</span>
+      </div>
+
+      <!-- Aviator -->
+      <div class="game-card aviator" id="card-aviator">
+        <img src="assets/images/aviator.png" alt="Aviator" class="game-card-img">
+        <span class="game-card-name">Aviator</span>
+      </div>
+
+      <!-- Chicken Road -->
+      <div class="game-card chicken-road" id="card-chicken-road">
+        <img src="assets/images/chicken-road.jpg" alt="Chicken Road" class="game-card-img">
+        <span class="game-card-name">Chicken Road</span>
+      </div>
+    </div>
+
+  </div><!-- /page-games -->
+
+
+  <!-- =============================================
+       PAGE: WALLET (Profile)
+       ============================================= -->
+  <div class="page" id="page-wallet">
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <div class="profile-avatar">EA</div>
+      <div class="profile-details">
+        <div class="profile-name">Eyu Ase</div>
+        <div class="profile-phone">251983624574</div>
+      </div>
+      <button class="profile-close" id="profile-close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Balance Card -->
+    <div class="balance-card">
+      <div class="balance-section">
+        <div class="balance-label-row">
+          <span class="balance-label">Balance</span>
+          <i class="fa-solid fa-wallet balance-label-icon"></i>
+        </div>
+        <span class="balance-amount">0.00 ETB</span>
+      </div>
+      <div class="balance-section">
+        <div class="balance-label-row">
+          <span class="balance-label">Bonus</span>
+          <i class="fa-solid fa-gift balance-label-icon"></i>
+        </div>
+        <span class="balance-amount">0.00 ETB</span>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button class="action-btn withdraw" id="withdraw-btn">
+        <i class="fa-solid fa-arrow-down-left"></i>
+        Withdraw
+      </button>
+      <button class="action-btn deposit-action" id="deposit-btn">
+        <i class="fa-solid fa-arrow-down"></i>
+        Deposit
+      </button>
+    </div>
+
+    <!-- Daily Leaderboard -->
+    <div class="daily-leaderboard">
+      <div class="leaderboard-title">
+        <i class="fa-regular fa-clock"></i>
+        Daily Leaderboard
+      </div>
+      <div class="countdown-timer" id="daily-countdown">
+        <div class="timer-block">
+          <div class="timer-number" id="timer-hours">09</div>
+          <span class="timer-label">HRS</span>
+        </div>
+        <span class="timer-separator">:</span>
+        <div class="timer-block">
+          <div class="timer-number" id="timer-minutes">54</div>
+          <span class="timer-label">MIN</span>
+        </div>
+        <span class="timer-separator">:</span>
+        <div class="timer-block">
+          <div class="timer-number" id="timer-seconds">35</div>
+          <span class="timer-label">SEC</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menu Items -->
+    <div class="menu-section">
+      <div class="menu-grid">
+        <!-- Leaderboard -->
+        <div class="menu-item" id="menu-leaderboard">
+          <div class="menu-item-icon">
+            <i class="fa-solid fa-chart-simple"></i>
+          </div>
+          <span class="menu-item-text">Leaderboard</span>
+          <i class="fa-solid fa-chevron-right menu-item-arrow"></i>
+        </div>
+
+        <!-- More Gifts -->
+        <div class="menu-item more-gifts" id="menu-gifts">
+          <i class="fa-solid fa-gift gifts-icon"></i>
+          <span class="gifts-text">More Gifts</span>
+        </div>
+
+        <!-- Affiliate -->
+        <div class="menu-item" id="menu-affiliate">
+          <div class="menu-item-icon">
+            <i class="fa-solid fa-people-group"></i>
+          </div>
+          <span class="menu-item-text">Affiliate</span>
+          <i class="fa-solid fa-chevron-right menu-item-arrow"></i>
+        </div>
+
+        <!-- Promotion -->
+        <div class="menu-item" id="menu-promotion">
+          <div class="menu-item-icon">
+            <i class="fa-solid fa-bullhorn"></i>
+          </div>
+          <span class="menu-item-text">Promotion</span>
+          <i class="fa-solid fa-chevron-right menu-item-arrow"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Row -->
+    <div class="profile-row" id="profile-row">
+      <i class="fa-regular fa-user profile-row-icon"></i>
+      <span class="profile-row-text">Profile</span>
+      <i class="fa-solid fa-chevron-right profile-row-arrow"></i>
+    </div>
+
+    <!-- Support Row -->
+    <div class="support-row" id="support-row">
+      <i class="fa-solid fa-headset support-row-icon"></i>
+      <span class="support-row-text">Support</span>
+      <i class="fa-solid fa-chevron-right support-row-arrow"></i>
+    </div>
+
+  </div><!-- /page-wallet -->
+
+
+  <!-- =============================================
+       PAGE: HISTORY (placeholder)
+       ============================================= -->
+  <div class="page" id="page-history">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;">
+      <i class="fa-solid fa-clock-rotate-left" style="font-size:3rem;color:var(--text-muted);"></i>
+      <span style="color:var(--text-secondary);font-size:0.9375rem;font-weight:500;">No history yet</span>
+    </div>
+  </div>
+
+  <!-- =============================================
+       PAGE: LEADER (placeholder)
+       ============================================= -->
+  <div class="page" id="page-leader">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;">
+      <i class="fa-solid fa-trophy" style="font-size:3rem;color:var(--text-muted);"></i>
+      <span style="color:var(--text-secondary);font-size:0.9375rem;font-weight:500;">Leaderboard coming soon</span>
+    </div>
+  </div>
+
+  <!-- =============================================
+       PAGE: PROFILE (placeholder)
+       ============================================= -->
+  <div class="page" id="page-profile">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;">
+      <i class="fa-regular fa-user" style="font-size:3rem;color:var(--text-muted);"></i>
+      <span style="color:var(--text-secondary);font-size:0.9375rem;font-weight:500;">Profile settings</span>
+    </div>
+  </div>
+
+
+  <!-- =============================================
+       PAGE: BINGO GAME
+       ============================================= -->
+  <div class="page bingo-page" id="page-bingo">
+
+    <!-- Bingo Header -->
+    <header class="top-header">
+      <button class="bingo-back-btn" id="bingo-back-btn">
+        <i class="fa-solid fa-chevron-left"></i>
+        <span>Back</span>
+      </button>
+      <div class="header-actions">
+        <button><i class="fa-solid fa-chevron-down"></i></button>
+        <button><i class="fa-solid fa-ellipsis-vertical"></i></button>
+      </div>
+    </header>
+
+    <!-- Title Bar -->
+    <div class="bingo-title-bar">
+      <div class="bingo-title-left">
+        <div class="bingo-logo">B</div>
+        <span class="bingo-title-text">World Bingo</span>
+        <span class="bingo-info-icon"><i class="fa-solid fa-info"></i></span>
+      </div>
+      <div class="bingo-title-pills">
+        <div class="pill-players">
+          <i class="fa-solid fa-users"></i>
+          173
+        </div>
+        <div class="pill-prize">
+          <i class="fa-solid fa-trophy"></i>
+          1384 Birr
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Info Row -->
+    <div class="game-info-row">
+      <div class="game-info-item">
+        Game ID: #WB-78562
+        <i class="fa-regular fa-copy copy-icon" id="copy-game-id"></i>
+      </div>
+      <div class="game-info-item">
+        <i class="fa-solid fa-users"></i>
+        Players: 173 / 500
+      </div>
+      <div class="game-info-item">
+        Prize Pool: <span class="gold"><i class="fa-solid fa-trophy"></i> 1384 Birr</span>
+      </div>
+    </div>
+
+    <!-- Main Game Area -->
+    <div class="bingo-game-area">
+
+      <!-- Left Sidebar -->
+      <div class="bingo-sidebar">
+
+        <!-- Next Call -->
+        <div class="sidebar-panel">
+          <div class="sidebar-label">NEXT CALL</div>
+          <div class="next-call-circle">
+            <span class="next-call-number">32</span>
+          </div>
+          <div class="next-call-letter">N 32</div>
+        </div>
+
+        <!-- Called Numbers -->
+        <div class="sidebar-panel">
+          <div class="sidebar-label">CALLED NUMBERS</div>
+          <div class="called-numbers-grid">
+            <div class="called-num col-b"><span class="cn-letter">B</span><span class="cn-number">7</span></div>
+            <div class="called-num col-i"><span class="cn-letter">I</span><span class="cn-number">18</span></div>
+            <div class="called-num col-n highlighted"><span class="cn-letter">N</span><span class="cn-number">32</span></div>
+            <div class="called-num col-g"><span class="cn-letter">G</span><span class="cn-number">54</span></div>
+            <div class="called-num col-g"><span class="cn-letter">G</span><span class="cn-number">54</span></div>
+            <div class="called-num col-o"><span class="cn-letter">O</span><span class="cn-number">61</span></div>
+            <div class="called-num col-b"><span class="cn-letter">B</span><span class="cn-number">4</span></div>
+            <div class="called-num col-i"><span class="cn-letter">I</span><span class="cn-number">25</span></div>
+            <div class="called-num col-n"><span class="cn-letter">N</span><span class="cn-number">59</span></div>
+          </div>
+          <div class="called-more">...</div>
+        </div>
+
+        <!-- Pattern -->
+        <div class="sidebar-panel">
+          <div class="sidebar-label">PATTERN</div>
+          <div class="pattern-grid">
+            <div class="pattern-cell filled"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div>
+            <div class="pattern-cell"></div><div class="pattern-cell filled"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div>
+            <div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell filled"></div><div class="pattern-cell"></div><div class="pattern-cell"></div>
+            <div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell filled"></div><div class="pattern-cell"></div>
+            <div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell filled"></div>
+          </div>
+          <div class="pattern-name">Diagonal</div>
+          <div class="pattern-prize">Next Prize: <span class="gold"><i class="fa-solid fa-trophy"></i> 100 Birr</span></div>
+        </div>
+
+      </div><!-- /sidebar -->
+
+      <!-- Bingo Card -->
+      <div class="bingo-card-area">
+        <div class="bingo-card">
+          <!-- Header Row -->
+          <div class="bingo-header-row">
+            <div class="bingo-col-header col-b">B</div>
+            <div class="bingo-col-header col-i">I</div>
+            <div class="bingo-col-header col-n">N</div>
+            <div class="bingo-col-header col-g">G</div>
+            <div class="bingo-col-header col-o">O</div>
+          </div>
+          <!-- Number Grid -->
+          <div class="bingo-grid" id="bingo-grid">
+            <!-- Row 1 -->
+            <div class="bingo-cell unmarked" data-num="4">4</div>
+            <div class="bingo-cell unmarked" data-num="18">18</div>
+            <div class="bingo-cell marked" data-num="32">32</div>
+            <div class="bingo-cell unmarked" data-num="54">54</div>
+            <div class="bingo-cell unmarked" data-num="61">61</div>
+            <!-- Row 2 -->
+            <div class="bingo-cell marked" data-num="7">7</div>
+            <div class="bingo-cell unmarked" data-num="25">25</div>
+            <div class="bingo-cell unmarked" data-num="36">36</div>
+            <div class="bingo-cell marked" data-num="59">59</div>
+            <div class="bingo-cell unmarked" data-num="68">68</div>
+            <!-- Row 3 -->
+            <div class="bingo-cell unmarked" data-num="9">9</div>
+            <div class="bingo-cell unmarked" data-num="21">21</div>
+            <div class="bingo-cell free-cell" data-num="free">
+              <span class="free-star">★</span>
+              <span class="free-text">FREE</span>
+            </div>
+            <div class="bingo-cell unmarked" data-num="51">51</div>
+            <div class="bingo-cell unmarked" data-num="70">70</div>
+            <!-- Row 4 -->
+            <div class="bingo-cell unmarked" data-num="13">13</div>
+            <div class="bingo-cell unmarked" data-num="29">29</div>
+            <div class="bingo-cell unmarked" data-num="44">44</div>
+            <div class="bingo-cell unmarked" data-num="56">56</div>
+            <div class="bingo-cell unmarked" data-num="72">72</div>
+            <!-- Row 5 -->
+            <div class="bingo-cell unmarked" data-num="2">2</div>
+            <div class="bingo-cell unmarked" data-num="19">19</div>
+            <div class="bingo-cell unmarked" data-num="41">41</div>
+            <div class="bingo-cell unmarked" data-num="58">58</div>
+            <div class="bingo-cell unmarked" data-num="74">74</div>
+          </div>
+        </div>
+      </div><!-- /bingo-card-area -->
+
+    </div><!-- /bingo-game-area -->
+
+    <!-- Action Buttons -->
+    <div class="bingo-actions">
+      <button class="bingo-action-btn" id="auto-mark-btn">
+        <i class="fa-solid fa-bolt"></i>
+        Auto Mark
+      </button>
+      <button class="bingo-btn-main" id="bingo-call-btn">
+        BINGO!
+      </button>
+      <button class="bingo-action-btn" id="lucky-pick-btn">
+        <i class="fa-solid fa-clover"></i>
+        Lucky Pick
+        <span class="action-badge">3</span>
+      </button>
+    </div>
+
+    <!-- Bottom Panels -->
+    <div class="bingo-bottom-panels">
+
+      <!-- Chat Panel -->
+      <div class="bottom-panel">
+        <div class="panel-label">CHAT</div>
+        <div class="chat-messages">
+          <div class="chat-msg">
+            <div class="chat-avatar green">BM</div>
+            <div class="chat-content">
+              <div class="chat-header">
+                <span class="chat-username">BingoMaster</span>
+                <span class="chat-time">2:35 PM</span>
+              </div>
+              <div class="chat-text">Good luck everyone! 🍀</div>
+            </div>
+          </div>
+          <div class="chat-msg">
+            <div class="chat-avatar blue">P7</div>
+            <div class="chat-content">
+              <div class="chat-header">
+                <span class="chat-username">Player_77</span>
+                <span class="chat-time">2:35 PM</span>
+              </div>
+              <div class="chat-text">Let's go!</div>
+            </div>
+          </div>
+          <div class="chat-msg">
+            <div class="chat-avatar orange">LS</div>
+            <div class="chat-content">
+              <div class="chat-header">
+                <span class="chat-username">LuckyStar</span>
+                <span class="chat-time">2:35 PM</span>
+              </div>
+              <div class="chat-text">Almost there!</div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input type="text" placeholder="Type a message..." id="chat-input">
+          <button class="chat-send-btn" id="chat-send">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Power-ups Panel -->
+      <div class="bottom-panel">
+        <div class="panel-label">POWER-UPS</div>
+        <div class="powerups-row">
+          <div class="powerup-item">
+            <div class="powerup-icon red">
+              <i class="fa-solid fa-stopwatch"></i>
+            </div>
+            <span class="powerup-name">Extra<br>Time</span>
+            <span class="powerup-count">2</span>
+          </div>
+          <div class="powerup-item">
+            <div class="powerup-icon gold">
+              <span class="pu-text">2X</span>
+            </div>
+            <span class="powerup-name">Double<br>Chance</span>
+            <span class="powerup-count">1</span>
+          </div>
+          <div class="powerup-item">
+            <div class="powerup-icon blue">
+              <i class="fa-solid fa-crosshairs"></i>
+            </div>
+            <span class="powerup-name">Auto<br>Mark</span>
+            <span class="powerup-count">1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Info Panel -->
+      <div class="bottom-panel">
+        <div class="panel-label">GAME INFO</div>
+        <div class="gameinfo-starts">GAME STARTS IN</div>
+        <div class="gameinfo-countdown">
+          <span class="gi-number" id="bingo-min">00</span>
+          <span class="gi-sep">:</span>
+          <span class="gi-number" id="bingo-sec">25</span>
+        </div>
+        <div class="gameinfo-labels">
+          <span>Min</span>
+          <span>Sec</span>
+        </div>
+        <div class="gameinfo-progress">
+          <div class="gameinfo-progress-bar" id="bingo-progress"></div>
+        </div>
+        <div class="gameinfo-stats">
+          <div class="gi-stat">
+            <span class="gi-stat-label">Cards</span>
+            <span class="gi-stat-value">1 <i class="fa-solid fa-id-card"></i></span>
+          </div>
+          <div class="gi-stat">
+            <span class="gi-stat-label">Daubers</span>
+            <span class="gi-stat-value">12 <i class="fa-solid fa-paintbrush"></i></span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /bottom-panels -->
+
+    <!-- Footer Banner -->
+    <div class="bingo-footer-banner">
+      <img src="assets/images/footer-banner.jpg" alt="" class="footer-banner-img">
+      <div class="footer-text-overlay">
+        <div class="footer-title">More fun, More wins!</div>
+        <div class="footer-subtitle">Play, Win &amp; Enjoy Big Rewards</div>
+      </div>
+    </div>
+
+  </div><!-- /page-bingo -->
+
+
+  <!-- ========== BOTTOM NAVIGATION ========== -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <div class="nav-item" data-page="wallet" id="nav-wallet">
+      <i class="fa-solid fa-wallet"></i>
+      <span>Wallet</span>
+    </div>
+    <div class="nav-item" data-page="history" id="nav-history">
+      <i class="fa-solid fa-clock-rotate-left"></i>
+      <span>History</span>
+    </div>
+    <div class="nav-item center-btn active" data-page="games" id="nav-games">
+      <div class="nav-icon-circle">
+        <i class="fa-solid fa-gamepad"></i>
+      </div>
+      <span>Games</span>
+    </div>
+    <div class="nav-item" data-page="leader" id="nav-leader">
+      <i class="fa-solid fa-trophy"></i>
+      <span>Leader</span>
+    </div>
+    <div class="nav-item" data-page="profile" id="nav-profile">
+      <i class="fa-regular fa-user"></i>
+      <span>Profile</span>
+    </div>
+  </nav>
+
+</div><!-- /app-container -->
+
+<!-- Scripts -->
+<script src="js/navigation.js"></script>
+<script src="js/timer.js"></script>
+<script src="js/app.js"></script>
+<script src="js/bingo.js"></script>
+<script src="js/auth.js"></script>
+
+</body>
+</html>

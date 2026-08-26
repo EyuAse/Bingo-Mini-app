@@ -1,0 +1,96 @@
+/* ===== Bottom Navigation ===== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  height: 68px;
+  z-index: 200;
+  box-shadow: var(--shadow-nav);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 0;
+  flex: 1;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  color: var(--text-secondary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-item i {
+  font-size: 1.2rem;
+  transition: color var(--transition-fast);
+}
+
+.nav-item span {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.nav-item.active {
+  color: var(--accent-gold);
+}
+
+.nav-item.active i {
+  color: var(--accent-gold);
+}
+
+.nav-item.active span {
+  color: var(--accent-gold);
+}
+
+/* Center Games Button - Elevated */
+.nav-item.center-btn {
+  position: relative;
+  padding-top: 0;
+}
+
+.nav-item.center-btn .nav-icon-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-circle);
+  background: linear-gradient(135deg, #1a3a6e 0%, #0d2550 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -22px;
+  border: 3px solid var(--bg-secondary);
+  box-shadow: 0 -2px 12px rgba(30, 90, 200, 0.2);
+  transition: all var(--transition-normal);
+}
+
+.nav-item.center-btn i {
+  font-size: 1.3rem;
+  color: var(--text-secondary);
+}
+
+.nav-item.center-btn.active .nav-icon-circle {
+  background: linear-gradient(135deg, #1e5faa 0%, #1a4a8a 100%);
+  border-color: rgba(30, 144, 255, 0.3);
+  box-shadow: 0 -2px 16px rgba(30, 120, 230, 0.35);
+}
+
+.nav-item.center-btn.active i {
+  color: var(--text-primary);
+}
+
+.nav-item.center-btn span {
+  margin-top: 2px;
+}

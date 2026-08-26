@@ -1,0 +1,384 @@
+/* ===== Profile Section ===== */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  margin: 0 16px 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.profile-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-circle);
+  background: linear-gradient(135deg, #1a3060, #0d2040);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  border: 2px solid rgba(212, 160, 23, 0.25);
+  flex-shrink: 0;
+}
+
+.profile-details {
+  flex: 1;
+}
+
+.profile-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.profile-phone {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.profile-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: var(--radius-circle);
+  transition: all var(--transition-fast);
+}
+
+.profile-close:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ===== Balance Card ===== */
+.balance-card {
+  display: flex;
+  margin: 0 16px 14px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  position: relative;
+}
+
+.balance-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-gold), transparent);
+}
+
+.balance-section {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.balance-section:first-child {
+  border-right: 1px solid var(--border-subtle);
+}
+
+.balance-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.balance-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-gold);
+}
+
+.balance-label-icon {
+  color: var(--text-gold);
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.balance-amount {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* ===== Action Buttons ===== */
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px;
+  margin-bottom: 20px;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border-radius: var(--radius-pill);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  transition: all var(--transition-fast);
+}
+
+.action-btn:active {
+  transform: scale(0.96);
+}
+
+.action-btn.withdraw {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-card);
+}
+
+.action-btn.withdraw:active {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.action-btn.withdraw i {
+  font-size: 0.85rem;
+}
+
+.action-btn.deposit-action {
+  background: var(--gradient-deposit);
+  color: var(--bg-primary);
+  border: none;
+  box-shadow: var(--shadow-button);
+}
+
+.action-btn.deposit-action i {
+  font-size: 0.85rem;
+}
+
+/* ===== Daily Leaderboard ===== */
+.daily-leaderboard {
+  margin: 0 16px 20px;
+  padding: 18px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.leaderboard-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.leaderboard-title i {
+  color: var(--accent-gold);
+  font-size: 1.1rem;
+}
+
+.countdown-timer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.timer-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.timer-number {
+  width: 70px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--accent-gold);
+}
+
+.timer-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.timer-separator {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--accent-gold);
+  margin-bottom: 20px;
+}
+
+/* ===== Menu Items ===== */
+.menu-section {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 10px;
+}
+
+
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.menu-item:active {
+  transform: scale(0.97);
+  background: var(--bg-card-alt);
+}
+
+.menu-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.menu-item-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-gold);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.menu-item-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.menu-item-arrow {
+  color: var(--accent-gold);
+  font-size: 0.85rem;
+}
+
+/* More Gifts Card */
+.menu-item.more-gifts {
+  grid-column: 2;
+  grid-row: 1 / 4;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+}
+
+.menu-item.more-gifts .gifts-icon {
+  font-size: 2rem;
+  color: var(--accent-gold);
+}
+
+.menu-item.more-gifts .gifts-text {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+/* ===== Profile Row ===== */
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 16px 12px;
+  padding: 16px;
+  background: transparent;
+  border-top: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.profile-row:active {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.profile-row-icon {
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+}
+
+.profile-row-text {
+  flex: 1;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.profile-row-arrow {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* ===== Support Row ===== */
+.support-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 16px 12px;
+  padding: 16px;
+  border-top: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+
+.support-row-icon {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.support-row-text {
+  flex: 1;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.support-row-arrow {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
