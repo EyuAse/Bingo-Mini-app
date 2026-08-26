@@ -72,19 +72,19 @@
 .bingo-rooms-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 0 14px 20px;
+  gap: 14px;
+  padding: 0 14px 24px;
 }
 
 .bingo-room-card {
-  border-radius: 20px;
-  padding: 12px 10px 14px;
+  border-radius: 22px;
+  padding: 14px 12px 14px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
   transition: transform 150ms ease, box-shadow 150ms ease;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
 }
 
 .bingo-room-card:hover {
@@ -95,29 +95,29 @@
   transform: scale(0.98);
 }
 
-/* Card Themes */
+/* Card Themes & Radial Glows */
 .bingo-room-card.room-purple {
-  background: linear-gradient(180deg, #1d0e45 0%, #0d0526 100%);
-  border: 1.5px solid rgba(168, 85, 247, 0.45);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 18px rgba(147, 51, 234, 0.25);
+  background: radial-gradient(circle at 65% 20%, #3d1075 0%, transparent 60%), linear-gradient(180deg, #1a083d 0%, #0c0320 100%);
+  border: 1.5px solid rgba(168, 85, 247, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(147, 51, 234, 0.2);
 }
 
 .bingo-room-card.room-green {
-  background: linear-gradient(180deg, #07331d 0%, #03180e 100%);
-  border: 1.5px solid rgba(34, 197, 94, 0.45);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 18px rgba(34, 197, 94, 0.25);
+  background: radial-gradient(circle at 65% 20%, #0d4f29 0%, transparent 60%), linear-gradient(180deg, #052613 0%, #021309 100%);
+  border: 1.5px solid rgba(34, 197, 94, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(34, 197, 94, 0.2);
 }
 
 .bingo-room-card.room-orange {
-  background: linear-gradient(180deg, #3d1b06 0%, #1f0c02 100%);
-  border: 1.5px solid rgba(249, 115, 22, 0.45);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 18px rgba(249, 115, 22, 0.25);
+  background: radial-gradient(circle at 65% 20%, #662707 0%, transparent 60%), linear-gradient(180deg, #381504 0%, #1c0a02 100%);
+  border: 1.5px solid rgba(249, 115, 22, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(249, 115, 22, 0.2);
 }
 
 .bingo-room-card.room-blue {
-  background: linear-gradient(180deg, #07224e 0%, #031026 100%);
-  border: 1.5px solid rgba(59, 130, 246, 0.45);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 18px rgba(59, 130, 246, 0.25);
+  background: radial-gradient(circle at 65% 20%, #0c367d 0%, transparent 60%), linear-gradient(180deg, #051a42 0%, #020c22 100%);
+  border: 1.5px solid rgba(59, 130, 246, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(59, 130, 246, 0.2);
 }
 
 /* Badges */
@@ -125,50 +125,30 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   position: relative;
   z-index: 5;
 }
 
 .room-badge {
-  padding: 3px 9px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 9999px;
-  font-size: 0.65rem;
+  padding: 4px 10px;
+  font-size: 0.6875rem;
   font-weight: 800;
-  letter-spacing: 0.4px;
+  color: #ffffff;
+  letter-spacing: 0.5px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-}
-
-.badge-popular {
-  background: rgba(147, 51, 234, 0.3);
-  border: 1px solid rgba(168, 85, 247, 0.55);
-  color: #f3e8ff;
-}
-
-.badge-hot {
-  background: rgba(34, 197, 94, 0.3);
-  border: 1px solid rgba(34, 197, 94, 0.55);
-  color: #dcfce7;
-}
-
-.badge-quick {
-  background: rgba(249, 115, 22, 0.3);
-  border: 1px solid rgba(249, 115, 22, 0.55);
-  color: #ffedd5;
-}
-
-.badge-special {
-  background: rgba(59, 130, 246, 0.3);
-  border: 1px solid rgba(59, 130, 246, 0.55);
-  color: #dbeafe;
+  gap: 5px;
+  backdrop-filter: blur(4px);
 }
 
 /* Card Hero Graphic Area */
 .room-card-hero {
   width: 100%;
-  height: 116px;
+  height: 118px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -178,141 +158,11 @@
 
 .room-hero-img {
   width: 100%;
-  max-width: 160px;
+  max-width: 165px;
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
   display: block;
-}
-
-/* Layered 3D Cards & Ball Component */
-.layered-bingo-hero {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.bg-card {
-  position: absolute;
-  width: 58px;
-  height: 68px;
-  border-radius: 8px;
-  padding: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  display: flex;
-  flex-direction: column;
-}
-
-.card-back {
-  left: 20%;
-  top: 10px;
-  transform: rotate(-10deg);
-}
-
-.card-front {
-  right: 20%;
-  top: 6px;
-  transform: rotate(8deg);
-}
-
-.card-header-txt {
-  font-size: 0.5rem;
-  font-weight: 900;
-  text-align: center;
-  letter-spacing: 1px;
-  margin-bottom: 2px;
-  display: block;
-}
-
-.card-mini-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  flex: 1;
-}
-
-.card-mini-grid span {
-  font-size: 0.42rem;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Color Themes for Layered Cards */
-.hero-green .bg-card {
-  background: #14532d;
-  border: 1px solid #22c55e;
-  color: #86efac;
-}
-
-.hero-orange .bg-card {
-  background: #7c2d12;
-  border: 1px solid #f97316;
-  color: #fdba74;
-}
-
-.hero-blue .bg-card {
-  background: #1e3a8a;
-  border: 1px solid #3b82f6;
-  color: #93c5fd;
-}
-
-/* 3D Glossy Ball */
-.glossy-3d-ball {
-  position: absolute;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  z-index: 10;
-  top: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.7);
-}
-
-.ball-green {
-  background: radial-gradient(circle at 35% 30%, #86efac 0%, #22c55e 40%, #15803d 75%, #052e16 100%);
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
-}
-
-.ball-orange {
-  background: radial-gradient(circle at 35% 30%, #fed7aa 0%, #f97316 40%, #c2410c 75%, #431407 100%);
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
-}
-
-.ball-blue {
-  background: radial-gradient(circle at 35% 30%, #bfdbfe 0%, #3b82f6 40%, #1d4ed8 75%, #082f49 100%);
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
-}
-
-.ball-inner-ring {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.ball-inner-ring span {
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  font-weight: 900;
-  color: #0f172a;
-}
-
-.ball-inner-ring .star-icon {
-  font-size: 1.05rem;
-  filter: drop-shadow(0 1px 3px rgba(234, 179, 8, 0.6));
 }
 
 /* Card Body */
@@ -325,18 +175,18 @@
 
 .room-card-title {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.3rem;
   font-weight: 900;
   color: #ffffff;
   margin-bottom: 2px;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
 }
 
 .room-card-sub {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: #94a3b8;
   font-weight: 500;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 /* Stats Row */
@@ -344,25 +194,31 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 8px;
-  padding: 5px 8px;
-  margin-bottom: 10px;
-  font-size: 0.6875rem;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 7px 10px;
+  margin-bottom: 12px;
+  font-size: 0.75rem;
 }
 
 .room-stat-players {
   color: #cbd5e1;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+}
+
+.room-stat-players i {
+  color: #94a3b8;
+  font-size: 0.75rem;
 }
 
 .room-stat-divider {
   width: 1px;
-  height: 12px;
-  background: rgba(255, 255, 255, 0.15);
+  height: 14px;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .room-stat-jackpot {
@@ -370,13 +226,13 @@
   font-weight: 800;
   display: flex;
   align-items: center;
-  gap: 4px;
-  letter-spacing: 0.3px;
+  gap: 5px;
+  letter-spacing: 0.4px;
 }
 
 .room-stat-jackpot i {
   color: #fbbf24;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 /* Play Now Button */
@@ -384,18 +240,18 @@
   width: 100%;
   border: none;
   border-radius: 9999px;
-  padding: 9px 12px;
+  height: 42px;
   font-family: var(--font-display);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 900;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
   transition: all 150ms ease;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .room-play-btn:hover {
@@ -408,26 +264,26 @@
 
 .room-play-btn.btn-purple {
   background: linear-gradient(90deg, #7c3aed 0%, #9333ea 50%, #a855f7 100%);
-  box-shadow: 0 4px 14px rgba(147, 51, 234, 0.45);
+  box-shadow: 0 4px 16px rgba(147, 51, 234, 0.45);
 }
 
 .room-play-btn.btn-green {
   background: linear-gradient(90deg, #15803d 0%, #16a34a 50%, #22c55e 100%);
-  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.45);
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.45);
 }
 
 .room-play-btn.btn-orange {
   background: linear-gradient(90deg, #c2410c 0%, #ea580c 50%, #f97316 100%);
-  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.45);
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.45);
 }
 
 .room-play-btn.btn-blue {
   background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%);
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.45);
 }
 
 .room-play-btn i {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   transition: transform 150ms ease;
 }
 
