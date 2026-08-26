@@ -1004,3 +1004,43 @@
   background: radial-gradient(ellipse, rgba(251, 191, 36, 0.6), transparent 70%);
   filter: blur(2px);
 }
+
+/* ===== Responsive Mobile Queries for In-Game Bingo ===== */
+@media (max-width: 380px) {
+  .bingo-header {
+    padding: 6px 12px 8px;
+  }
+
+  .bingo-title-bar {
+    padding: 0 12px 8px;
+  }
+
+  .bingo-title-text {
+    font-size: 1rem;
+  }
+
+  .bingo-logo {
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+  }
+
+  .bingo-card {
+    padding: 6px;
+    gap: 4px;
+  }
+
+  .bingo-cell {
+    font-size: 0.95rem;
+  }
+
+  .bingo-col-header {
+    font-size: 0.85rem;
+    padding: 4px 0;
+  }
+
+  .bingo-controls {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+}

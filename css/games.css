@@ -488,24 +488,6 @@
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
-.room-action-btn.join:active {
-  transform: scale(0.95);
-}
-
-.room-action-btn.watch {
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-card);
-}
-
-.room-action-btn.watch:active {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.room-action-btn i {
-  font-size: 0.65rem;
-}
-
 /* ===== More Games Section ===== */
 .more-games-grid {
   display: grid;
@@ -563,8 +545,144 @@
   z-index: 2;
 }
 
-/* Aviator card gold border */
 .game-card.aviator {
   border: 1px solid var(--border-gold);
+}
+
+/* =============================================
+   MOBILE RESPONSIVENESS (Games Dashboard)
+   ============================================= */
+@media (max-width: 380px) {
+  .promo-banner {
+    padding: 0 12px;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .promo-card {
+    padding: 10px 10px;
+    gap: 8px;
+    border-radius: 12px;
+  }
+
+  .promo-icon-img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .promo-card .promo-text {
+    font-size: 0.78rem;
+  }
+
+  .promo-subtext {
+    font-size: 0.58rem;
+  }
+
+  .section-header {
+    padding: 0 12px;
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-size: 1.18rem;
+    gap: 8px;
+  }
+
+  .bingo-title-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  .info-badge {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  .tab-switcher {
+    margin: 0 12px 14px;
+    padding: 3px;
+  }
+
+  .tab-btn {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    gap: 6px;
+  }
+
+  .game-rooms {
+    padding: 0 12px;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .game-room-card {
+    padding: 10px 12px;
+    gap: 10px;
+    border-radius: 14px;
+  }
+
+  .birr-visual {
+    width: 66px;
+    height: 66px;
+    border-radius: 12px;
+  }
+
+  .room-players {
+    font-size: 0.75rem;
+    gap: 4px;
+  }
+
+  .room-players .count {
+    font-size: 0.8rem;
+  }
+
+  .room-players .label {
+    font-size: 0.72rem;
+  }
+
+  .room-prize-value {
+    font-size: 1.05rem;
+    gap: 4px;
+  }
+
+  .status-badge.playing {
+    padding: 3px 8px;
+    font-size: 0.625rem;
+  }
+
+  .countdown-pill {
+    padding: 2px 6px;
+    font-size: 0.6875rem;
+  }
+
+  .room-action-btn {
+    padding: 7px 11px;
+    font-size: 0.72rem;
+    gap: 4px;
+  }
+
+  .games-footer-banner {
+    margin: 0 12px 16px;
+    border-radius: 14px;
+  }
+
+  .games-footer-banner .footer-title {
+    font-size: 0.85rem;
+  }
+
+  .games-footer-banner .footer-subtitle {
+    font-size: 0.625rem;
+  }
+
+  .more-games-grid {
+    padding: 0 12px 20px;
+    gap: 10px;
+    row-gap: 14px;
+  }
+
+  .game-card-name {
+    font-size: 0.75rem;
+  }
 }
 

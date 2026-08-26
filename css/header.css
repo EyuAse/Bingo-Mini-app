@@ -154,3 +154,50 @@
 .deposit-btn i {
   font-size: 0.85rem;
 }
+
+/* ===== Responsive Mobile Queries ===== */
+@media (max-width: 380px) {
+  .top-header {
+    padding: 10px 12px;
+  }
+
+  .close-btn {
+    font-size: 0.85rem;
+  }
+
+  .header-actions button {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+
+  .balance-bar {
+    padding: 6px 12px 10px;
+    gap: 8px;
+  }
+
+  .balance-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  .balance-logo i {
+    font-size: 1rem;
+  }
+
+  .balance-info {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+
+  .balance-text {
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+  }
+
+  .deposit-btn {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    gap: 4px;
+  }
+}
