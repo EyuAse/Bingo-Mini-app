@@ -82,7 +82,7 @@
     });
   }
 
-  const socialBtns = document.querySelectorAll('.social-btn');
+  const socialBtns = document.querySelectorAll('.auth-social-btn, .social-btn');
   socialBtns.forEach(btn => {
     btn.addEventListener('click', function(e) {
       e.preventDefault();

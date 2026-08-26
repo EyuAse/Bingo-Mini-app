@@ -120,104 +120,129 @@
        PAGE: LOGIN / AUTH SCREEN (Screen 2)
        ============================================= -->
   <div class="page" id="page-login">
-    <div class="login-top-bar">
-      <button class="login-back-btn" id="login-back-btn">
-        <i class="fa-solid fa-chevron-left"></i>
-      </button>
-    </div>
-
-    <div class="login-container">
-      <h1 class="login-heading">Welcome Back!</h1>
-      <p class="login-subheading">Log in to continue playing</p>
-
-      <form class="login-form" id="login-form">
-        <div class="form-group">
-          <label class="form-label" for="login-username">Username or Email</label>
-          <div class="input-box">
-            <i class="fa-regular fa-user input-icon"></i>
-            <input type="text" id="login-username" placeholder="Enter your username or email" required>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="login-password">Password</label>
-          <div class="input-box">
-            <i class="fa-solid fa-lock input-icon"></i>
-            <input type="password" id="login-password" placeholder="Enter your password" required>
-            <i class="fa-regular fa-eye eye-toggle" id="pwd-toggle"></i>
-          </div>
-        </div>
-
-        <div class="login-options-row">
-          <div class="remember-label" id="remember-row">
-            <div class="remember-checkbox" id="remember-checkbox">
-              <i class="fa-solid fa-check"></i>
-            </div>
-            <span>Remember me</span>
-          </div>
-          <a href="#" class="forgot-link" id="forgot-pwd-link">Forgot password?</a>
-        </div>
-
-        <button type="submit" class="login-submit-btn" id="login-btn">
-          Login
+    <div class="auth-page-wrapper">
+      <!-- Top Bar: Back button & Language selector -->
+      <div class="auth-top-bar">
+        <button class="auth-back-btn" id="login-back-btn" title="Back">
+          <i class="fa-solid fa-chevron-left"></i>
         </button>
-
-        <div class="login-divider">
-          <span>OR</span>
-        </div>
-
-        <button type="button" class="social-btn facebook-btn" id="facebook-login-btn">
-          <i class="fa-brands fa-facebook-f"></i>
-          <span>Continue with Facebook</span>
-        </button>
-
-        <button type="button" class="social-btn google-btn" id="google-login-btn">
-          <svg class="google-icon-svg" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-          </svg>
-          <span>Continue with Google</span>
-        </button>
-
-        <div class="auth-switch-text">
-          <span>Don't have an account?</span>
-          <a href="#" id="goto-signup-btn" class="auth-highlight-link">Sign up</a>
-        </div>
-      </form>
-
-      <!-- Trust Footer Bar -->
-      <div class="trust-footer-bar">
-        <div class="trust-item">
-          <div class="trust-icon-circle icon-shield">
-            <i class="fa-solid fa-shield-halved"></i>
-          </div>
-          <div class="trust-text">
-            <span class="trust-title">100% SECURE</span>
-            <span class="trust-desc">Your data is safe with us</span>
-          </div>
-        </div>
-        <div class="trust-item">
-          <div class="trust-icon-circle icon-support">
-            <i class="fa-solid fa-headset"></i>
-          </div>
-          <div class="trust-text">
-            <span class="trust-title">24/7 SUPPORT</span>
-            <span class="trust-desc">We're here to help anytime</span>
-          </div>
-        </div>
-        <div class="trust-item">
-          <div class="trust-icon-circle icon-offers">
-            <i class="fa-solid fa-gift"></i>
-          </div>
-          <div class="trust-text">
-            <span class="trust-title">AMAZING OFFERS</span>
-            <span class="trust-desc">New deals every day</span>
-          </div>
+        <div class="lang-selector">
+          <i class="fa-solid fa-globe"></i>
+          <span>English</span>
+          <i class="fa-solid fa-chevron-down"></i>
         </div>
       </div>
 
+      <!-- 3D BINGO Hero Visual -->
+      <div class="auth-hero-container">
+        <img src="assets/images/auth-hero.jpg" alt="3D BINGO Hero" class="auth-hero-img">
+      </div>
+
+      <!-- Glowing Auth Card -->
+      <div class="auth-card">
+        <h1 class="auth-heading">Welcome Back!</h1>
+        <p class="auth-subheading">Log in to continue the fun</p>
+
+        <form class="auth-form" id="login-form">
+          <!-- Username or Email -->
+          <div class="auth-form-group">
+            <label class="auth-label" for="login-username">Username or Email</label>
+            <div class="auth-input-box">
+              <i class="fa-solid fa-user auth-input-icon"></i>
+              <input type="text" id="login-username" placeholder="Enter your username or email" required>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="auth-form-group">
+            <div class="auth-label-row">
+              <label class="auth-label" for="login-password">Password</label>
+              <a href="#" class="auth-forgot-link" id="forgot-pwd-link">Forgot Password?</a>
+            </div>
+            <div class="auth-input-box">
+              <i class="fa-solid fa-lock auth-input-icon"></i>
+              <input type="password" id="login-password" placeholder="Enter your password" required>
+              <i class="fa-solid fa-eye-slash auth-eye-toggle" id="pwd-toggle"></i>
+            </div>
+          </div>
+
+          <!-- Remember me & Secure Login -->
+          <div class="auth-options-row">
+            <div class="auth-remember-label" id="remember-row">
+              <div class="auth-checkbox" id="remember-checkbox">
+                <i class="fa-solid fa-check"></i>
+              </div>
+              <span>Remember me</span>
+            </div>
+            <div class="secure-login-badge">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Secure Login</span>
+            </div>
+          </div>
+
+          <!-- Red-to-Magenta Gradient Action Button -->
+          <button type="submit" class="auth-submit-btn" id="login-btn">
+            <span>LOGIN</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+
+          <!-- Divider -->
+          <div class="auth-divider">
+            <span>or continue with</span>
+          </div>
+
+          <!-- 3-Column Social Login Grid -->
+          <div class="auth-social-row">
+            <button type="button" class="auth-social-btn" id="google-login-btn">
+              <svg class="social-svg-icon" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+              </svg>
+              <span>Google</span>
+            </button>
+
+            <button type="button" class="auth-social-btn" id="facebook-login-btn">
+              <i class="fa-brands fa-facebook social-icon-fb"></i>
+              <span>Facebook</span>
+            </button>
+
+            <button type="button" class="auth-social-btn" id="apple-login-btn">
+              <i class="fa-brands fa-apple social-icon-apple"></i>
+              <span>Apple</span>
+            </button>
+          </div>
+
+          <!-- "New here?" Sub-Card Box -->
+          <div class="new-here-card">
+            <img src="assets/images/auth-gift.jpg" alt="Gift Box" class="new-here-gift-img">
+            <div class="new-here-text">
+              <h3 class="new-here-title">New here?</h3>
+              <p class="new-here-subtitle">Create an account and start playing!</p>
+            </div>
+            <button type="button" class="new-here-btn" id="goto-signup-btn">
+              <span>SIGN UP</span>
+              <i class="fa-solid fa-user-plus"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Floating Ambient Balls (3 and 9) -->
+      <div class="floating-balls-container">
+        <img src="assets/images/ball-3.jpg" alt="Ball 3" class="floating-ball ball-left">
+        <img src="assets/images/ball-9.jpg" alt="Ball 9" class="floating-ball ball-right">
+      </div>
+
+      <!-- SSL Encryption Security Footer -->
+      <div class="auth-ssl-footer">
+        <div class="ssl-trust-line">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Trusted • Safe • Secure</span>
+        </div>
+        <p class="ssl-desc">Your data is protected with 256-bit SSL encryption</p>
+      </div>
     </div>
   </div>
 
@@ -226,166 +251,180 @@
        PAGE: SIGN UP / REGISTER SCREEN (Screen 3)
        ============================================= -->
   <div class="page" id="page-signup">
-    <div class="login-top-bar">
-      <button class="login-back-btn" id="signup-back-btn">
-        <i class="fa-solid fa-chevron-left"></i>
-      </button>
-    </div>
-
-    <div class="login-container">
-      <div style="text-align: center;">
-        <span class="signup-badge-promo">🎁 200% BONUS MONEY + 30 FREE SPINS</span>
+    <div class="auth-page-wrapper">
+      <!-- Top Bar: Back button & Language selector -->
+      <div class="auth-top-bar">
+        <button class="auth-back-btn" id="signup-back-btn" title="Back">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <div class="lang-selector">
+          <i class="fa-solid fa-globe"></i>
+          <span>English</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
       </div>
-      <h1 class="login-heading">Create Account</h1>
-      <p class="login-subheading">Deposit in ETB &amp; get 200% bonus money instantly</p>
 
-      <form class="login-form" id="signup-form">
-        <!-- Phone Number Section -->
-        <div class="form-group">
-          <label class="form-label" for="signup-phone">Phone Number (ETB)</label>
-          <div class="phone-input-wrapper">
-            <div class="country-code-picker" id="country-code-picker">
-              <span class="country-flag" id="selected-flag">🇪🇹</span>
-              <span class="country-dial-code" id="selected-dial-code">+251</span>
-              <i class="fa-solid fa-chevron-down country-chevron"></i>
-              
-              <!-- Dropdown Options -->
-              <div class="country-dropdown" id="country-dropdown">
-                <div class="country-option" data-flag="🇪🇹" data-code="+251">
-                  <span class="country-flag">🇪🇹</span>
-                  <span class="country-option-name">Ethiopia (+251)</span>
-                </div>
-                <div class="country-option" data-flag="🇬🇧" data-code="+44">
-                  <span class="country-flag">🇬🇧</span>
-                  <span class="country-option-name">United Kingdom (+44)</span>
-                </div>
-                <div class="country-option" data-flag="🇰🇪" data-code="+254">
-                  <span class="country-flag">🇰🇪</span>
-                  <span class="country-option-name">Kenya (+254)</span>
-                </div>
-                <div class="country-option" data-flag="🇳🇬" data-code="+234">
-                  <span class="country-flag">🇳🇬</span>
-                  <span class="country-option-name">Nigeria (+234)</span>
-                </div>
-                <div class="country-option" data-flag="🇺🇸" data-code="+1">
-                  <span class="country-flag">🇺🇸</span>
-                  <span class="country-option-name">United States (+1)</span>
+      <!-- 3D BINGO Hero Visual -->
+      <div class="auth-hero-container">
+        <img src="assets/images/auth-hero.jpg" alt="3D BINGO Hero" class="auth-hero-img">
+      </div>
+
+      <!-- Glowing Auth Card -->
+      <div class="auth-card">
+        <div class="signup-bonus-pill">
+          🎁 200% BONUS MONEY + 30 FREE SPINS
+        </div>
+        <h1 class="auth-heading">Create Account</h1>
+        <p class="auth-subheading">Deposit in ETB &amp; get 200% bonus money instantly</p>
+
+        <form class="auth-form" id="signup-form">
+          <!-- Phone Number -->
+          <div class="auth-form-group">
+            <label class="auth-label" for="signup-phone">Phone Number (ETB)</label>
+            <div class="phone-input-wrapper">
+              <div class="country-code-picker" id="country-code-picker">
+                <span class="country-flag" id="selected-flag">🇪🇹</span>
+                <span class="country-dial-code" id="selected-dial-code">+251</span>
+                <i class="fa-solid fa-chevron-down country-chevron"></i>
+                
+                <div class="country-dropdown" id="country-dropdown">
+                  <div class="country-option" data-flag="🇪🇹" data-code="+251">
+                    <span class="country-flag">🇪🇹</span>
+                    <span class="country-option-name">Ethiopia (+251)</span>
+                  </div>
+                  <div class="country-option" data-flag="🇬🇧" data-code="+44">
+                    <span class="country-flag">🇬🇧</span>
+                    <span class="country-option-name">United Kingdom (+44)</span>
+                  </div>
+                  <div class="country-option" data-flag="🇰🇪" data-code="+254">
+                    <span class="country-flag">🇰🇪</span>
+                    <span class="country-option-name">Kenya (+254)</span>
+                  </div>
+                  <div class="country-option" data-flag="🇳🇬" data-code="+234">
+                    <span class="country-flag">🇳🇬</span>
+                    <span class="country-option-name">Nigeria (+234)</span>
+                  </div>
+                  <div class="country-option" data-flag="🇺🇸" data-code="+1">
+                    <span class="country-flag">🇺🇸</span>
+                    <span class="country-option-name">United States (+1)</span>
+                  </div>
                 </div>
               </div>
+              <div class="auth-input-box phone-box">
+                <i class="fa-solid fa-phone auth-input-icon"></i>
+                <input type="tel" id="signup-phone" placeholder="911 234567" required>
+              </div>
             </div>
-            <div class="input-box phone-box">
-              <i class="fa-solid fa-phone input-icon"></i>
-              <input type="tel" id="signup-phone" placeholder="911 234567" required>
+          </div>
+
+          <!-- Username -->
+          <div class="auth-form-group">
+            <label class="auth-label" for="signup-username">Username</label>
+            <div class="auth-input-box">
+              <i class="fa-solid fa-user auth-input-icon"></i>
+              <input type="text" id="signup-username" placeholder="Choose a username" required>
             </div>
           </div>
-        </div>
 
-        <!-- Username -->
-        <div class="form-group">
-          <label class="form-label" for="signup-username">Username</label>
-          <div class="input-box">
-            <i class="fa-regular fa-user input-icon"></i>
-            <input type="text" id="signup-username" placeholder="Choose a username" required>
+          <!-- Email -->
+          <div class="auth-form-group">
+            <label class="auth-label" for="signup-email">Email Address</label>
+            <div class="auth-input-box">
+              <i class="fa-solid fa-envelope auth-input-icon"></i>
+              <input type="email" id="signup-email" placeholder="name@example.com" required>
+            </div>
           </div>
-        </div>
 
-        <!-- Email -->
-        <div class="form-group">
-          <label class="form-label" for="signup-email">Email Address</label>
-          <div class="input-box">
-            <i class="fa-regular fa-envelope input-icon"></i>
-            <input type="email" id="signup-email" placeholder="name@example.com" required>
+          <!-- Password -->
+          <div class="auth-form-group">
+            <label class="auth-label" for="signup-password">Create Password</label>
+            <div class="auth-input-box">
+              <i class="fa-solid fa-lock auth-input-icon"></i>
+              <input type="password" id="signup-password" placeholder="At least 8 characters" required>
+              <i class="fa-solid fa-eye-slash auth-eye-toggle" id="signup-pwd-toggle"></i>
+            </div>
           </div>
-        </div>
 
-        <!-- Password -->
-        <div class="form-group">
-          <label class="form-label" for="signup-password">Create Password</label>
-          <div class="input-box">
-            <i class="fa-solid fa-lock input-icon"></i>
-            <input type="password" id="signup-password" placeholder="At least 8 characters" required>
-            <i class="fa-regular fa-eye eye-toggle" id="signup-pwd-toggle"></i>
+          <!-- Promo Code (Optional) -->
+          <div class="auth-form-group">
+            <label class="auth-label" for="signup-promo">Promo Code (Optional)</label>
+            <div class="auth-input-box">
+              <i class="fa-solid fa-ticket auth-input-icon"></i>
+              <input type="text" id="signup-promo" placeholder="Enter promo code if you have one">
+            </div>
           </div>
-        </div>
 
-        <!-- Promo Code (Optional) -->
-        <div class="form-group">
-          <label class="form-label" for="signup-promo">Promo Code (Optional)</label>
-          <div class="input-box">
-            <i class="fa-solid fa-ticket input-icon"></i>
-            <input type="text" id="signup-promo" placeholder="Enter promo code if you have one">
+          <!-- Terms Agreement -->
+          <div class="auth-terms-row" id="signup-terms-row">
+            <div class="auth-checkbox" id="terms-checkbox">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <span class="auth-terms-text">I am 18+ and agree to the <a href="#">Terms &amp; Conditions</a> and <a href="#">Privacy Policy</a></span>
           </div>
-        </div>
 
-        <!-- Age & Terms Agreement -->
-        <div class="signup-terms-row" id="signup-terms-row">
-          <div class="remember-checkbox" id="terms-checkbox">
-            <i class="fa-solid fa-check"></i>
-          </div>
-          <span class="terms-text">I am 18+ and agree to the <a href="#">Terms &amp; Conditions</a> and <a href="#">Privacy Policy</a></span>
-        </div>
+          <!-- Primary CTA Button -->
+          <button type="submit" class="auth-submit-btn" id="signup-submit-btn">
+            <span>CREATE ACCOUNT &amp; CLAIM 200%</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
 
-        <!-- Submit Button -->
-        <button type="submit" class="login-submit-btn" id="signup-submit-btn">
-          Create Account &amp; Claim 200% Bonus
-        </button>
+          <!-- Divider -->
+          <div class="auth-divider">
+            <span>or sign up with</span>
+          </div>
 
-        <div class="auth-switch-text">
-          <span>Already have an account?</span>
-          <a href="#" id="goto-login-btn" class="auth-highlight-link">Log in</a>
-        </div>
+          <!-- 3-Column Social Sign Up Grid -->
+          <div class="auth-social-row">
+            <button type="button" class="auth-social-btn" id="signup-google-btn">
+              <svg class="social-svg-icon" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+              </svg>
+              <span>Google</span>
+            </button>
 
-        <div class="login-divider">
-          <span>OR</span>
-        </div>
+            <button type="button" class="auth-social-btn" id="signup-facebook-btn">
+              <i class="fa-brands fa-facebook social-icon-fb"></i>
+              <span>Facebook</span>
+            </button>
 
-        <button type="button" class="social-btn facebook-btn" id="signup-facebook-btn">
-          <i class="fa-brands fa-facebook-f"></i>
-          <span>Sign up with Facebook</span>
-        </button>
+            <button type="button" class="auth-social-btn" id="signup-apple-btn">
+              <i class="fa-brands fa-apple social-icon-apple"></i>
+              <span>Apple</span>
+            </button>
+          </div>
 
-        <button type="button" class="social-btn google-btn" id="signup-google-btn">
-          <svg class="google-icon-svg" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-          </svg>
-          <span>Sign up with Google</span>
-        </button>
-      </form>
-
-      <!-- Trust Footer Bar -->
-      <div class="trust-footer-bar">
-        <div class="trust-item">
-          <div class="trust-icon-circle icon-shield">
-            <i class="fa-solid fa-shield-halved"></i>
+          <!-- "Already a player?" Sub-Card Box -->
+          <div class="new-here-card">
+            <img src="assets/images/auth-gift.jpg" alt="Gift Box" class="new-here-gift-img">
+            <div class="new-here-text">
+              <h3 class="new-here-title">Already a player?</h3>
+              <p class="new-here-subtitle">Log in to your account and play!</p>
+            </div>
+            <button type="button" class="new-here-btn" id="goto-login-btn">
+              <span>LOGIN</span>
+              <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            </button>
           </div>
-          <div class="trust-text">
-            <span class="trust-title">100% SECURE</span>
-            <span class="trust-desc">Your data is safe with us</span>
-          </div>
-        </div>
-        <div class="trust-item">
-          <div class="trust-icon-circle icon-support">
-            <i class="fa-solid fa-headset"></i>
-          </div>
-          <div class="trust-text">
-            <span class="trust-title">24/7 SUPPORT</span>
-            <span class="trust-desc">We're here to help anytime</span>
-          </div>
-        </div>
-        <div class="trust-item">
-          <div class="trust-icon-circle icon-offers">
-            <i class="fa-solid fa-gift"></i>
-          </div>
-          <div class="trust-text">
-            <span class="trust-title">AMAZING OFFERS</span>
-            <span class="trust-desc">New deals every day</span>
-          </div>
-        </div>
+        </form>
       </div>
 
+      <!-- Floating Ambient Balls (3 and 9) -->
+      <div class="floating-balls-container">
+        <img src="assets/images/ball-3.jpg" alt="Ball 3" class="floating-ball ball-left">
+        <img src="assets/images/ball-9.jpg" alt="Ball 9" class="floating-ball ball-right">
+      </div>
+
+      <!-- SSL Footer -->
+      <div class="auth-ssl-footer">
+        <div class="ssl-trust-line">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Trusted • Safe • Secure</span>
+        </div>
+        <p class="ssl-desc">Your data is protected with 256-bit SSL encryption</p>
+      </div>
     </div>
   </div>
 
