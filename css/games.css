@@ -168,7 +168,7 @@
 /* Card Hero Graphic Area */
 .room-card-hero {
   width: 100%;
-  height: 110px;
+  height: 116px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -176,11 +176,12 @@
   margin-bottom: 6px;
 }
 
-.room-svg-graphic {
+.room-hero-img {
   width: 100%;
-  max-width: 155px;
+  max-width: 160px;
   height: 100%;
-  overflow: visible;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
   display: block;
 }
 
