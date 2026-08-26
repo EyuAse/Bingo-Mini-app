@@ -58,7 +58,7 @@
   });
 
   // ===== Game Room Buttons → Open Bingo Page =====
-  document.querySelectorAll('.room-action-btn').forEach(btn => {
+  document.querySelectorAll('.room-play-btn, .room-action-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
       e.preventDefault();
       this.style.transform = 'scale(0.95)';
@@ -70,5 +70,16 @@
       }, 150);
     });
   });
+
+  // ===== Header Menu Button → Return to Landing Screen =====
+  const headerMenuBtn = document.getElementById('header-menu-btn');
+  if (headerMenuBtn) {
+    headerMenuBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (typeof window.showPage === 'function') {
+        window.showPage('page-landing');
+      }
+    });
+  }
 
 })();

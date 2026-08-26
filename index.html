@@ -473,16 +473,20 @@
   </div>
 
 
-  <!-- ========== TOP HEADER (shared) ========== -->
+  <!-- ========== TOP HEADER (WORLD BINGO Header) ========== -->
   <header class="top-header">
-    <button class="close-btn" id="close-btn">
-      <i class="fa-solid fa-xmark"></i>
-      <span>Close</span>
+    <button class="header-menu-btn" id="header-menu-btn" title="Menu">
+      <i class="fa-solid fa-bars"></i>
     </button>
-    <div class="header-actions">
-      <button id="chevron-btn"><i class="fa-solid fa-chevron-down"></i></button>
-      <button id="menu-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+
+    <div class="header-world-bingo-logo">
+      <img src="assets/images/world-bingo-logo.jpg" alt="World Bingo Logo" class="world-bingo-img">
     </div>
+
+    <button class="header-notif-btn" id="header-notif-btn" title="Notifications">
+      <i class="fa-solid fa-bell"></i>
+      <span class="notif-badge">3</span>
+    </button>
   </header>
 
   <!-- ========== BALANCE BAR (shared) ========== -->
@@ -506,149 +510,176 @@
        ============================================= -->
   <div class="page" id="page-games">
 
-    <!-- Promo Banner -->
-    <div class="promo-banner">
-      <div class="promo-card" id="promo-code-btn">
-        <img src="assets/images/promo-gift.jpg" alt="" class="promo-icon-img">
-        <div class="promo-text-group">
-          <span class="promo-text">Promo Code</span>
-          <span class="promo-subtext">Use code & get bonus</span>
-        </div>
-        <i class="fa-solid fa-chevron-right promo-arrow"></i>
+    <!-- Ready to Play? Banner -->
+    <div class="ready-play-banner">
+      <div class="ready-play-content">
+        <h2 class="ready-play-title">Ready to Play?</h2>
+        <p class="ready-play-subtitle">Pick a room and let the bingo fun begin! 🎉</p>
       </div>
-      <div class="promo-card promo-orange" id="promotions-btn">
-        <img src="assets/images/promo-megaphone.jpg" alt="" class="promo-icon-img">
-        <div class="promo-text-group">
-          <span class="promo-text">Promotions</span>
-          <span class="promo-subtext">View all offers</span>
-        </div>
-        <i class="fa-solid fa-chevron-right promo-arrow"></i>
+      <div class="ready-play-visual">
+        <img src="assets/images/auth-hero.jpg" alt="Cards & Balls" class="ready-play-img">
       </div>
     </div>
 
-    <!-- World Bingo Section -->
-    <div class="section-header">
-      <h1 class="section-title">
-        <div class="bingo-title-icon">B</div>
-        <span>World Bingo</span>
-      </h1>
-      <button class="info-badge" id="info-btn">
-        <i class="fa-solid fa-circle-info"></i>
-        <span>Info</span>
-      </button>
-    </div>
-
-    <!-- Tab Switcher -->
-    <div class="tab-switcher">
-      <button class="tab-btn active" id="tab-quick" data-tab="quick">
-        <i class="fa-solid fa-bolt"></i>
-        <span>QUICK</span>
-      </button>
-      <button class="tab-btn" id="tab-event" data-tab="event">
-        <i class="fa-solid fa-calendar-days"></i>
-        <span>EVENT</span>
-        <span class="new-badge">NEW</span>
-      </button>
-    </div>
-
-    <!-- Game Room Cards -->
-    <div class="game-rooms" id="game-rooms">
-
-      <!-- Room 1: 10 BIRR - Playing -->
-      <div class="game-room-card room-10">
-        <div class="birr-visual">
-          <img src="assets/images/ball-10.jpg" alt="10 BIRR" class="birr-img">
+    <!-- 2x2 Bingo Game Rooms Grid -->
+    <div class="bingo-rooms-grid">
+      <!-- Card 1: 90 BALL (Purple) -->
+      <div class="bingo-room-card room-purple">
+        <div class="room-card-top">
+          <span class="room-badge badge-popular">🔥 POPULAR</span>
         </div>
-        <div class="room-info">
-          <div class="room-players players-teal">
-            <i class="fa-solid fa-users"></i>
-            <span class="count">173 / 500</span>
-            <span class="label">Players</span>
-          </div>
-          <div class="room-prize">
-            <span class="room-prize-label">PRIZE POOL</span>
-            <span class="room-prize-value val-green">
+        <div class="room-card-hero">
+          <img src="assets/images/card-90-ball.jpg" alt="90 Ball" class="room-hero-img">
+        </div>
+        <div class="room-card-body">
+          <h3 class="room-card-title">90 BALL</h3>
+          <p class="room-card-sub">Classic Bingo</p>
+          <div class="room-stats-row">
+            <div class="room-stat-players">
+              <i class="fa-solid fa-user"></i>
+              <span>1,234</span>
+            </div>
+            <div class="room-stat-divider"></div>
+            <div class="room-stat-jackpot">
               <i class="fa-solid fa-trophy"></i>
-              <span>1384 Birr</span>
-            </span>
+              <span>JACKPOT</span>
+            </div>
           </div>
-        </div>
-        <div class="room-actions">
-          <div class="status-badge playing">
-            <span class="status-dot"></span>
-            <span>PLAYING</span>
-          </div>
-          <button class="room-action-btn watch">
-            <span>Watch Game</span>
-            <i class="fa-solid fa-chevron-right"></i>
+          <button class="room-play-btn btn-purple" data-room="90-ball">
+            <span>PLAY NOW</span>
+            <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
       </div>
 
-      <!-- Room 2: 20 BIRR - Starts in 00:47 -->
-      <div class="game-room-card room-20">
-        <div class="birr-visual">
-          <img src="assets/images/ball-20.jpg" alt="20 BIRR" class="birr-img">
+      <!-- Card 2: 75 BALL (Green) -->
+      <div class="bingo-room-card room-green">
+        <div class="room-card-top">
+          <span class="room-badge badge-hot">🔥 HOT</span>
         </div>
-        <div class="room-info">
-          <div class="room-players players-orange">
-            <i class="fa-solid fa-users"></i>
-            <span class="count">21 / 500</span>
-            <span class="label">Players</span>
+        <div class="room-card-hero">
+          <!-- 3D Emerald Layered Graphic -->
+          <div class="layered-bingo-hero hero-green">
+            <div class="bg-card card-back">
+              <span class="card-header-txt">BINGO</span>
+              <div class="card-mini-grid"><span>13</span><span>13</span><span>13</span><span>23</span><span>33</span></div>
+            </div>
+            <div class="bg-card card-front">
+              <span class="card-header-txt">BINGO</span>
+              <div class="card-mini-grid"><span>13</span><span>23</span><span>33</span><span>33</span><span>33</span></div>
+            </div>
+            <div class="glossy-3d-ball ball-green">
+              <div class="ball-inner-ring">
+                <span>75</span>
+              </div>
+            </div>
           </div>
-          <div class="room-prize">
-            <span class="room-prize-label">PRIZE POOL</span>
-            <span class="room-prize-value val-orange">
+        </div>
+        <div class="room-card-body">
+          <h3 class="room-card-title">75 BALL</h3>
+          <p class="room-card-sub">Multiple Chances</p>
+          <div class="room-stats-row">
+            <div class="room-stat-players">
+              <i class="fa-solid fa-user"></i>
+              <span>982</span>
+            </div>
+            <div class="room-stat-divider"></div>
+            <div class="room-stat-jackpot">
               <i class="fa-solid fa-trophy"></i>
-              <span>336 Birr</span>
-            </span>
+              <span>JACKPOT</span>
+            </div>
           </div>
-        </div>
-        <div class="room-actions">
-          <div class="status-starts starts-orange">
-            <span class="starts-label">STARTS IN</span>
-            <span class="countdown-pill pill-orange" data-seconds="47">
-              <span class="timer-num">0:00</span>
-              <i class="fa-regular fa-clock"></i>
-            </span>
-          </div>
-          <button class="room-action-btn join join-orange">
-            <span>Join Game</span>
-            <i class="fa-solid fa-chevron-right"></i>
+          <button class="room-play-btn btn-green" data-room="75-ball">
+            <span>PLAY NOW</span>
+            <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
       </div>
 
-      <!-- Room 3: 50 BIRR - Starts in 1:00 -->
-      <div class="game-room-card room-50">
-        <div class="birr-visual">
-          <img src="assets/images/ball-50.jpg" alt="50 BIRR" class="birr-img">
+      <!-- Card 3: 30 BALL (Orange) -->
+      <div class="bingo-room-card room-orange">
+        <div class="room-card-top">
+          <span class="room-badge badge-quick">⚡ QUICK</span>
         </div>
-        <div class="room-info">
-          <div class="room-players players-purple">
-            <i class="fa-solid fa-users"></i>
-            <span class="count">0 / 500</span>
-            <span class="label">Players</span>
+        <div class="room-card-hero">
+          <!-- 3D Amber Layered Graphic -->
+          <div class="layered-bingo-hero hero-orange">
+            <div class="bg-card card-back">
+              <span class="card-header-txt">BINGO</span>
+              <div class="card-mini-grid"><span>13</span><span>23</span><span>13</span><span>13</span><span>33</span></div>
+            </div>
+            <div class="bg-card card-front">
+              <span class="card-header-txt">BINGO</span>
+              <div class="card-mini-grid"><span>13</span><span>33</span><span>33</span><span>33</span><span>33</span></div>
+            </div>
+            <div class="glossy-3d-ball ball-orange">
+              <div class="ball-inner-ring">
+                <span>30</span>
+              </div>
+            </div>
           </div>
-          <div class="room-prize">
-            <span class="room-prize-label">PRIZE POOL</span>
-            <span class="room-prize-value val-purple">
+        </div>
+        <div class="room-card-body">
+          <h3 class="room-card-title">30 BALL</h3>
+          <p class="room-card-sub">Quick &amp; Exciting</p>
+          <div class="room-stats-row">
+            <div class="room-stat-players">
+              <i class="fa-solid fa-user"></i>
+              <span>634</span>
+            </div>
+            <div class="room-stat-divider"></div>
+            <div class="room-stat-jackpot">
               <i class="fa-solid fa-trophy"></i>
-              <span>0 Birr</span>
-            </span>
+              <span>JACKPOT</span>
+            </div>
+          </div>
+          <button class="room-play-btn btn-orange" data-room="30-ball">
+            <span>PLAY NOW</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 4: SPECIAL (Blue) -->
+      <div class="bingo-room-card room-blue">
+        <div class="room-card-top">
+          <span class="room-badge badge-special">⭐ SPECIAL</span>
+        </div>
+        <div class="room-card-hero">
+          <!-- 3D Royal Blue Layered Graphic -->
+          <div class="layered-bingo-hero hero-blue">
+            <div class="bg-card card-back">
+              <span class="card-header-txt">BINGO</span>
+              <div class="card-mini-grid"><span>13</span><span>13</span><span>13</span><span>23</span><span>23</span></div>
+            </div>
+            <div class="bg-card card-front">
+              <span class="card-header-txt">BINGO</span>
+              <div class="card-mini-grid"><span>13</span><span>23</span><span>23</span><span>33</span><span>33</span></div>
+            </div>
+            <div class="glossy-3d-ball ball-blue">
+              <div class="ball-inner-ring">
+                <span class="star-icon">⭐</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="room-actions">
-          <div class="status-starts starts-purple">
-            <span class="starts-label">STARTS IN</span>
-            <span class="countdown-pill pill-purple" data-seconds="60">
-              <span class="timer-num">0:00</span>
-              <i class="fa-regular fa-clock"></i>
-            </span>
+        <div class="room-card-body">
+          <h3 class="room-card-title">SPECIAL</h3>
+          <p class="room-card-sub">Unique Patterns</p>
+          <div class="room-stats-row">
+            <div class="room-stat-players">
+              <i class="fa-solid fa-user"></i>
+              <span>512</span>
+            </div>
+            <div class="room-stat-divider"></div>
+            <div class="room-stat-jackpot">
+              <i class="fa-solid fa-trophy"></i>
+              <span>JACKPOT</span>
+            </div>
           </div>
-          <button class="room-action-btn join join-purple">
-            <span>Join Game</span>
-            <i class="fa-solid fa-chevron-right"></i>
+          <button class="room-play-btn btn-blue" data-room="special">
+            <span>PLAY NOW</span>
+            <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
       </div>
