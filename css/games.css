@@ -168,19 +168,20 @@
 /* Card Hero Graphic Area */
 .room-card-hero {
   width: 100%;
-  height: 105px;
+  height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
-.room-hero-img {
+.room-svg-graphic {
   width: 100%;
+  max-width: 155px;
   height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6));
+  overflow: visible;
+  display: block;
 }
 
 /* Layered 3D Cards & Ball Component */
