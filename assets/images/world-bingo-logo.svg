@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 230" width="100%" height="100%">
+  <defs>
+    <!-- 3D Shadow Filters -->
+    <filter id="logoDepthShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+    <filter id="ballGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+    <filter id="starGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <!-- Ball Gradients -->
+    <!-- Purple Ball -->
+    <radialGradient id="pSphere" cx="30%" cy="26%" r="72%">
+      <stop offset="0%" stop-color="#f5d0fe"/>
+      <stop offset="18%" stop-color="#d946ef"/>
+      <stop offset="45%" stop-color="#9333ea"/>
+      <stop offset="78%" stop-color="#581c87"/>
+      <stop offset="100%" stop-color="#240747"/>
+    </radialGradient>
+
+    <!-- Green Ball -->
+    <radialGradient id="gSphere" cx="30%" cy="26%" r="72%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="18%" stop-color="#4ade80"/>
+      <stop offset="45%" stop-color="#16a34a"/>
+      <stop offset="78%" stop-color="#15803d"/>
+      <stop offset="100%" stop-color="#052e16"/>
+    </radialGradient>
+
+    <!-- Orange Ball -->
+    <radialGradient id="oSphere" cx="30%" cy="26%" r="72%">
+      <stop offset="0%" stop-color="#fff7ed"/>
+      <stop offset="18%" stop-color="#fb923c"/>
+      <stop offset="45%" stop-color="#ea580c"/>
+      <stop offset="78%" stop-color="#9a3412"/>
+      <stop offset="100%" stop-color="#431407"/>
+    </radialGradient>
+
+    <!-- Blue Ball -->
+    <radialGradient id="bSphere" cx="30%" cy="26%" r="72%">
+      <stop offset="0%" stop-color="#eff6ff"/>
+      <stop offset="18%" stop-color="#60a5fa"/>
+      <stop offset="45%" stop-color="#2563eb"/>
+      <stop offset="78%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#082f49"/>
+    </radialGradient>
+
+    <!-- Disc Gradient -->
+    <linearGradient id="discShading" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+
+    <!-- Text Gradients -->
+    <!-- WORLD (White to Soft Lilac) -->
+    <linearGradient id="worldTextGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#f8fafc"/>
+      <stop offset="85%" stop-color="#e0e7ff"/>
+      <stop offset="100%" stop-color="#c7d2fe"/>
+    </linearGradient>
+
+    <!-- BINGO Golden 3D Face -->
+    <linearGradient id="bingoFaceGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fffbeb"/>
+      <stop offset="15%" stop-color="#fef08a"/>
+      <stop offset="45%" stop-color="#facc15"/>
+      <stop offset="75%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <!-- 3D Gold Extrusion -->
+    <linearGradient id="bingoExtrudeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d97706"/>
+      <stop offset="50%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+
+    <!-- Star 3D Gradient -->
+    <linearGradient id="starGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="35%" stop-color="#facc15"/>
+      <stop offset="75%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+
+    <!-- Specular Highlight -->
+    <linearGradient id="specularGlint" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ============================================================
+       TOP ARCH: 4 GLOSSY BINGO BALLS (B - I - N - G)
+       ============================================================ -->
+  <g filter="url(#ballGlow)">
+    <!-- 1. Purple Ball "B" -->
+    <g transform="translate(130, 58)">
+      <circle cx="0" cy="0" r="38" fill="url(#pSphere)"/>
+      <circle cx="0" cy="0" r="37.5" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+      <circle cx="0" cy="0" r="26" fill="none" stroke="#ffffff" stroke-width="2"/>
+      <circle cx="0" cy="0" r="22" fill="url(#discShading)" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+      <text x="0" y="8" fill="#3b0764" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="24" text-anchor="middle">B</text>
+      <ellipse cx="-12" cy="-18" rx="12" ry="6" transform="rotate(-28 -12 -18)" fill="url(#specularGlint)"/>
+      <circle cx="-18" cy="-22" r="2.5" fill="#ffffff" opacity="0.9"/>
+    </g>
+
+    <!-- 2. Green Ball "I" -->
+    <g transform="translate(208, 44)">
+      <circle cx="0" cy="0" r="36" fill="url(#gSphere)"/>
+      <circle cx="0" cy="0" r="35.5" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+      <circle cx="0" cy="0" r="25" fill="none" stroke="#ffffff" stroke-width="2"/>
+      <circle cx="0" cy="0" r="21" fill="url(#discShading)" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+      <text x="0" y="8" fill="#052e16" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="24" text-anchor="middle">I</text>
+      <ellipse cx="-11" cy="-16" rx="11" ry="5.5" transform="rotate(-28 -11 -16)" fill="url(#specularGlint)"/>
+      <circle cx="-16" cy="-20" r="2.2" fill="#ffffff" opacity="0.9"/>
+    </g>
+
+    <!-- 3. Orange Ball "N" -->
+    <g transform="translate(284, 44)">
+      <circle cx="0" cy="0" r="36" fill="url(#oSphere)"/>
+      <circle cx="0" cy="0" r="35.5" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+      <circle cx="0" cy="0" r="25" fill="none" stroke="#ffffff" stroke-width="2"/>
+      <circle cx="0" cy="0" r="21" fill="url(#discShading)" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+      <text x="0" y="8" fill="#431407" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="24" text-anchor="middle">N</text>
+      <ellipse cx="-11" cy="-16" rx="11" ry="5.5" transform="rotate(-28 -11 -16)" fill="url(#specularGlint)"/>
+      <circle cx="-16" cy="-20" r="2.2" fill="#ffffff" opacity="0.9"/>
+    </g>
+
+    <!-- 4. Blue Ball "G" -->
+    <g transform="translate(362, 58)">
+      <circle cx="0" cy="0" r="38" fill="url(#bSphere)"/>
+      <circle cx="0" cy="0" r="37.5" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+      <circle cx="0" cy="0" r="26" fill="none" stroke="#ffffff" stroke-width="2"/>
+      <circle cx="0" cy="0" r="22" fill="url(#discShading)" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+      <text x="0" y="8" fill="#082f49" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="24" text-anchor="middle">G</text>
+      <ellipse cx="-12" cy="-18" rx="12" ry="6" transform="rotate(-28 -12 -18)" fill="url(#specularGlint)"/>
+      <circle cx="-18" cy="-22" r="2.5" fill="#ffffff" opacity="0.9"/>
+    </g>
+  </g>
+
+
+  <!-- ============================================================
+       MAIN 3D LOGO: "WORLD BINGO" WITH STAR
+       ============================================================ -->
+  <g filter="url(#logoDepthShadow)">
+
+    <!-- 1. "WORLD" BUBBLE TEXT -->
+    <!-- Outermost Purple Shadow/Chassis -->
+    <text x="246" y="103" fill="#1b0338" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="44" text-anchor="middle" letter-spacing="3" stroke="#1b0338" stroke-width="14" stroke-linejoin="round" stroke-linecap="round">WORLD</text>
+
+    <!-- Deep Violet Border -->
+    <text x="246" y="101" fill="#3b0764" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="44" text-anchor="middle" letter-spacing="3" stroke="#3b0764" stroke-width="8" stroke-linejoin="round">WORLD</text>
+
+    <!-- 3D Extrusion Layer -->
+    <text x="246" y="99" fill="#9333ea" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="44" text-anchor="middle" letter-spacing="3" stroke="#9333ea" stroke-width="3" stroke-linejoin="round">WORLD</text>
+
+    <!-- White Glossy Front Face -->
+    <text x="246" y="97" fill="url(#worldTextGrad)" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="44" text-anchor="middle" letter-spacing="3">WORLD</text>
+
+
+    <!-- 2. "BINGO" MASSIVE 3D BUBBLE BADGE -->
+
+    <!-- Level 1: Outermost Thick Purple Base Chassis -->
+    <g font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="94" text-anchor="middle" letter-spacing="1" stroke="#14022a" stroke-width="26" stroke-linejoin="round" stroke-linecap="round">
+      <text x="248" y="196">BINGO</text>
+    </g>
+
+    <!-- Level 2: Rich Purple Contour Stroke -->
+    <g font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="94" text-anchor="middle" letter-spacing="1" stroke="#380968" stroke-width="16" stroke-linejoin="round">
+      <text x="248" y="194">BINGO</text>
+    </g>
+
+    <!-- Level 3: Magenta/Violet Bevel Accent -->
+    <g font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="94" text-anchor="middle" letter-spacing="1" stroke="#7e22ce" stroke-width="8" stroke-linejoin="round">
+      <text x="248" y="191">BINGO</text>
+    </g>
+
+    <!-- Level 4: 3D Bottom Orange Extrusion Shadow -->
+    <g font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="94" text-anchor="middle" letter-spacing="1" fill="url(#bingoExtrudeGrad)">
+      <text x="248" y="191">BINGO</text>
+      <text x="248" y="189">BINGO</text>
+      <text x="248" y="187">BINGO</text>
+    </g>
+
+    <!-- Level 5: Golden-Yellow Vibrant Front Face -->
+    <g font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="94" text-anchor="middle" letter-spacing="1" fill="url(#bingoFaceGrad)">
+      <text x="248" y="184">BINGO</text>
+    </g>
+
+    <!-- Level 6: Top Inner Bevel Highlight -->
+    <g font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="94" text-anchor="middle" letter-spacing="1" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.8">
+      <text x="248" y="183">BINGO</text>
+    </g>
+
+    <!-- 3. GOLDEN STAR IN THE HOLLOW OF THE 'O' -->
+    <!-- O Center is roughly at x=362, y=156 -->
+    <g transform="translate(362, 154)" filter="url(#starGlow)">
+      <!-- Outer Star Bevel Shadow -->
+      <polygon points="0,-16 4.9,-4.9 16,-3.4 8,4.5 9.9,15.6 0,10.4 -9.9,15.6 -8,4.5 -16,-3.4 -4.9,-4.9" fill="#78350f" stroke="#451a03" stroke-width="2"/>
+      <!-- Golden Star Face -->
+      <polygon points="0,-15 4.6,-4.6 15,-3.2 7.5,4.2 9.3,14.6 0,9.7 -9.3,14.6 -7.5,4.2 -15,-3.2 -4.6,-4.6" fill="url(#starGoldGrad)" stroke="#fef08a" stroke-width="1"/>
+      <!-- Specular Sparkle Highlight -->
+      <circle cx="-3" cy="-5" r="2" fill="#ffffff" opacity="0.9"/>
+    </g>
+  </g>
+</svg>

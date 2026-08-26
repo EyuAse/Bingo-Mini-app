@@ -45,11 +45,11 @@
 }
 
 .world-bingo-img {
-  height: 52px;
+  height: 54px;
   width: auto;
   max-width: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 4px 14px rgba(168, 85, 247, 0.5));
+  filter: drop-shadow(0 4px 16px rgba(168, 85, 247, 0.4));
 }
 
 .notif-badge {

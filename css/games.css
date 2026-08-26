@@ -53,8 +53,8 @@
 }
 
 .ready-play-visual {
-  width: 95px;
-  height: 70px;
+  width: 105px;
+  height: 65px;
   flex-shrink: 0;
   position: relative;
   z-index: 2;
@@ -63,22 +63,21 @@
 .ready-play-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 12px;
-  filter: drop-shadow(0 4px 14px rgba(147, 51, 234, 0.6));
+  object-fit: contain;
+  filter: drop-shadow(0 4px 14px rgba(147, 51, 234, 0.4));
 }
 
 /* 2x2 Bingo Game Rooms Grid */
 .bingo-rooms-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  padding: 0 14px 24px;
+  gap: 10px;
+  padding: 0 10px 24px;
 }
 
 .bingo-room-card {
-  border-radius: 22px;
-  padding: 14px 12px 14px;
+  border-radius: 20px;
+  padding: 14px 14px 14px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -125,7 +124,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   position: relative;
   z-index: 5;
 }
@@ -148,17 +147,17 @@
 /* Card Hero Graphic Area */
 .room-card-hero {
   width: 100%;
-  height: 118px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .room-hero-img {
   width: 100%;
-  max-width: 165px;
+  max-width: 180px;
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
@@ -175,7 +174,7 @@
 
 .room-card-title {
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 900;
   color: #ffffff;
   margin-bottom: 2px;
@@ -183,7 +182,7 @@
 }
 
 .room-card-sub {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #94a3b8;
   font-weight: 500;
   margin-bottom: 10px;
@@ -198,7 +197,7 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 10px;
   padding: 7px 10px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-size: 0.75rem;
 }
 
@@ -240,9 +239,9 @@
   width: 100%;
   border: none;
   border-radius: 9999px;
-  height: 42px;
+  height: 46px;
   font-family: var(--font-display);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 900;
   color: #ffffff;
   display: flex;
@@ -289,6 +288,50 @@
 
 .room-play-btn:hover i {
   transform: translateX(3px);
+}
+
+/* Ambient Sparkle Decorations */
+.bingo-room-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 60%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.bingo-room-card.room-purple::after {
+  background:
+    radial-gradient(circle at 85% 15%, rgba(168, 85, 247, 0.5) 0%, transparent 2px),
+    radial-gradient(circle at 70% 35%, rgba(192, 132, 252, 0.4) 0%, transparent 1.5px),
+    radial-gradient(circle at 92% 40%, rgba(233, 213, 255, 0.6) 0%, transparent 1px),
+    radial-gradient(circle at 60% 10%, rgba(168, 85, 247, 0.3) 0%, transparent 2px);
+}
+
+.bingo-room-card.room-green::after {
+  background:
+    radial-gradient(circle at 85% 15%, rgba(34, 197, 94, 0.5) 0%, transparent 2px),
+    radial-gradient(circle at 70% 35%, rgba(134, 239, 172, 0.4) 0%, transparent 1.5px),
+    radial-gradient(circle at 92% 40%, rgba(220, 252, 231, 0.6) 0%, transparent 1px),
+    radial-gradient(circle at 60% 10%, rgba(34, 197, 94, 0.3) 0%, transparent 2px);
+}
+
+.bingo-room-card.room-orange::after {
+  background:
+    radial-gradient(circle at 85% 15%, rgba(249, 115, 22, 0.5) 0%, transparent 2px),
+    radial-gradient(circle at 70% 35%, rgba(253, 186, 116, 0.4) 0%, transparent 1.5px),
+    radial-gradient(circle at 92% 40%, rgba(255, 237, 213, 0.6) 0%, transparent 1px),
+    radial-gradient(circle at 60% 10%, rgba(249, 115, 22, 0.3) 0%, transparent 2px);
+}
+
+.bingo-room-card.room-blue::after {
+  background:
+    radial-gradient(circle at 85% 15%, rgba(59, 130, 246, 0.5) 0%, transparent 2px),
+    radial-gradient(circle at 70% 35%, rgba(147, 197, 253, 0.4) 0%, transparent 1.5px),
+    radial-gradient(circle at 92% 40%, rgba(219, 234, 254, 0.6) 0%, transparent 1px),
+    radial-gradient(circle at 60% 10%, rgba(59, 130, 246, 0.3) 0%, transparent 2px);
 }
 
 /* Games Footer Banner */
@@ -528,6 +571,43 @@
 
   .game-card-name {
     font-size: 0.75rem;
+  }
+
+  .bingo-rooms-grid {
+    gap: 10px;
+    padding: 0 10px 20px;
+  }
+
+  .bingo-room-card {
+    padding: 14px 12px 14px;
+    border-radius: 16px;
+  }
+
+  .room-card-hero {
+    height: 120px;
+  }
+
+  .room-hero-img {
+    max-width: 155px;
+  }
+
+  .room-card-title {
+    font-size: 1.3rem;
+  }
+
+  .room-card-sub {
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+  }
+
+  .room-stats-row {
+    padding: 7px 10px;
+    margin-bottom: 10px;
+  }
+
+  .room-play-btn {
+    height: 40px;
+    font-size: 0.8125rem;
   }
 }
 

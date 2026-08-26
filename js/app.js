@@ -14,25 +14,41 @@
     });
   });
 
-  // ===== Balance Toggle (Eye Icon) =====
+  // ===== Balance State & Dynamic Wallet Manager =====
+  let currentBalance = parseFloat(localStorage.getItem('betika_user_balance') || '250.00');
   const toggleBalance = document.getElementById('toggle-balance');
   const balanceText = document.querySelector('.balance-text');
   let balanceVisible = false;
+
+  function updateBalanceDisplay() {
+    if (balanceText) {
+      if (balanceVisible) {
+        balanceText.textContent = `${currentBalance.toFixed(2)} ETB`;
+      } else {
+        balanceText.textContent = '•••• ETB';
+      }
+    }
+  }
 
   if (toggleBalance && balanceText) {
     toggleBalance.addEventListener('click', function() {
       balanceVisible = !balanceVisible;
       if (balanceVisible) {
-        balanceText.textContent = '0.00 ETB';
         this.classList.remove('fa-eye');
         this.classList.add('fa-eye-slash');
       } else {
-        balanceText.textContent = '•••• ETB';
         this.classList.remove('fa-eye-slash');
         this.classList.add('fa-eye');
       }
+      updateBalanceDisplay();
     });
   }
+
+  window.addWalletBalance = function(amount) {
+    currentBalance += parseFloat(amount || 0);
+    localStorage.setItem('betika_user_balance', currentBalance.toFixed(2));
+    updateBalanceDisplay();
+  };
 
   // ===== Refresh Icon Spin =====
   const refreshIcon = document.getElementById('refresh-balance');

@@ -135,7 +135,7 @@
 
       <!-- 3D BINGO Hero Visual -->
       <div class="auth-hero-container">
-        <img src="assets/images/auth-hero.jpg" alt="3D BINGO Hero" class="auth-hero-img">
+        <img src="assets/images/cards-balls-hero.svg" alt="3D BINGO Hero" class="auth-hero-img">
       </div>
 
       <!-- Glowing Auth Card -->
@@ -288,7 +288,7 @@
 
       <!-- 3D BINGO Hero Visual -->
       <div class="auth-hero-container">
-        <img src="assets/images/auth-hero.jpg" alt="3D BINGO Hero" class="auth-hero-img">
+        <img src="assets/images/cards-balls-hero.svg" alt="3D BINGO Hero" class="auth-hero-img">
       </div>
 
       <!-- Glowing Auth Card -->
@@ -480,7 +480,7 @@
     </button>
 
     <div class="header-world-bingo-logo">
-      <img src="assets/images/world-bingo-logo.jpg" alt="World Bingo Logo" class="world-bingo-img">
+      <img src="assets/images/world-bingo-logo.svg" alt="World Bingo Logo" class="world-bingo-img">
     </div>
 
     <button class="header-notif-btn" id="header-notif-btn" title="Notifications">
@@ -517,7 +517,7 @@
         <p class="ready-play-subtitle">Pick a room and let the bingo fun begin! 🎉</p>
       </div>
       <div class="ready-play-visual">
-        <img src="assets/images/auth-hero.jpg" alt="Cards & Balls" class="ready-play-img">
+        <img src="assets/images/cards-balls-hero.svg" alt="Cards & Balls" class="ready-play-img">
       </div>
     </div>
 
@@ -882,16 +882,17 @@
 
     <!-- Game Info Row -->
     <div class="game-info-row">
-      <div class="game-info-item">
-        Game ID: #WB-78562
-        <i class="fa-regular fa-copy copy-icon" id="copy-game-id"></i>
+      <div class="game-info-item game-id-box" id="copy-game-id-container">
+        <span>Game ID: #WB-78562</span>
+        <i class="fa-regular fa-copy copy-icon" id="copy-game-id" title="Copy Game ID"></i>
       </div>
-      <div class="game-info-item">
+      <div class="game-info-item players-box">
         <i class="fa-solid fa-users"></i>
-        Players: 173 / 500
+        <span>Players: <strong id="bingo-players-count">173</strong> / 500</span>
       </div>
-      <div class="game-info-item">
-        Prize Pool: <span class="gold"><i class="fa-solid fa-trophy"></i> 1384 Birr</span>
+      <div class="game-info-item prize-box">
+        <span>Prize Pool:</span>
+        <span class="gold"><i class="fa-solid fa-trophy"></i> <strong id="bingo-prize-pool">1384</strong> Birr</span>
       </div>
     </div>
 
@@ -901,22 +902,26 @@
       <!-- Left Sidebar -->
       <div class="bingo-sidebar">
 
-        <!-- Next Call -->
-        <div class="sidebar-panel">
+        <!-- NEXT CALL Panel -->
+        <div class="sidebar-panel next-call-panel">
           <div class="sidebar-label">NEXT CALL</div>
-          <div class="next-call-circle">
-            <span class="next-call-number">32</span>
+          <div class="next-call-sphere" id="next-call-sphere">
+            <div class="sphere-inner">
+              <span class="next-call-number" id="next-call-num">32</span>
+            </div>
+            <div class="sphere-glint"></div>
           </div>
-          <div class="next-call-letter">N 32</div>
+          <div class="next-call-letter" id="next-call-label">N 32</div>
         </div>
 
-        <!-- Called Numbers -->
-        <div class="sidebar-panel">
+        <!-- CALLED NUMBERS Panel -->
+        <div class="sidebar-panel called-numbers-panel">
           <div class="sidebar-label">CALLED NUMBERS</div>
-          <div class="called-numbers-grid">
+          <div class="called-numbers-grid" id="called-numbers-grid">
+            <!-- Dynamic balls rendered here -->
             <div class="called-num col-b"><span class="cn-letter">B</span><span class="cn-number">7</span></div>
             <div class="called-num col-i"><span class="cn-letter">I</span><span class="cn-number">18</span></div>
-            <div class="called-num col-n highlighted"><span class="cn-letter">N</span><span class="cn-number">32</span></div>
+            <div class="called-num col-n active-called"><span class="cn-letter">N</span><span class="cn-number">32</span></div>
             <div class="called-num col-g"><span class="cn-letter">G</span><span class="cn-number">54</span></div>
             <div class="called-num col-g"><span class="cn-letter">G</span><span class="cn-number">54</span></div>
             <div class="called-num col-o"><span class="cn-letter">O</span><span class="cn-number">61</span></div>
@@ -924,71 +929,78 @@
             <div class="called-num col-i"><span class="cn-letter">I</span><span class="cn-number">25</span></div>
             <div class="called-num col-n"><span class="cn-letter">N</span><span class="cn-number">59</span></div>
           </div>
-          <div class="called-more">...</div>
+          <button class="called-more-btn" id="view-all-called-btn" title="View all called numbers">...</button>
         </div>
 
-        <!-- Pattern -->
-        <div class="sidebar-panel">
+        <!-- PATTERN Panel -->
+        <div class="sidebar-panel pattern-panel">
           <div class="sidebar-label">PATTERN</div>
-          <div class="pattern-grid">
-            <div class="pattern-cell filled"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div>
-            <div class="pattern-cell"></div><div class="pattern-cell filled"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div>
-            <div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell filled"></div><div class="pattern-cell"></div><div class="pattern-cell"></div>
-            <div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell filled"></div><div class="pattern-cell"></div>
-            <div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell filled"></div>
+          <div class="pattern-grid-wrapper">
+            <div class="pattern-grid" id="pattern-grid">
+              <!-- 5x5 pattern dots -->
+              <div class="pattern-dot active" data-idx="0"></div><div class="pattern-dot" data-idx="1"></div><div class="pattern-dot" data-idx="2"></div><div class="pattern-dot" data-idx="3"></div><div class="pattern-dot" data-idx="4"></div>
+              <div class="pattern-dot" data-idx="5"></div><div class="pattern-dot active" data-idx="6"></div><div class="pattern-dot" data-idx="7"></div><div class="pattern-dot" data-idx="8"></div><div class="pattern-dot" data-idx="9"></div>
+              <div class="pattern-dot" data-idx="10"></div><div class="pattern-dot" data-idx="11"></div><div class="pattern-dot active" data-idx="12"></div><div class="pattern-dot" data-idx="13"></div><div class="pattern-dot" data-idx="14"></div>
+              <div class="pattern-dot" data-idx="15"></div><div class="pattern-dot" data-idx="16"></div><div class="pattern-dot" data-idx="17"></div><div class="pattern-dot active" data-idx="18"></div><div class="pattern-dot" data-idx="19"></div>
+              <div class="pattern-dot" data-idx="20"></div><div class="pattern-dot" data-idx="21"></div><div class="pattern-dot" data-idx="22"></div><div class="pattern-dot" data-idx="23"></div><div class="pattern-dot active" data-idx="24"></div>
+            </div>
+            <!-- Connecting Line SVG -->
+            <svg class="pattern-line-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <line x1="10" y1="10" x2="90" y2="90" stroke="#ffffff" stroke-width="6" stroke-linecap="round" filter="drop-shadow(0 0 4px #a855f7)"/>
+            </svg>
           </div>
-          <div class="pattern-name">Diagonal</div>
+          <div class="pattern-name" id="pattern-name-display">Diagonal</div>
           <div class="pattern-prize">Next Prize: <span class="gold"><i class="fa-solid fa-trophy"></i> 100 Birr</span></div>
         </div>
 
       </div><!-- /sidebar -->
 
-      <!-- Bingo Card -->
+      <!-- Main 5x5 Bingo Card -->
       <div class="bingo-card-area">
-        <div class="bingo-card">
-          <!-- Header Row -->
+        <div class="bingo-card-container">
+          <!-- Colorful Column Headers -->
           <div class="bingo-header-row">
-            <div class="bingo-col-header col-b">B</div>
-            <div class="bingo-col-header col-i">I</div>
-            <div class="bingo-col-header col-n">N</div>
-            <div class="bingo-col-header col-g">G</div>
-            <div class="bingo-col-header col-o">O</div>
+            <div class="bingo-col-header col-b"><span>B</span></div>
+            <div class="bingo-col-header col-i"><span>I</span></div>
+            <div class="bingo-col-header col-n"><span>N</span></div>
+            <div class="bingo-col-header col-g"><span>G</span></div>
+            <div class="bingo-col-header col-o"><span>O</span></div>
           </div>
-          <!-- Number Grid -->
+          <!-- 5x5 Number Grid -->
           <div class="bingo-grid" id="bingo-grid">
             <!-- Row 1 -->
-            <div class="bingo-cell unmarked" data-num="4">4</div>
-            <div class="bingo-cell unmarked" data-num="18">18</div>
-            <div class="bingo-cell marked" data-num="32">32</div>
-            <div class="bingo-cell unmarked" data-num="54">54</div>
-            <div class="bingo-cell unmarked" data-num="61">61</div>
+            <div class="bingo-cell unmarked" data-index="0" data-col="B" data-val="4"><span class="cell-num">4</span></div>
+            <div class="bingo-cell unmarked" data-index="1" data-col="I" data-val="18"><span class="cell-num">18</span></div>
+            <div class="bingo-cell marked" data-index="2" data-col="N" data-val="32"><div class="token-star">★</div><span class="cell-num">32</span></div>
+            <div class="bingo-cell unmarked" data-index="3" data-col="G" data-val="54"><span class="cell-num">54</span></div>
+            <div class="bingo-cell unmarked" data-index="4" data-col="O" data-val="61"><span class="cell-num">61</span></div>
             <!-- Row 2 -->
-            <div class="bingo-cell marked" data-num="7">7</div>
-            <div class="bingo-cell unmarked" data-num="25">25</div>
-            <div class="bingo-cell unmarked" data-num="36">36</div>
-            <div class="bingo-cell marked" data-num="59">59</div>
-            <div class="bingo-cell unmarked" data-num="68">68</div>
+            <div class="bingo-cell marked" data-index="5" data-col="B" data-val="7"><div class="token-star">★</div><span class="cell-num">7</span></div>
+            <div class="bingo-cell unmarked" data-index="6" data-col="I" data-val="25"><span class="cell-num">25</span></div>
+            <div class="bingo-cell unmarked" data-index="7" data-col="N" data-val="36"><span class="cell-num">36</span></div>
+            <div class="bingo-cell marked" data-index="8" data-col="G" data-val="59"><div class="token-star">★</div><span class="cell-num">59</span></div>
+            <div class="bingo-cell unmarked" data-index="9" data-col="O" data-val="68"><span class="cell-num">68</span></div>
             <!-- Row 3 -->
-            <div class="bingo-cell unmarked" data-num="9">9</div>
-            <div class="bingo-cell unmarked" data-num="21">21</div>
-            <div class="bingo-cell free-cell" data-num="free">
+            <div class="bingo-cell unmarked" data-index="10" data-col="B" data-val="9"><span class="cell-num">9</span></div>
+            <div class="bingo-cell unmarked" data-index="11" data-col="I" data-val="21"><span class="cell-num">21</span></div>
+            <div class="bingo-cell free-cell marked" data-index="12" data-col="N" data-val="FREE">
               <span class="free-star">★</span>
-              <span class="free-text">FREE</span>
+              <span class="free-text">★FREE★</span>
             </div>
-            <div class="bingo-cell unmarked" data-num="51">51</div>
-            <div class="bingo-cell unmarked" data-num="70">70</div>
+            <div class="bingo-cell unmarked" data-index="13" data-col="G" data-val="51"><span class="cell-num">51</span></div>
+            <div class="bingo-cell unmarked" data-index="14" data-col="O" data-val="70"><span class="cell-num">70</span></div>
             <!-- Row 4 -->
-            <div class="bingo-cell unmarked" data-num="13">13</div>
-            <div class="bingo-cell unmarked" data-num="29">29</div>
-            <div class="bingo-cell unmarked" data-num="44">44</div>
-            <div class="bingo-cell unmarked" data-num="56">56</div>
-            <div class="bingo-cell unmarked" data-num="72">72</div>
+            <div class="bingo-cell unmarked" data-index="15" data-col="B" data-val="13"><span class="cell-num">13</span></div>
+            <div class="bingo-cell unmarked" data-index="16" data-col="I" data-val="29"><span class="cell-num">29</span></div>
+            <div class="bingo-cell unmarked" data-index="17" data-col="N" data-val="44"><span class="cell-num">44</span></div>
+            <div class="bingo-cell unmarked" data-index="18" data-col="G" data-val="56"><span class="cell-num">56</span></div>
+            <div class="bingo-cell unmarked" data-index="19" data-col="O" data-val="72"><span class="cell-num">72</span></div>
             <!-- Row 5 -->
-            <div class="bingo-cell unmarked" data-num="2">2</div>
-            <div class="bingo-cell unmarked" data-num="19">19</div>
-            <div class="bingo-cell unmarked" data-num="41">41</div>
-            <div class="bingo-cell unmarked" data-num="58">58</div>
-            <div class="bingo-cell unmarked" data-num="74">74</div>
+            <div class="bingo-cell unmarked" data-index="20" data-col="B" data-val="2"><span class="cell-num">2</span></div>
+            <div class="bingo-cell unmarked" data-index="21" data-col="I" data-val="19"><span class="cell-num">19</span></div>
+            <div class="bingo-cell unmarked" data-index="22" data-col="N" data-val="41"><span class="cell-num">41</span></div>
+            <div class="bingo-cell unmarked" data-index="23" data-col="G" data-val="58"><span class="cell-num">58</span></div>
+            <div class="bingo-cell unmarked" data-index="24" data-col="O" data-val="74"><span class="cell-num">74</span></div>
           </div>
         </div>
       </div><!-- /bingo-card-area -->
@@ -997,130 +1009,94 @@
 
     <!-- Action Buttons -->
     <div class="bingo-actions">
-      <button class="bingo-action-btn" id="auto-mark-btn">
+      <button class="bingo-action-btn auto-mark-btn" id="auto-mark-btn" title="Toggle Auto Daubing">
         <i class="fa-solid fa-bolt"></i>
-        Auto Mark
+        <span>Auto Mark</span>
       </button>
+
       <button class="bingo-btn-main" id="bingo-call-btn">
-        BINGO!
+        <span class="bingo-btn-star star-1">★</span>
+        <span class="bingo-btn-text">BINGO!</span>
+        <span class="bingo-btn-star star-2">★</span>
       </button>
-      <button class="bingo-action-btn" id="lucky-pick-btn">
-        <i class="fa-solid fa-clover"></i>
-        Lucky Pick
-        <span class="action-badge">3</span>
+
+      <button class="bingo-action-btn lucky-pick-btn" id="lucky-pick-btn" title="Use Lucky Pick Power-Up">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>Lucky Pick</span>
+        <span class="action-badge" id="lucky-pick-count">3</span>
       </button>
     </div>
 
-    <!-- Bottom Panels -->
-    <div class="bingo-bottom-panels">
-
-      <!-- Chat Panel -->
-      <div class="bottom-panel">
-        <div class="panel-label">CHAT</div>
-        <div class="chat-messages">
-          <div class="chat-msg">
-            <div class="chat-avatar green">BM</div>
-            <div class="chat-content">
-              <div class="chat-header">
-                <span class="chat-username">BingoMaster</span>
-                <span class="chat-time">2:35 PM</span>
-              </div>
-              <div class="chat-text">Good luck everyone! 🍀</div>
-            </div>
-          </div>
-          <div class="chat-msg">
-            <div class="chat-avatar blue">P7</div>
-            <div class="chat-content">
-              <div class="chat-header">
-                <span class="chat-username">Player_77</span>
-                <span class="chat-time">2:35 PM</span>
-              </div>
-              <div class="chat-text">Let's go!</div>
-            </div>
-          </div>
-          <div class="chat-msg">
-            <div class="chat-avatar orange">LS</div>
-            <div class="chat-content">
-              <div class="chat-header">
-                <span class="chat-username">LuckyStar</span>
-                <span class="chat-time">2:35 PM</span>
-              </div>
-              <div class="chat-text">Almost there!</div>
-            </div>
-          </div>
+    <!-- Victory Celebration Modal -->
+    <div class="bingo-win-modal" id="bingo-win-modal">
+      <div class="bingo-win-card">
+        <div class="win-crown">👑</div>
+        <h2 class="win-title">BINGO!</h2>
+        <p class="win-subtitle">Congratulations! You completed the pattern!</p>
+        <div class="win-prize-box">
+          <span class="win-prize-label">You Won</span>
+          <span class="win-prize-amount" id="modal-prize-amount">+1,384 ETB</span>
         </div>
-        <div class="chat-input-area">
-          <input type="text" placeholder="Type a message..." id="chat-input">
-          <button class="chat-send-btn" id="chat-send">
-            <i class="fa-solid fa-paper-plane"></i>
-          </button>
+        <button class="win-collect-btn" id="win-collect-btn">Play Next Round</button>
+      </div>
+    </div>
+
+    <!-- Confetti Canvas -->
+    <canvas id="bingo-confetti-canvas" class="bingo-confetti-canvas"></canvas>
+
+    <!-- In-Game Toast -->
+    <div class="bingo-toast" id="bingo-toast"></div>
+
+    <!-- Real Betting & Ticket Purchase Bar -->
+    <div class="bingo-betting-bar" id="bingo-betting-bar">
+      <div class="betting-header">
+        <div class="betting-title">
+          <i class="fa-solid fa-coins gold"></i>
+          <span>Select Bet Amount</span>
+        </div>
+        <div class="lobby-countdown-pill" id="lobby-countdown-pill">
+          <i class="fa-regular fa-clock"></i>
+          <span>Round in: <strong id="lobby-timer">00:08</strong></span>
         </div>
       </div>
 
-      <!-- Power-ups Panel -->
-      <div class="bottom-panel">
-        <div class="panel-label">POWER-UPS</div>
-        <div class="powerups-row">
-          <div class="powerup-item">
-            <div class="powerup-icon red">
-              <i class="fa-solid fa-stopwatch"></i>
-            </div>
-            <span class="powerup-name">Extra<br>Time</span>
-            <span class="powerup-count">2</span>
-          </div>
-          <div class="powerup-item">
-            <div class="powerup-icon gold">
-              <span class="pu-text">2X</span>
-            </div>
-            <span class="powerup-name">Double<br>Chance</span>
-            <span class="powerup-count">1</span>
-          </div>
-          <div class="powerup-item">
-            <div class="powerup-icon blue">
-              <i class="fa-solid fa-crosshairs"></i>
-            </div>
-            <span class="powerup-name">Auto<br>Mark</span>
-            <span class="powerup-count">1</span>
-          </div>
-        </div>
+      <!-- Quick Bet Chips -->
+      <div class="bet-chips-row">
+        <button class="bet-chip" data-bet="10">10 ETB</button>
+        <button class="bet-chip active" data-bet="20">20 ETB</button>
+        <button class="bet-chip" data-bet="50">50 ETB</button>
+        <button class="bet-chip" data-bet="100">100 ETB</button>
       </div>
 
-      <!-- Game Info Panel -->
-      <div class="bottom-panel">
-        <div class="panel-label">GAME INFO</div>
-        <div class="gameinfo-starts">GAME STARTS IN</div>
-        <div class="gameinfo-countdown">
-          <span class="gi-number" id="bingo-min">00</span>
-          <span class="gi-sep">:</span>
-          <span class="gi-number" id="bingo-sec">25</span>
+      <!-- Card Quantity & Buy In CTA -->
+      <div class="buy-action-row">
+        <div class="card-qty-selector">
+          <span class="qty-label">Cards:</span>
+          <button class="qty-btn" id="qty-minus">-</button>
+          <span class="qty-val" id="qty-val">1</span>
+          <button class="qty-btn" id="qty-plus">+</button>
         </div>
-        <div class="gameinfo-labels">
-          <span>Min</span>
-          <span>Sec</span>
+
+        <button class="btn-buy-ticket" id="btn-buy-ticket">
+          <i class="fa-solid fa-ticket"></i>
+          <span>Buy Ticket &bull; <strong id="total-bet-display">20 ETB</strong></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Competing Room Players Panel -->
+    <div class="bingo-live-players-panel" id="bingo-live-players-panel">
+      <div class="live-players-header">
+        <div class="lp-title">
+          <span class="live-indicator"></span>
+          <span>LIVE ROOM PLAYERS (<strong id="live-players-header-count">173</strong>)</span>
         </div>
-        <div class="gameinfo-progress">
-          <div class="gameinfo-progress-bar" id="bingo-progress"></div>
-        </div>
-        <div class="gameinfo-stats">
-          <div class="gi-stat">
-            <span class="gi-stat-label">Cards</span>
-            <span class="gi-stat-value">1 <i class="fa-solid fa-id-card"></i></span>
-          </div>
-          <div class="gi-stat">
-            <span class="gi-stat-label">Daubers</span>
-            <span class="gi-stat-value">12 <i class="fa-solid fa-paintbrush"></i></span>
-          </div>
-        </div>
+        <span class="lp-subtitle">Competing for <strong class="gold" id="live-pool-display">1,384 ETB</strong></span>
       </div>
 
-    </div><!-- /bottom-panels -->
-
-    <!-- Footer Banner -->
-    <div class="bingo-footer-banner">
-      <img src="assets/images/footer-banner.jpg" alt="" class="footer-banner-img">
-      <div class="footer-text-overlay">
-        <div class="footer-title">More fun, More wins!</div>
-        <div class="footer-subtitle">Play, Win &amp; Enjoy Big Rewards</div>
+      <!-- Opponents Feed List -->
+      <div class="live-players-feed" id="live-players-feed">
+        <!-- Dynamic active opponents rendered here -->
       </div>
     </div>
 

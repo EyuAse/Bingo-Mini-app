@@ -1,0 +1,238 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 300" width="100%" height="100%">
+  <defs>
+    <!-- Filters for realistic 3D depth -->
+    <filter id="cardShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+    <filter id="ballShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#000000" flood-opacity="0.75"/>
+    </filter>
+    <filter id="glowLight" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <!-- Card Gradients -->
+    <!-- Purple Card Gradient -->
+    <linearGradient id="pCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="35%" stop-color="#6d28d9"/>
+      <stop offset="70%" stop-color="#4c1d95"/>
+      <stop offset="100%" stop-color="#2e1065"/>
+    </linearGradient>
+    <linearGradient id="pCardBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="50%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#581c87"/>
+    </linearGradient>
+
+    <!-- Orange Card Gradient -->
+    <linearGradient id="oCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="35%" stop-color="#f97316"/>
+      <stop offset="70%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </linearGradient>
+    <linearGradient id="oCardBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fed7aa"/>
+      <stop offset="50%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+
+    <!-- Inner Disc Base Gradient -->
+    <linearGradient id="discGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+
+    <!-- Ball Spherical Gradients -->
+    <!-- Purple Ball (B) -->
+    <radialGradient id="pBallSphere" cx="30%" cy="26%" r="74%">
+      <stop offset="0%" stop-color="#f5d0fe"/>
+      <stop offset="15%" stop-color="#d946ef"/>
+      <stop offset="42%" stop-color="#a21caf"/>
+      <stop offset="75%" stop-color="#581c87"/>
+      <stop offset="100%" stop-color="#240747"/>
+    </radialGradient>
+
+    <!-- Emerald Green Ball (7) -->
+    <radialGradient id="gBallSphere" cx="30%" cy="25%" r="75%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="14%" stop-color="#86efac"/>
+      <stop offset="38%" stop-color="#22c55e"/>
+      <stop offset="65%" stop-color="#15803d"/>
+      <stop offset="88%" stop-color="#052e16"/>
+      <stop offset="100%" stop-color="#021c0d"/>
+    </radialGradient>
+
+    <!-- Blue Ball (6) -->
+    <radialGradient id="bBallSphere" cx="30%" cy="26%" r="74%">
+      <stop offset="0%" stop-color="#eff6ff"/>
+      <stop offset="15%" stop-color="#93c5fd"/>
+      <stop offset="42%" stop-color="#3b82f6"/>
+      <stop offset="70%" stop-color="#1d4ed8"/>
+      <stop offset="90%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#080e1a"/>
+    </radialGradient>
+
+    <!-- Specular Highlight Gradients -->
+    <linearGradient id="specularGlint" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="softRingGlint" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ============================================================
+       BACKGROUND: 2 TILTED BINGO CARDS
+       ============================================================ -->
+
+  <!-- LEFT CARD: PURPLE (Tilted -15deg) -->
+  <g transform="translate(195, 125) rotate(-15) translate(-75, -95)" filter="url(#cardShadow)">
+    <!-- Outer Card Shell -->
+    <rect x="0" y="0" width="150" height="190" rx="16" fill="url(#pCardGrad)" stroke="url(#pCardBorder)" stroke-width="4"/>
+    <!-- Inner Bevel Outline -->
+    <rect x="5" y="5" width="140" height="180" rx="12" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+
+    <!-- Header: BINGO -->
+    <text x="75" y="32" fill="#ffffff" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="20" text-anchor="middle" letter-spacing="4">BINGO</text>
+
+    <!-- Number Grid Background -->
+    <rect x="12" y="42" width="126" height="134" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2"/>
+    
+    <!-- Grid Dividers -->
+    <g stroke="#e2e8f0" stroke-width="1.4">
+      <line x1="54" y1="42" x2="54" y2="176"/>
+      <line x1="96" y1="42" x2="96" y2="176"/>
+      <line x1="12" y1="86.6" x2="138" y2="86.6"/>
+      <line x1="12" y1="131.3" x2="138" y2="131.3"/>
+    </g>
+
+    <!-- Grid Numbers -->
+    <g fill="#4c1d95" font-family="'Outfit', 'Inter', sans-serif" font-weight="900" font-size="18" text-anchor="middle">
+      <text x="33" y="73">23</text>
+      <text x="75" y="73">8</text>
+      <text x="117" y="73">28</text>
+      
+      <text x="33" y="117.5">13</text>
+      <text x="75" y="117.5" fill="#8b5cf6">2</text>
+      <text x="117" y="117.5">33</text>
+      
+      <text x="33" y="162">23</text>
+      <text x="75" y="162">13</text>
+      <text x="117" y="162">33</text>
+    </g>
+  </g>
+
+  <!-- RIGHT CARD: ORANGE (Tilted +15deg) -->
+  <g transform="translate(370, 135) rotate(15) translate(-75, -95)" filter="url(#cardShadow)">
+    <!-- Outer Card Shell -->
+    <rect x="0" y="0" width="150" height="190" rx="16" fill="url(#oCardGrad)" stroke="url(#oCardBorder)" stroke-width="4"/>
+    <!-- Inner Bevel Outline -->
+    <rect x="5" y="5" width="140" height="180" rx="12" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+
+    <!-- Header: BINGO -->
+    <text x="75" y="32" fill="#ffffff" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="20" text-anchor="middle" letter-spacing="4">BINGO</text>
+
+    <!-- Number Grid Background -->
+    <rect x="12" y="42" width="126" height="134" rx="8" fill="#ffffff" stroke="#fed7aa" stroke-width="1.2"/>
+    
+    <!-- Grid Dividers -->
+    <g stroke="#fed7aa" stroke-width="1.4">
+      <line x1="54" y1="42" x2="54" y2="176"/>
+      <line x1="96" y1="42" x2="96" y2="176"/>
+      <line x1="12" y1="86.6" x2="138" y2="86.6"/>
+      <line x1="12" y1="131.3" x2="138" y2="131.3"/>
+    </g>
+
+    <!-- Grid Numbers -->
+    <g fill="#9a3412" font-family="'Outfit', 'Inter', sans-serif" font-weight="900" font-size="18" text-anchor="middle">
+      <text x="33" y="73">22</text>
+      <text x="75" y="73">33</text>
+      <text x="117" y="73">13</text>
+      
+      <text x="33" y="117.5">13</text>
+      <text x="75" y="117.5" fill="#ea580c">★</text>
+      <text x="117" y="117.5">33</text>
+      
+      <text x="33" y="162">23</text>
+      <text x="75" y="162">13</text>
+      <text x="117" y="162">33</text>
+    </g>
+  </g>
+
+
+  <!-- ============================================================
+       FOREGROUND: 3 3D GLOSSY BINGO BALLS
+       ============================================================ -->
+
+  <!-- 1. LEFT BALL: PURPLE "B" -->
+  <g filter="url(#ballShadow)">
+    <!-- Ball Sphere -->
+    <circle cx="138" cy="196" r="62" fill="url(#pBallSphere)"/>
+    <circle cx="138" cy="196" r="61" fill="none" stroke="url(#softRingGlint)" stroke-width="1.8"/>
+
+    <!-- Concentric White Outer Ring -->
+    <circle cx="138" cy="196" r="44" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.95"/>
+
+    <!-- Inner White Disc -->
+    <circle cx="138" cy="196" r="37" fill="url(#discGrad)" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+
+    <!-- Bold Letter "B" -->
+    <text x="138" y="210" fill="#3b0764" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="40" text-anchor="middle">B</text>
+
+    <!-- Top-Left Glossy Specular Arc -->
+    <ellipse cx="118" cy="160" rx="20" ry="10" transform="rotate(-28 118 160)" fill="url(#specularGlint)"/>
+    <circle cx="106" cy="152" r="4" fill="#ffffff" opacity="0.9"/>
+  </g>
+
+  <!-- 2. RIGHT BALL: ROYAL BLUE "6" -->
+  <g filter="url(#ballShadow)">
+    <!-- Ball Sphere -->
+    <circle cx="446" cy="194" r="64" fill="url(#bBallSphere)"/>
+    <circle cx="446" cy="194" r="63" fill="none" stroke="url(#softRingGlint)" stroke-width="1.8"/>
+
+    <!-- Concentric White Outer Ring -->
+    <circle cx="446" cy="194" r="45" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.95"/>
+
+    <!-- Inner White Disc -->
+    <circle cx="446" cy="194" r="38" fill="url(#discGrad)" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+
+    <!-- Bold Number "6" -->
+    <text x="446" y="210" fill="#082f49" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="44" text-anchor="middle" letter-spacing="-1">6</text>
+
+    <!-- Top-Left Glossy Specular Arc -->
+    <ellipse cx="426" cy="158" rx="20" ry="10" transform="rotate(-28 426 158)" fill="url(#specularGlint)"/>
+    <circle cx="414" cy="150" r="4" fill="#ffffff" opacity="0.9"/>
+  </g>
+
+  <!-- 3. CENTER BALL (LARGEST & PROMINENT): EMERALD GREEN "7" -->
+  <g filter="url(#ballShadow)">
+    <!-- Ball Sphere -->
+    <circle cx="288" cy="172" r="78" fill="url(#gBallSphere)"/>
+    <circle cx="288" cy="172" r="77" fill="none" stroke="url(#softRingGlint)" stroke-width="2.5"/>
+
+    <!-- Concentric Green / White Multiple Bevel Rings -->
+    <circle cx="288" cy="172" r="56" fill="none" stroke="#ffffff" stroke-width="3.5" opacity="0.95"/>
+    <circle cx="288" cy="172" r="50" fill="none" stroke="rgba(5,46,22,0.35)" stroke-width="1.2"/>
+
+    <!-- Inner White Disc -->
+    <circle cx="288" cy="172" r="46" fill="url(#discGrad)" stroke="rgba(0,0,0,0.15)" stroke-width="1.2"/>
+
+    <!-- Bold Number "7" with Distinct Stylized Sans-Serif -->
+    <text x="288" y="192" fill="#052e16" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="58" text-anchor="middle" letter-spacing="-1">7</text>
+
+    <!-- Top-Left Large Specular Gloss Reflection -->
+    <ellipse cx="262" cy="126" rx="26" ry="13" transform="rotate(-28 262 126)" fill="url(#specularGlint)"/>
+    <circle cx="248" cy="116" r="5.5" fill="#ffffff" opacity="0.95"/>
+
+    <!-- Bottom Subtle Ambient Bounce Light Reflection -->
+    <path d="M245 238 C 265 248, 310 248, 330 238" stroke="rgba(134,239,172,0.4)" stroke-width="3" stroke-linecap="round" fill="none"/>
+  </g>
+</svg>
