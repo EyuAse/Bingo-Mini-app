@@ -3433,6 +3433,45 @@
 /* ============================================================
    DEDICATED CASHIER SUBPAGES (DEPOSIT & WITHDRAW)
    ============================================================ */
+.subpage-inline-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 4px;
+  width: 100%;
+}
+
+.btn-subpage-back-pill {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #0f172a;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.btn-subpage-back-pill:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateX(-2px);
+}
+
+.subpage-main-heading {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+  font-family: var(--font-display), 'Outfit', sans-serif;
+  letter-spacing: -0.3px;
+}
+
 .fresh-cashier-card-shell {
   background: #ffffff;
   border: 1px solid #f1f5f9;

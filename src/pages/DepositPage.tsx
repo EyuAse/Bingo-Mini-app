@@ -104,11 +104,11 @@ export const DepositPage: React.FC = () => {
 
   return (
     <div className="page active page-subpage-fresh" id="page-deposit">
-      {/* Top Sticky Header */}
-      <div className="subpage-top-header">
+      {/* Clean Inline Page Navigation Header */}
+      <div className="subpage-inline-nav-row">
         <button
           type="button"
-          className="btn-subpage-back"
+          className="btn-subpage-back-pill"
           onClick={() => switchPage('wallet')}
           title="Back to Wallet"
         >
@@ -116,11 +116,9 @@ export const DepositPage: React.FC = () => {
           <span>{lang === 'am' ? 'ወደ ዋሌት' : 'Back to Wallet'}</span>
         </button>
 
-        <h1 className="subpage-title-txt">
+        <h1 className="subpage-main-heading">
           {lang === 'am' ? 'ገንዘብ አስገባ' : 'Deposit Funds'}
         </h1>
-
-        <LanguageDropdown />
       </div>
 
       <div className="subpage-scroll-content">

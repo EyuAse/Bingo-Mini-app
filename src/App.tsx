@@ -44,9 +44,7 @@ export const App: React.FC = () => {
   const isSubpage =
     currentPage === 'account-info' ||
     currentPage === 'help' ||
-    currentPage === 'about' ||
-    currentPage === 'deposit' ||
-    currentPage === 'withdraw';
+    currentPage === 'about';
 
   return (
     <div className="app-container">
