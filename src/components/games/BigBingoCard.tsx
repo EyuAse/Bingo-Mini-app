@@ -2,12 +2,11 @@ import React from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { useBingo } from '../../context/BingoContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
-import { FastBingoArt } from './FastBingoArt.tsx';
 
 export const BigBingoCard: React.FC = () => {
   const { switchPage } = useApp();
   const { startLobbyCountdown, playersCount, prizePool } = useBingo();
-  const { t, lang } = useLanguage();
+  const { lang } = useLanguage();
 
   const handlePlayNow = () => {
     switchPage('bingo');
@@ -66,9 +65,13 @@ export const BigBingoCard: React.FC = () => {
           </div>
         </div>
 
-        {/* Right 3D Artwork Column */}
+        {/* Right 3D Artwork Column with Exact Image */}
         <div className="card-right-art">
-          <FastBingoArt />
+          <img
+            src="/assets/images/fast-bingo-exact-hero.jpg"
+            alt="Fast Bingo 3D Cards, Star Coin and Balls"
+            className="fast-bingo-3d-hero-img"
+          />
         </div>
       </div>
 
