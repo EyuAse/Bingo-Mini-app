@@ -347,15 +347,63 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [botPool] = useState<BotPlayer[]>(generateEthiopianBots);
   const [cartelaPool] = useState<CartelaCard[]>(generate400Cartelas);
 
-  // Users & Transactions
+  // Users & Transactions (with defensive sanitization)
   const [users, setUsers] = useState<UserAccount[]>(() => {
-    const saved = localStorage.getItem('lb_admin_users');
-    return saved ? JSON.parse(saved) : initialUsers;
+    try {
+      const saved = localStorage.getItem('lb_admin_users');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((u: any, idx: number) => ({
+            id: u.id || `usr-${idx + 1}`,
+            name: u.name || 'Lomi Player',
+            phone: u.phone || '+251 900 000 000',
+            balance: Number(u.balance) || 0,
+            bonus: Number(u.bonus) || 0,
+            referralCount: Number(u.referralCount) || 0,
+            totalDeposited: Number(u.totalDeposited) || 0,
+            totalWithdrawn: Number(u.totalWithdrawn) || 0,
+            status: u.status === 'suspended' ? 'suspended' : 'active',
+            createdAt: u.createdAt || '2026-08-01'
+          }));
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading admin users:', e);
+    }
+    return initialUsers;
   });
 
   const [transactions, setTransactions] = useState<TransactionRequest[]>(() => {
-    const saved = localStorage.getItem('lb_admin_transactions');
-    return saved ? JSON.parse(saved) : initialTransactions;
+    try {
+      const saved = localStorage.getItem('lb_admin_transactions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((t: any, idx: number) => ({
+            id: t.id || `tx-${idx + 100}`,
+            referenceNumber: t.referenceNumber || (t.method === 'CBE' ? `TX-CBE-${100000 + idx}` : `TX-TB-${800000 + idx}`),
+            userId: t.userId || 'usr-1',
+            userName: t.userName || 'Player',
+            phone: t.phone || '+251 911 000 000',
+            method: t.method === 'CBE' ? 'CBE' : 'Telebirr',
+            type: t.type === 'withdrawal' ? 'withdrawal' : 'deposit',
+            amount: Number(t.amount) || 100,
+            accountNumber: t.accountNumber || '0911000000',
+            status: t.status === 'approved' ? 'approved' : t.status === 'rejected' ? 'rejected' : 'pending',
+            riskScore: t.riskScore || 'verified',
+            userLifetimeDeposits: Number(t.userLifetimeDeposits) || 500,
+            userLifetimeWithdrawals: Number(t.userLifetimeWithdrawals) || 0,
+            createdAt: t.createdAt || 'Today, 18:00',
+            processedAt: t.processedAt,
+            adminNote: t.adminNote
+          }));
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading admin transactions:', e);
+    }
+    return initialTransactions;
   });
 
   const [totalHouseProfit, setTotalHouseProfit] = useState<number>(() => {

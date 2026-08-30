@@ -20,12 +20,21 @@ import { AdminPage } from './pages/AdminPage.tsx';
 export const App: React.FC = () => {
   const { currentPage } = useApp();
 
+  // If on Admin portal route, render full-screen bypassing 480px app-container
+  if (currentPage === 'admin') {
+    return (
+      <div className="admin-fullscreen-root">
+        <AdminPage />
+        <Toast />
+      </div>
+    );
+  }
+
   const isStandalonePage =
     currentPage === 'landing' ||
     currentPage === 'login' ||
     currentPage === 'signup' ||
-    currentPage === 'bingo' ||
-    currentPage === 'admin';
+    currentPage === 'bingo';
 
   return (
     <div className="app-container">
@@ -45,7 +54,6 @@ export const App: React.FC = () => {
       {currentPage === 'leader' && <LeaderPage />}
       {currentPage === 'profile' && <ProfilePage />}
       {currentPage === 'bingo' && <BingoPage />}
-      {currentPage === 'admin' && <AdminPage />}
 
       {/* Bottom Navigation */}
       {!isStandalonePage && <BottomNav />}
@@ -55,3 +63,4 @@ export const App: React.FC = () => {
     </div>
   );
 };
+

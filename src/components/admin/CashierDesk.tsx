@@ -34,14 +34,25 @@ export const CashierDesk: React.FC = () => {
   const [manualMethod, setManualMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [manualAccount, setManualAccount] = useState('0911234567');
 
-  // Stats Calculations
-  const pendingDeposits = transactions.filter(t => t.type === 'deposit' && t.status === 'pending');
-  const pendingWithdrawals = transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending');
-  const totalPendingAmount = [...pendingDeposits, ...pendingWithdrawals].reduce((acc, t) => acc + t.amount, 0);
-  const netCashflow = totalDepositedToday - totalWithdrawnToday;
+  // Stats Calculations with safe null-coalescing
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+  const safeDepositedToday = Number(totalDepositedToday) || 0;
+  const safeWithdrawnToday = Number(totalWithdrawnToday) || 0;
+
+  const pendingDeposits = safeTransactions.filter(
+    t => (t.type || 'deposit') === 'deposit' && (t.status || 'pending') === 'pending'
+  );
+  const pendingWithdrawals = safeTransactions.filter(
+    t => t.type === 'withdrawal' && (t.status || 'pending') === 'pending'
+  );
+  const totalPendingAmount = [...pendingDeposits, ...pendingWithdrawals].reduce(
+    (acc, t) => acc + (Number(t.amount) || 0),
+    0
+  );
+  const netCashflow = safeDepositedToday - safeWithdrawnToday;
 
   // Filter Logic
-  const filteredTransactions = transactions.filter(tx => {
+  const filteredTransactions = safeTransactions.filter(tx => {
     // Status Filter
     if (activeFilter === 'pending_deposits' && !(tx.type === 'deposit' && tx.status === 'pending')) return false;
     if (activeFilter === 'pending_withdrawals' && !(tx.type === 'withdrawal' && tx.status === 'pending')) return false;
@@ -54,10 +65,10 @@ export const CashierDesk: React.FC = () => {
     // Search Query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const matchRef = tx.referenceNumber?.toLowerCase().includes(q);
-      const matchName = tx.userName?.toLowerCase().includes(q);
-      const matchPhone = tx.phone?.includes(q);
-      const matchAcc = tx.accountNumber?.includes(q);
+      const matchRef = (tx.referenceNumber || '').toLowerCase().includes(q);
+      const matchName = (tx.userName || '').toLowerCase().includes(q);
+      const matchPhone = (tx.phone || '').includes(q);
+      const matchAcc = (tx.accountNumber || '').includes(q);
       if (!matchRef && !matchName && !matchPhone && !matchAcc) return false;
     }
 
@@ -65,22 +76,27 @@ export const CashierDesk: React.FC = () => {
   });
 
   const handleApprove = (tx: TransactionRequest) => {
+    const safeAmt = Number(tx.amount) || 0;
     approveAndReleaseTransaction(tx.id, adminNoteInput || 'Approved & Released by Admin');
-    showToast(`✅ ${tx.type.toUpperCase()} of ${tx.amount} ETB released to ${tx.userName}!`);
+    showToast(`✅ ${(tx.type || 'deposit').toUpperCase()} of ${safeAmt} ETB released to ${tx.userName || 'Player'}!`);
     setInspectTx(null);
     setAdminNoteInput('');
   };
 
   const handleReject = (tx: TransactionRequest) => {
     rejectTransaction(tx.id, adminNoteInput || 'Rejected by Admin');
-    showToast(`❌ ${tx.type.toUpperCase()} rejected`);
+    showToast(`❌ ${(tx.type || 'deposit').toUpperCase()} rejected`);
     setInspectTx(null);
     setAdminNoteInput('');
   };
 
   const handleCreateManualTx = (e: React.FormEvent) => {
     e.preventDefault();
-    const targetUser = users.find(u => u.id === manualUser) || users[0];
+    const targetUser = (users && users.find(u => u.id === manualUser)) || (users && users[0]) || {
+      id: 'usr-1',
+      name: 'Player',
+      phone: '+251 911 000 000'
+    };
     const amt = parseFloat(manualAmount) || 100;
     if (manualType === 'deposit') {
       addDepositRequest(targetUser.id, targetUser.name, targetUser.phone, amt, manualMethod, manualAccount);
@@ -257,67 +273,75 @@ export const CashierDesk: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map(tx => (
-                  <tr key={tx.id} className={tx.status === 'pending' ? 'highlight-pending-row' : ''}>
-                    <td>
-                      <strong className="tx-ref-code">{tx.referenceNumber}</strong>
-                    </td>
-                    <td>
-                      <span className={`tx-type-pill ${tx.type}`}>
-                        <i className={`fa-solid ${tx.type === 'deposit' ? 'fa-arrow-down' : 'fa-arrow-up'}`}></i>
-                        {tx.type.toUpperCase()}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="method-pill-brand">
-                        <span className={`method-logo-badge ${tx.method.toLowerCase()}`}>
-                          {tx.method === 'Telebirr' ? '📱 TB' : '🏦 CBE'}
+                filteredTransactions.map(tx => {
+                  const txAmt = Number(tx.amount) || 0;
+                  const txMethod = tx.method || 'Telebirr';
+                  const txType = tx.type || 'deposit';
+                  const txRisk = tx.riskScore || 'verified';
+                  const txRef = tx.referenceNumber || 'TX-REF-000';
+
+                  return (
+                    <tr key={tx.id} className={tx.status === 'pending' ? 'highlight-pending-row' : ''}>
+                      <td>
+                        <strong className="tx-ref-code">{txRef}</strong>
+                      </td>
+                      <td>
+                        <span className={`tx-type-pill ${txType}`}>
+                          <i className={`fa-solid ${txType === 'deposit' ? 'fa-arrow-down' : 'fa-arrow-up'}`}></i>
+                          {txType.toUpperCase()}
                         </span>
-                        <span>{tx.method}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="player-account-cell">
-                        <strong>{tx.userName}</strong>
-                        <span className="account-number-sub">{tx.accountNumber}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="tx-amount-badge">
-                        {tx.type === 'deposit' ? '+' : '-'}{tx.amount.toFixed(2)} ETB
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`risk-badge ${tx.riskScore}`}>
-                        <i className="fa-solid fa-shield-check"></i> {tx.riskScore.toUpperCase()}
-                      </span>
-                    </td>
-                    <td style={{ color: '#94a3b8', fontSize: '0.75rem' }}>{tx.createdAt}</td>
-                    <td>
-                      <span className={`status-pill ${tx.status}`}>
-                        {tx.status === 'pending' && <span className="pulsing-amber-dot"></span>}
-                        {tx.status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td>
-                      {tx.status === 'pending' ? (
-                        <div className="settlement-actions-cell">
-                          <button
-                            className="btn-tbl-action btn-inspect"
-                            onClick={() => setInspectTx(tx)}
-                            title="Inspect Proof & Release"
-                          >
-                            <i className="fa-solid fa-magnifying-glass"></i> Review & Release
-                          </button>
+                      </td>
+                      <td>
+                        <div className="method-pill-brand">
+                          <span className={`method-logo-badge ${txMethod.toLowerCase()}`}>
+                            {txMethod === 'Telebirr' ? '📱 TB' : '🏦 CBE'}
+                          </span>
+                          <span>{txMethod}</span>
                         </div>
-                      ) : (
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          <span>{tx.processedAt || 'Settled'}</span>
+                      </td>
+                      <td>
+                        <div className="player-account-cell">
+                          <strong>{tx.userName || 'Player'}</strong>
+                          <span className="account-number-sub">{tx.accountNumber || '0900000000'}</span>
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td>
+                        <span className="tx-amount-badge">
+                          {txType === 'deposit' ? '+' : '-'}{txAmt.toFixed(2)} ETB
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`risk-badge ${txRisk}`}>
+                          <i className="fa-solid fa-shield-check"></i> {txRisk.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{ color: '#94a3b8', fontSize: '0.75rem' }}>{tx.createdAt || 'Today'}</td>
+                      <td>
+                        <span className={`status-pill ${tx.status || 'pending'}`}>
+                          {tx.status === 'pending' && <span className="pulsing-amber-dot"></span>}
+                          {(tx.status || 'pending').toUpperCase()}
+                        </span>
+                      </td>
+                      <td>
+                        {tx.status === 'pending' ? (
+                          <div className="settlement-actions-cell">
+                            <button
+                              className="btn-tbl-action btn-inspect"
+                              onClick={() => setInspectTx(tx)}
+                              title="Inspect Proof & Release"
+                            >
+                              <i className="fa-solid fa-magnifying-glass"></i> Review & Release
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            <span>{tx.processedAt || 'Settled'}</span>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -332,9 +356,9 @@ export const CashierDesk: React.FC = () => {
           <div className="admin-pin-card cashier-inspect-card" style={{ maxWidth: '520px', textAlign: 'left' }}>
             <div className="inspect-header">
               <div>
-                <span className="inspect-badge-type">{inspectTx.type.toUpperCase()} VERIFICATION</span>
+                <span className="inspect-badge-type">{(inspectTx.type || 'DEPOSIT').toUpperCase()} VERIFICATION</span>
                 <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#ffffff', margin: '4px 0' }}>
-                  {inspectTx.referenceNumber}
+                  {inspectTx.referenceNumber || 'TX-REF'}
                 </h3>
               </div>
               <button className="inspect-close-btn" onClick={() => setInspectTx(null)}>
@@ -346,19 +370,19 @@ export const CashierDesk: React.FC = () => {
             <div className="inspect-details-grid">
               <div className="inspect-detail-item">
                 <span className="label">Requested Amount</span>
-                <span className="val-large gold">{inspectTx.amount.toFixed(2)} ETB</span>
+                <span className="val-large gold">{(Number(inspectTx.amount) || 0).toFixed(2)} ETB</span>
               </div>
               <div className="inspect-detail-item">
                 <span className="label">Payment Provider</span>
-                <span className="val-bold">{inspectTx.method}</span>
+                <span className="val-bold">{inspectTx.method || 'Telebirr'}</span>
               </div>
               <div className="inspect-detail-item">
                 <span className="label">Account / Phone</span>
-                <span className="val-bold">{inspectTx.accountNumber}</span>
+                <span className="val-bold">{inspectTx.accountNumber || '0900000000'}</span>
               </div>
               <div className="inspect-detail-item">
                 <span className="label">Request Time</span>
-                <span className="val-muted">{inspectTx.createdAt}</span>
+                <span className="val-muted">{inspectTx.createdAt || 'Today'}</span>
               </div>
             </div>
 
@@ -366,16 +390,16 @@ export const CashierDesk: React.FC = () => {
             <div className="player-context-box">
               <div className="context-header">
                 <i className="fa-solid fa-user-check" style={{ color: '#4ade80' }}></i>
-                <span>Player Profile: <strong>{inspectTx.userName}</strong> ({inspectTx.phone})</span>
+                <span>Player Profile: <strong>{inspectTx.userName || 'Player'}</strong> ({inspectTx.phone || '+251 9...'})</span>
               </div>
               <div className="context-stats-row">
                 <div>
                   <span className="sub-lbl">Lifetime Deposits</span>
-                  <strong>{inspectTx.userLifetimeDeposits.toFixed(2)} ETB</strong>
+                  <strong>{(Number(inspectTx.userLifetimeDeposits) || 0).toFixed(2)} ETB</strong>
                 </div>
                 <div>
                   <span className="sub-lbl">Lifetime Withdrawals</span>
-                  <strong>{inspectTx.userLifetimeWithdrawals.toFixed(2)} ETB</strong>
+                  <strong>{(Number(inspectTx.userLifetimeWithdrawals) || 0).toFixed(2)} ETB</strong>
                 </div>
                 <div>
                   <span className="sub-lbl">Risk Assessment</span>
