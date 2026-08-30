@@ -117,7 +117,7 @@ interface AdminContextType {
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
-// Generate 260+ realistic & undetectable Ethiopian bot profiles
+// Generate 260+ realistic, undetectable & 100% UNIQUE Ethiopian bot profiles
 const generateEthiopianBots = (): BotPlayer[] => {
   const firstNames = [
     'Abebe', 'Almaz', 'Bekele', 'Chala', 'Dawit', 'Ephrem', 'Fikirte', 'Getachew',
@@ -127,36 +127,69 @@ const generateEthiopianBots = (): BotPlayer[] => {
     'Tadesse', 'Wondwosen', 'Yordanos', 'Zelalem', 'Abinet', 'Bethel', 'Daniel',
     'Eskinder', 'Frehiwot', 'Girum', 'Hiwot', 'Kalkidan', 'Mahlet', 'Nahom',
     'Surafel', 'Biruk', 'Meron', 'Henok', 'Tigist', 'Yohannes', 'Fitsum', 'Kalid',
-    'Sintayehu', 'Meseret', 'Solomon', 'Tsion', 'Binyam', 'Eden', 'Kenenisa'
+    'Sintayehu', 'Meseret', 'Solomon', 'Tsion', 'Binyam', 'Eden', 'Kenenisa',
+    'Abel', 'Aster', 'Biniyam', 'Chernet', 'Debre', 'Eyob', 'Feven', 'Gashaw',
+    'Habtamu', 'Ibrahim', 'Jaleta', 'Kidan', 'Liya', 'Mikias', 'Nardos', 'Omer',
+    'Rediet', 'Saba', 'Temesgen', 'Urga', 'Winta', 'Yonas', 'Zufan', 'Amanuel'
   ];
+
   const lastNames = [
     'Bikila', 'Kebede', 'Mengistu', 'Alemu', 'Tadesse', 'Tesfaye', 'Haile', 'Worku',
     'Assefa', 'Girma', 'Demissie', 'Bogale', 'Wolde', 'Dibaba', 'Tolessa', 'Berhanu',
     'Kassa', 'Legesse', 'Negash', 'Mekonnen', 'Alemayehu', 'Zewde', 'Tefera', 'Shiferaw',
-    'Gashaw', 'Belay', 'Aysele', 'Kassaye', 'Ayele', 'Derese', 'Tilahun', 'Feyissa'
+    'Gashaw', 'Belay', 'Aysele', 'Kassaye', 'Ayele', 'Derese', 'Tilahun', 'Feyissa',
+    'Gebre', 'Abate', 'Woldemariam', 'Getahun', 'Bedada', 'Mamo', 'Endale', 'Bayisa',
+    'Fikre', 'Gemechu', 'Hailu', 'Jemal', 'Kumsa', 'Lema', 'Mulu', 'Nega', 'Robba'
   ];
+
   const phonePrefixes = ['911', '912', '913', '914', '915', '920', '921', '922', '923', '924', '930', '933', '940', '944', '955', '966', '977', '701', '711'];
-  const avatars = ['🦁', '👑', '⚡', '🌟', '💎', '🔥', '🎯', '🦅', '🍀', '🏆', '🍋', '⚽', '🥇', '🚀', '✨', '🐺', '🦊', '🐯'];
+  const avatars = ['🦁', '👑', '⚡', '🌟', '💎', '🔥', '🎯', '🦅', '🍀', '🏆', '🍋', '⚽', '🥇', '🚀', '✨', '🐺', '🦊', '🐯', '🎩', '🎲', '🧿', '🔥', '💰'];
 
   const bots: BotPlayer[] = [];
-  let count = 0;
-  for (const fn of firstNames) {
-    for (const ln of lastNames) {
-      if (count >= 260) break;
-      const prefix = phonePrefixes[count % phonePrefixes.length];
-      const numPart = Math.floor(100000 + Math.random() * 900000);
+  const usedNames = new Set<string>();
+  const usedPhones = new Set<string>();
+
+  let fnIdx = 0;
+  let lnIdx = 0;
+
+  while (bots.length < 260) {
+    const fn = firstNames[fnIdx % firstNames.length];
+    const ln = lastNames[lnIdx % lastNames.length];
+
+    // Create unique identity (Full Name or Distinct Format)
+    const candidateName = (bots.length % 2 === 0)
+      ? `${fn} ${ln}`
+      : `${fn} ${ln.charAt(0)}. (${ln.slice(1, 4)})`;
+
+    if (!usedNames.has(candidateName)) {
+      usedNames.add(candidateName);
+
+      const prefix = phonePrefixes[bots.length % phonePrefixes.length];
+      let numPart = 100000 + (bots.length * 3137) % 899999;
+      let phoneStr = `+251 ${prefix} ${numPart.toString().slice(0, 3)} ${numPart.toString().slice(3)}`;
+      while (usedPhones.has(phoneStr)) {
+        numPart = (numPart + 7919) % 899999;
+        phoneStr = `+251 ${prefix} ${numPart.toString().slice(0, 3)} ${numPart.toString().slice(3)}`;
+      }
+      usedPhones.add(phoneStr);
+
       bots.push({
-        id: `bot-${count + 1}`,
-        name: `${fn} ${ln.charAt(0)}.`,
-        phone: `+251 ${prefix} ${numPart.toString().slice(0, 3)} ${numPart.toString().slice(3)}`,
-        avatar: avatars[count % avatars.length],
-        cartelasPlayed: Math.floor(15 + Math.random() * 120),
-        winsCount: Math.floor(1 + Math.random() * 22),
+        id: `bot-${bots.length + 1}`,
+        name: candidateName,
+        phone: phoneStr,
+        avatar: avatars[bots.length % avatars.length],
+        cartelasPlayed: 15 + ((bots.length * 7) % 95),
+        winsCount: 1 + ((bots.length * 3) % 21),
         isBot: true
       });
-      count++;
+    }
+
+    lnIdx++;
+    if (lnIdx % lastNames.length === 0) {
+      fnIdx++;
     }
   }
+
   return bots;
 };
 
