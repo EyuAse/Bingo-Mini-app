@@ -1,14 +1,18 @@
 /* ============================================================
-   LOMI BINGO: EXACT FIRST SCREEN / LANDING PAGE DESIGN
+   LOMI BINGO: EXACT LIGHT LEMON DESIGN SYSTEM
+   Landing, Login, and Sign Up screens
    ============================================================ */
 
-.page-landing-fresh {
+.page-landing-fresh,
+.page-auth-fresh {
   min-height: 100vh;
   background: radial-gradient(ellipse at 50% 0%, #fffdf8 0%, #fefce8 50%, #fef9c3 100%);
   color: #0f172a;
   position: relative;
   overflow-x: hidden;
-  padding-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 20px;
 }
 
 /* Floating Background Lemon Slices & Leaves */
@@ -25,26 +29,12 @@
   animation: floatLemon 6s ease-in-out infinite alternate;
 }
 
-.lemon-top-left {
-  top: 60px;
-  left: -25px;
-}
+.lemon-top-left { top: 60px; left: -25px; }
+.lemon-top-right { top: 130px; right: -25px; width: 110px; height: 110px; animation-duration: 7s; }
+.lemon-bottom-left { bottom: 120px; left: -30px; width: 80px; height: 80px; animation-duration: 8s; }
 
-.lemon-top-right {
-  top: 130px;
-  right: -25px;
-  width: 110px;
-  height: 110px;
-  animation-duration: 7s;
-}
-
-.lemon-bottom-left {
-  bottom: 120px;
-  left: -30px;
-  width: 80px;
-  height: 80px;
-  animation-duration: 8s;
-}
+.lemon-auth-left { top: 140px; left: -30px; width: 100px; height: 100px; }
+.lemon-auth-right { top: 280px; right: -30px; width: 110px; height: 110px; animation-duration: 7.5s; }
 
 .bg-floating-leaf {
   position: absolute;
@@ -59,17 +49,10 @@
   animation: floatLeaf 5s ease-in-out infinite alternate;
 }
 
-.leaf-mid-left {
-  top: 240px;
-  left: 20px;
-  transform: rotate(-35deg);
-}
-
-.leaf-bottom-right {
-  bottom: 80px;
-  right: 25px;
-  transform: rotate(45deg);
-}
+.leaf-mid-left { top: 240px; left: 20px; transform: rotate(-35deg); }
+.leaf-bottom-right { bottom: 80px; right: 25px; transform: rotate(45deg); }
+.leaf-auth-top { top: 80px; right: 40px; transform: rotate(25deg); }
+.leaf-auth-bottom { bottom: 100px; left: 30px; transform: rotate(-45deg); }
 
 @keyframes floatLemon {
   0% { transform: translateY(0px) rotate(0deg); }
@@ -82,7 +65,118 @@
 }
 
 /* ============================================================
-   EXACT TOP NAVBAR
+   REAL FLAG LANGUAGE PILL DROPDOWN
+   ============================================================ */
+.custom-lang-pill-container {
+  position: relative;
+}
+
+.btn-custom-lang-pill {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.btn-custom-lang-pill:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.real-flag-icon {
+  width: 20px;
+  height: 14px;
+  border-radius: 3px;
+  object-fit: cover;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.lang-code-bold {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.5px;
+}
+
+.pill-chevron-mini {
+  font-size: 0.625rem;
+  color: #64748b;
+}
+
+.custom-lang-menu-pop {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  padding: 6px;
+  min-width: 170px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.lang-option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lang-option-row:hover {
+  background: #fef9c3;
+}
+
+.lang-option-row.selected {
+  background: #fef08a;
+}
+
+.real-flag-mini {
+  width: 22px;
+  height: 15px;
+  border-radius: 3px;
+  object-fit: cover;
+}
+
+.lang-opt-labels {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lang-opt-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.lang-opt-code {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: #854d0e;
+}
+
+.check-gold {
+  color: #ca8a04;
+  font-size: 0.75rem;
+}
+
+/* ============================================================
+   LANDING NAVBAR
    ============================================================ */
 .landing-fresh-navbar {
   width: 100%;
@@ -105,7 +199,6 @@
   gap: 12px;
 }
 
-/* Exact Brand Logo */
 .lomi-brand-logo {
   display: flex;
   flex-direction: column;
@@ -124,9 +217,7 @@
   line-height: 1;
 }
 
-.lomi-char {
-  display: inline-block;
-}
+.lomi-char { display: inline-block; }
 
 .lomi-lemon-wrapper {
   display: inline-flex;
@@ -155,11 +246,6 @@
   margin-top: 1px;
 }
 
-/* Bingo Dropdown */
-.nav-bingo-dropdown-wrap {
-  position: relative;
-}
-
 .btn-nav-bingo-select {
   background: transparent;
   border: none;
@@ -173,83 +259,10 @@
   padding: 4px 6px;
 }
 
-.nav-chevron-mini {
-  font-size: 0.625rem;
-  color: #64748b;
-  transition: transform 0.15s ease;
-}
-
-/* Right Cluster */
 .landing-nav-right {
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-.nav-lang-pill-wrap {
-  position: relative;
-}
-
-.btn-nav-lang-pill {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 9999px;
-  padding: 5px 9px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.lang-flag-emoji {
-  font-size: 0.875rem;
-}
-
-.lang-code-txt {
-  font-size: 0.6875rem;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.nav-dropdown-menu-pop {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 6px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  padding: 6px;
-  min-width: 160px;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dropdown-opt-item {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #1e293b;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.dropdown-opt-item:hover {
-  background: #fef9c3;
-  color: #854d0e;
-}
-
-.dropdown-opt-item.active {
-  background: #fef08a;
-  color: #854d0e;
 }
 
 .btn-nav-fresh-login {
@@ -292,23 +305,24 @@
 }
 
 /* ============================================================
-   HERO CONTENT CONTAINER
+   LANDING HERO SECTION
    ============================================================ */
 .landing-fresh-hero-container {
-  padding: 16px 16px 20px;
+  padding: 16px 16px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   position: relative;
   z-index: 5;
+  flex: 1;
 }
 
 .hero-fresh-pretitle {
   font-size: 0.875rem;
   font-weight: 700;
   color: #1e293b;
-  margin: 10px 0 4px;
+  margin: 8px 0 4px;
 }
 
 .hero-fresh-title {
@@ -343,7 +357,6 @@
   margin: 0 0 16px;
 }
 
-/* 200% Deposit Bonus Block */
 .hero-promo-block {
   display: flex;
   flex-direction: column;
@@ -374,7 +387,6 @@
   color: #0f172a;
 }
 
-/* Golden Gift CTA Button */
 .btn-hero-fresh-cta {
   width: 100%;
   max-width: 440px;
@@ -400,15 +412,8 @@
   box-shadow: 0 12px 30px rgba(234, 179, 8, 0.6);
 }
 
-.btn-hero-fresh-cta:active {
-  transform: translateY(1px);
-}
+.cta-gift-icon { font-size: 1.35rem; }
 
-.cta-gift-icon {
-  font-size: 1.35rem;
-}
-
-/* 3D 75-Ball Artwork Card */
 .hero-fresh-artwork-card {
   width: 100%;
   max-width: 440px;
@@ -417,7 +422,7 @@
   background: linear-gradient(135deg, #fef08a, #fde047);
   box-shadow: 0 10px 30px rgba(234, 179, 8, 0.25);
   border: 2px solid rgba(255, 255, 255, 0.9);
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .hero-artwork-img {
@@ -427,10 +432,494 @@
   object-fit: cover;
 }
 
-/* 3-Pillar Trust Footer */
+/* ============================================================
+   EXACT AUTH SCREEN (LOGIN & SIGN UP)
+   ============================================================ */
+.auth-fresh-container {
+  padding: 14px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 5;
+  flex: 1;
+}
+
+.auth-fresh-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.btn-auth-back-square {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+  font-size: 0.9375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.btn-auth-back-square:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* 3D Header Graphic */
+.auth-header-artwork-wrap {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto 10px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(234, 179, 8, 0.2);
+}
+
+.auth-header-art-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+/* Relative Shell for Flanking Balls */
+.auth-card-relative-shell {
+  position: relative;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+/* 3D Flanking Ball Ornaments (Yellow 3 & Green 9) */
+.flanking-ball-ornament {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display), 'Outfit', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #0f172a;
+  z-index: 10;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.ball-left-yellow {
+  bottom: 30px;
+  left: -14px;
+  background: radial-gradient(circle at 35% 35%, #fffbeb, #facc15 60%, #ca8a04 100%);
+  border: 2px solid #ffffff;
+}
+
+.ball-right-green {
+  bottom: 25px;
+  right: -14px;
+  background: radial-gradient(circle at 35% 35%, #f0fdf4, #4ade80 60%, #15803d 100%);
+  border: 2px solid #ffffff;
+}
+
+.ball-num {
+  width: 28px;
+  height: 28px;
+  background: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Main White Card */
+.auth-fresh-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 24px;
+  padding: 24px 20px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.06);
+  position: relative;
+  z-index: 5;
+}
+
+.auth-card-title {
+  font-size: 1.65rem;
+  font-weight: 900;
+  color: #0f172a;
+  text-align: center;
+  margin: 0 0 4px;
+  font-family: var(--font-display), 'Outfit', sans-serif;
+}
+
+.title-lemon {
+  font-size: 1.4rem;
+  display: inline-block;
+}
+
+.auth-card-sub {
+  font-size: 0.8125rem;
+  color: #64748b;
+  text-align: center;
+  margin: 0 0 18px;
+}
+
+/* Form Groups & Inputs */
+.auth-fresh-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.auth-input-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.auth-input-pill {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 4px 12px;
+  gap: 10px;
+  transition: all 0.15s ease;
+}
+
+.auth-input-pill:focus-within {
+  border-color: #eab308;
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.15);
+}
+
+.input-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.input-icon-wrap.yellow { color: #eab308; background: #fefce8; }
+.input-icon-wrap.gold { color: #ca8a04; background: #fef9c3; }
+.input-icon-wrap.blue { color: #3b82f6; background: #eff6ff; }
+.input-icon-wrap.green { color: #16a34a; background: #f0fdf4; }
+
+.auth-input-pill input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.875rem;
+  color: #0f172a;
+  font-weight: 600;
+  padding: 8px 0;
+}
+
+.auth-input-pill input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.btn-eye-toggle {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 0.9375rem;
+  transition: color 0.15s ease;
+}
+
+.btn-eye-toggle:hover {
+  color: #475569;
+}
+
+/* Remember Me & SSL Row */
+.auth-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.remember-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.remember-checkbox-label input {
+  display: none;
+}
+
+.custom-check-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  color: transparent;
+  transition: all 0.15s ease;
+}
+
+.remember-checkbox-label input:checked + .custom-check-box {
+  background: #eab308;
+  border-color: #ca8a04;
+  color: #ffffff;
+}
+
+.remember-text {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.ssl-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+/* Golden Action Button */
+.btn-auth-golden-cta {
+  width: 100%;
+  background: linear-gradient(135deg, #fde047 0%, #facc15 50%, #eab308 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 13px 20px;
+  font-size: 1rem;
+  font-weight: 900;
+  color: #0f172a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(234, 179, 8, 0.4);
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.btn-auth-golden-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(234, 179, 8, 0.55);
+}
+
+/* Divider */
+.auth-or-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 18px 0;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.auth-or-divider::before,
+.auth-or-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.auth-or-divider span {
+  padding: 0 12px;
+}
+
+/* Social Buttons Row */
+.auth-social-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.btn-social-pill {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.btn-social-pill:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.social-svg-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.social-fb-icon {
+  color: #1877f2;
+  font-size: 0.9375rem;
+}
+
+.social-apple-icon {
+  color: #000000;
+  font-size: 1rem;
+}
+
+/* Referral Reward Box */
+.auth-referral-banner {
+  background: linear-gradient(135deg, #fefce8, #fef9c3);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ref-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.ref-gift-emoji {
+  font-size: 1.4rem;
+}
+
+.ref-banner-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.ref-banner-text strong {
+  font-size: 0.75rem;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.ref-banner-text span {
+  font-size: 0.625rem;
+  color: #64748b;
+}
+
+.btn-enter-code-mini {
+  background: #ffffff;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  border-radius: 9999px;
+  padding: 6px 10px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: #854d0e;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(234, 179, 8, 0.2);
+  transition: all 0.15s ease;
+}
+
+.btn-enter-code-mini:hover {
+  background: #fef08a;
+}
+
+.inline-referral-input-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #eab308;
+  border-radius: 10px;
+  padding: 4px 6px;
+  margin-bottom: 12px;
+}
+
+.inline-referral-input-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.75rem;
+  padding: 4px 6px;
+  color: #0f172a;
+  font-family: monospace;
+  font-weight: 700;
+}
+
+.btn-apply-ref {
+  background: #eab308;
+  border: none;
+  border-radius: 6px;
+  color: #0f172a;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* Switch Links */
+.auth-switch-link-row {
+  text-align: center;
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin-top: 6px;
+}
+
+.btn-switch-auth {
+  background: none;
+  border: none;
+  color: #ca8a04;
+  font-weight: 800;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0 2px;
+}
+
+/* ============================================================
+   3-PILLAR TRUST FOOTER (ZERO TRAILING EMPTY SPACE)
+   ============================================================ */
 .landing-fresh-trust-bar {
   width: 100%;
   max-width: 440px;
+  margin: 0 auto;
   background: #ffffff;
   border: 1px solid #f1f5f9;
   border-radius: 18px;

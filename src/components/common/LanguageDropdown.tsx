@@ -11,18 +11,18 @@ interface LanguageOption {
 
 const languageOptions: LanguageOption[] = [
   {
-    code: 'am',
-    name: 'Amharic',
-    nativeName: 'አማርኛ',
-    flagImg: '/assets/images/flag-et.png',
-    country: 'Ethiopia'
-  },
-  {
     code: 'en',
     name: 'English',
-    nativeName: 'English',
-    flagImg: '/assets/images/flag-us.png',
-    country: 'United States'
+    nativeName: 'EN',
+    flagImg: '/assets/images/flag-et.png', // Default displays Ethiopian flag as shown in reference
+    country: 'English'
+  },
+  {
+    code: 'am',
+    name: 'Amharic',
+    nativeName: 'AM',
+    flagImg: '/assets/images/flag-et.png',
+    country: 'አማርኛ'
   }
 ];
 
@@ -30,7 +30,7 @@ interface LanguageDropdownProps {
   compact?: boolean;
 }
 
-export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({ compact = false }) => {
+export const LanguageDropdown: React.FC<LanguageDropdownProps> = () => {
   const { lang, setLang } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -58,45 +58,47 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({ compact = fa
   };
 
   return (
-    <div className={`custom-lang-dropdown ${compact ? 'compact' : ''}`} ref={dropdownRef}>
-      {/* Trigger Button: Shows Real Country Flag Logo Image + Dropdown Arrow */}
+    <div className="custom-lang-pill-container" ref={dropdownRef}>
       <button
         type="button"
-        className={`lang-dropdown-trigger ${isOpen ? 'active' : ''}`}
+        className="btn-custom-lang-pill"
         onClick={() => setIsOpen(prev => !prev)}
-        title="Select Language / ቋንቋ ይምረጡ"
+        aria-label="Select Language"
       >
         <img
-          src={currentOption.flagImg}
-          alt={currentOption.country}
-          className="lang-flag-img"
+          src="/assets/images/flag-et.png"
+          alt="Ethiopian Flag"
+          className="real-flag-icon"
         />
-        <i className={`fa-solid fa-chevron-down lang-chevron ${isOpen ? 'rotate' : ''}`}></i>
+        <span className="lang-code-bold">{lang.toUpperCase()}</span>
+        <i className="fa-solid fa-chevron-down pill-chevron-mini"></i>
       </button>
 
-      {/* Floating Dropdown Menu */}
       {isOpen && (
-        <div className="lang-dropdown-menu">
-          <div className="lang-menu-header">Select Language / ቋንቋ ይምረጡ</div>
-          {languageOptions.map(opt => {
-            const isSelected = opt.code === lang;
-            return (
-              <div
-                key={opt.code}
-                className={`lang-option-row ${isSelected ? 'selected' : ''}`}
-                onClick={() => handleSelectLanguage(opt.code)}
-              >
-                <img src={opt.flagImg} alt={opt.country} className="option-flag-img" />
-                <div className="option-text-group">
-                  <span className="option-native-name">{opt.nativeName}</span>
-                  <span className="option-en-name">{opt.name} ({opt.country})</span>
-                </div>
-                {isSelected && (
-                  <i className="fa-solid fa-check option-check-icon"></i>
-                )}
-              </div>
-            );
-          })}
+        <div className="custom-lang-menu-pop">
+          <div
+            className={`lang-option-row ${lang === 'en' ? 'selected' : ''}`}
+            onClick={() => handleSelectLanguage('en')}
+          >
+            <img src="/assets/images/flag-us.png" alt="English" className="real-flag-mini" />
+            <div className="lang-opt-labels">
+              <span className="lang-opt-name">English</span>
+              <span className="lang-opt-code">EN</span>
+            </div>
+            {lang === 'en' && <i className="fa-solid fa-check check-gold"></i>}
+          </div>
+
+          <div
+            className={`lang-option-row ${lang === 'am' ? 'selected' : ''}`}
+            onClick={() => handleSelectLanguage('am')}
+          >
+            <img src="/assets/images/flag-et.png" alt="Amharic" className="real-flag-mini" />
+            <div className="lang-opt-labels">
+              <span className="lang-opt-name">አማርኛ</span>
+              <span className="lang-opt-code">AM</span>
+            </div>
+            {lang === 'am' && <i className="fa-solid fa-check check-gold"></i>}
+          </div>
         </div>
       )}
     </div>

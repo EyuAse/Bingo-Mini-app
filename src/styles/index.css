@@ -129,6 +129,7 @@ body {
 
 .page#page-landing,
 .page#page-login,
+.page#page-signup,
 .page#page-bingo {
   padding-bottom: 24px;
 }

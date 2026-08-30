@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { LomiLogo } from '../common/LomiLogo.tsx';
+import { LanguageDropdown } from '../common/LanguageDropdown.tsx';
 
 export const LandingNavbar: React.FC = () => {
   const { switchPage } = useApp();
@@ -46,35 +47,7 @@ export const LandingNavbar: React.FC = () => {
 
       {/* Right: Language Pill, Login, Sign Up */}
       <div className="landing-nav-right">
-        {/* Ethiopian Flag Language Pill */}
-        <div className="nav-lang-pill-wrap">
-          <button
-            type="button"
-            className="btn-nav-lang-pill"
-            onClick={() => setShowLangMenu(prev => !prev)}
-          >
-            <span className="lang-flag-emoji">🇪🇹</span>
-            <span className="lang-code-txt">{lang.toUpperCase()}</span>
-            <i className="fa-solid fa-chevron-down nav-chevron-mini"></i>
-          </button>
-
-          {showLangMenu && (
-            <div className="nav-dropdown-menu-pop lang-pop" onClick={() => setShowLangMenu(false)}>
-              <div
-                className={`dropdown-opt-item ${lang === 'en' ? 'active' : ''}`}
-                onClick={() => setLang('en')}
-              >
-                <span>🇬🇧 English (EN)</span>
-              </div>
-              <div
-                className={`dropdown-opt-item ${lang === 'am' ? 'active' : ''}`}
-                onClick={() => setLang('am')}
-              >
-                <span>🇪🇹 አማርኛ (AM)</span>
-              </div>
-            </div>
-          )}
-        </div>
+        <LanguageDropdown />
 
         {/* Login Button */}
         <button
