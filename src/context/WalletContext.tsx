@@ -7,6 +7,8 @@ interface WalletContextType {
   toggleBalanceVisibility: () => void;
   addBalance: (amount: number) => void;
   deductBalance: (amount: number) => boolean;
+  addBonus: (amount: number) => void;
+  deductBonus: (amount: number) => boolean;
   refreshBalance: () => void;
   isRefreshing: boolean;
 }
@@ -22,13 +24,20 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
     return 750.0;
   });
-  const [bonus] = useState<number>(0.0);
+  const [bonus, setBonus] = useState<number>(() => {
+    const saved = localStorage.getItem('betika_user_bonus');
+    return saved ? parseFloat(saved) : 10.0; // 10 Birr Registration Bonus
+  });
   const [isBalanceVisible, setIsBalanceVisible] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   useEffect(() => {
     localStorage.setItem('betika_user_balance', balance.toFixed(2));
   }, [balance]);
+
+  useEffect(() => {
+    localStorage.setItem('betika_user_bonus', bonus.toFixed(2));
+  }, [bonus]);
 
   const toggleBalanceVisibility = () => {
     setIsBalanceVisible(prev => !prev);
@@ -41,6 +50,18 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const deductBalance = (amount: number): boolean => {
     if (balance >= amount) {
       setBalance(prev => prev - amount);
+      return true;
+    }
+    return false;
+  };
+
+  const addBonus = (amount: number) => {
+    setBonus(prev => prev + amount);
+  };
+
+  const deductBonus = (amount: number): boolean => {
+    if (bonus >= amount) {
+      setBonus(prev => prev - amount);
       return true;
     }
     return false;
@@ -62,6 +83,8 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         toggleBalanceVisibility,
         addBalance,
         deductBalance,
+        addBonus,
+        deductBonus,
         refreshBalance,
         isRefreshing
       }}

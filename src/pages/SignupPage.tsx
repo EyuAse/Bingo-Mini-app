@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
+import { useAdmin } from '../context/AdminContext.tsx';
+import { useWallet } from '../context/WalletContext.tsx';
 import { LanguageDropdown } from '../components/common/LanguageDropdown.tsx';
 import { SocialLoginRow } from '../components/auth/SocialLoginRow.tsx';
 import { TrustFooter } from '../components/landing/TrustFooter.tsx';
@@ -8,6 +10,9 @@ import { TrustFooter } from '../components/landing/TrustFooter.tsx';
 export const SignupPage: React.FC = () => {
   const { switchPage, showToast } = useApp();
   const { t } = useLanguage();
+  const { addUser, registerBonus } = useAdmin();
+  const { addBonus } = useWallet();
+
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +26,21 @@ export const SignupPage: React.FC = () => {
       showToast('⚠️ PIN / Passwords do not match!');
       return;
     }
-    showToast(`🎉 Account created! Welcome, ${fullName || 'Player'}!`);
+
+    // Register user in Admin system with 10 ETB free registration bonus
+    addUser({
+      name: fullName.trim() || 'Lomi Player',
+      phone: phone.trim() || '+251 900 000 000',
+      balance: 0,
+      bonus: registerBonus,
+      referralCount: 0,
+      totalDeposited: 0,
+      totalWithdrawn: 0,
+      status: 'active'
+    });
+
+    addBonus(registerBonus);
+    showToast(`🎉 Welcome ${fullName || 'Player'}! +${registerBonus} Birr Free Registration Bonus Added!`);
     switchPage('games');
   };
 

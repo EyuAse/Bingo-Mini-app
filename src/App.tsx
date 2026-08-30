@@ -15,6 +15,7 @@ import { HistoryPage } from './pages/HistoryPage.tsx';
 import { LeaderPage } from './pages/LeaderPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
 import { BingoPage } from './pages/BingoPage.tsx';
+import { AdminPage } from './pages/AdminPage.tsx';
 
 export const App: React.FC = () => {
   const { currentPage } = useApp();
@@ -23,7 +24,8 @@ export const App: React.FC = () => {
     currentPage === 'landing' ||
     currentPage === 'login' ||
     currentPage === 'signup' ||
-    currentPage === 'bingo';
+    currentPage === 'bingo' ||
+    currentPage === 'admin';
 
   return (
     <div className="app-container">
@@ -43,6 +45,7 @@ export const App: React.FC = () => {
       {currentPage === 'leader' && <LeaderPage />}
       {currentPage === 'profile' && <ProfilePage />}
       {currentPage === 'bingo' && <BingoPage />}
+      {currentPage === 'admin' && <AdminPage />}
 
       {/* Bottom Navigation */}
       {!isStandalonePage && <BottomNav />}

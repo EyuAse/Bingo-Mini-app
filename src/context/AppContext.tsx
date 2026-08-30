@@ -9,7 +9,8 @@ export type PageId =
   | 'history'
   | 'leader'
   | 'profile'
-  | 'bingo';
+  | 'bingo'
+  | 'admin';
 
 interface AppContextType {
   currentPage: PageId;
@@ -21,12 +22,37 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentPage, setCurrentPage] = useState<PageId>('landing');
+  const [currentPage, setCurrentPage] = useState<PageId>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      const path = window.location.pathname;
+      if (hash.includes('lomibingo-Admin-vBingo') || path.includes('lomibingo-Admin-vBingo') || hash.includes('admin')) {
+        return 'admin';
+      }
+    }
+    return 'landing';
+  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastTimeout, setToastTimeout] = useState<number | null>(null);
 
+  // URL Hash routing listener for private route
+  React.useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      const path = window.location.pathname;
+      if (hash.includes('lomibingo-Admin-vBingo') || path.includes('lomibingo-Admin-vBingo') || hash.includes('admin')) {
+        setCurrentPage('admin');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const switchPage = (page: PageId) => {
     setCurrentPage(page);
+    if (page === 'admin') {
+      window.location.hash = '/lomibingo-Admin-vBingo';
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

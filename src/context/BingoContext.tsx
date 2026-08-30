@@ -10,6 +10,7 @@ import React, {
 import { soundEngine } from '../services/soundEngine.ts';
 import { useWallet } from './WalletContext.tsx';
 import { useApp } from './AppContext.tsx';
+import { useAdmin } from './AdminContext.tsx';
 
 export interface BingoCell {
   index: number;
@@ -108,6 +109,12 @@ const initialOpponents: Opponent[] = [
 export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { deductBalance, addBalance } = useWallet();
   const { showToast } = useApp();
+  const {
+    houseCommissionEnabled,
+    commissionRate,
+    simulatedPlayerCount,
+    recordHouseCommission
+  } = useAdmin();
 
   // Round Lifecycle Phase
   const [roundPhase, setRoundPhase] = useState<RoundPhase>('lobby');
@@ -136,7 +143,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [currentCall, setCurrentCall] = useState<CalledBall | null>(null);
   const [autoMark, setAutoMark] = useState<boolean>(true);
   const [luckyPicks, setLuckyPicks] = useState<number>(3);
-  const [playersCount, setPlayersCount] = useState<number>(185);
+  const [playersCount, setPlayersCount] = useState<number>(simulatedPlayerCount);
   const [prizePool, setPrizePool] = useState<number>(3330);
   const [opponents, setOpponents] = useState<Opponent[]>(initialOpponents);
   const [canWin, setCanWin] = useState<boolean>(false);
@@ -152,21 +159,29 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const autoMarkRef = useRef<boolean>(autoMark);
   autoMarkRef.current = autoMark;
 
-  // 10% System House Commission Rule (Prize Pool = 90% of total bets)
+  // Sync with Admin Simulated Player Count
   useEffect(() => {
-    setPrizePool(Math.round(playersCount * betAmount * 0.90));
-  }, [playersCount, betAmount]);
+    setPlayersCount(simulatedPlayerCount);
+  }, [simulatedPlayerCount]);
 
-  // Live players traffic fluctuation
+  // System House Commission Rule (Default 10% Cut, Configurable in Admin)
+  useEffect(() => {
+    const cutMultiplier = houseCommissionEnabled ? (100 - commissionRate) / 100 : 1.0;
+    setPrizePool(Math.round(playersCount * betAmount * cutMultiplier));
+  }, [playersCount, betAmount, houseCommissionEnabled, commissionRate]);
+
+  // Live players traffic fluctuation around admin base
   useEffect(() => {
     const interval = setInterval(() => {
       setPlayersCount(prev => {
         const delta = Math.floor(Math.random() * 5) - 2;
-        return Math.max(160, Math.min(240, prev + delta));
+        const minP = Math.max(15, simulatedPlayerCount - 15);
+        const maxP = simulatedPlayerCount + 25;
+        return Math.max(minP, Math.min(maxP, prev + delta));
       });
     }, 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [simulatedPlayerCount]);
 
   const toggleVoiceLang = () => {
     const nextLang = voiceLang === 'en' ? 'am' : 'en';

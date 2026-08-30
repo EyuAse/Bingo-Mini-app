@@ -1,10 +1,12 @@
 import React from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
+import { useAdmin } from '../../context/AdminContext.tsx';
 
 export const MasterBoard75: React.FC = () => {
   const { calledNumbers } = useBingo();
   const { t } = useLanguage();
+  const { verticalBoardMode } = useAdmin();
 
   const columns: { letter: string; colorClass: string; min: number; max: number }[] = [
     { letter: 'B', colorClass: 'col-b-hdr', min: 1, max: 15 },
@@ -15,8 +17,11 @@ export const MasterBoard75: React.FC = () => {
   ];
 
   return (
-    <div className="master-board-card">
-      <div className="master-board-title">{t('bingo.masterBoard')}</div>
+    <div className={`master-board-card ${verticalBoardMode ? 'vertical-layout' : ''}`}>
+      <div className="master-board-title">
+        <span>{t('bingo.masterBoard')}</span>
+        {verticalBoardMode && <span className="vertical-tag">VERTICAL</span>}
+      </div>
 
       <div className="master-board-table">
         {/* Column Headers: B I N G O */}
