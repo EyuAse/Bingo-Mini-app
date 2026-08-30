@@ -39,14 +39,38 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        showToast('⚠️ Image size exceeds 5MB limit.');
-        return;
-      }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setReceiptImage(reader.result as string);
-        showToast('📸 Receipt screenshot attached!');
+      reader.onload = (event) => {
+        const rawResult = event.target?.result as string;
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1000;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.85);
+            setReceiptImage(compressed);
+            showToast('📸 Receipt screenshot attached!');
+          } else {
+            setReceiptImage(rawResult);
+            showToast('📸 Receipt screenshot attached!');
+          }
+        };
+        img.src = rawResult;
       };
       reader.readAsDataURL(file);
     }

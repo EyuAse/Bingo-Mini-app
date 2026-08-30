@@ -522,31 +522,37 @@ export const CashierDesk: React.FC = () => {
               </button>
             </div>
 
-            {/* Quick Metrics */}
-            <div className="inspect-metrics-grid">
-              <div className="inspect-metric-item">
-                <span className="label">Order Type</span>
-                <span className={`val ${(inspectTx.type || 'deposit') === 'deposit' ? 'green' : 'red'}`}>
-                  {(inspectTx.type || 'deposit').toUpperCase()}
+            {/* Quick Structured Metrics Box */}
+            <div className="inspect-metrics-box">
+              <div className="inspect-info-row">
+                <span className="inspect-lbl">Order Type:</span>
+                <span className={`tx-type-pill ${inspectTx.type || 'deposit'}`}>
+                  {(inspectTx.type || 'deposit') === 'deposit' ? '📥 DEPOSIT' : '📤 WITHDRAWAL'}
                 </span>
               </div>
-              <div className="inspect-metric-item">
-                <span className="label">Amount</span>
-                <span className="val-amount">
+
+              <div className="inspect-info-row">
+                <span className="inspect-lbl">Amount:</span>
+                <span className={`inspect-amount-val ${(inspectTx.type || 'deposit') === 'deposit' ? 'green' : 'red'}`}>
                   {(inspectTx.type || 'deposit') === 'deposit' ? '+' : '-'}{(Number(inspectTx.amount) || 0).toFixed(2)} ETB
                 </span>
               </div>
-              <div className="inspect-metric-item">
-                <span className="label">Payment Provider</span>
-                <span className="val-bold">{inspectTx.method || 'Telebirr'}</span>
+
+              <div className="inspect-info-row">
+                <span className="inspect-lbl">Payment Provider:</span>
+                <span className="inspect-val-bold">
+                  {inspectTx.method === 'Telebirr' ? '📱 Telebirr' : '🏦 CBE Bank'}
+                </span>
               </div>
-              <div className="inspect-detail-item">
-                <span className="label">Account / Phone</span>
-                <span className="val-bold">{inspectTx.accountNumber || '0998983344'}</span>
+
+              <div className="inspect-info-row">
+                <span className="inspect-lbl">Receiver Account:</span>
+                <span className="inspect-val-mono">{inspectTx.accountNumber || '0998983344'}</span>
               </div>
-              <div className="inspect-detail-item">
-                <span className="label">Request Time</span>
-                <span className="val-muted">{inspectTx.createdAt || 'Today'}</span>
+
+              <div className="inspect-info-row">
+                <span className="inspect-lbl">Submission Time:</span>
+                <span className="inspect-val-muted">{inspectTx.createdAt || 'Today'}</span>
               </div>
             </div>
 

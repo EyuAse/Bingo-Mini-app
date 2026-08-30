@@ -458,7 +458,8 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             userLifetimeWithdrawals: Number(t.userLifetimeWithdrawals) || 0,
             createdAt: t.createdAt || 'Today, 18:00',
             processedAt: t.processedAt,
-            adminNote: t.adminNote
+            adminNote: t.adminNote,
+            receiptImage: t.receiptImage
           }));
         }
       }
