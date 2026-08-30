@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin, TransactionRequest } from '../../context/AdminContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
+import { TelebirrLogo, CBELogo } from '../wallet/PaymentLogos.tsx';
 
 type FilterType = 'pending' | 'pending_deposits' | 'pending_withdrawals' | 'all' | 'approved' | 'rejected';
 
@@ -223,7 +224,10 @@ export const CashierDesk: React.FC = () => {
                 <div className="tx-card-top">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span className={`method-logo-badge ${txMethod.toLowerCase()}`}>
-                      {txMethod === 'Telebirr' ? '📱 Telebirr' : '🏦 CBE Bank'}
+                      <span className="cashier-mini-logo-box">
+                        {txMethod === 'Telebirr' ? <TelebirrLogo size={18} /> : <CBELogo size={18} />}
+                      </span>
+                      <span>{txMethod === 'Telebirr' ? 'Telebirr' : 'CBE Bank'}</span>
                     </span>
                     <span className={`tx-type-pill ${txType}`}>
                       {txType === 'deposit' ? '📥 DEPOSIT' : '📤 WITHDRAWAL'}

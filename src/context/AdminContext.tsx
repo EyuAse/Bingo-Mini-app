@@ -566,6 +566,16 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           if (tx.type === 'deposit') {
             adjustUserBalance(tx.userId, tx.amount);
             setTotalDepositedToday(d => d + tx.amount);
+
+            // Sync with player active wallet
+            try {
+              const currentSaved = parseFloat(localStorage.getItem('betika_user_balance') || '750');
+              const newBal = currentSaved + tx.amount;
+              localStorage.setItem('betika_user_balance', newBal.toFixed(2));
+              window.dispatchEvent(new CustomEvent('lb_deposit_approved', { detail: { amount: tx.amount, txId: tx.id } }));
+            } catch (e) {
+              console.warn('Error updating player storage:', e);
+            }
           } else {
             setTotalWithdrawnToday(w => w + tx.amount);
           }
@@ -589,6 +599,14 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           // If rejected withdrawal, refund user wallet
           if (tx.type === 'withdrawal') {
             adjustUserBalance(tx.userId, tx.amount);
+            try {
+              const currentSaved = parseFloat(localStorage.getItem('betika_user_balance') || '750');
+              const newBal = currentSaved + tx.amount;
+              localStorage.setItem('betika_user_balance', newBal.toFixed(2));
+              window.dispatchEvent(new CustomEvent('lb_deposit_approved', { detail: { amount: tx.amount } }));
+            } catch (e) {
+              console.warn('Error refunding player storage:', e);
+            }
           }
           return {
             ...tx,

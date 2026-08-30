@@ -1233,23 +1233,25 @@ input:checked + .slider-round:before {
   gap: 8px;
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+  width: 100%;
 }
 
 .btn-card-action {
   border-radius: 10px;
-  padding: 10px;
+  padding: 10px 12px;
   font-size: 0.8125rem;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.15s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .btn-card-approve {
-  flex: 1;
+  flex: 1.8;
   background: linear-gradient(135deg, #10b981, #059669);
   border: none;
   color: #ffffff;
@@ -1262,10 +1264,11 @@ input:checked + .slider-round:before {
 }
 
 .btn-card-inspect {
+  flex: 1;
   background: rgba(168, 85, 247, 0.15);
   border: 1px solid rgba(168, 85, 247, 0.4);
   color: #c4b5fd;
-  width: 38px;
+  min-width: 85px;
 }
 
 .btn-card-inspect:hover {
@@ -1274,15 +1277,26 @@ input:checked + .slider-round:before {
 }
 
 .btn-card-reject {
+  flex: 1;
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.4);
   color: #f87171;
-  width: 38px;
+  min-width: 75px;
 }
 
 .btn-card-reject:hover {
   background: rgba(239, 68, 68, 0.3);
   color: #ffffff;
+}
+
+.cashier-mini-logo-box {
+  background: #ffffff;
+  border-radius: 4px;
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .tx-card-settled-info {

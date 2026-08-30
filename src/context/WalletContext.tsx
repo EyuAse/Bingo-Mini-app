@@ -39,6 +39,29 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     localStorage.setItem('betika_user_bonus', bonus.toFixed(2));
   }, [bonus]);
 
+  // Reactive listener to admin cashier approvals
+  useEffect(() => {
+    const handleDepositApproved = (e: any) => {
+      if (e.detail && e.detail.amount) {
+        setBalance(prev => prev + e.detail.amount);
+      }
+    };
+
+    const handleStorage = () => {
+      const saved = localStorage.getItem('betika_user_balance');
+      if (saved) {
+        setBalance(parseFloat(saved));
+      }
+    };
+
+    window.addEventListener('lb_deposit_approved' as any, handleDepositApproved);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('lb_deposit_approved' as any, handleDepositApproved);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
+
   const toggleBalanceVisibility = () => {
     setIsBalanceVisible(prev => !prev);
   };
