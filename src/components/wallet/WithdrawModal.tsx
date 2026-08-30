@@ -14,7 +14,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
   const { balance, deductBalance } = useWallet();
   const { showToast, switchPage } = useApp();
   const { addWithdrawRequest } = useAdmin();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [amount, setAmount] = useState<number>(200);
@@ -31,22 +31,22 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
     e.preventDefault();
 
     if (amount < 50) {
-      showToast('⚠️ Minimum withdrawal amount is 50 ETB.');
+      showToast(lang === 'am' ? '⚠️ ዝቅተኛ የማውጣት መጠን 50 ብር ነው።' : '⚠️ Minimum withdrawal amount is 50 ETB.');
       return;
     }
 
     if (amount > 25000) {
-      showToast('⚠️ Maximum withdrawal limit is 25,000 ETB per request.');
+      showToast(lang === 'am' ? '⚠️ ከፍተኛ የማውጣት መጠን 25,000 ብር ነው።' : '⚠️ Maximum withdrawal limit is 25,000 ETB.');
       return;
     }
 
     if (amount > balance) {
-      showToast('❌ Insufficient balance for withdrawal.');
+      showToast(lang === 'am' ? '❌ በቂ ቀሪ ሂሳብ የለም።' : '❌ Insufficient balance for withdrawal.');
       return;
     }
 
     if (!accountNumber || accountNumber.trim().length < 9) {
-      showToast('⚠️ Please enter a valid account or phone number.');
+      showToast(lang === 'am' ? '⚠️ እባክዎ ትክክለኛ ስልክ ቁጥር ወይም የባንክ አካውንት ያስገቡ።' : '⚠️ Please enter a valid account or phone number.');
       return;
     }
 
@@ -71,7 +71,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
 
     setSubmittedRef(assignedRef);
     setIsSubmitted(true);
-    showToast(`💸 Withdrawal request of ${amount} ETB submitted!`);
+    showToast(lang === 'am' ? `💸 የ${amount} ብር የወጪ ጥያቄ ተልኳል!` : `💸 Withdrawal request of ${amount} ETB submitted!`);
   };
 
   const handleResetAndClose = () => {
@@ -94,8 +94,14 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
               <i className="fa-solid fa-arrow-up-from-bracket"></i>
             </div>
             <div className="modal-title-texts">
-              <h3 className="modal-heading">{isSubmitted ? 'Withdrawal Submitted' : 'Withdraw Funds'}</h3>
-              <span className="modal-subheading">Fast settlement to Telebirr or CBE Bank</span>
+              <h3 className="modal-heading">
+                {isSubmitted
+                  ? (lang === 'am' ? 'የወጪ ጥያቄ ተልኳል' : 'Withdrawal Submitted')
+                  : (lang === 'am' ? 'ገንዘብ አውጣ' : 'Withdraw Funds')}
+              </h3>
+              <span className="modal-subheading">
+                {lang === 'am' ? 'በቴሌብር ወይም በንግድ ባንክ ፈጣን ክፍያ' : 'Fast settlement to Telebirr or CBE Bank'}
+              </span>
             </div>
           </div>
 
@@ -116,19 +122,25 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
               <i className="fa-solid fa-check"></i>
             </div>
 
-            <h3 className="success-main-title">Payout Request Submitted!</h3>
+            <h3 className="success-main-title">
+              {lang === 'am' ? 'የክፍያ ጥያቄ ተቀብለናል!' : 'Payout Request Submitted!'}
+            </h3>
             <p className="success-subtext">
-              Your cashout of <strong>{amount.toFixed(2)} ETB</strong> to <strong>{selectedMethod} ({accountNumber})</strong> has been received by our 24/7 cashier desk.
+              {lang === 'am' ? (
+                <>የ<strong>{amount.toFixed(2)} ብር</strong> ወደ <strong>{selectedMethod} ({accountNumber})</strong> የማውጣት ጥያቄዎ በ24/7 ካሳችን ተቀብሏል።</>
+              ) : (
+                <>Your cashout of <strong>{amount.toFixed(2)} ETB</strong> to <strong>{selectedMethod} ({accountNumber})</strong> has been received by our 24/7 cashier desk.</>
+              )}
             </p>
 
             <div className="success-ref-box">
-              <span className="ref-box-lbl">PAYOUT REFERENCE</span>
+              <span className="ref-box-lbl">{lang === 'am' ? 'የክፍያ መለያ ቁጥር' : 'PAYOUT REFERENCE'}</span>
               <strong className="ref-box-val">{submittedRef}</strong>
             </div>
 
             <div className="success-eta-tag">
               <i className="fa-solid fa-clock gold"></i>
-              <span>Estimated processing time: <strong>~1 to 3 minutes</strong></span>
+              <span>{lang === 'am' ? 'የሚገመተው የማጠናቀቂያ ጊዜ፡ ' : 'Estimated processing time: '}<strong>~1 {lang === 'am' ? 'እስከ 3 ደቂቃዎች' : 'to 3 minutes'}</strong></span>
             </div>
 
             <div className="success-actions-row">
@@ -137,7 +149,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
                 className="btn-payment-action-gold"
                 onClick={handleViewHistory}
               >
-                <span>View in Withdrawal History</span>
+                <span>{lang === 'am' ? 'በወጪ ታሪክ እይ' : 'View in Withdrawal History'}</span>
                 <i className="fa-solid fa-arrow-right"></i>
               </button>
 
@@ -146,7 +158,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
                 className="btn-payment-action-outline"
                 onClick={handleResetAndClose}
               >
-                <span>Done</span>
+                <span>{t('common.done')}</span>
               </button>
             </div>
           </div>
@@ -156,19 +168,19 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
             {/* Available Balance Banner */}
             <div className="withdraw-balance-banner">
               <div className="balance-banner-left">
-                <span className="balance-banner-lbl">Withdrawable Balance</span>
+                <span className="balance-banner-lbl">{lang === 'am' ? 'ሊወጣ የሚችል ቀሪ ሂሳብ' : 'Withdrawable Balance'}</span>
                 <strong className="balance-banner-val">{balance.toFixed(2)} ETB</strong>
               </div>
               <div className="balance-banner-limits">
-                <span>Min: 50 ETB</span>
-                <span>Max: 25,000 ETB</span>
+                <span>{lang === 'am' ? 'ዝቅተኛ፡ 50 ብር' : 'Min: 50 ETB'}</span>
+                <span>{lang === 'am' ? 'ከፍተኛ፡ 25,000 ብር' : 'Max: 25,000 ETB'}</span>
               </div>
             </div>
 
             {/* 1. Payment Method Selection */}
             <div className="form-section-block">
               <label className="form-section-label">
-                <span className="step-num">1</span> Choose Payout Method
+                <span className="step-num">1</span> {lang === 'am' ? 'የመክፈያ መንገድ ይምረጡ' : 'Choose Payout Method'}
               </label>
 
               <div className="payment-method-selector-grid">
@@ -181,8 +193,8 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
                     <TelebirrLogo size={24} />
                   </div>
                   <div className="method-text-col">
-                    <strong className="method-name">Telebirr Payout</strong>
-                    <span className="method-badge-fast">⚡ Instant (1-3 min)</span>
+                    <strong className="method-name">Telebirr</strong>
+                    <span className="method-badge-fast">{lang === 'am' ? '⚡ ፈጣን (1-3 ደቂቃ)' : '⚡ Instant (1-3 min)'}</span>
                   </div>
                   <div className="method-radio-circ">
                     {selectedMethod === 'Telebirr' && <div className="radio-dot"></div>}
@@ -198,8 +210,8 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
                     <CBELogo size={24} />
                   </div>
                   <div className="method-text-col">
-                    <strong className="method-name">CBE Bank Payout</strong>
-                    <span className="method-badge-fast">Direct Bank Transfer</span>
+                    <strong className="method-name">CBE Bank</strong>
+                    <span className="method-badge-fast">{lang === 'am' ? 'የኢትዮጵያ ንግድ ባንክ' : 'Commercial Bank of Ethiopia'}</span>
                   </div>
                   <div className="method-radio-circ">
                     {selectedMethod === 'CBE' && <div className="radio-dot"></div>}
@@ -212,14 +224,14 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
             <div className="form-section-block">
               <div className="section-label-row">
                 <label className="form-section-label">
-                  <span className="step-num">2</span> Withdrawal Amount
+                  <span className="step-num">2</span> {lang === 'am' ? 'የማውጫ መጠን' : 'Withdrawal Amount'}
                 </label>
                 <button
                   type="button"
-                  className="btn-max-all-balance"
+                  className="btn-max-amount"
                   onClick={() => setAmount(Math.min(balance, 25000))}
                 >
-                  Max All
+                  {lang === 'am' ? 'ሁሉንም' : 'Max All'}
                 </button>
               </div>
 
@@ -243,10 +255,10 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
                 <input
                   type="number"
                   min="50"
-                  max={Math.min(balance, 25000)}
+                  max="25000"
                   value={amount || ''}
                   onChange={e => setAmount(Number(e.target.value))}
-                  placeholder="Enter amount"
+                  placeholder={lang === 'am' ? 'መጠን ያስገቡ' : 'Enter amount'}
                   required
                 />
               </div>
@@ -255,18 +267,18 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
             {/* 3. Destination Account Details */}
             <div className="form-section-block">
               <label className="form-section-label">
-                <span className="step-num">3</span> Destination Account
+                <span className="step-num">3</span> {lang === 'am' ? 'ገንዘቡ የሚላክበት አካውንት' : 'Payout Destination'}
               </label>
 
               <div className="input-field-group">
-                <label className="field-tiny-label">Account Holder Full Name</label>
+                <label className="field-tiny-label">{lang === 'am' ? 'የአካውንት ባለቤት ስም' : 'Account Holder Name'}</label>
                 <div className="field-input-box">
                   <i className="fa-solid fa-user field-icon"></i>
                   <input
                     type="text"
                     value={accountHolder}
                     onChange={e => setAccountHolder(e.target.value)}
-                    placeholder="Full Name"
+                    placeholder={lang === 'am' ? 'ሙሉ ስም' : 'Full Name'}
                     required
                   />
                 </div>
@@ -274,7 +286,9 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
 
               <div className="input-field-group" style={{ marginTop: '8px' }}>
                 <label className="field-tiny-label">
-                  {selectedMethod === 'Telebirr' ? 'Telebirr Mobile Number' : 'CBE Account Number'}
+                  {selectedMethod === 'Telebirr'
+                    ? (lang === 'am' ? 'የቴሌብር ስልክ ቁጥር' : 'Telebirr Phone Number')
+                    : (lang === 'am' ? 'የኢትዮጵያ ንግድ ባንክ ሒሳብ ቁጥር' : 'CBE Bank Account Number')}
                 </label>
                 <div className="field-input-box">
                   <i className={`fa-solid ${selectedMethod === 'Telebirr' ? 'fa-mobile-screen' : 'fa-building-columns'} field-icon`}></i>
@@ -282,27 +296,21 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
                     type="text"
                     value={accountNumber}
                     onChange={e => setAccountNumber(e.target.value)}
-                    placeholder={selectedMethod === 'Telebirr' ? '0911234567' : '100012345678'}
+                    placeholder={selectedMethod === 'Telebirr' ? '0911234567' : '1000...'}
                     required
                   />
                 </div>
               </div>
             </div>
 
-            {/* Terms & Security Notice */}
-            <div className="withdraw-security-notice">
-              <i className="fa-solid fa-shield-halved security-icon"></i>
-              <span>24/7 automated settlement desk. No withdrawal fees.</span>
-            </div>
-
             {/* Submit Button */}
             <button
               type="submit"
               className="btn-submit-payment-gold"
-              disabled={amount < 50 || amount > balance}
+              disabled={amount > balance || amount < 50}
             >
-              <i className="fa-solid fa-money-bill-transfer"></i>
-              <span>Confirm & Withdraw {amount > 0 ? `${amount} ETB` : ''}</span>
+              <i className="fa-solid fa-arrow-up-from-bracket"></i>
+              <span>{lang === 'am' ? `አሁን ${amount > 0 ? `${amount} ብር` : ''} አውጣ` : `Withdraw ${amount > 0 ? `${amount} ETB` : ''} Now`}</span>
             </button>
           </form>
         )}

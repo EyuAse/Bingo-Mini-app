@@ -12,7 +12,7 @@ interface DepositModalProps {
 export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
   const { showToast, switchPage } = useApp();
   const { addDepositRequest } = useAdmin();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [amount, setAmount] = useState<number>(100);
@@ -34,7 +34,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    showToast(`📋 Copied ${label}: ${text}`);
+    showToast(`📋 ${t('common.copied')}: ${label}`);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,12 +80,12 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
   const handleDepositSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (amount < 50) {
-      showToast('⚠️ Minimum deposit is 50 ETB.');
+      showToast(lang === 'am' ? '⚠️ ዝቅተኛ ተቀማጭ 50 ብር ነው።' : '⚠️ Minimum deposit is 50 ETB.');
       return;
     }
 
     if (!playerPhone || playerPhone.trim().length < 9) {
-      showToast('⚠️ Please enter your valid mobile number.');
+      showToast(lang === 'am' ? '⚠️ እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ።' : '⚠️ Please enter your valid mobile number.');
       return;
     }
 
@@ -105,7 +105,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
 
     setSubmittedRef(assignedRef);
     setIsSubmitted(true);
-    showToast(`✅ Deposit request of ${amount} ETB submitted!`);
+    showToast(lang === 'am' ? `✅ የ${amount} ብር ተቀማጭ ጥያቄ ተልኳል!` : `✅ Deposit request of ${amount} ETB submitted!`);
   };
 
   const handleResetAndClose = () => {
@@ -130,8 +130,14 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
               <i className="fa-solid fa-arrow-down"></i>
             </div>
             <div className="modal-title-texts">
-              <h3 className="modal-heading">{isSubmitted ? 'Deposit Submitted' : 'Deposit Funds'}</h3>
-              <span className="modal-subheading">Instant automated cashier credit</span>
+              <h3 className="modal-heading">
+                {isSubmitted
+                  ? (lang === 'am' ? 'ተቀማጭ ተልኳል' : 'Deposit Submitted')
+                  : (lang === 'am' ? 'ገንዘብ አስገባ' : 'Deposit Funds')}
+              </h3>
+              <span className="modal-subheading">
+                {lang === 'am' ? 'ፈጣን አውቶማቲክ ክፍያ' : 'Instant automated cashier credit'}
+              </span>
             </div>
           </div>
 
@@ -152,26 +158,32 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
               <i className="fa-solid fa-check"></i>
             </div>
 
-            <h3 className="success-main-title">Deposit Request Received!</h3>
+            <h3 className="success-main-title">
+              {lang === 'am' ? 'የተቀማጭ ጥያቄ ደርሶናል!' : 'Deposit Request Received!'}
+            </h3>
             <p className="success-subtext">
-              Your deposit of <strong>{amount.toFixed(2)} ETB</strong> via <strong>{selectedMethod}</strong> is being verified by our automated cashier desk.
+              {lang === 'am' ? (
+                <>የ<strong>{amount.toFixed(2)} ብር</strong> በ<strong>{selectedMethod}</strong> ተቀማጭ ጥያቄዎ በካሳችን እየተረጋገጠ ነው።</>
+              ) : (
+                <>Your deposit of <strong>{amount.toFixed(2)} ETB</strong> via <strong>{selectedMethod}</strong> is being verified by our automated cashier desk.</>
+              )}
             </p>
 
             <div className="success-ref-box">
-              <span className="ref-box-lbl">TRANSACTION ID</span>
+              <span className="ref-box-lbl">{lang === 'am' ? 'የግብይት መለያ ቁጥር' : 'TRANSACTION ID'}</span>
               <strong className="ref-box-val">{submittedRef}</strong>
               <button
                 type="button"
                 className="btn-copy-ref-success"
                 onClick={() => handleCopy(submittedRef, 'Transaction ID')}
               >
-                <i className="fa-regular fa-copy"></i> Copy
+                <i className="fa-regular fa-copy"></i> {t('common.copy')}
               </button>
             </div>
 
             <div className="success-eta-tag">
               <i className="fa-solid fa-bolt gold"></i>
-              <span>Average verification time: <strong>~30 seconds</strong></span>
+              <span>{lang === 'am' ? 'አማካይ የማረጋገጫ ጊዜ፡ ' : 'Average verification time: '}<strong>~30 {lang === 'am' ? 'ሰከንዶች' : 'seconds'}</strong></span>
             </div>
 
             <div className="success-actions-row">
@@ -180,7 +192,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                 className="btn-payment-action-gold"
                 onClick={handleViewHistory}
               >
-                <span>View in Deposit History</span>
+                <span>{lang === 'am' ? 'በተቀማጭ ታሪክ እይ' : 'View in Deposit History'}</span>
                 <i className="fa-solid fa-arrow-right"></i>
               </button>
 
@@ -189,7 +201,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                 className="btn-payment-action-outline"
                 onClick={handleResetAndClose}
               >
-                <span>Done</span>
+                <span>{t('common.done')}</span>
               </button>
             </div>
           </div>
@@ -199,7 +211,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
             {/* 1. Payment Method Selection */}
             <div className="form-section-block">
               <label className="form-section-label">
-                <span className="step-num">1</span> Choose Payment Method
+                <span className="step-num">1</span> {lang === 'am' ? 'የመክፈያ መንገድ ይምረጡ' : 'Choose Payment Method'}
               </label>
 
               <div className="payment-method-selector-grid">
@@ -213,7 +225,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                   </div>
                   <div className="method-text-col">
                     <strong className="method-name">Telebirr</strong>
-                    <span className="method-badge-fast">⚡ Instant</span>
+                    <span className="method-badge-fast">{lang === 'am' ? '⚡ ፈጣን' : '⚡ Instant'}</span>
                   </div>
                   <div className="method-radio-circ">
                     {selectedMethod === 'Telebirr' && <div className="radio-dot"></div>}
@@ -243,9 +255,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
             <div className="form-section-block">
               <div className="section-label-row">
                 <label className="form-section-label">
-                  <span className="step-num">2</span> Deposit Amount
+                  <span className="step-num">2</span> {lang === 'am' ? 'የተቀማጭ መጠን' : 'Deposit Amount'}
                 </label>
-                <span className="min-limit-sub">Min: 50 ETB</span>
+                <span className="min-limit-sub">{lang === 'am' ? 'ዝቅተኛ፡ 50 ብር' : 'Min: 50 ETB'}</span>
               </div>
 
               {/* Preset Chips */}
@@ -271,7 +283,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                   max="100000"
                   value={amount || ''}
                   onChange={e => setAmount(Number(e.target.value))}
-                  placeholder="Enter amount"
+                  placeholder={lang === 'am' ? 'መጠን ያስገቡ' : 'Enter amount'}
                   required
                 />
               </div>
@@ -280,18 +292,20 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
             {/* 3. Official Receiver Account Details */}
             <div className="form-section-block">
               <label className="form-section-label">
-                <span className="step-num">3</span> Send Payment To
+                <span className="step-num">3</span> {lang === 'am' ? 'ክፍያውን ወደዚህ ይላኩ' : 'Send Payment To'}
               </label>
 
               <div className="deposit-receiver-callout">
                 <div className="receiver-top-row">
-                  <span className="receiver-provider-tag">{selectedMethod} Official Account</span>
+                  <span className="receiver-provider-tag">
+                    {selectedMethod} {lang === 'am' ? 'ይፋዊ አካውንት' : 'Official Account'}
+                  </span>
                   <button
                     type="button"
                     className="btn-copy-receiver"
                     onClick={() => handleCopy(activeReceiverNumber, selectedMethod)}
                   >
-                    <i className="fa-regular fa-copy"></i> Copy
+                    <i className="fa-regular fa-copy"></i> {t('common.copy')}
                   </button>
                 </div>
 
@@ -300,12 +314,12 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                 </div>
 
                 <div className="receiver-name-row">
-                  <span className="receiver-name-lbl">Account Name:</span>
+                  <span className="receiver-name-lbl">{lang === 'am' ? 'የአካውንት ስም፡' : 'Account Name:'}</span>
                   <strong className="receiver-name-val">{receiverName}</strong>
                 </div>
 
                 <p className="receiver-note-sub">
-                  Transfer exact amount from your {selectedMethod} app, then enter the SMS reference below.
+                  {lang === 'am' ? 'ትክክለኛውን መጠን ከባንክ መተግበሪያዎ ይላኩ፣ ከዚያም የግብይት ቁጥሩን ከታች ያስገቡ።' : `Transfer exact amount from your ${selectedMethod} app, then enter the SMS reference below.`}
                 </p>
               </div>
             </div>
@@ -313,11 +327,11 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
             {/* 4. Verification & Submission */}
             <div className="form-section-block">
               <label className="form-section-label">
-                <span className="step-num">4</span> Verification Details
+                <span className="step-num">4</span> {lang === 'am' ? 'የማረጋገጫ ዝርዝሮች' : 'Verification Details'}
               </label>
 
               <div className="input-field-group">
-                <label className="field-tiny-label">Your Phone Number</label>
+                <label className="field-tiny-label">{lang === 'am' ? 'የእርስዎ ስልክ ቁጥር' : 'Your Phone Number'}</label>
                 <div className="field-input-box">
                   <i className="fa-solid fa-phone field-icon"></i>
                   <input
@@ -332,7 +346,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
 
               <div className="input-field-group" style={{ marginTop: '8px' }}>
                 <label className="field-tiny-label">
-                  SMS Transaction ID / Reference (Optional for Instant Match)
+                  {lang === 'am' ? 'የኤስኤምኤስ ግብይት መለያ ቁጥር' : 'SMS Transaction ID / Reference (Optional)'}
                 </label>
                 <div className="field-input-box">
                   <i className="fa-solid fa-receipt field-icon"></i>
@@ -356,7 +370,11 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                 />
                 <label htmlFor="deposit-receipt-file" className="btn-upload-label">
                   <i className="fa-solid fa-camera"></i>
-                  <span>{receiptImage ? 'Change Screenshot' : 'Attach Receipt Screenshot (Optional)'}</span>
+                  <span>
+                    {receiptImage
+                      ? (lang === 'am' ? 'ምስሉን ቀይር' : 'Change Screenshot')
+                      : (lang === 'am' ? 'የደረሰኝ ምስል አያይዝ (አስገዳጅ አይደለም)' : 'Attach Receipt Screenshot (Optional)')}
+                  </span>
                 </label>
 
                 {receiptImage && (
@@ -377,7 +395,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
             {/* Submit Button */}
             <button type="submit" className="btn-submit-payment-gold">
               <i className="fa-solid fa-bolt"></i>
-              <span>Deposit {amount > 0 ? `${amount} ETB` : ''} Now</span>
+              <span>{lang === 'am' ? `አሁን ${amount > 0 ? `${amount} ብር` : ''} አስገባ` : `Deposit ${amount > 0 ? `${amount} ETB` : ''} Now`}</span>
             </button>
           </form>
         )}

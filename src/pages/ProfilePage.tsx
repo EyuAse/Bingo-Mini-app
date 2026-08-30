@@ -65,7 +65,7 @@ export const ProfilePage: React.FC = () => {
               </div>
               <div className="settings-lang-pill-wrap">
                 <span className="lang-preview-pill">
-                  <span className="pill-flag">🇪🇹</span>
+                  <span className="pill-flag">{lang === 'am' ? '🇪🇹' : '🇬🇧'}</span>
                   <span>{lang === 'am' ? 'አማርኛ' : 'English'}</span>
                 </span>
                 <i className="fa-solid fa-chevron-right settings-chevron"></i>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 import { TelebirrLogo, CBELogo } from './PaymentLogos.tsx';
 
 interface TransactionHistoryProps {
@@ -14,6 +15,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 }) => {
   const { transactions } = useAdmin();
   const { showToast } = useApp();
+  const { t, lang } = useLanguage();
   const [activeTab, setActiveTab] = useState<'deposits' | 'withdrawals'>(initialTab);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
 
@@ -29,7 +31,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    showToast(`📋 Copied ${label}: ${text}`);
+    showToast(`📋 ${t('common.copied')}: ${label}`);
   };
 
   return (
@@ -39,11 +41,11 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
         {onBack && (
           <button type="button" className="btn-tx-back" onClick={onBack}>
             <i className="fa-solid fa-arrow-left"></i>
-            <span>Back to Wallet</span>
+            <span>{t('history.backToWallet')}</span>
           </button>
         )}
         <h2 className="tx-page-title">
-          {activeTab === 'deposits' ? 'Deposit History' : 'Withdrawal History'}
+          {activeTab === 'deposits' ? t('history.depositsTab') : t('history.withdrawalsTab')}
         </h2>
       </div>
 
@@ -55,7 +57,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
           onClick={() => setActiveTab('deposits')}
         >
           <i className="fa-solid fa-arrow-down"></i>
-          <span>Deposits</span>
+          <span>{t('history.depositsTab')}</span>
           <span className="tx-count-pill">{deposits.length}</span>
         </button>
 
@@ -65,7 +67,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
           onClick={() => setActiveTab('withdrawals')}
         >
           <i className="fa-solid fa-arrow-up"></i>
-          <span>Withdrawals</span>
+          <span>{t('history.withdrawalsTab')}</span>
           <span className="tx-count-pill">{withdrawals.length}</span>
         </button>
       </div>
@@ -77,9 +79,11 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
             <div className="empty-icon-circle">
               <i className="fa-solid fa-receipt"></i>
             </div>
-            <h3 className="empty-title">No {activeTab} yet</h3>
+            <h3 className="empty-title">
+              {activeTab === 'deposits' ? t('history.emptyDeposits') : t('history.emptyWithdrawals')}
+            </h3>
             <p className="empty-subtext">
-              Your {activeTab} transactions and live settlement status will appear here in real time.
+              {lang === 'am' ? 'የእርስዎ የግብይት እና የክፍያ ታሪክ እዚህ በእውነተኛ ጊዜ ይታያል።' : 'Your transactions and live settlement status will appear here in real time.'}
             </p>
           </div>
         ) : (
@@ -99,7 +103,9 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                     </div>
                     <div className="tx-provider-meta">
                       <strong className="tx-provider-name">{tx.method}</strong>
-                      <span className="tx-type-lbl">{isDeposit ? 'Deposit' : 'Withdrawal'}</span>
+                      <span className="tx-type-lbl">
+                        {isDeposit ? t('common.deposit') : t('common.withdraw')}
+                      </span>
                     </div>
                   </div>
 
@@ -107,19 +113,19 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                     {isPending && (
                       <span className="status-pill pending">
                         <span className="pulse-dot"></span>
-                        <span>In Review</span>
+                        <span>{lang === 'am' ? 'በመገምገም ላይ' : 'In Review'}</span>
                       </span>
                     )}
                     {isApproved && (
                       <span className="status-pill approved">
                         <i className="fa-solid fa-circle-check"></i>
-                        <span>{isDeposit ? 'Verified' : 'Settled'}</span>
+                        <span>{isDeposit ? (lang === 'am' ? 'ተረጋግጧል' : 'Verified') : (lang === 'am' ? 'ተከፍሏል' : 'Settled')}</span>
                       </span>
                     )}
                     {isRejected && (
                       <span className="status-pill rejected">
                         <i className="fa-solid fa-circle-xmark"></i>
-                        <span>Rejected</span>
+                        <span>{lang === 'am' ? 'ተቀባይነት አላገኘም' : 'Rejected'}</span>
                       </span>
                     )}
                   </div>
@@ -141,7 +147,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                     </div>
                     <div className="tx-timestamp">
                       <i className="fa-regular fa-clock"></i>
-                      <span>{tx.createdAt || 'Today, 11:33 PM'}</span>
+                      <span>{tx.createdAt || (lang === 'am' ? 'ዛሬ፣ 11:33' : 'Today, 11:33 PM')}</span>
                     </div>
                   </div>
 
@@ -154,7 +160,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                 {tx.receiptImage && (
                   <div className="tx-receipt-thumbnail-row">
                     <span className="receipt-tag-label">
-                      <i className="fa-solid fa-image"></i> Payment Screenshot
+                      <i className="fa-solid fa-image"></i> {lang === 'am' ? 'የክፍያ ደረሰኝ ምስል' : 'Payment Screenshot'}
                     </span>
                     <img
                       src={tx.receiptImage}
@@ -166,13 +172,13 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                   </div>
                 )}
 
-                {/* Cashier Note (Admin message on Approval or Rejection) */}
+                {/* Cashier Note */}
                 {tx.adminNote && (
                   <div className={`tx-cashier-note-box ${isRejected ? 'note-rejected' : 'note-approved'}`}>
                     <i className={`fa-solid ${isRejected ? 'fa-circle-exclamation' : 'fa-circle-info'} note-icon`}></i>
                     <div className="note-text-group">
                       <strong className="note-title">
-                        {isRejected ? 'Cashier Rejection Reason:' : 'Cashier Note:'}
+                        {isRejected ? (lang === 'am' ? 'የውድቅ የተደረገበት ምክንያት፡' : 'Cashier Rejection Reason:') : (lang === 'am' ? 'የካሳ ማስታወሻ፡' : 'Cashier Note:')}
                       </strong>
                       <p className="note-message">{tx.adminNote}</p>
                     </div>
@@ -189,7 +195,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
         <div className="custom-modal-backdrop" onClick={() => setZoomImage(null)}>
           <div className="receipt-lightbox-card" onClick={e => e.stopPropagation()}>
             <div className="modal-header-fresh">
-              <h4>Attached Screenshot</h4>
+              <h4>{lang === 'am' ? 'የተያያዘ የክፍያ ምስል' : 'Attached Screenshot'}</h4>
               <button
                 type="button"
                 className="btn-close-modal-round"

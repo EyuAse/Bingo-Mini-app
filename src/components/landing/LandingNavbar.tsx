@@ -6,8 +6,7 @@ import { LanguageDropdown } from '../common/LanguageDropdown.tsx';
 
 export const LandingNavbar: React.FC = () => {
   const { switchPage } = useApp();
-  const { lang, setLang } = useLanguage();
-  const [showLangMenu, setShowLangMenu] = useState(false);
+  const { t } = useLanguage();
   const [showBingoMenu, setShowBingoMenu] = useState(false);
 
   return (
@@ -30,15 +29,15 @@ export const LandingNavbar: React.FC = () => {
             <div className="nav-dropdown-menu-pop" onClick={() => setShowBingoMenu(false)}>
               <div className="dropdown-opt-item" onClick={() => switchPage('games')}>
                 <i className="fa-solid fa-gamepad" style={{ color: '#eab308' }}></i>
-                <span>All Bingo Rooms</span>
+                <span>{t('landing.allRooms')}</span>
               </div>
               <div className="dropdown-opt-item" onClick={() => switchPage('games')}>
                 <i className="fa-solid fa-bolt" style={{ color: '#22c55e' }}></i>
-                <span>Fast 75-Ball Express</span>
+                <span>{t('landing.fast75')}</span>
               </div>
               <div className="dropdown-opt-item" onClick={() => switchPage('wallet')}>
                 <i className="fa-solid fa-gift" style={{ color: '#38bdf8' }}></i>
-                <span>Promotions & Bonus</span>
+                <span>{t('landing.promoBonus')}</span>
               </div>
             </div>
           )}
@@ -56,7 +55,7 @@ export const LandingNavbar: React.FC = () => {
           id="nav-login-btn"
           onClick={() => switchPage('login')}
         >
-          Login
+          {t('nav.login')}
         </button>
 
         {/* Sign Up Button (Bright Gold Pill) */}
@@ -67,7 +66,7 @@ export const LandingNavbar: React.FC = () => {
           onClick={() => switchPage('signup')}
         >
           <i className="fa-solid fa-user-plus"></i>
-          <span>Sign Up</span>
+          <span>{t('nav.register')}</span>
         </button>
       </div>
     </header>

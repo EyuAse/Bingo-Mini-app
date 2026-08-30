@@ -61,16 +61,6 @@ export const BigBingoCard: React.FC = () => {
               </div>
             </div>
           </div>
-
-          {/* Golden CTA Button */}
-          <button
-            type="button"
-            className="btn-card-play-now"
-            onClick={handlePlayNow}
-          >
-            <i className="fa-solid fa-play"></i>
-            <span>{t('games.playNow')}</span>
-          </button>
         </div>
 
         {/* Right 3D Artwork Column */}
@@ -92,6 +82,16 @@ export const BigBingoCard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Full-width Golden CTA Button */}
+      <button
+        type="button"
+        className="btn-play-fast-bingo-cta"
+        onClick={handlePlayNow}
+      >
+        <i className="fa-solid fa-play"></i>
+        <span>{t('games.playNow')}</span>
+      </button>
     </div>
   );
 };
