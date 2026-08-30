@@ -12,19 +12,20 @@ interface WithdrawModalProps {
 
 export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose }) => {
   const { balance, deductBalance } = useWallet();
-  const { showToast } = useApp();
+  const { showToast, switchPage } = useApp();
   const { addWithdrawRequest } = useAdmin();
   const { t } = useLanguage();
 
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [amount, setAmount] = useState<number>(200);
-  const [accountHolder, setAccountHolder] = useState<string>('Player');
+  const [accountHolder, setAccountHolder] = useState<string>('Eyu Ase');
   const [accountNumber, setAccountNumber] = useState<string>('0911234567');
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [submittedRef, setSubmittedRef] = useState<string>('');
 
   if (!isOpen) return null;
 
-  const quickAmounts = [100, 200, 500, 1000, 5000, 10000];
+  const quickAmounts = [100, 200, 500, 1000, 5000];
 
   const handleWithdrawSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,18 +57,21 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
       return;
     }
 
+    const assignedRef = `WD-${selectedMethod === 'Telebirr' ? 'TB' : 'CBE'}-${Math.floor(100000 + Math.random() * 900000)}`;
+
     // Submit to Admin Cashier Settlement Desk
     addWithdrawRequest(
       'usr-me',
-      accountHolder || 'Player',
+      accountHolder || 'Eyu Ase',
       accountNumber,
       amount,
       selectedMethod,
       accountNumber
     );
 
+    setSubmittedRef(assignedRef);
     setIsSubmitted(true);
-    showToast(`💸 Withdrawal request of ${amount} ETB submitted to Cashier Desk!`);
+    showToast(`💸 Withdrawal request of ${amount} ETB submitted!`);
   };
 
   const handleResetAndClose = () => {
@@ -75,178 +79,230 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
     onClose();
   };
 
+  const handleViewHistory = () => {
+    handleResetAndClose();
+    switchPage('wallet');
+  };
+
   return (
     <div className="custom-modal-backdrop" onClick={handleResetAndClose}>
-      <div className="custom-modal-card wallet-deposit-card" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-title-wrap">
-            <i className="fa-solid fa-arrow-up-from-bracket modal-icon" style={{ color: '#f87171' }}></i>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#ffffff' }}>
-                {isSubmitted ? 'Withdrawal Submitted' : t('wallet.instantCashOut')}
-              </h3>
-              <span style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>
-                Fast Settlement to Telebirr or CBE Bank
-              </span>
+      <div className="fresh-payment-modal-card" onClick={e => e.stopPropagation()}>
+        {/* Modal Header */}
+        <div className="payment-modal-header">
+          <div className="payment-modal-title-group">
+            <div className="modal-title-icon red">
+              <i className="fa-solid fa-arrow-up-from-bracket"></i>
+            </div>
+            <div className="modal-title-texts">
+              <h3 className="modal-heading">{isSubmitted ? 'Withdrawal Submitted' : 'Withdraw Funds'}</h3>
+              <span className="modal-subheading">Fast settlement to Telebirr or CBE Bank</span>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={handleResetAndClose}>
+
+          <button
+            type="button"
+            className="btn-modal-close"
+            onClick={handleResetAndClose}
+            title="Close"
+          >
             <i className="fa-solid fa-xmark"></i>
           </button>
         </div>
 
         {isSubmitted ? (
-          /* Submission Confirmation */
-          <div className="deposit-success-view">
-            <div className="status-pulse-circle" style={{ borderColor: 'rgba(74, 222, 128, 0.4)' }}>
-              <i className="fa-solid fa-check" style={{ color: '#4ade80', fontSize: '2rem' }}></i>
+          /* Success Confirmation View */
+          <div className="payment-success-content">
+            <div className="success-icon-circle green">
+              <i className="fa-solid fa-check"></i>
             </div>
 
-            <h4 style={{ color: '#ffffff', fontSize: '1.2rem', margin: '10px 0 4px' }}>
-              Withdrawal Order Dispatched!
-            </h4>
-            <p style={{ color: '#94a3b8', fontSize: '0.8125rem', maxWidth: '340px', margin: '0 auto 16px' }}>
-              Our Telebirr/CBE Cashier Desk is processing your payout. Funds will arrive in your account shortly.
+            <h3 className="success-main-title">Payout Request Submitted!</h3>
+            <p className="success-subtext">
+              Your cashout of <strong>{amount.toFixed(2)} ETB</strong> to <strong>{selectedMethod} ({accountNumber})</strong> has been received by our 24/7 cashier desk.
             </p>
 
-            <div className="receipt-summary-box">
-              <div className="summary-line">
-                <span>Amount:</span>
-                <strong style={{ color: '#f87171' }}>-{amount.toFixed(2)} ETB</strong>
-              </div>
-              <div className="summary-line">
-                <span>Recipient:</span>
-                <span>{accountHolder} ({accountNumber})</span>
-              </div>
-              <div className="summary-line">
-                <span>Method:</span>
-                <span>{selectedMethod}</span>
-              </div>
-              <div className="summary-line">
-                <span>Status:</span>
-                <span className="status-pill pending">⏳ SETTLEMENT IN PROGRESS</span>
-              </div>
+            <div className="success-ref-box">
+              <span className="ref-box-lbl">PAYOUT REFERENCE</span>
+              <strong className="ref-box-val">{submittedRef}</strong>
             </div>
 
-            <button
-              type="button"
-              className="btn-modal-submit"
-              onClick={handleResetAndClose}
-              style={{ marginTop: '16px' }}
-            >
-              <i className="fa-solid fa-check"></i> Done & Return
-            </button>
+            <div className="success-eta-tag">
+              <i className="fa-solid fa-clock gold"></i>
+              <span>Estimated processing time: <strong>~1 to 3 minutes</strong></span>
+            </div>
+
+            <div className="success-actions-row">
+              <button
+                type="button"
+                className="btn-payment-action-gold"
+                onClick={handleViewHistory}
+              >
+                <span>View in Withdrawal History</span>
+                <i className="fa-solid fa-arrow-right"></i>
+              </button>
+
+              <button
+                type="button"
+                className="btn-payment-action-outline"
+                onClick={handleResetAndClose}
+              >
+                <span>Done</span>
+              </button>
+            </div>
           </div>
         ) : (
-          /* Main Withdraw Form */
-          <form onSubmit={handleWithdrawSubmit}>
-            {/* Available Balance Card */}
+          /* Withdrawal Form */
+          <form className="payment-modal-form" onSubmit={handleWithdrawSubmit}>
+            {/* Available Balance Banner */}
             <div className="withdraw-balance-banner">
-              <div>
-                <span className="w-label">{t('wallet.availableWithdraw')}</span>
-                <span className="w-sub">Withdrawable Cash</span>
+              <div className="balance-banner-left">
+                <span className="balance-banner-lbl">Withdrawable Balance</span>
+                <strong className="balance-banner-val">{balance.toFixed(2)} ETB</strong>
               </div>
-              <span className="w-amount">{balance.toFixed(2)} ETB</span>
-            </div>
-
-            {/* Provider Selection: Full-Width Official Logos */}
-            <div className="payment-methods-grid">
-              <div
-                className={`payment-method-card ${selectedMethod === 'Telebirr' ? 'active' : ''}`}
-                onClick={() => setSelectedMethod('Telebirr')}
-              >
-                <div className="pm-full-logo-box">
-                  <TelebirrLogo size={46} />
-                </div>
-                <div className="pm-card-bottom">
-                  <span className="pm-name">Telebirr</span>
-                  <i className={`fa-solid ${selectedMethod === 'Telebirr' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
-                </div>
-              </div>
-
-              <div
-                className={`payment-method-card ${selectedMethod === 'CBE' ? 'active' : ''}`}
-                onClick={() => setSelectedMethod('CBE')}
-              >
-                <div className="pm-full-logo-box">
-                  <CBELogo size={46} />
-                </div>
-                <div className="pm-card-bottom">
-                  <span className="pm-name">CBE Bank</span>
-                  <i className={`fa-solid ${selectedMethod === 'CBE' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
-                </div>
+              <div className="balance-banner-limits">
+                <span>Min: 50 ETB</span>
+                <span>Max: 25,000 ETB</span>
               </div>
             </div>
 
-            {/* Limits Info Tag */}
-            <div className="withdraw-limits-notice">
-              <span><i className="fa-solid fa-circle-info"></i> Min: <strong>50 ETB</strong> · Max: <strong>25,000 ETB</strong> per request</span>
-            </div>
+            {/* 1. Payment Method Selection */}
+            <div className="form-section-block">
+              <label className="form-section-label">
+                <span className="step-num">1</span> Choose Payout Method
+              </label>
 
-            {/* Quick Amount Chips */}
-            <div className="quick-amounts-label">
-              <span>Select Amount</span>
-            </div>
-            <div className="quick-amounts-row">
-              {quickAmounts.map(val => (
+              <div className="payment-method-selector-grid">
                 <button
                   type="button"
-                  key={val}
-                  className={`quick-amt-chip ${amount === val ? 'active' : ''}`}
-                  onClick={() => setAmount(val)}
+                  className={`btn-payment-method-card ${selectedMethod === 'Telebirr' ? 'active' : ''}`}
+                  onClick={() => setSelectedMethod('Telebirr')}
                 >
-                  {val} ETB
+                  <div className="method-logo-wrap">
+                    <TelebirrLogo size={24} />
+                  </div>
+                  <div className="method-text-col">
+                    <strong className="method-name">Telebirr Payout</strong>
+                    <span className="method-badge-fast">⚡ Instant (1-3 min)</span>
+                  </div>
+                  <div className="method-radio-circ">
+                    {selectedMethod === 'Telebirr' && <div className="radio-dot"></div>}
+                  </div>
                 </button>
-              ))}
+
+                <button
+                  type="button"
+                  className={`btn-payment-method-card ${selectedMethod === 'CBE' ? 'active' : ''}`}
+                  onClick={() => setSelectedMethod('CBE')}
+                >
+                  <div className="method-logo-wrap">
+                    <CBELogo size={24} />
+                  </div>
+                  <div className="method-text-col">
+                    <strong className="method-name">CBE Bank Payout</strong>
+                    <span className="method-badge-fast">Direct Bank Transfer</span>
+                  </div>
+                  <div className="method-radio-circ">
+                    {selectedMethod === 'CBE' && <div className="radio-dot"></div>}
+                  </div>
+                </button>
+              </div>
             </div>
 
-            {/* Amount & Account Inputs */}
-            <div className="input-duo-grid">
-              <div className="modal-input-group">
-                <label>Payout Amount (ETB)</label>
+            {/* 2. Amount Selection */}
+            <div className="form-section-block">
+              <div className="section-label-row">
+                <label className="form-section-label">
+                  <span className="step-num">2</span> Withdrawal Amount
+                </label>
+                <button
+                  type="button"
+                  className="btn-max-all-balance"
+                  onClick={() => setAmount(Math.min(balance, 25000))}
+                >
+                  Max All
+                </button>
+              </div>
+
+              {/* Preset Chips */}
+              <div className="amount-preset-chips-grid">
+                {quickAmounts.map(chip => (
+                  <button
+                    key={chip}
+                    type="button"
+                    className={`btn-amount-chip ${amount === chip ? 'active' : ''}`}
+                    onClick={() => setAmount(chip)}
+                  >
+                    {chip} ETB
+                  </button>
+                ))}
+              </div>
+
+              {/* Numeric Input */}
+              <div className="amount-numeric-input-wrap">
+                <span className="currency-tag">ETB</span>
                 <input
                   type="number"
                   min="50"
-                  max="25000"
+                  max={Math.min(balance, 25000)}
+                  value={amount || ''}
+                  onChange={e => setAmount(Number(e.target.value))}
+                  placeholder="Enter amount"
                   required
-                  value={amount}
-                  onChange={e => setAmount(parseFloat(e.target.value) || 0)}
-                  placeholder="Min 50, Max 25,000"
-                />
-              </div>
-
-              <div className="modal-input-group">
-                <label>Account Holder Name</label>
-                <input
-                  type="text"
-                  required
-                  value={accountHolder}
-                  onChange={e => setAccountHolder(e.target.value)}
-                  placeholder="Full Legal Name"
                 />
               </div>
             </div>
 
-            <div className="modal-input-group" style={{ marginTop: '10px' }}>
-              <label>
-                {selectedMethod === 'Telebirr' ? 'Telebirr Phone Number' : 'CBE Bank Account Number'}
+            {/* 3. Destination Account Details */}
+            <div className="form-section-block">
+              <label className="form-section-label">
+                <span className="step-num">3</span> Destination Account
               </label>
-              <input
-                type="text"
-                required
-                value={accountNumber}
-                onChange={e => setAccountNumber(e.target.value)}
-                placeholder={selectedMethod === 'Telebirr' ? '09...' : '1000...'}
-              />
+
+              <div className="input-field-group">
+                <label className="field-tiny-label">Account Holder Full Name</label>
+                <div className="field-input-box">
+                  <i className="fa-solid fa-user field-icon"></i>
+                  <input
+                    type="text"
+                    value={accountHolder}
+                    onChange={e => setAccountHolder(e.target.value)}
+                    placeholder="Full Name"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="input-field-group" style={{ marginTop: '8px' }}>
+                <label className="field-tiny-label">
+                  {selectedMethod === 'Telebirr' ? 'Telebirr Mobile Number' : 'CBE Account Number'}
+                </label>
+                <div className="field-input-box">
+                  <i className={`fa-solid ${selectedMethod === 'Telebirr' ? 'fa-mobile-screen' : 'fa-building-columns'} field-icon`}></i>
+                  <input
+                    type="text"
+                    value={accountNumber}
+                    onChange={e => setAccountNumber(e.target.value)}
+                    placeholder={selectedMethod === 'Telebirr' ? '0911234567' : '100012345678'}
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
+            {/* Terms & Security Notice */}
+            <div className="withdraw-security-notice">
+              <i className="fa-solid fa-shield-halved security-icon"></i>
+              <span>24/7 automated settlement desk. No withdrawal fees.</span>
+            </div>
+
+            {/* Submit Button */}
             <button
               type="submit"
-              className="btn-modal-submit btn-modal-withdraw"
-              disabled={amount < 50 || amount > 25000 || amount > balance}
-              style={{ marginTop: '14px' }}
+              className="btn-submit-payment-gold"
+              disabled={amount < 50 || amount > balance}
             >
-              <i className="fa-solid fa-arrow-down-left"></i> Confirm Cash Out ({amount} ETB)
+              <i className="fa-solid fa-money-bill-transfer"></i>
+              <span>Confirm & Withdraw {amount > 0 ? `${amount} ETB` : ''}</span>
             </button>
           </form>
         )}
