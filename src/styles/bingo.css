@@ -1056,3 +1056,86 @@
   gap: 8px;
   cursor: pointer;
 }
+
+/* ============================================================
+   BINGO ARENA MOBILE RESPONSIVENESS (320px - 480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  .fresh-bingo-page-container {
+    padding: 6px 8px 100px;
+    gap: 8px;
+  }
+
+  .bingo-play-split-arena {
+    gap: 6px;
+  }
+
+  .fresh-master-board-card,
+  .fresh-cartela-play-card,
+  .fresh-spectator-card {
+    padding: 8px 6px;
+    border-radius: 14px;
+  }
+
+  .cartela-5x5-grid {
+    gap: 3px;
+  }
+
+  .cartela-num-cell {
+    font-size: clamp(0.75rem, 3.2vw, 0.95rem);
+    border-radius: 6px;
+  }
+
+  .mb-num-box {
+    font-size: 0.58rem;
+    height: 16px;
+  }
+
+  .fresh-stats-bar-4col {
+    gap: 4px;
+    padding: 0;
+  }
+
+  .fresh-stat-card {
+    padding: 6px 4px;
+    border-radius: 10px;
+  }
+
+  .fresh-stat-val {
+    font-size: clamp(0.7rem, 2.8vw, 0.875rem);
+  }
+
+  .fresh-stat-lbl {
+    font-size: 0.5rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .fresh-bingo-page-container {
+    padding: 4px 4px 90px;
+    gap: 6px;
+  }
+
+  .bingo-play-split-arena {
+    gap: 4px;
+  }
+
+  .cartela-num-cell {
+    font-size: 0.72rem;
+  }
+
+  .mb-num-box {
+    font-size: 0.52rem;
+    height: 14px;
+  }
+
+  .fresh-bingo-bottom-betting-bar {
+    padding: 8px 10px;
+  }
+
+  .btn-bingo-chip {
+    padding: 6px 4px;
+    font-size: 0.6875rem;
+  }
+}
+

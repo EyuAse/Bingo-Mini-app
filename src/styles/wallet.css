@@ -3363,6 +3363,74 @@
   font-size: 0.75rem;
 }
 
+/* ============================================================
+   WALLET, MODALS & SUBPAGES MOBILE RESPONSIVENESS
+   ============================================================ */
+@media (max-width: 480px) {
+  .fresh-payment-modal-card {
+    width: calc(100% - 20px);
+    padding: 16px 14px;
+    border-radius: 20px;
+    max-height: 92vh;
+  }
+
+  .amount-preset-chips-grid {
+    gap: 4px;
+  }
+
+  .btn-amount-chip {
+    padding: 7px 2px;
+    font-size: 0.72rem;
+  }
+
+  .page-subpage-dedicated {
+    padding: 6px 10px 90px;
+  }
+
+  .user-kyc-hero-box {
+    padding: 12px 14px;
+    border-radius: 16px;
+  }
+
+  .credentials-grid-strip {
+    gap: 6px;
+  }
+
+  .cred-item-box {
+    padding: 6px 8px;
+  }
+
+  .cred-mono {
+    font-size: 0.7rem;
+  }
+
+  .attached-account-card {
+    padding: 8px 10px;
+  }
+
+  .contact-channels-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 360px) {
+  .fresh-payment-modal-card {
+    width: calc(100% - 12px);
+    padding: 14px 10px;
+  }
+
+  .credentials-grid-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .user-meta-chips-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+
 
 
 

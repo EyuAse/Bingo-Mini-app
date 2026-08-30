@@ -8,7 +8,6 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'landing', label: 'Home', icon: 'fa-solid fa-house' },
   { id: 'games', label: 'Games', icon: 'fa-solid fa-gamepad' },
   { id: 'wallet', label: 'Wallet', icon: 'fa-solid fa-wallet' },
   { id: 'affiliate', label: 'Rewards', icon: 'fa-solid fa-gift' },
@@ -23,7 +22,8 @@ export const BottomNav: React.FC = () => {
       {navItems.map(item => {
         const isActive =
           currentPage === item.id ||
-          (item.id === 'games' && currentPage === 'bingo');
+          (item.id === 'games' && currentPage === 'bingo') ||
+          (item.id === 'profile' && (currentPage === 'account-info' || currentPage === 'help' || currentPage === 'about'));
 
         return (
           <button
