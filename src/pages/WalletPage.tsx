@@ -9,7 +9,7 @@ export const WalletPage: React.FC = () => {
   const [activeHistoryTab, setActiveHistoryTab] = useState<'deposits' | 'withdrawals' | null>(null);
 
   return (
-    <div className="page active" id="page-wallet" style={{ paddingBottom: '30px' }}>
+    <div className="page active" id="page-wallet" style={{ paddingBottom: '100px' }}>
       <ProfileHeader />
 
       {activeHistoryTab !== null ? (

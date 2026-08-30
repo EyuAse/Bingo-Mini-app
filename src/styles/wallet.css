@@ -936,6 +936,110 @@
   border: 1px solid rgba(248, 113, 113, 0.4);
 }
 
+/* Clean Wallet Menu List Rows */
+.wallet-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 16px 20px;
+}
+
+.wallet-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wallet-menu-row:hover {
+  background: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.4);
+  transform: translateY(-1px);
+}
+
+.wallet-menu-row.affiliate-row {
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  background: linear-gradient(135deg, rgba(250, 204, 21, 0.05), var(--bg-card));
+}
+
+.wallet-menu-row.affiliate-row:hover {
+  border-color: #facc15;
+}
+
+.menu-row-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.menu-row-icon.gold {
+  background: rgba(250, 204, 21, 0.15);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  color: #facc15;
+}
+
+.menu-row-icon.blue {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.menu-row-icon.purple {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c4b5fd;
+}
+
+.menu-row-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu-row-title {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.menu-row-sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.affiliate-badge-mini {
+  background: rgba(250, 204, 21, 0.15);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  color: #facc15;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.menu-row-arrow {
+  color: #64748b;
+  font-size: 0.8125rem;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.wallet-menu-row:hover .menu-row-arrow {
+  color: #ffffff;
+  transform: translateX(3px);
+}
+
 .tx-history-top-nav {
   display: flex;
   align-items: center;

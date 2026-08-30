@@ -58,75 +58,52 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
         </div>
       </div>
 
-      <div className="menu-section">
-        <div className="menu-grid">
-          {/* Leaderboard */}
-          <div
-            className="menu-item"
-            id="menu-leaderboard"
-            onClick={() => switchPage('leader')}
-          >
-            <div className="menu-item-icon">
-              <i className="fa-solid fa-chart-simple"></i>
-            </div>
-            <span className="menu-item-text">{t('nav.leaderboard')}</span>
-            <i className="fa-solid fa-chevron-right menu-item-arrow"></i>
+      {/* Clean Account & Affiliate Navigation Rows */}
+      <div className="wallet-menu-list">
+        {/* Affiliate (10% Referral Program) */}
+        <div
+          className="wallet-menu-row affiliate-row"
+          id="menu-affiliate"
+          onClick={() => switchPage('affiliate')}
+        >
+          <div className="menu-row-icon gold">
+            <i className="fa-solid fa-people-group"></i>
           </div>
-
-          {/* More Gifts */}
-          <div
-            className="menu-item more-gifts"
-            id="menu-gifts"
-            onClick={() => showToast('🎁 Free spins and bonuses credited daily!')}
-          >
-            <i className="fa-solid fa-gift gifts-icon"></i>
-            <span className="gifts-text">{t('nav.bonus')}</span>
+          <div className="menu-row-info">
+            <span className="menu-row-title">Affiliate Program</span>
+            <span className="menu-row-sub">Earn 10% on every 1st deposit</span>
           </div>
-
-          {/* Affiliate */}
-          <div
-            className="menu-item"
-            id="menu-affiliate"
-            onClick={() => switchPage('affiliate')}
-          >
-            <div className="menu-item-icon">
-              <i className="fa-solid fa-people-group"></i>
-            </div>
-            <span className="menu-item-text">Affiliate (10%)</span>
-            <i className="fa-solid fa-chevron-right menu-item-arrow"></i>
-          </div>
-
-          {/* Promotion */}
-          <div
-            className="menu-item"
-            id="menu-promotion"
-            onClick={() => showToast('🔥 200% Bonus promotion is active on your next deposit!')}
-          >
-            <div className="menu-item-icon">
-              <i className="fa-solid fa-bullhorn"></i>
-            </div>
-            <span className="menu-item-text">Promotion</span>
-            <i className="fa-solid fa-chevron-right menu-item-arrow"></i>
-          </div>
+          <span className="affiliate-badge-mini">10% BONUS</span>
+          <i className="fa-solid fa-chevron-right menu-row-arrow"></i>
         </div>
-      </div>
 
-      {/* Profile Row */}
-      <div className="profile-row" id="profile-row" onClick={() => switchPage('profile')}>
-        <i className="fa-regular fa-user profile-row-icon"></i>
-        <span className="profile-row-text">{t('nav.profile')}</span>
-        <i className="fa-solid fa-chevron-right profile-row-arrow"></i>
-      </div>
+        {/* Profile */}
+        <div className="wallet-menu-row" id="profile-row" onClick={() => switchPage('profile')}>
+          <div className="menu-row-icon blue">
+            <i className="fa-regular fa-user"></i>
+          </div>
+          <div className="menu-row-info">
+            <span className="menu-row-title">{t('nav.profile')}</span>
+            <span className="menu-row-sub">Account details & preferences</span>
+          </div>
+          <i className="fa-solid fa-chevron-right menu-row-arrow"></i>
+        </div>
 
-      {/* Support Row */}
-      <div
-        className="support-row"
-        id="support-row"
-        onClick={() => showToast('🎧 Support team is available 24/7 via live chat!')}
-      >
-        <i className="fa-solid fa-headset support-row-icon"></i>
-        <span className="support-row-text">{t('profile.support')}</span>
-        <i className="fa-solid fa-chevron-right support-row-arrow"></i>
+        {/* Support */}
+        <div
+          className="wallet-menu-row"
+          id="support-row"
+          onClick={() => showToast('🎧 Support team is available 24/7 via live chat!')}
+        >
+          <div className="menu-row-icon purple">
+            <i className="fa-solid fa-headset"></i>
+          </div>
+          <div className="menu-row-info">
+            <span className="menu-row-title">{t('profile.support')}</span>
+            <span className="menu-row-sub">24/7 Live customer assistance</span>
+          </div>
+          <i className="fa-solid fa-chevron-right menu-row-arrow"></i>
+        </div>
       </div>
     </>
   );
