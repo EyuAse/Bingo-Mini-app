@@ -2,7 +2,7 @@ import React from 'react';
 import { useAdmin } from '../../context/AdminContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
 
-export type AdminTab = 'overview' | 'cashier' | 'commission' | 'bots' | 'users' | 'cartelas';
+export type AdminTab = 'overview' | 'cashier' | 'cashflow' | 'commission' | 'bots' | 'users' | 'cartelas';
 
 interface AdminSidebarProps {
   activeTab: AdminTab;
@@ -18,7 +18,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   closeMobileSidebar
 }) => {
   const {
-    brandName,
     isSidebarCollapsed,
     toggleSidebar,
     logoutAdmin,
@@ -30,7 +29,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   const { switchPage, showToast } = useApp();
 
-  const pendingCount = transactions.filter(t => t.status === 'pending').length;
+  const pendingCount = (transactions || []).filter(t => t.status === 'pending').length;
 
   const handleSelectTab = (tab: AdminTab) => {
     setActiveTab(tab);
@@ -90,7 +89,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <button
             className={`sidebar-nav-item ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => handleSelectTab('overview')}
-            title="Overview & Analytics"
+            title="Overview & Platform Dashboard"
           >
             <div className="nav-icon-wrap">
               <i className="fa-solid fa-chart-pie"></i>
@@ -98,17 +97,18 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             {!isSidebarCollapsed && <span className="nav-label">Dashboard & Metrics</span>}
           </button>
 
+          {/* Cashier Approvals Desk with Glowing Badge */}
           <button
             className={`sidebar-nav-item cashier-item ${activeTab === 'cashier' ? 'active' : ''}`}
             onClick={() => handleSelectTab('cashier')}
-            title="Deposit & Withdraw Cashier Desk"
+            title="Deposit & Withdraw Approvals Desk"
           >
             <div className="nav-icon-wrap">
-              <i className="fa-solid fa-cash-register"></i>
+              <i className="fa-solid fa-bolt-lightning" style={{ color: '#facc15' }}></i>
             </div>
             {!isSidebarCollapsed && (
               <>
-                <span className="nav-label">Cashier Desk</span>
+                <span className="nav-label">Cashier Approvals</span>
                 {pendingCount > 0 && (
                   <span className="sidebar-pending-badge">{pendingCount}</span>
                 )}
@@ -119,10 +119,22 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             )}
           </button>
 
+          {/* Dedicated Cash Flow & Revenue Ledger */}
+          <button
+            className={`sidebar-nav-item ${activeTab === 'cashflow' ? 'active' : ''}`}
+            onClick={() => handleSelectTab('cashflow')}
+            title="Cash Flow & Revenue Analytics"
+          >
+            <div className="nav-icon-wrap">
+              <i className="fa-solid fa-scale-balanced" style={{ color: '#4ade80' }}></i>
+            </div>
+            {!isSidebarCollapsed && <span className="nav-label">Cash Flow & Revenue</span>}
+          </button>
+
           <button
             className={`sidebar-nav-item ${activeTab === 'commission' ? 'active' : ''}`}
             onClick={() => handleSelectTab('commission')}
-            title="Game & Commission Rules"
+            title="Game Rules & House Commission"
           >
             <div className="nav-icon-wrap">
               <i className="fa-solid fa-sliders"></i>
@@ -186,7 +198,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <span>House Profit (10%)</span>
               <i className="fa-solid fa-vault gold"></i>
             </div>
-            <div className="snapshot-val">{totalHouseProfit.toFixed(2)} ETB</div>
+            <div className="snapshot-val">{(totalHouseProfit || 0).toFixed(2)} ETB</div>
             <div className="snapshot-footer">
               <span>Online Crowd: {simulatedPlayerCount} Players</span>
             </div>

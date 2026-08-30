@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext.tsx';
 import { AdminPINModal } from '../components/admin/AdminPINModal.tsx';
 import { AdminSidebar, AdminTab } from '../components/admin/AdminSidebar.tsx';
 import { CashierDesk } from '../components/admin/CashierDesk.tsx';
+import { CashFlowAnalytics } from '../components/admin/CashFlowAnalytics.tsx';
 import '../styles/admin.css';
 
 export const AdminPage: React.FC = () => {
@@ -142,7 +143,8 @@ export const AdminPage: React.FC = () => {
             <div className="viewport-page-title">
               <h2>
                 {activeTab === 'overview' && '📊 Dashboard & Platform Analytics'}
-                {activeTab === 'cashier' && '💳 Telebirr & CBE Cashier Desk'}
+                {activeTab === 'cashier' && '⚡ Cashier Approvals & Settlement Queue'}
+                {activeTab === 'cashflow' && '💰 Cash Flow & Revenue Analytics'}
                 {activeTab === 'commission' && '⚙️ Game Rules & House Commission (10%)'}
                 {activeTab === 'bots' && '🤖 200+ Smart Bots & Crowd Simulator'}
                 {activeTab === 'users' && '👥 Player Accounts & Bonus Manager'}
@@ -258,8 +260,11 @@ export const AdminPage: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 2: CASHIER DESK */}
+          {/* TAB 2: CASHIER APPROVALS DESK */}
           {activeTab === 'cashier' && <CashierDesk />}
+
+          {/* TAB 3: CASH FLOW & REVENUE ANALYTICS */}
+          {activeTab === 'cashflow' && <CashFlowAnalytics />}
 
           {/* TAB 3: GAME & COMMISSION RULES */}
           {activeTab === 'commission' && (

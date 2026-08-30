@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAdmin, TransactionRequest } from '../../context/AdminContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
 
-type FilterType = 'all' | 'pending_deposits' | 'pending_withdrawals' | 'approved' | 'rejected';
+type FilterType = 'pending' | 'pending_deposits' | 'pending_withdrawals' | 'all' | 'approved' | 'rejected';
 
 export const CashierDesk: React.FC = () => {
   const {
@@ -11,14 +11,13 @@ export const CashierDesk: React.FC = () => {
     rejectTransaction,
     addDepositRequest,
     addWithdrawRequest,
-    totalDepositedToday,
-    totalWithdrawnToday,
     users
   } = useAdmin();
 
   const { showToast } = useApp();
 
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  // Default to 'pending' to prioritize actionable orders
+  const [activeFilter, setActiveFilter] = useState<FilterType>('pending');
   const [methodFilter, setMethodFilter] = useState<'all' | 'Telebirr' | 'CBE'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -26,7 +25,7 @@ export const CashierDesk: React.FC = () => {
   const [inspectTx, setInspectTx] = useState<TransactionRequest | null>(null);
   const [adminNoteInput, setAdminNoteInput] = useState('');
 
-  // Manual Transaction Injection Modal
+  // Manual Transaction Modal
   const [showManualTxModal, setShowManualTxModal] = useState(false);
   const [manualType, setManualType] = useState<'deposit' | 'withdrawal'>('deposit');
   const [manualUser, setManualUser] = useState(users[0]?.id || '');
@@ -34,26 +33,22 @@ export const CashierDesk: React.FC = () => {
   const [manualMethod, setManualMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [manualAccount, setManualAccount] = useState('0911234567');
 
-  // Stats Calculations with safe null-coalescing
   const safeTransactions = Array.isArray(transactions) ? transactions : [];
-  const safeDepositedToday = Number(totalDepositedToday) || 0;
-  const safeWithdrawnToday = Number(totalWithdrawnToday) || 0;
 
-  const pendingDeposits = safeTransactions.filter(
+  const pendingDepositsCount = safeTransactions.filter(
     t => (t.type || 'deposit') === 'deposit' && (t.status || 'pending') === 'pending'
-  );
-  const pendingWithdrawals = safeTransactions.filter(
+  ).length;
+
+  const pendingWithdrawalsCount = safeTransactions.filter(
     t => t.type === 'withdrawal' && (t.status || 'pending') === 'pending'
-  );
-  const totalPendingAmount = [...pendingDeposits, ...pendingWithdrawals].reduce(
-    (acc, t) => acc + (Number(t.amount) || 0),
-    0
-  );
-  const netCashflow = safeDepositedToday - safeWithdrawnToday;
+  ).length;
+
+  const totalPendingCount = pendingDepositsCount + pendingWithdrawalsCount;
 
   // Filter Logic
   const filteredTransactions = safeTransactions.filter(tx => {
     // Status Filter
+    if (activeFilter === 'pending' && tx.status !== 'pending') return false;
     if (activeFilter === 'pending_deposits' && !(tx.type === 'deposit' && tx.status === 'pending')) return false;
     if (activeFilter === 'pending_withdrawals' && !(tx.type === 'withdrawal' && tx.status === 'pending')) return false;
     if (activeFilter === 'approved' && tx.status !== 'approved') return false;
@@ -110,116 +105,68 @@ export const CashierDesk: React.FC = () => {
 
   return (
     <div className="cashier-desk-wrapper">
-      {/* 1. Big-Operator Financial Barometer (Inflow / Outflow / Net) */}
-      <div className="admin-metrics-grid">
-        <div className="admin-metric-card">
-          <div className="metric-header">
-            <span className="metric-title">Today's Inflow (Deposits)</span>
-            <i className="fa-solid fa-arrow-down-long metric-icon green"></i>
-          </div>
-          <div className="metric-val green">+{totalDepositedToday.toFixed(2)} ETB</div>
-          <span className="metric-sub">Telebirr & CBE Cashier Inflow</span>
-        </div>
-
-        <div className="admin-metric-card">
-          <div className="metric-header">
-            <span className="metric-title">Today's Outflow (Payouts)</span>
-            <i className="fa-solid fa-arrow-up-long metric-icon" style={{ color: '#f87171' }}></i>
-          </div>
-          <div className="metric-val" style={{ color: '#f87171' }}>
-            -{totalWithdrawnToday.toFixed(2)} ETB
-          </div>
-          <span className="metric-sub">Processed Player Withdrawals</span>
-        </div>
-
-        <div className="admin-metric-card">
-          <div className="metric-header">
-            <span className="metric-title">Net Platform Cashflow</span>
-            <i className="fa-solid fa-scale-balanced metric-icon gold"></i>
-          </div>
-          <div className="metric-val gold">
-            {netCashflow >= 0 ? `+${netCashflow.toFixed(2)}` : netCashflow.toFixed(2)} ETB
-          </div>
-          <span className="metric-sub">Platform Retained Liquidity</span>
-        </div>
-
-        <div className="admin-metric-card">
-          <div className="metric-header">
-            <span className="metric-title">Pending Queue Value</span>
-            <i className="fa-solid fa-hourglass-half metric-icon purple"></i>
-          </div>
-          <div className="metric-val purple">{totalPendingAmount.toFixed(2)} ETB</div>
-          <span className="metric-sub">
-            {pendingDeposits.length + pendingWithdrawals.length} Orders Awaiting Action
-          </span>
-        </div>
-      </div>
-
-      {/* 2. Cashier Operations Desk Header & Actions */}
-      <div className="admin-card">
-        <div className="admin-card-header">
+      {/* 1. Actionable Header with Pending Badge */}
+      <div className="admin-card" style={{ marginBottom: '18px' }}>
+        <div className="admin-card-header" style={{ marginBottom: '14px' }}>
           <div className="cashier-title-group">
             <h3 className="admin-card-title">
-              <i className="fa-solid fa-building-columns"></i> Telebirr & CBE Cashier Settlement Desk
+              <i className="fa-solid fa-bolt-lightning" style={{ color: '#facc15' }}></i> Cashier Approvals & Settlement Queue
             </h3>
             <p className="cashier-subtitle">
-              Verify SMS references, inspect player risk scores, and release wallet balances in 1-click
+              Direct 1-click approvals for Telebirr & CBE deposits and withdrawals
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <span className={`sidebar-pending-badge ${totalPendingCount === 0 ? 'green-badge' : ''}`} style={{ fontSize: '0.8125rem', padding: '6px 12px' }}>
+              {totalPendingCount} Pending Action
+            </span>
             <button
               className="btn-tbl-action btn-approve"
               onClick={() => setShowManualTxModal(true)}
+              style={{ margin: 0, padding: '8px 14px' }}
             >
-              <i className="fa-solid fa-plus"></i> New Transaction Request
+              <i className="fa-solid fa-plus"></i> New Request
             </button>
           </div>
         </div>
 
-        {/* 3. Filter Matrix & Search Bar */}
-        <div className="cashier-filter-row">
+        {/* 2. Filter Tabs & Search Bar */}
+        <div className="cashier-filter-row" style={{ margin: 0 }}>
           <div className="cashier-filter-tabs">
             <button
-              className={`filter-tab-btn ${activeFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveFilter('all')}
+              className={`filter-tab-btn ${activeFilter === 'pending' ? 'active' : ''}`}
+              onClick={() => setActiveFilter('pending')}
             >
-              All Orders ({transactions.length})
+              🚨 All Pending ({totalPendingCount})
             </button>
             <button
               className={`filter-tab-btn ${activeFilter === 'pending_deposits' ? 'active' : ''}`}
               onClick={() => setActiveFilter('pending_deposits')}
             >
-              Pending Deposits
-              {pendingDeposits.length > 0 && (
-                <span className="filter-badge green-badge">{pendingDeposits.length}</span>
-              )}
+              📥 Deposits ({pendingDepositsCount})
             </button>
             <button
               className={`filter-tab-btn ${activeFilter === 'pending_withdrawals' ? 'active' : ''}`}
               onClick={() => setActiveFilter('pending_withdrawals')}
             >
-              Pending Withdrawals
-              {pendingWithdrawals.length > 0 && (
-                <span className="filter-badge red-badge">{pendingWithdrawals.length}</span>
-              )}
+              📤 Withdrawals ({pendingWithdrawalsCount})
             </button>
             <button
               className={`filter-tab-btn ${activeFilter === 'approved' ? 'active' : ''}`}
               onClick={() => setActiveFilter('approved')}
             >
-              Approved & Settled
+              ✅ Settled
             </button>
             <button
-              className={`filter-tab-btn ${activeFilter === 'rejected' ? 'active' : ''}`}
-              onClick={() => setActiveFilter('rejected')}
+              className={`filter-tab-btn ${activeFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveFilter('all')}
             >
-              Rejected
+              All Orders ({safeTransactions.length})
             </button>
           </div>
 
           <div className="cashier-search-group">
-            {/* Payment Method Select */}
             <select
               className="cashier-select"
               value={methodFilter}
@@ -227,15 +174,14 @@ export const CashierDesk: React.FC = () => {
             >
               <option value="all">All Methods</option>
               <option value="Telebirr">Telebirr</option>
-              <option value="CBE">CBE Birr / Bank</option>
+              <option value="CBE">CBE</option>
             </select>
 
-            {/* Search Input */}
             <div className="cashier-search-box">
               <i className="fa-solid fa-magnifying-glass search-icon"></i>
               <input
                 type="text"
-                placeholder="Search TX reference, player or phone..."
+                placeholder="Search reference, player or phone..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
@@ -247,109 +193,126 @@ export const CashierDesk: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* 4. Enterprise Transactions Table */}
-        <div className="admin-table-wrapper">
-          <table className="admin-table cashier-table">
-            <thead>
-              <tr>
-                <th>Reference ID</th>
-                <th>Type</th>
-                <th>Method</th>
-                <th>Player / Account</th>
-                <th>Amount</th>
-                <th>Player Risk</th>
-                <th>Time</th>
-                <th>Status</th>
-                <th>Settlement Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTransactions.length === 0 ? (
-                <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
-                    <i className="fa-solid fa-receipt" style={{ fontSize: '2rem', marginBottom: '10px', display: 'block' }}></i>
-                    No transactions match the selected filter.
-                  </td>
-                </tr>
-              ) : (
-                filteredTransactions.map(tx => {
-                  const txAmt = Number(tx.amount) || 0;
-                  const txMethod = tx.method || 'Telebirr';
-                  const txType = tx.type || 'deposit';
-                  const txRisk = tx.riskScore || 'verified';
-                  const txRef = tx.referenceNumber || 'TX-REF-000';
+      {/* 3. ZERO-SCROLL RESPONSIVE TRANSACTION CARDS GRID */}
+      <div className="tx-card-grid">
+        {filteredTransactions.length === 0 ? (
+          <div className="tx-empty-state">
+            <i className="fa-solid fa-circle-check" style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '12px' }}></i>
+            <h4>All Clear! No Pending Requests</h4>
+            <p style={{ color: '#94a3b8', fontSize: '0.8125rem' }}>
+              All deposit and withdrawal orders in this view have been processed.
+            </p>
+          </div>
+        ) : (
+          filteredTransactions.map(tx => {
+            const txAmt = Number(tx.amount) || 0;
+            const txMethod = tx.method || 'Telebirr';
+            const txType = tx.type || 'deposit';
+            const txRisk = tx.riskScore || 'verified';
+            const txRef = tx.referenceNumber || 'TX-REF-000';
+            const isPending = (tx.status || 'pending') === 'pending';
 
-                  return (
-                    <tr key={tx.id} className={tx.status === 'pending' ? 'highlight-pending-row' : ''}>
-                      <td>
-                        <strong className="tx-ref-code">{txRef}</strong>
-                      </td>
-                      <td>
-                        <span className={`tx-type-pill ${txType}`}>
-                          <i className={`fa-solid ${txType === 'deposit' ? 'fa-arrow-down' : 'fa-arrow-up'}`}></i>
-                          {txType.toUpperCase()}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="method-pill-brand">
-                          <span className={`method-logo-badge ${txMethod.toLowerCase()}`}>
-                            {txMethod === 'Telebirr' ? '📱 TB' : '🏦 CBE'}
-                          </span>
-                          <span>{txMethod}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="player-account-cell">
-                          <strong>{tx.userName || 'Player'}</strong>
-                          <span className="account-number-sub">{tx.accountNumber || '0900000000'}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="tx-amount-badge">
-                          {txType === 'deposit' ? '+' : '-'}{txAmt.toFixed(2)} ETB
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`risk-badge ${txRisk}`}>
-                          <i className="fa-solid fa-shield-check"></i> {txRisk.toUpperCase()}
-                        </span>
-                      </td>
-                      <td style={{ color: '#94a3b8', fontSize: '0.75rem' }}>{tx.createdAt || 'Today'}</td>
-                      <td>
-                        <span className={`status-pill ${tx.status || 'pending'}`}>
-                          {tx.status === 'pending' && <span className="pulsing-amber-dot"></span>}
-                          {(tx.status || 'pending').toUpperCase()}
-                        </span>
-                      </td>
-                      <td>
-                        {tx.status === 'pending' ? (
-                          <div className="settlement-actions-cell">
-                            <button
-                              className="btn-tbl-action btn-inspect"
-                              onClick={() => setInspectTx(tx)}
-                              title="Inspect Proof & Release"
-                            >
-                              <i className="fa-solid fa-magnifying-glass"></i> Review & Release
-                            </button>
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                            <span>{tx.processedAt || 'Settled'}</span>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+            return (
+              <div
+                key={tx.id}
+                className={`tx-card-item ${isPending ? 'pending-card' : 'settled-card'}`}
+              >
+                {/* Card Header: Method, Ref, Time */}
+                <div className="tx-card-top">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className={`method-logo-badge ${txMethod.toLowerCase()}`}>
+                      {txMethod === 'Telebirr' ? '📱 TB' : '🏦 CBE'}
+                    </span>
+                    <span className={`tx-type-pill ${txType}`}>
+                      {txType.toUpperCase()}
+                    </span>
+                    <strong className="tx-ref-code">{txRef}</strong>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className={`status-pill ${tx.status || 'pending'}`}>
+                      {isPending && <span className="pulsing-amber-dot"></span>}
+                      {(tx.status || 'pending').toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card Body: Player & Large Amount */}
+                <div className="tx-card-body">
+                  <div className="tx-player-meta">
+                    <div className="player-main-name">
+                      <i className="fa-solid fa-user-circle"></i>
+                      <strong>{tx.userName || 'Player'}</strong>
+                    </div>
+                    <div className="player-phone-row">
+                      <span>📞 {tx.phone || '+251 9...'}</span>
+                      <span>·</span>
+                      <span className="account-tag">Acc: {tx.accountNumber || '0900000000'}</span>
+                    </div>
+                    <div className="player-stats-micro">
+                      <span className={`risk-badge ${txRisk}`}>
+                        <i className="fa-solid fa-shield-check"></i> {txRisk.toUpperCase()}
+                      </span>
+                      <span style={{ color: '#64748b', fontSize: '0.6875rem' }}>
+                        {tx.createdAt || 'Today'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="tx-amount-col">
+                    <span className="tx-amount-label">Requested</span>
+                    <div className={`tx-amount-huge ${txType}`}>
+                      {txType === 'deposit' ? '+' : '-'}{txAmt.toFixed(2)}
+                      <span className="currency-unit"> ETB</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Actions: 1-Click Approve, Reject & Inspect */}
+                <div className="tx-card-actions">
+                  {isPending ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn-card-action btn-card-approve"
+                        onClick={() => handleApprove(tx)}
+                      >
+                        <i className="fa-solid fa-bolt"></i> Approve & Release
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-card-action btn-card-inspect"
+                        onClick={() => setInspectTx(tx)}
+                        title="Review Full Details & Notes"
+                      >
+                        <i className="fa-solid fa-magnifying-glass"></i>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-card-action btn-card-reject"
+                        onClick={() => handleReject(tx)}
+                        title="Reject Request"
+                      >
+                        <i className="fa-solid fa-xmark"></i>
+                      </button>
+                    </>
+                  ) : (
+                    <div className="tx-card-settled-info">
+                      <span>Processed: {tx.processedAt || 'Settled'}</span>
+                      <span>· Note: {tx.adminNote || 'Verified'}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* ============================================================
-          5. INSPECTION & RELEASE VERIFICATION MODAL (Big Operator Standard)
+          4. INSPECTION & RELEASE VERIFICATION MODAL
           ============================================================ */}
       {inspectTx && (
         <div className="admin-pin-overlay" style={{ position: 'fixed', inset: 0, zIndex: 1100 }}>
@@ -408,7 +371,7 @@ export const CashierDesk: React.FC = () => {
               </div>
             </div>
 
-            {/* Admin Release Notes */}
+            {/* Admin Settlement Note */}
             <div style={{ marginBottom: '18px' }}>
               <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
                 Admin Settlement Note / SMS Receipt Code (Optional)
@@ -430,7 +393,7 @@ export const CashierDesk: React.FC = () => {
               />
             </div>
 
-            {/* Big Action Buttons */}
+            {/* Modal Actions */}
             <div className="inspect-actions-row">
               <button
                 type="button"
@@ -451,9 +414,7 @@ export const CashierDesk: React.FC = () => {
         </div>
       )}
 
-      {/* ============================================================
-          6. MANUAL TRANSACTION INJECTION MODAL (For Direct Support)
-          ============================================================ */}
+      {/* Manual Request Modal */}
       {showManualTxModal && (
         <div className="admin-pin-overlay" style={{ position: 'fixed', inset: 0, zIndex: 1100 }}>
           <div className="admin-pin-card" style={{ maxWidth: '440px', textAlign: 'left' }}>
@@ -472,7 +433,7 @@ export const CashierDesk: React.FC = () => {
                     style={{ flex: 1, padding: '8px' }}
                     onClick={() => setManualType('deposit')}
                   >
-                    Deposit (Inflow)
+                    Deposit
                   </button>
                   <button
                     type="button"
@@ -480,7 +441,7 @@ export const CashierDesk: React.FC = () => {
                     style={{ flex: 1, padding: '8px' }}
                     onClick={() => setManualType('withdrawal')}
                   >
-                    Withdrawal (Outflow)
+                    Withdrawal
                   </button>
                 </div>
               </div>
@@ -525,7 +486,7 @@ export const CashierDesk: React.FC = () => {
                   style={{ width: '100%', padding: '10px', background: '#0f0724', border: '1px solid #7c3aed', borderRadius: '8px', color: '#fff' }}
                 >
                   <option value="Telebirr">Telebirr</option>
-                  <option value="CBE">CBE Birr / Bank</option>
+                  <option value="CBE">CBE</option>
                 </select>
               </div>
 

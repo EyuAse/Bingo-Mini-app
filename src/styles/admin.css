@@ -900,11 +900,12 @@ input:checked + .slider-round:before {
 }
 
 /* ============================================================
-   8. CASHIER DESK STYLES
+   8. ZERO-SCROLL RESPONSIVE TRANSACTION CARDS & CASH FLOW
    ============================================================ */
-.cashier-desk-wrapper {
+.cashier-desk-wrapper, .cashflow-analytics-wrapper {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .cashier-title-group {
@@ -925,7 +926,6 @@ input:checked + .slider-round:before {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 18px;
 }
 
 .cashier-filter-tabs {
@@ -959,17 +959,6 @@ input:checked + .slider-round:before {
   border-color: #a855f7;
   color: #facc15;
 }
-
-.filter-badge {
-  font-size: 0.625rem;
-  font-weight: 900;
-  padding: 1px 6px;
-  border-radius: 9999px;
-  color: #ffffff;
-}
-
-.green-badge { background: #10b981; }
-.red-badge { background: #ef4444; }
 
 .cashier-search-group {
   display: flex;
@@ -1020,130 +1009,275 @@ input:checked + .slider-round:before {
   padding: 0;
 }
 
-.highlight-pending-row {
-  background: rgba(245, 158, 11, 0.05);
+/* ============================================================
+   ZERO-SCROLL RESPONSIVE TRANSACTION CARDS GRID
+   ============================================================ */
+.tx-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  width: 100%;
 }
 
-.tx-ref-code {
-  font-family: monospace;
-  font-size: 0.8125rem;
-  color: #c4b5fd;
-  letter-spacing: 0.5px;
+.tx-card-item {
+  background: rgba(18, 10, 46, 0.85);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  backdrop-filter: blur(14px);
+  transition: all 0.2s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
 }
 
-.tx-type-pill {
-  display: inline-flex;
+.tx-card-item.pending-card {
+  border: 1.5px solid rgba(245, 158, 11, 0.5);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(18, 10, 46, 0.9));
+}
+
+.tx-card-item.pending-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #f59e0b, #ec4899);
+}
+
+.tx-card-item.settled-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tx-card-top {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 10px;
+}
+
+.tx-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tx-player-meta {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
-  font-size: 0.6875rem;
-  font-weight: 800;
-  padding: 3px 8px;
-  border-radius: 6px;
+  flex: 1;
 }
 
-.tx-type-pill.deposit {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.35);
-}
-
-.tx-type-pill.withdrawal {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-}
-
-.method-pill-brand {
+.player-main-name {
   display: flex;
   align-items: center;
   gap: 6px;
+  font-size: 1rem;
+  color: #ffffff;
 }
 
-.method-logo-badge {
-  font-size: 0.6875rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
+.player-main-name i {
+  color: #c4b5fd;
 }
 
-.method-logo-badge.telebirr {
-  background: rgba(2, 132, 199, 0.2);
-  color: #38bdf8;
-  border: 1px solid rgba(2, 132, 199, 0.4);
+.player-phone-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #94a3b8;
 }
 
-.method-logo-badge.cbe {
-  background: rgba(168, 85, 247, 0.2);
-  color: #c084fc;
-  border: 1px solid rgba(168, 85, 247, 0.4);
+.account-tag {
+  font-family: monospace;
+  color: #cbd5e1;
 }
 
-.player-account-cell {
+.player-stats-micro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.tx-amount-col {
+  text-align: right;
   display: flex;
   flex-direction: column;
-  line-height: 1.2;
 }
 
-.account-number-sub {
-  font-size: 0.6875rem;
-  color: #94a3b8;
-  font-family: monospace;
-}
-
-.tx-amount-badge {
-  font-weight: 900;
-  font-size: 0.9375rem;
-  color: #ffffff;
-}
-
-.risk-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.tx-amount-label {
   font-size: 0.625rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 700;
 }
 
-.risk-badge.verified {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.4);
+.tx-amount-huge {
+  font-size: 1.45rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
 }
 
-.risk-badge.low {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
+.tx-amount-huge.deposit {
+  color: #4ade80;
+  text-shadow: 0 0 12px rgba(74, 222, 128, 0.35);
 }
 
-.risk-badge.review {
-  background: rgba(239, 68, 68, 0.15);
+.tx-amount-huge.withdrawal {
   color: #f87171;
+  text-shadow: 0 0 12px rgba(248, 113, 113, 0.35);
 }
 
-.pulsing-amber-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #f59e0b;
-  box-shadow: 0 0 6px #f59e0b;
-  display: inline-block;
-  margin-right: 4px;
-  animation: livePulse 1s infinite alternate;
-}
-
-.btn-inspect {
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(236, 72, 153, 0.25));
-  border: 1px solid #a855f7;
-  color: #ffffff;
+.currency-unit {
+  font-size: 0.8125rem;
   font-weight: 800;
 }
 
-.btn-inspect:hover {
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
-  box-shadow: 0 0 12px rgba(236, 72, 153, 0.4);
+.tx-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
+
+.btn-card-action {
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-card-approve {
+  flex: 1;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.btn-card-approve:hover {
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-card-inspect {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #c4b5fd;
+  width: 38px;
+}
+
+.btn-card-inspect:hover {
+  background: rgba(168, 85, 247, 0.3);
+  color: #ffffff;
+}
+
+.btn-card-reject {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  width: 38px;
+}
+
+.btn-card-reject:hover {
+  background: rgba(239, 68, 68, 0.3);
+  color: #ffffff;
+}
+
+.tx-card-settled-info {
+  font-size: 0.75rem;
+  color: #64748b;
+  width: 100%;
+}
+
+.tx-empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 24px;
+  background: rgba(18, 10, 46, 0.6);
+  border: 1px dashed rgba(168, 85, 247, 0.3);
+  border-radius: 16px;
+}
+
+.tx-empty-state h4 {
+  font-size: 1.15rem;
+  color: #ffffff;
+  margin: 0 0 6px;
+}
+
+/* ============================================================
+   CASH FLOW ANALYTICS PROGRESS BARS & DUO GRID
+   ============================================================ */
+.cashflow-grid-duo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.provider-share-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.share-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.share-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.share-amount {
+  color: #4ade80;
+  font-weight: 800;
+}
+
+.share-progress-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.share-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.telebirr-fill {
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+.cbe-fill {
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+}
+
 
 /* Inspection Modal */
 .cashier-inspect-card {
