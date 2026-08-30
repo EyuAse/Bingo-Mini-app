@@ -392,6 +392,27 @@ export const CashierDesk: React.FC = () => {
               </div>
             </div>
 
+            {/* Uploaded Receipt Image Preview (if attached) */}
+            {inspectTx.receiptImage && (
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ fontSize: '0.75rem', color: '#facc15', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', fontWeight: 700 }}>
+                  <i className="fa-solid fa-image"></i> Attached Payment Receipt Screenshot
+                </label>
+                <div style={{ background: '#0a0518', border: '1px solid rgba(168,85,247,0.4)', borderRadius: '10px', padding: '8px', textAlign: 'center' }}>
+                  <img
+                    src={inspectTx.receiptImage}
+                    alt="Player Receipt"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '180px',
+                      objectFit: 'contain',
+                      borderRadius: '6px'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Admin Settlement Note */}
             <div style={{ marginBottom: '18px' }}>
               <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>

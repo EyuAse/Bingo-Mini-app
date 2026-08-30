@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useWallet } from '../../context/WalletContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
+import { useAdmin } from '../../context/AdminContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
+import { TelebirrLogo, CBELogo } from './PaymentLogos.tsx';
 
 interface DepositModalProps {
   isOpen: boolean;
@@ -9,141 +10,331 @@ interface DepositModalProps {
 }
 
 export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
-  const { addBalance } = useWallet();
   const { showToast } = useApp();
+  const { addDepositRequest } = useAdmin();
   const { t } = useLanguage();
-  const [selectedMethod, setSelectedMethod] = useState<'telebirr' | 'cbe'>('telebirr');
+
+  const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [amount, setAmount] = useState<number>(100);
-  const [phone, setPhone] = useState<string>('0911234567');
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [playerPhone, setPlayerPhone] = useState<string>('0911234567');
+  const [transactionRef, setTransactionRef] = useState<string>('');
+  const [receiptImage, setReceiptImage] = useState<string | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [submittedRef, setSubmittedRef] = useState<string>('');
 
   if (!isOpen) return null;
 
-  const quickAmounts = [50, 100, 200, 500, 1000];
+  const quickAmounts = [50, 100, 200, 500, 1000, 2000];
+  const receiverPhone = '0998983344';
+  const receiverName = 'Mekonen Woldekidane';
+
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    showToast(`📋 Copied ${label}: ${text}`);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('⚠️ Image size exceeds 5MB limit.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptImage(reader.result as string);
+        showToast('📸 Receipt screenshot attached!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleDepositSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (amount <= 0) {
-      showToast('⚠️ Please enter a valid deposit amount.');
+    if (amount < 50) {
+      showToast('⚠️ Minimum deposit is 50 ETB.');
       return;
     }
 
-    setIsProcessing(true);
-    setTimeout(() => {
-      addBalance(amount);
-      setIsProcessing(false);
-      showToast(`✅ ${amount} ETB successfully deposited via ${selectedMethod === 'telebirr' ? 'Telebirr' : 'CBE Birr'}!`);
-      onClose();
-    }, 800);
+    if (!playerPhone || playerPhone.trim().length < 9) {
+      showToast('⚠️ Please enter your valid mobile number.');
+      return;
+    }
+
+    const assignedRef = transactionRef.trim()
+      ? transactionRef.trim().toUpperCase()
+      : `TX-TB-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    addDepositRequest(
+      'usr-me',
+      'Player (Me)',
+      playerPhone,
+      amount,
+      selectedMethod,
+      receiverPhone,
+      receiptImage || undefined,
+      assignedRef
+    );
+
+    setSubmittedRef(assignedRef);
+    setIsSubmitted(true);
+    showToast(`🚀 Deposit request of ${amount} ETB submitted for verification!`);
+  };
+
+  const handleResetAndClose = () => {
+    setIsSubmitted(false);
+    setTransactionRef('');
+    setReceiptImage(null);
+    onClose();
   };
 
   return (
-    <div className="custom-modal-backdrop" onClick={onClose}>
-      <div className="custom-modal-card" onClick={e => e.stopPropagation()}>
+    <div className="custom-modal-backdrop" onClick={handleResetAndClose}>
+      <div className="custom-modal-card wallet-deposit-card" onClick={e => e.stopPropagation()}>
+        {/* Header */}
         <div className="modal-header">
           <div className="modal-title-wrap">
             <i className="fa-solid fa-wallet modal-icon gold"></i>
-            <h3>{t('wallet.quickDeposit')}</h3>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#ffffff' }}>
+                {isSubmitted ? 'Deposit Confirmation' : t('wallet.quickDeposit')}
+              </h3>
+              <span style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>
+                Instant Telebirr & CBE Cashier Verification
+              </span>
+            </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>
+          <button className="modal-close-btn" onClick={handleResetAndClose}>
             <i className="fa-solid fa-xmark"></i>
           </button>
         </div>
 
-        {/* Payment Method Selector */}
-        <div className="payment-methods-grid">
-          <div
-            className={`payment-method-card ${selectedMethod === 'telebirr' ? 'active' : ''}`}
-            onClick={() => setSelectedMethod('telebirr')}
-          >
-            <div className="pm-icon telebirr-icon">
-              <span>📱</span>
+        {isSubmitted ? (
+          /* ============================================================
+             SUBMITTED STATUS CONFIRMATION SCREEN
+             ============================================================ */
+          <div className="deposit-success-view">
+            <div className="status-pulse-circle">
+              <i className="fa-solid fa-hourglass-half" style={{ color: '#facc15', fontSize: '2rem' }}></i>
             </div>
-            <div className="pm-info">
-              <span className="pm-name">{t('wallet.telebirrName')}</span>
-              <span className="pm-sub">{t('wallet.telebirrSub')}</span>
-            </div>
-            <i className={`fa-solid ${selectedMethod === 'telebirr' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
-          </div>
 
-          <div
-            className={`payment-method-card ${selectedMethod === 'cbe' ? 'active' : ''}`}
-            onClick={() => setSelectedMethod('cbe')}
-          >
-            <div className="pm-icon cbe-icon">
-              <span>🏦</span>
-            </div>
-            <div className="pm-info">
-              <span className="pm-name">{t('wallet.cbeName')}</span>
-              <span className="pm-sub">{t('wallet.cbeSub')}</span>
-            </div>
-            <i className={`fa-solid ${selectedMethod === 'cbe' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
-          </div>
-        </div>
+            <h4 style={{ color: '#ffffff', fontSize: '1.2rem', margin: '10px 0 4px' }}>
+              Deposit Request Submitted!
+            </h4>
+            <p style={{ color: '#94a3b8', fontSize: '0.8125rem', maxWidth: '340px', margin: '0 auto 16px' }}>
+              Our Telebirr Cashier is verifying your payment. Your wallet balance will automatically update in 1–2 minutes.
+            </p>
 
-        <form onSubmit={handleDepositSubmit}>
-          {/* Quick Amounts */}
-          <div className="quick-amounts-label">{t('wallet.selectAmount')}</div>
-          <div className="quick-amounts-row">
-            {quickAmounts.map(val => (
-              <button
-                type="button"
-                key={val}
-                className={`quick-amt-chip ${amount === val ? 'active' : ''}`}
-                onClick={() => setAmount(val)}
+            <div className="receipt-summary-box">
+              <div className="summary-line">
+                <span>Amount:</span>
+                <strong style={{ color: '#4ade80' }}>+{amount.toFixed(2)} ETB</strong>
+              </div>
+              <div className="summary-line">
+                <span>Reference ID:</span>
+                <strong style={{ fontFamily: 'monospace', color: '#facc15' }}>{submittedRef}</strong>
+              </div>
+              <div className="summary-line">
+                <span>Receiver:</span>
+                <span>{receiverName} ({receiverPhone})</span>
+              </div>
+              <div className="summary-line">
+                <span>Status:</span>
+                <span className="status-pill pending">⏳ AWAITING VERIFICATION</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="btn-modal-submit"
+              onClick={handleResetAndClose}
+              style={{ marginTop: '16px' }}
+            >
+              <i className="fa-solid fa-check"></i> Done & Return to Game
+            </button>
+          </div>
+        ) : (
+          /* ============================================================
+             MAIN DEPOSIT FORM
+             ============================================================ */
+          <form onSubmit={handleDepositSubmit}>
+            {/* 1. Payment Provider Selection with Real Vector Logos */}
+            <div className="payment-methods-grid">
+              <div
+                className={`payment-method-card ${selectedMethod === 'Telebirr' ? 'active' : ''}`}
+                onClick={() => setSelectedMethod('Telebirr')}
               >
-                {val} ETB
-              </button>
-            ))}
-          </div>
+                <div className="pm-logo-wrap">
+                  <TelebirrLogo size={36} />
+                </div>
+                <div className="pm-info">
+                  <span className="pm-name">Telebirr</span>
+                  <span className="pm-sub">Instant *127# or App</span>
+                </div>
+                <i className={`fa-solid ${selectedMethod === 'Telebirr' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
+              </div>
 
-          {/* Amount Input */}
-          <div className="modal-input-group">
-            <label>{t('wallet.customAmount')}</label>
-            <div className="modal-input-box">
-              <span className="input-currency">ETB</span>
-              <input
-                type="number"
-                min="10"
-                max="50000"
-                value={amount}
-                onChange={e => setAmount(parseInt(e.target.value) || 0)}
-                required
-              />
+              <div
+                className={`payment-method-card ${selectedMethod === 'CBE' ? 'active' : ''}`}
+                onClick={() => setSelectedMethod('CBE')}
+              >
+                <div className="pm-logo-wrap">
+                  <CBELogo size={36} />
+                </div>
+                <div className="pm-info">
+                  <span className="pm-name">CBE Birr</span>
+                  <span className="pm-sub">Mobile & Bank App</span>
+                </div>
+                <i className={`fa-solid ${selectedMethod === 'CBE' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
+              </div>
             </div>
-          </div>
 
-          {/* Phone Number */}
-          <div className="modal-input-group">
-            <label>{selectedMethod === 'telebirr' ? t('wallet.phoneNumber') : t('wallet.cbeAccount')}</label>
-            <div className="modal-input-box">
-              <i className="fa-solid fa-phone input-icon"></i>
-              <input
-                type="tel"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <button type="submit" className="modal-submit-btn deposit-submit" disabled={isProcessing}>
-            {isProcessing ? (
-              <span>{t('wallet.processing')}</span>
-            ) : (
-              <>
-                <i className="fa-solid fa-bolt"></i>
-                <span>
-                  {t('wallet.depositSubmit', {
-                    amt: amount,
-                    method: selectedMethod === 'telebirr' ? 'Telebirr' : 'CBE Birr'
-                  })}
+            {/* 2. Official Receiver Card (0998983344 - Mekonen Woldekidane) */}
+            <div className="official-receiver-card">
+              <div className="receiver-header">
+                <span className="receiver-tag">
+                  <i className="fa-solid fa-shield-check" style={{ color: '#4ade80' }}></i> Verified Merchant Receiver
                 </span>
-              </>
-            )}
-          </button>
-        </form>
+                <span className="receiver-min-badge">Min: 50 ETB</span>
+              </div>
+
+              <div className="receiver-details-grid">
+                <div className="receiver-item">
+                  <span className="rcv-lbl">Send Telebirr / CBE to:</span>
+                  <div className="rcv-copy-row">
+                    <strong className="rcv-phone">{receiverPhone}</strong>
+                    <button
+                      type="button"
+                      className="btn-copy-mini"
+                      onClick={() => handleCopy(receiverPhone, 'Receiver Phone')}
+                    >
+                      <i className="fa-regular fa-copy"></i> Copy
+                    </button>
+                  </div>
+                </div>
+
+                <div className="receiver-item">
+                  <span className="rcv-lbl">Account Holder:</span>
+                  <div className="rcv-copy-row">
+                    <strong className="rcv-name">{receiverName}</strong>
+                    <button
+                      type="button"
+                      className="btn-copy-mini"
+                      onClick={() => handleCopy(receiverName, 'Account Name')}
+                    >
+                      <i className="fa-regular fa-copy"></i> Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Quick Amount Preset Chips (Minimum 50 ETB) */}
+            <div className="quick-amounts-label">
+              <span>Select Deposit Amount</span>
+              <span style={{ fontSize: '0.6875rem', color: '#facc15' }}>Min 50 ETB</span>
+            </div>
+            <div className="quick-amounts-row">
+              {quickAmounts.map(val => (
+                <button
+                  type="button"
+                  key={val}
+                  className={`quick-amt-chip ${amount === val ? 'active' : ''}`}
+                  onClick={() => setAmount(val)}
+                >
+                  {val} ETB
+                </button>
+              ))}
+            </div>
+
+            {/* Custom Amount & Sender Phone */}
+            <div className="input-duo-grid">
+              <div className="modal-input-group">
+                <label>Amount (ETB)</label>
+                <input
+                  type="number"
+                  min="50"
+                  required
+                  value={amount}
+                  onChange={e => setAmount(Math.max(0, parseFloat(e.target.value) || 0))}
+                  placeholder="Min 50 ETB"
+                />
+              </div>
+
+              <div className="modal-input-group">
+                <label>Your Phone / Account</label>
+                <input
+                  type="text"
+                  required
+                  value={playerPhone}
+                  onChange={e => setPlayerPhone(e.target.value)}
+                  placeholder="0911..."
+                />
+              </div>
+            </div>
+
+            {/* 4. Telebirr SMS Ref ID or Receipt Image Proof */}
+            <div className="proof-submission-section">
+              <div className="modal-input-group" style={{ marginBottom: '10px' }}>
+                <label>
+                  Telebirr SMS Transaction ID / Reference (Recommended)
+                </label>
+                <input
+                  type="text"
+                  value={transactionRef}
+                  onChange={e => setTransactionRef(e.target.value)}
+                  placeholder="e.g. CFA492810 or SMS Reference"
+                />
+              </div>
+
+              {/* Upload Screenshot Dropzone */}
+              <div className="receipt-upload-container">
+                <label className="upload-label">
+                  <i className="fa-solid fa-camera" style={{ color: '#c4b5fd' }}></i>
+                  <span>Attach SMS / App Payment Screenshot (Optional)</span>
+                </label>
+
+                {receiptImage ? (
+                  <div className="receipt-preview-box">
+                    <img src={receiptImage} alt="Payment Receipt" className="receipt-thumb" />
+                    <div className="preview-meta">
+                      <span>✓ Receipt Screenshot Attached</span>
+                      <button
+                        type="button"
+                        className="btn-remove-proof"
+                        onClick={() => setReceiptImage(null)}
+                      >
+                        <i className="fa-solid fa-trash"></i> Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="receipt-dropzone">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <i className="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                    <span className="drop-text">Click or drag screenshot here</span>
+                    <span className="drop-sub">JPG, PNG up to 5MB</span>
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* Submit Action */}
+            <button
+              type="submit"
+              className="btn-modal-submit"
+              disabled={amount < 50}
+              style={{ marginTop: '14px' }}
+            >
+              <i className="fa-solid fa-paper-plane"></i> Submit Deposit ({amount} ETB)
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

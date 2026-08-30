@@ -382,3 +382,296 @@
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
+
+/* ============================================================
+   REDESIGNED ETHIOPIAN DEPOSIT & WITHDRAWAL MODAL STYLES
+   ============================================================ */
+.wallet-deposit-card {
+  max-width: 460px;
+  width: 95%;
+  background: #0d0624;
+  border: 1.5px solid rgba(168, 85, 247, 0.35);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: hidden;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.wallet-deposit-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0284c7, #7c3aed, #facc15);
+}
+
+.pm-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Official Receiver Card (0998983344 - Mekonen Woldekidane) */
+.official-receiver-card {
+  background: rgba(18, 10, 46, 0.9);
+  border: 1.5px solid rgba(250, 204, 21, 0.35);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.receiver-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.receiver-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #facc15;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.receiver-min-badge {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.receiver-details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  background: rgba(10, 4, 26, 0.75);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.receiver-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rcv-lbl {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+}
+
+.rcv-copy-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rcv-phone {
+  font-family: monospace;
+  font-size: 0.9375rem;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+}
+
+.rcv-name {
+  font-size: 0.8125rem;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.btn-copy-mini {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 6px;
+  color: #c4b5fd;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-copy-mini:hover {
+  background: rgba(168, 85, 247, 0.3);
+  color: #ffffff;
+  border-color: #facc15;
+}
+
+.input-duo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Proof Submission Section */
+.proof-submission-section {
+  background: rgba(15, 7, 40, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.receipt-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upload-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.receipt-dropzone {
+  border: 1.5px dashed rgba(168, 85, 247, 0.4);
+  background: rgba(13, 6, 36, 0.5);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.receipt-dropzone:hover {
+  border-color: #facc15;
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.drop-icon {
+  font-size: 1.5rem;
+  color: #c4b5fd;
+  margin-bottom: 2px;
+}
+
+.drop-text {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.drop-sub {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+}
+
+.receipt-preview-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(18, 10, 46, 0.8);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.receipt-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.preview-meta {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.btn-remove-proof {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+  font-size: 0.6875rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Success Confirmation Screen */
+.deposit-success-view {
+  text-align: center;
+  padding: 16px 8px 8px;
+}
+
+.status-pulse-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(250, 204, 21, 0.12);
+  border: 2px solid rgba(250, 204, 21, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  animation: livePulse 1.5s infinite alternate;
+}
+
+.receipt-summary-box {
+  background: rgba(18, 10, 46, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+}
+
+.withdraw-limits-notice {
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.btn-modal-withdraw {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4) !important;
+}

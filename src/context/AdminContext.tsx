@@ -28,6 +28,8 @@ export interface TransactionRequest {
   riskScore: 'verified' | 'low' | 'review';
   userLifetimeDeposits: number;
   userLifetimeWithdrawals: number;
+  receiptImage?: string;
+  senderName?: string;
   createdAt: string;
   processedAt?: string;
   adminNote?: string;
@@ -105,7 +107,16 @@ interface AdminContextType {
   transactions: TransactionRequest[];
   approveAndReleaseTransaction: (id: string, note?: string) => void;
   rejectTransaction: (id: string, note?: string) => void;
-  addDepositRequest: (userId: string, userName: string, phone: string, amount: number, method: 'Telebirr' | 'CBE', accountNumber: string) => void;
+  addDepositRequest: (
+    userId: string,
+    userName: string,
+    phone: string,
+    amount: number,
+    method: 'Telebirr' | 'CBE',
+    accountNumber: string,
+    receiptImage?: string,
+    customRef?: string
+  ) => void;
   addWithdrawRequest: (userId: string, userName: string, phone: string, amount: number, method: 'Telebirr' | 'CBE', accountNumber: string) => void;
 
   // Financial Summary Stats
@@ -597,19 +608,25 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     phone: string,
     amount: number,
     method: 'Telebirr' | 'CBE',
-    accountNumber: string
+    accountNumber: string,
+    receiptImage?: string,
+    customRef?: string
   ) => {
-    const randomRef = `${method === 'Telebirr' ? 'TX-TB-' : 'TX-CBE-'}${Math.floor(100000 + Math.random() * 900000)}`;
+    const finalRef = customRef?.trim()
+      ? customRef.trim().toUpperCase()
+      : `${method === 'Telebirr' ? 'TX-TB-' : 'TX-CBE-'}${Math.floor(100000 + Math.random() * 900000)}`;
+
     const newTx: TransactionRequest = {
-      id: `tx-${Date.now().toString().slice(-4)}`,
-      referenceNumber: randomRef,
+      id: `tx-${Date.now().toString().slice(-5)}`,
+      referenceNumber: finalRef,
       userId,
-      userName,
-      phone,
+      userName: userName || 'Player',
+      phone: phone || accountNumber,
       method,
       type: 'deposit',
       amount,
       accountNumber,
+      receiptImage,
       status: 'pending',
       riskScore: 'verified',
       userLifetimeDeposits: 500,
