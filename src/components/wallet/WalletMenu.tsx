@@ -1,13 +1,63 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext.tsx';
+import { useAdmin } from '../../context/AdminContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 
-export const WalletMenu: React.FC = () => {
+interface WalletMenuProps {
+  onOpenHistory?: (type: 'deposits' | 'withdrawals') => void;
+}
+
+export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
   const { switchPage, showToast } = useApp();
+  const { transactions } = useAdmin();
   const { t } = useLanguage();
+
+  const myTransactions = (transactions || []).filter(
+    tx => tx.userId === 'usr-me' || tx.userName.includes('Me') || tx.userName === 'Player'
+  );
+
+  const depositsCount = myTransactions.filter(tx => tx.type === 'deposit').length;
+  const withdrawalsCount = myTransactions.filter(tx => tx.type === 'withdrawal').length;
 
   return (
     <>
+      {/* Dedicated Transaction History Action Buttons */}
+      <div className="wallet-history-nav-section">
+        <div
+          className="history-nav-card deposit-nav-card"
+          onClick={() => onOpenHistory?.('deposits')}
+        >
+          <div className="hist-nav-icon-wrap green">
+            <i className="fa-solid fa-arrow-down-left"></i>
+          </div>
+          <div className="hist-nav-info">
+            <span className="hist-nav-title">Deposit History</span>
+            <span className="hist-nav-sub">Track Telebirr & CBE Deposits</span>
+          </div>
+          <div className="hist-nav-badge-wrap">
+            {depositsCount > 0 && <span className="hist-count-badge green">{depositsCount}</span>}
+            <i className="fa-solid fa-chevron-right"></i>
+          </div>
+        </div>
+
+        <div
+          className="history-nav-card withdraw-nav-card"
+          onClick={() => onOpenHistory?.('withdrawals')}
+        >
+          <div className="hist-nav-icon-wrap red">
+            <i className="fa-solid fa-arrow-up-right-from-square"></i>
+          </div>
+          <div className="hist-nav-info">
+            <span className="hist-nav-title">Withdrawal History</span>
+            <span className="hist-nav-sub">Track Payout & Cashouts</span>
+          </div>
+          <div className="hist-nav-badge-wrap">
+            {withdrawalsCount > 0 && <span className="hist-count-badge red">{withdrawalsCount}</span>}
+            <i className="fa-solid fa-chevron-right"></i>
+          </div>
+        </div>
+      </div>
+
       <div className="menu-section">
         <div className="menu-grid">
           {/* Leaderboard */}

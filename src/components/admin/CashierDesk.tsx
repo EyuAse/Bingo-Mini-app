@@ -126,11 +126,10 @@ export const CashierDesk: React.FC = () => {
         <div className="desk-title-block">
           <div className="desk-badge">
             <i className="fa-solid fa-cash-register"></i>
-            <span>CASHIER APPROVALS DESK</span>
+            <span>TELEBIRR & CBE CASHIER DESK</span>
           </div>
-          <h2>Deposit & Withdrawal Settlement Queue</h2>
-          <p>
-            Verify Telebirr & CBE SMS references, inspect player receipts, and release wallet balances in 1-click.
+          <p className="desk-subtitle">
+            Verify SMS references, inspect player receipts, and release wallet balances in 1-click.
           </p>
         </div>
 
