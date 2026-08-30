@@ -90,192 +90,221 @@ export const AffiliatePage: React.FC = () => {
 
   const handleShareTelegram = () => {
     const text = encodeURIComponent(
-      `🎉 Join me on Lomi Bingo! Get 10 Birr free signup bonus and win big with 400 cartelas: ${referralLink}`
+      `🍋 Join me on Lomi Bingo! Get 10 ETB free registration bonus and win big with 75-ball express: ${referralLink}`
     );
     window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${text}`, '_blank');
   };
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `🎉 Join me on Lomi Bingo! Get 10 Birr free signup bonus: ${referralLink}`
+      `🍋 Join me on Lomi Bingo! Get 10 ETB free registration bonus: ${referralLink}`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
   return (
-    <div className="page active" id="page-affiliate" style={{ paddingBottom: '40px' }}>
-      {/* Top Header Navigation */}
-      <div className="affiliate-header-bar">
-        <button type="button" className="btn-back-affiliate" onClick={() => switchPage('wallet')}>
-          <i className="fa-solid fa-arrow-left"></i> Back to Wallet
+    <div className="page active page-affiliate-fresh" id="page-affiliate">
+      {/* 1. Top Navigation Bar */}
+      <div className="affiliate-top-navbar">
+        <button
+          type="button"
+          className="btn-affiliate-back"
+          onClick={() => switchPage('wallet')}
+        >
+          <i className="fa-solid fa-arrow-left"></i>
+          <span>Back to Wallet</span>
         </button>
-        <span className="affiliate-header-title">Affiliate & Referral Rewards</span>
+        <h2 className="affiliate-page-title">Affiliate & Rewards</h2>
       </div>
 
-      <div className="affiliate-content-shell">
-        {/* 1. Hero Value Proposition Banner */}
-        <div className="affiliate-hero-card">
-          <div className="affiliate-hero-badge">
-            <i className="fa-solid fa-gift" style={{ color: '#facc15' }}></i>
+      <div className="affiliate-content-scroll">
+        {/* 2. Hero Value Proposition Banner */}
+        <div className="affiliate-hero-banner">
+          <div className="hero-banner-decor-glow"></div>
+          <div className="hero-banner-tag">
+            <i className="fa-solid fa-gift"></i>
             <span>10% REFERRAL BONUS PROGRAM</span>
           </div>
-          <h2>Invite Friends & Earn 10% On Every First Deposit!</h2>
-          <p>
-            When your invited friend registers and makes their <strong>first deposit</strong>, you instantly receive <strong>10% of their deposit amount</strong> credited directly into your bonus balance.
+
+          <h1 className="hero-banner-heading">
+            Invite Friends & Earn 10% On Every First Deposit!
+          </h1>
+          <p className="hero-banner-sub">
+            When your invited friend registers and makes their first deposit, you instantly receive <strong>10% of their deposit amount</strong> credited directly into your bonus balance.
           </p>
         </div>
 
-        {/* 2. Invitation Link & Code Box */}
-        <div className="referral-share-card">
-          <div className="ref-card-header">
-            <i className="fa-solid fa-link" style={{ color: '#38bdf8' }}></i>
-            <span>Your Exclusive Referral Link</span>
+        {/* 3. Referral Link & Code Sharing Box */}
+        <div className="affiliate-share-box-card">
+          {/* Link Section */}
+          <div className="share-field-group">
+            <label className="share-field-lbl">
+              <i className="fa-solid fa-link"></i> Your Exclusive Referral Link
+            </label>
+            <div className="share-input-pill">
+              <input type="text" readOnly value={referralLink} />
+              <button
+                type="button"
+                className={`btn-copy-action ${copiedLink ? 'copied' : ''}`}
+                onClick={handleCopyLink}
+              >
+                <i className={`fa-solid ${copiedLink ? 'fa-check' : 'fa-copy'}`}></i>
+                <span>{copiedLink ? 'Copied' : 'Copy Link'}</span>
+              </button>
+            </div>
           </div>
 
-          <div className="ref-link-box">
-            <input type="text" readOnly value={referralLink} />
-            <button type="button" className="btn-copy-ref" onClick={handleCopyLink}>
-              <i className={`fa-regular ${copiedLink ? 'fa-check' : 'fa-copy'}`}></i>
-              <span>{copiedLink ? 'Copied!' : 'Copy Link'}</span>
+          {/* Code Section */}
+          <div className="share-field-group">
+            <label className="share-field-lbl">
+              <i className="fa-solid fa-ticket"></i> Referral Code
+            </label>
+            <div className="share-input-pill">
+              <span className="ref-code-bold">{referralCode}</span>
+              <button
+                type="button"
+                className={`btn-copy-action ${copiedCode ? 'copied' : ''}`}
+                onClick={handleCopyCode}
+              >
+                <i className={`fa-solid ${copiedCode ? 'fa-check' : 'fa-copy'}`}></i>
+                <span>{copiedCode ? 'Copied' : 'Copy Code'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Social Share Buttons */}
+          <div className="social-share-actions-row">
+            <button
+              type="button"
+              className="btn-share-social telegram"
+              onClick={handleShareTelegram}
+            >
+              <i className="fa-brands fa-telegram"></i>
+              <span>Share via Telegram</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn-share-social whatsapp"
+              onClick={handleShareWhatsApp}
+            >
+              <i className="fa-brands fa-whatsapp"></i>
+              <span>Share via WhatsApp</span>
             </button>
           </div>
+        </div>
 
-          <div className="ref-code-row">
-            <div className="code-pill">
-              <span className="code-lbl">Referral Code:</span>
-              <strong className="code-val">{referralCode}</strong>
-              <button type="button" className="btn-mini-code-copy" onClick={handleCopyCode}>
-                <i className={`fa-regular ${copiedCode ? 'fa-check' : 'fa-copy'}`}></i>
-              </button>
+        {/* 4. Analytics Barometer Grid */}
+        <div className="affiliate-analytics-grid">
+          <div className="analytics-kpi-card">
+            <div className="kpi-icon-circ yellow">
+              <i className="fa-solid fa-users"></i>
             </div>
+            <div className="kpi-meta-text">
+              <strong className="kpi-val">{totalInvited}</strong>
+              <span className="kpi-lbl">Friends Invited</span>
+              <span className="kpi-sub">Registered with Link</span>
+            </div>
+          </div>
 
-            <div className="share-actions-row">
-              <button type="button" className="btn-share-tg" onClick={handleShareTelegram}>
-                <i className="fa-brands fa-telegram"></i> Telegram
-              </button>
-              <button type="button" className="btn-share-wa" onClick={handleShareWhatsApp}>
-                <i className="fa-brands fa-whatsapp"></i> WhatsApp
-              </button>
+          <div className="analytics-kpi-card">
+            <div className="kpi-icon-circ green">
+              <i className="fa-solid fa-money-bill-wave"></i>
+            </div>
+            <div className="kpi-meta-text">
+              <strong className="kpi-val">{activeDepositors}</strong>
+              <span className="kpi-lbl">Active Depositors</span>
+              <span className="kpi-sub">Completed 1st Deposit</span>
+            </div>
+          </div>
+
+          <div className="analytics-kpi-card">
+            <div className="kpi-icon-circ gold">
+              <i className="fa-solid fa-sack-dollar"></i>
+            </div>
+            <div className="kpi-meta-text">
+              <strong className="kpi-val gold">{totalEarned.toFixed(2)} ETB</strong>
+              <span className="kpi-lbl">Total Earned</span>
+              <span className="kpi-sub">10% Bonus Credited</span>
+            </div>
+          </div>
+
+          <div className="analytics-kpi-card">
+            <div className="kpi-icon-circ purple">
+              <i className="fa-solid fa-gift"></i>
+            </div>
+            <div className="kpi-meta-text">
+              <strong className="kpi-val">{bonus.toFixed(2)} ETB</strong>
+              <span className="kpi-lbl">Bonus Balance</span>
+              <span className="kpi-sub">Available in Wallet</span>
             </div>
           </div>
         </div>
 
-        {/* 3. 4-Card Analytics Stats Barometer */}
-        <div className="affiliate-stats-grid">
-          <div className="aff-stat-card">
-            <div className="stat-header">
-              <span className="stat-label">Friends Invited</span>
-              <i className="fa-solid fa-users stat-icon purple"></i>
-            </div>
-            <div className="stat-val">{totalInvited}</div>
-            <span className="stat-sub">Registered with Link</span>
-          </div>
+        {/* 5. 3-Step "How It Works" Card */}
+        <div className="affiliate-how-it-works-card">
+          <h3 className="how-title-bold">How 10% Referral Works</h3>
 
-          <div className="aff-stat-card">
-            <div className="stat-header">
-              <span className="stat-label">Active Depositors</span>
-              <i className="fa-solid fa-wallet stat-icon blue"></i>
-            </div>
-            <div className="stat-val blue">{activeDepositors}</div>
-            <span className="stat-sub">Completed 1st Deposit</span>
-          </div>
-
-          <div className="aff-stat-card">
-            <div className="stat-header">
-              <span className="stat-label">Total Earned</span>
-              <i className="fa-solid fa-coins stat-icon gold"></i>
-            </div>
-            <div className="stat-val gold">+{totalEarned.toFixed(2)} ETB</div>
-            <span className="stat-sub">10% Deposit Share</span>
-          </div>
-
-          <div className="aff-stat-card">
-            <div className="stat-header">
-              <span className="stat-label">Bonus Balance</span>
-              <i className="fa-solid fa-gift stat-icon green"></i>
-            </div>
-            <div className="stat-val green">{bonus.toFixed(2)} ETB</div>
-            <span className="stat-sub">Playable in Bingo</span>
-          </div>
-        </div>
-
-        {/* 4. How It Works (3 Steps Visual Guide) */}
-        <div className="how-it-works-card">
-          <div className="hiw-header">
-            <i className="fa-solid fa-circle-question" style={{ color: '#c4b5fd' }}></i>
-            <h3>How Referral Rewards Work</h3>
-          </div>
-
-          <div className="hiw-steps-grid">
-            <div className="hiw-step-item">
-              <div className="step-number">1</div>
+          <div className="how-steps-list">
+            <div className="how-step-item">
+              <div className="step-num-circ">1</div>
               <div className="step-content">
                 <strong>Share Your Invite Link</strong>
-                <p>Send your link or code to friends on Telegram, WhatsApp, or social media.</p>
+                <span>Send your link or code to friends on Telegram, WhatsApp, or SMS.</span>
               </div>
             </div>
 
-            <div className="hiw-step-item">
-              <div className="step-number">2</div>
+            <div className="how-step-item">
+              <div className="step-num-circ">2</div>
               <div className="step-content">
-                <strong>Friend Signs Up & Deposits</strong>
-                <p>Friend receives 10 ETB free registration bonus and makes their first deposit.</p>
+                <strong>Friend Deposits Min 50 ETB</strong>
+                <span>Your friend signs up and completes their first verified deposit.</span>
               </div>
             </div>
 
-            <div className="hiw-step-item">
-              <div className="step-number">3</div>
+            <div className="how-step-item">
+              <div className="step-num-circ">3</div>
               <div className="step-content">
-                <strong>Instant 10% Cash Reward</strong>
-                <p>You automatically receive 10% of their first deposit into your bonus wallet.</p>
+                <strong>Get Instant 10% Bonus</strong>
+                <span>10% of their deposit is immediately added to your bonus wallet balance.</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 5. Referred Friends Activity Ledger */}
-        <div className="referral-ledger-card">
-          <div className="ledger-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <i className="fa-solid fa-list-check" style={{ color: '#4ade80' }}></i>
-              <h3>Referred Friends & Payout Status</h3>
-            </div>
-            <span className="ledger-count-tag">{friendsList.length} Total</span>
+        {/* 6. Referred Friends Activity Ledger */}
+        <div className="affiliate-friends-ledger-card">
+          <div className="ledger-header-row">
+            <h3 className="ledger-title-bold">Referred Friends ({friendsList.length})</h3>
+            <span className="ledger-reward-tag">10% Auto-Credit</span>
           </div>
 
-          <div className="ledger-list">
-            {friendsList.map(friend => (
-              <div key={friend.id} className="ledger-item">
-                <div className="friend-avatar-wrap">
-                  <span>{friend.avatar}</span>
-                </div>
+          <div className="ledger-friends-list">
+            {friendsList.map(friend => {
+              const isPaid = friend.status === 'paid';
+              return (
+                <div key={friend.id} className="ledger-friend-item">
+                  <div className="friend-avatar-circ">{friend.avatar}</div>
+                  <div className="friend-info-col">
+                    <strong className="friend-name">{friend.name}</strong>
+                    <span className="friend-joined">{friend.joinedAt}</span>
+                  </div>
 
-                <div className="friend-info">
-                  <span className="friend-name">{friend.name}</span>
-                  <span className="friend-joined">Joined: {friend.joinedAt}</span>
+                  <div className="friend-reward-col">
+                    {isPaid ? (
+                      <>
+                        <span className="friend-bonus-earned">+{friend.bonusEarned}.00 ETB</span>
+                        <span className="friend-deposit-sub">1st Dep: {friend.firstDeposit} ETB</span>
+                      </>
+                    ) : (
+                      <span className="friend-status-pending">
+                        <i className="fa-regular fa-clock"></i> No Deposit Yet
+                      </span>
+                    )}
+                  </div>
                 </div>
-
-                <div className="friend-deposit-col">
-                  <span className="first-dep-lbl">1st Deposit</span>
-                  <span className="first-dep-val">
-                    {friend.firstDeposit > 0 ? `${friend.firstDeposit} ETB` : 'No Deposit'}
-                  </span>
-                </div>
-
-                <div className="friend-reward-col">
-                  {friend.status === 'paid' ? (
-                    <div className="reward-paid-box">
-                      <span className="reward-amt">+{friend.bonusEarned.toFixed(2)} ETB</span>
-                      <span className="reward-status-tag paid">✓ 10% Paid</span>
-                    </div>
-                  ) : (
-                    <div className="reward-pending-box">
-                      <span className="reward-status-tag pending">⏳ Awaiting Deposit</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

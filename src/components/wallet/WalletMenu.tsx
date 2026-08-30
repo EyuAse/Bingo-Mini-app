@@ -73,24 +73,7 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
         </div>
       </div>
 
-      {/* Row 4: Account Settings */}
-      <div
-        className="fresh-menu-row-item"
-        onClick={() => switchPage('profile')}
-      >
-        <div className="menu-row-icon-box blue">
-          <i className="fa-solid fa-gear"></i>
-        </div>
-        <div className="menu-row-info-text">
-          <strong className="menu-row-title">Account Settings</strong>
-          <span className="menu-row-sub">Manage your account & preferences</span>
-        </div>
-        <div className="menu-row-action-right">
-          <i className="fa-solid fa-chevron-right menu-chevron"></i>
-        </div>
-      </div>
-
-      {/* Row 5: Help & Support */}
+      {/* Row 4: Help & Support */}
       <div
         className="fresh-menu-row-item"
         onClick={() => showToast('🎧 24/7 Live Support via Telegram @LomiBingoHelp')}
