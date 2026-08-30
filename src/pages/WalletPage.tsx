@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ProfileHeader } from '../components/wallet/ProfileHeader.tsx';
 import { BalanceCard } from '../components/wallet/BalanceCard.tsx';
-import { DailyTimer } from '../components/wallet/DailyTimer.tsx';
 import { TransactionHistory } from '../components/wallet/TransactionHistory.tsx';
 import { WalletMenu } from '../components/wallet/WalletMenu.tsx';
 
@@ -22,7 +21,6 @@ export const WalletPage: React.FC = () => {
         /* Clean Main Wallet Overview */
         <>
           <BalanceCard />
-          <DailyTimer />
           <WalletMenu onOpenHistory={tab => setActiveHistoryTab(tab)} />
         </>
       )}

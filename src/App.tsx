@@ -14,7 +14,6 @@ import { WalletPage } from './pages/WalletPage.tsx';
 import { DepositPage } from './pages/DepositPage.tsx';
 import { WithdrawPage } from './pages/WithdrawPage.tsx';
 import { HistoryPage } from './pages/HistoryPage.tsx';
-import { LeaderPage } from './pages/LeaderPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
 import { BingoPage } from './pages/BingoPage.tsx';
 import { AffiliatePage } from './pages/AffiliatePage.tsx';
@@ -63,7 +62,6 @@ export const App: React.FC = () => {
       {currentPage === 'deposit' && <DepositPage />}
       {currentPage === 'withdraw' && <WithdrawPage />}
       {currentPage === 'history' && <HistoryPage />}
-      {currentPage === 'leader' && <LeaderPage />}
       {currentPage === 'profile' && <ProfilePage />}
       {currentPage === 'bingo' && <BingoPage />}
       {currentPage === 'affiliate' && <AffiliatePage />}

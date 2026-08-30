@@ -9,7 +9,6 @@ export type PageId =
   | 'deposit'
   | 'withdraw'
   | 'history'
-  | 'leader'
   | 'profile'
   | 'bingo'
   | 'affiliate'
