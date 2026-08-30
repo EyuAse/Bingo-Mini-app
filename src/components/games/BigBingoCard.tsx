@@ -2,11 +2,12 @@ import React from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { useBingo } from '../../context/BingoContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
+import { FastBingoArt } from './FastBingoArt.tsx';
 
 export const BigBingoCard: React.FC = () => {
   const { switchPage } = useApp();
   const { startLobbyCountdown, playersCount, prizePool } = useBingo();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const handlePlayNow = () => {
     switchPage('bingo');
@@ -19,11 +20,11 @@ export const BigBingoCard: React.FC = () => {
       <div className="card-top-badges">
         <span className="badge-fast-pill">
           <i className="fa-solid fa-bolt"></i>
-          <span>{t('games.versionTag')}</span>
+          <span>{lang === 'am' ? 'ፈጣን ቢንጎ' : 'Fast Bingo'}</span>
         </span>
         <span className="badge-players-pill">
           <i className="fa-solid fa-user-group"></i>
-          <span>75+ {t('games.activePlayers')}</span>
+          <span>75+ {lang === 'am' ? 'ተጫዋቾች' : 'Players'}</span>
         </span>
       </div>
 
@@ -31,11 +32,13 @@ export const BigBingoCard: React.FC = () => {
       <div className="card-main-split">
         {/* Left Info Column */}
         <div className="card-left-info">
-          <h3 className="card-title-fast">Lomii Bingo</h3>
+          <h3 className="card-title-fast">{lang === 'am' ? 'ፈጣን ቢንጎ' : 'Fast Bingo'}</h3>
           <span className="badge-75-ball">75-Ball</span>
 
           <div className="stakes-values-txt">10 • 20 • 50 • 100 ETB</div>
-          <div className="stakes-limits-sub">{t('games.stakesSub')}</div>
+          <div className="stakes-limits-sub">
+            {lang === 'am' ? 'ዝቅተኛ፡ 10 • ከፍተኛ፡ 2,000 ብር' : 'Min: 10 • Max: 2,000 ETB'}
+          </div>
 
           {/* Micro Stats: Players & Top Prize */}
           <div className="card-micro-stats-row">
@@ -44,8 +47,8 @@ export const BigBingoCard: React.FC = () => {
                 <i className="fa-solid fa-users"></i>
               </div>
               <div className="stat-text-meta">
-                <strong className="stat-bold-val">{playersCount || 437}</strong>
-                <span className="stat-sub-lbl">{t('bingo.players')}</span>
+                <strong className="stat-bold-val">{playersCount || 188}</strong>
+                <span className="stat-sub-lbl">{lang === 'am' ? 'ተጫዋቾች' : 'Players'}</span>
               </div>
             </div>
 
@@ -55,9 +58,9 @@ export const BigBingoCard: React.FC = () => {
               </div>
               <div className="stat-text-meta">
                 <strong className="stat-bold-val">
-                  {prizePool ? prizePool.toLocaleString() : '7,866'} ETB
+                  {prizePool ? prizePool.toLocaleString() : '3,384'} ETB
                 </strong>
-                <span className="stat-sub-lbl">{t('games.prizePool')}</span>
+                <span className="stat-sub-lbl">{lang === 'am' ? 'ከፍተኛ ሽልማት' : 'Top Prize'}</span>
               </div>
             </div>
           </div>
@@ -65,21 +68,7 @@ export const BigBingoCard: React.FC = () => {
 
         {/* Right 3D Artwork Column */}
         <div className="card-right-art">
-          <div className="bingo-star-hero-glow"></div>
-          <div className="bingo-3d-ball-showcase">
-            <div className="bingo-ball-3d sphere-b12">
-              <span className="sphere-letter">B</span>
-              <span className="sphere-num">12</span>
-            </div>
-            <div className="bingo-ball-3d sphere-n34">
-              <span className="sphere-letter">N</span>
-              <span className="sphere-num">34</span>
-            </div>
-            <div className="bingo-ball-3d sphere-o75">
-              <span className="sphere-letter">O</span>
-              <span className="sphere-num">75</span>
-            </div>
-          </div>
+          <FastBingoArt />
         </div>
       </div>
 
@@ -89,8 +78,8 @@ export const BigBingoCard: React.FC = () => {
         className="btn-play-fast-bingo-cta"
         onClick={handlePlayNow}
       >
-        <i className="fa-solid fa-play"></i>
-        <span>{t('games.playNow')}</span>
+        <span>{lang === 'am' ? 'ፈጣን ቢንጎ ተጫወት' : 'Play Fast Bingo'}</span>
+        <i className="fa-solid fa-arrow-right"></i>
       </button>
     </div>
   );

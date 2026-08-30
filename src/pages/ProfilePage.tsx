@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { ProfileHeader } from '../components/wallet/ProfileHeader.tsx';
+import { EthiopiaFlag, UKFlag } from '../components/common/FlagIcons.tsx';
 
 export const ProfilePage: React.FC = () => {
   const { switchPage, showToast } = useApp();
@@ -28,13 +29,13 @@ export const ProfilePage: React.FC = () => {
           <span className="category-section-title">{t('profile.generalSettings')}</span>
 
           <div className="profile-settings-card">
-            {/* Account Information */}
+            {/* Account Information -> Dedicated Page */}
             <div
               className="settings-row-item"
               onClick={() => switchPage('account-info')}
             >
               <div className="settings-row-icon-circ">
-                <i className="fa-regular fa-user"></i>
+                <i className="fa-solid fa-user-gear"></i>
               </div>
               <div className="settings-row-text-col">
                 <strong className="settings-row-title">{t('profile.accountInfo')}</strong>
@@ -65,8 +66,10 @@ export const ProfilePage: React.FC = () => {
               </div>
               <div className="settings-lang-pill-wrap">
                 <span className="lang-preview-pill">
-                  <span className="pill-flag">{lang === 'am' ? '🇪🇹' : '🇬🇧'}</span>
-                  <span>{lang === 'am' ? 'አማርኛ' : 'English'}</span>
+                  <span className="pill-flag-box" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    {lang === 'am' ? <EthiopiaFlag width={22} height={15} /> : <UKFlag width={22} height={15} />}
+                  </span>
+                  <span style={{ fontWeight: 800 }}>{lang === 'am' ? 'አማርኛ' : 'English'}</span>
                 </span>
                 <i className="fa-solid fa-chevron-right settings-chevron"></i>
               </div>
@@ -80,26 +83,31 @@ export const ProfilePage: React.FC = () => {
               <div className="settings-row-text-col">
                 <strong className="settings-row-title">{t('profile.theme')}</strong>
                 <span className="settings-row-sub">
-                  {lang === 'am' ? 'የመተግበሪያውን ገጽታ ይምረጡ' : 'Choose your app appearance'}
+                  {lang === 'am' ? 'የገጽታ ቀለም ይምረጡ' : 'Choose light or dark interface'}
                 </span>
               </div>
-              <div className="theme-segmented-pill">
+              <div className="theme-toggle-pill-wrap">
                 <button
                   type="button"
-                  className={`theme-segment-btn ${selectedTheme === 'light' ? 'active' : ''}`}
-                  onClick={() => setSelectedTheme('light')}
+                  className={`btn-theme-pill ${selectedTheme === 'light' ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedTheme('light');
+                    showToast('☀️ Light mode active');
+                  }}
                 >
-                  {t('profile.light')}
+                  <i className="fa-solid fa-sun"></i>
+                  <span>{t('profile.light')}</span>
                 </button>
                 <button
                   type="button"
-                  className={`theme-segment-btn ${selectedTheme === 'dark' ? 'active' : ''}`}
+                  className={`btn-theme-pill ${selectedTheme === 'dark' ? 'active' : ''}`}
                   onClick={() => {
                     setSelectedTheme('dark');
-                    showToast('🌙 Dark mode is coming soon!');
+                    showToast('🌙 Dark mode active');
                   }}
                 >
-                  {t('profile.dark')}
+                  <i className="fa-solid fa-moon"></i>
+                  <span>{t('profile.dark')}</span>
                 </button>
               </div>
             </div>
@@ -113,13 +121,13 @@ export const ProfilePage: React.FC = () => {
           <span className="category-section-title">{t('profile.supportAbout')}</span>
 
           <div className="profile-settings-card">
-            {/* Help Center */}
+            {/* Help Center -> Dedicated Page */}
             <div
               className="settings-row-item"
               onClick={() => switchPage('help')}
             >
               <div className="settings-row-icon-circ">
-                <i className="fa-solid fa-headset"></i>
+                <i className="fa-regular fa-circle-question"></i>
               </div>
               <div className="settings-row-text-col">
                 <strong className="settings-row-title">{t('profile.helpCenter')}</strong>
@@ -128,13 +136,13 @@ export const ProfilePage: React.FC = () => {
               <i className="fa-solid fa-chevron-right settings-chevron"></i>
             </div>
 
-            {/* About Lomii Bingo */}
+            {/* About Lomii Bingo -> Dedicated Page */}
             <div
               className="settings-row-item"
               onClick={() => switchPage('about')}
             >
               <div className="settings-row-icon-circ">
-                <i className="fa-solid fa-circle-info"></i>
+                <i className="fa-solid fa-shield-halved"></i>
               </div>
               <div className="settings-row-text-col">
                 <strong className="settings-row-title">{t('profile.aboutLomi')}</strong>
@@ -142,17 +150,20 @@ export const ProfilePage: React.FC = () => {
               </div>
               <i className="fa-solid fa-chevron-right settings-chevron"></i>
             </div>
+          </div>
+        </div>
 
-            {/* Logout */}
-            <div
-              className="settings-row-item logout-row"
-              onClick={handleLogout}
-            >
-              <div className="settings-row-icon-circ red-logout">
+        {/* ============================================================
+            CATEGORY 4: LOGOUT
+            ============================================================ */}
+        <div className="profile-category-group">
+          <div className="profile-settings-card">
+            <div className="settings-row-item logout-row" onClick={handleLogout}>
+              <div className="settings-row-icon-circ logout">
                 <i className="fa-solid fa-arrow-right-from-bracket"></i>
               </div>
               <div className="settings-row-text-col">
-                <strong className="settings-row-title logout-txt">{t('profile.logout')}</strong>
+                <strong className="settings-row-title text-danger">{t('profile.logout')}</strong>
                 <span className="settings-row-sub">{t('profile.logoutSub')}</span>
               </div>
               <i className="fa-solid fa-chevron-right settings-chevron"></i>

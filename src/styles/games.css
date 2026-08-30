@@ -455,6 +455,26 @@
   min-height: 140px;
 }
 
+.fast-bingo-art-exact-wrap {
+  width: 100%;
+  max-width: 175px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 8px 16px rgba(234, 179, 8, 0.18));
+  transition: transform 0.25s ease;
+}
+
+.fast-bingo-art-exact-wrap:hover {
+  transform: scale(1.04);
+}
+
+.fast-bingo-art-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
 .bingo-star-hero-glow {
   position: absolute;
   width: 130px;

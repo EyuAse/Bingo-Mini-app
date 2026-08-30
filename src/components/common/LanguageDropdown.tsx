@@ -1,39 +1,36 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage, Language } from '../../context/LanguageContext.tsx';
+import { EthiopiaFlag, UKFlag } from './FlagIcons.tsx';
 
 interface LanguageOption {
   code: Language;
   name: string;
   nativeName: string;
-  flagEmoji: string;
+  flagIcon: React.ReactNode;
   country: string;
 }
 
-const languageOptions: LanguageOption[] = [
-  {
-    code: 'en',
-    name: 'English',
-    nativeName: 'EN',
-    flagEmoji: '🇬🇧',
-    country: 'English'
-  },
-  {
-    code: 'am',
-    name: 'Amharic',
-    nativeName: 'አማ',
-    flagEmoji: '🇪🇹',
-    country: 'አማርኛ'
-  }
-];
-
-interface LanguageDropdownProps {
-  compact?: boolean;
-}
-
-export const LanguageDropdown: React.FC<LanguageDropdownProps> = () => {
+export const LanguageDropdown: React.FC = () => {
   const { lang, setLang } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const languageOptions: LanguageOption[] = [
+    {
+      code: 'en',
+      name: 'English',
+      nativeName: 'EN',
+      flagIcon: <UKFlag width={22} height={15} />,
+      country: 'English'
+    },
+    {
+      code: 'am',
+      name: 'Amharic',
+      nativeName: 'አማ',
+      flagIcon: <EthiopiaFlag width={22} height={15} />,
+      country: 'አማርኛ'
+    }
+  ];
 
   const currentOption = languageOptions.find(opt => opt.code === lang) || languageOptions[0];
 
@@ -65,7 +62,7 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = () => {
         onClick={() => setIsOpen(prev => !prev)}
         aria-label="Select Language"
       >
-        <span className="real-flag-emoji">{currentOption.flagEmoji}</span>
+        <span className="real-flag-box">{currentOption.flagIcon}</span>
         <span className="lang-code-bold">{currentOption.nativeName}</span>
         <i className="fa-solid fa-chevron-down pill-chevron-mini"></i>
       </button>
@@ -78,7 +75,7 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = () => {
               className={`lang-option-row ${lang === opt.code ? 'selected' : ''}`}
               onClick={() => handleSelectLanguage(opt.code)}
             >
-              <span className="real-flag-emoji" style={{ fontSize: '1.2rem' }}>{opt.flagEmoji}</span>
+              <span className="real-flag-box">{opt.flagIcon}</span>
               <div className="lang-opt-labels">
                 <span className="lang-opt-name">{opt.name}</span>
                 <span className="lang-opt-code">{opt.country}</span>
