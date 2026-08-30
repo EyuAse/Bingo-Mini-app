@@ -117,77 +117,90 @@ interface AdminContextType {
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
-// Generate 260+ realistic, undetectable & 100% UNIQUE Ethiopian bot profiles
+// Generate 260+ realistic, dynamic & 100% UNIQUE Ethiopian player identities / usernames
 const generateEthiopianBots = (): BotPlayer[] => {
-  const firstNames = [
-    'Abebe', 'Almaz', 'Bekele', 'Chala', 'Dawit', 'Ephrem', 'Fikirte', 'Getachew',
-    'Haile', 'Helen', 'Kassahun', 'Lensa', 'Marta', 'Natnael', 'Rahel', 'Samuel',
-    'Selam', 'Tariku', 'Tewodros', 'Yared', 'Zinash', 'Bilen', 'Desta', 'Ermias',
-    'Fasil', 'Genet', 'Hana', 'Kiros', 'Mulugeta', 'Netsanet', 'Robel', 'Senait',
-    'Tadesse', 'Wondwosen', 'Yordanos', 'Zelalem', 'Abinet', 'Bethel', 'Daniel',
-    'Eskinder', 'Frehiwot', 'Girum', 'Hiwot', 'Kalkidan', 'Mahlet', 'Nahom',
-    'Surafel', 'Biruk', 'Meron', 'Henok', 'Tigist', 'Yohannes', 'Fitsum', 'Kalid',
-    'Sintayehu', 'Meseret', 'Solomon', 'Tsion', 'Binyam', 'Eden', 'Kenenisa',
-    'Abel', 'Aster', 'Biniyam', 'Chernet', 'Debre', 'Eyob', 'Feven', 'Gashaw',
-    'Habtamu', 'Ibrahim', 'Jaleta', 'Kidan', 'Liya', 'Mikias', 'Nardos', 'Omer',
-    'Rediet', 'Saba', 'Temesgen', 'Urga', 'Winta', 'Yonas', 'Zufan', 'Amanuel'
-  ];
+  // Diverse realistic usernames, gaming handles & Ethiopian player names (no repetitive father names)
+  const dynamicIdentities = [
+    // Modern Telegram / Mobile Gaming Usernames
+    'Alex_King', 'Sami_Lucky', 'Nati_Boss', 'Dani_Addis', 'Bini_Winner', 'Teddy_Pro', 'Robel_21', 'Ermi_Ace',
+    'Henok_VIP', 'Yoni_Bole', 'Miku_Hero', 'Jhonny_Star', 'Surafel_Gold', 'Abel_Winner', 'Sol_King', 'Kidus_Habesha',
+    'Dagi_Champion', 'Biruk_777', 'Yared_Lomi', 'Temu_Winner', 'Redi_Star', 'Fasika_Lucky', 'Bila_Pro', 'Mika_Star',
+    'Mesi_Cute', 'Eden_Rose', 'Hanna_Queen', 'Marta_Beauty', 'Meron_Sweet', 'Bethel_7', 'Tsion_Lucky', 'Aster_Smile',
+    'Kalkidan_Love', 'Liya_Star', 'Feven_Gold', 'Sara_Bole', 'Helen_Sweet', 'Winta_Joy', 'Zufan_Lucky', 'Rahel_Queen',
+    'ShegerBoy', 'LuckyHabesha', 'HabeshaQueen', 'BoleWinner', 'AddisHero', 'LomiChamp', 'KingDawit', 'GoldBingo_ET',
+    'LuckyLomi77', 'AddisViper', 'ShegerQueen', 'BingoKing_ET', 'HabeshaLegend', 'LomiMaster', 'AddisSniper', 'Abyssinia_Lion',
+    'Tommy_Star', 'Kidus_G', 'Brook_Champ', 'Nebiyu_Winner', 'Bisrat_Pro', 'Yidne_7', 'Fikadu_Boss', 'Mikias_VIP',
+    'Amanuel_Ace', 'Eyob_King', 'Chernet_Lucky', 'Biniyam_Hero', 'Ibrahim_Star', 'Habtamu_Pro', 'Jaleta_Winner', 'Kenenisa_Run',
 
-  const lastNames = [
-    'Bikila', 'Kebede', 'Mengistu', 'Alemu', 'Tadesse', 'Tesfaye', 'Haile', 'Worku',
-    'Assefa', 'Girma', 'Demissie', 'Bogale', 'Wolde', 'Dibaba', 'Tolessa', 'Berhanu',
-    'Kassa', 'Legesse', 'Negash', 'Mekonnen', 'Alemayehu', 'Zewde', 'Tefera', 'Shiferaw',
-    'Gashaw', 'Belay', 'Aysele', 'Kassaye', 'Ayele', 'Derese', 'Tilahun', 'Feyissa',
-    'Gebre', 'Abate', 'Woldemariam', 'Getahun', 'Bedada', 'Mamo', 'Endale', 'Bayisa',
-    'Fikre', 'Gemechu', 'Hailu', 'Jemal', 'Kumsa', 'Lema', 'Mulu', 'Nega', 'Robba'
+    // Natural Player Names (Clean First Names with Distinct Last Names)
+    'Abebe Bikila', 'Dawit Mengistu', 'Almaz Kebede', 'Chala Tolessa', 'Bilen Haile', 'Senait Girma',
+    'Ermias Tadesse', 'Robel Assefa', 'Fitsum Demissie', 'Kalid Bogale', 'Natnael Wolde', 'Tigist Dibaba',
+    'Yohannes Berhanu', 'Sintayehu Kassa', 'Meseret Legesse', 'Solomon Negash', 'Binyam Mekonnen', 'Eden Alemayehu',
+    'Ephrem Zewde', 'Fikirte Tefera', 'Getachew Shiferaw', 'Helen Gashaw', 'Kassahun Belay', 'Lensa Aysele',
+    'Marta Kassaye', 'Samuel Ayele', 'Selam Derese', 'Tariku Tilahun', 'Tewodros Feyissa', 'Zinash Gebre',
+    'Desta Abate', 'Fasil Woldemariam', 'Genet Getahun', 'Kiros Bedada', 'Mulugeta Mamo', 'Netsanet Endale',
+    'Wondwosen Bayisa', 'Yordanos Fikre', 'Zelalem Gemechu', 'Abinet Hailu', 'Daniel Jemal', 'Eskinder Kumsa',
+    'Frehiwot Lema', 'Girum Mulu', 'Hiwot Nega', 'Mahlet Robba', 'Nahom Tura', 'Surafel Wakgari',
+
+    // First Name + Single Initial
+    'Dawit K.', 'Sara B.', 'Abebe M.', 'Almaz T.', 'Senait G.', 'Ermias W.', 'Fitsum D.', 'Kiros H.',
+    'Selamawit N.', 'Yohannes S.', 'Tigist L.', 'Natnael B.', 'Robel M.', 'Bilen T.', 'Henok F.', 'Kalkidan Z.',
+    'Abel G.', 'Bethel A.', 'Surafel P.', 'Biruk T.', 'Meron K.', 'Eden S.', 'Tsion R.', 'Marta D.',
+    'Chala B.', 'Tariku H.', 'Binyam E.', 'Mahlet G.', 'Nahom V.', 'Fasika M.', 'Zelalem K.', 'Genet W.',
+
+    // Regional & Modern Ethiopian Handles
+    'AddisGamer', 'BoleBoy_251', 'PiassaKing', 'GondarStar', 'HawassaVibes', 'AdamaChamp', 'MekelleWinner', 'DireDawaAce',
+    'BahrDarPro', 'ArbaMinchStar', 'JimmaWinner', 'DebreZeitKing', 'WolloHero', 'HararStar', 'ShegerGamer', 'AbyssiniaStar',
+    'LomiPlayer_01', 'LomiPlayer_02', 'LomiPlayer_03', 'LomiPlayer_07', 'LomiPlayer_10', 'LomiPlayer_77', 'LomiPlayer_99',
+    'LuckyStrike_ET', 'BingoHero_2026', 'GoldenDaub', 'BingoSniper', 'DaubMaster', 'CartelaKing', 'CartelaQueen', 'FastDauber',
+    'LuckyTicket_ET', 'DailyWinner_ET', 'BirrMaker', 'PocketWinner', 'TelebirrMaster', 'CBE_Champ', 'SuperLomi', 'JackpotHunter',
+
+    // Realistic Individual Nicknames
+    'Abe_Addis', 'Almi_Cute', 'Beki_Star', 'Chali_Pro', 'Dawi_King', 'Ephri_Hero', 'Fiki_Sweet', 'Getu_Gold',
+    'Haily_Champ', 'Heli_Smile', 'Kassu_Winner', 'Lensi_Star', 'Marti_Beauty', 'Nati_Vip', 'Rahi_Queen', 'Sammy_Boss',
+    'Selu_Lucky', 'Tari_Ace', 'Teddy_Winner', 'Yari_Lomi', 'Zini_Star', 'Bili_Cute', 'Desi_Hero', 'Ermi_King',
+    'Fasi_Champ', 'Geni_Smile', 'Hani_Sweet', 'Kiri_Pro', 'Mule_Boss', 'Neti_Queen', 'Robi_Star', 'Seni_Gold',
+    'Tadi_Winner', 'Wondi_Ace', 'Yordi_Beauty', 'Zeli_King', 'Abi_Hero', 'Beti_Star', 'Dani_Vip', 'Eski_Champ',
+    'Fre_Smile', 'Giru_Gold', 'Hiwi_Sweet', 'Kalki_Queen', 'Mahi_Star', 'Naho_Winner', 'Sura_Ace', 'Biri_King',
+    'Meri_Cute', 'Heni_Hero', 'Tigi_Gold', 'Yoni_Winner', 'Fitsu_Star', 'Kali_Pro', 'Sinti_Champ', 'Mesi_Smile',
+    'Soli_King', 'Tsioni_Sweet', 'Bini_Hero', 'Edu_Beauty', 'Keni_Runner', 'Abeli_Star', 'Asti_Smile', 'Biniy_Winner',
+    'Cheri_Pro', 'Debri_King', 'Eyobi_Hero', 'Fevi_Gold', 'Gashi_Champ', 'Habti_Star', 'Ibro_Winner', 'Jali_Ace',
+    'Kidi_Sweet', 'Liyi_Queen', 'Miki_Pro', 'Nardi_Beauty', 'Omi_King', 'Redu_Star', 'Sabi_Smile', 'Temi_Winner',
+    'Urgi_Hero', 'Winti_Gold', 'Yoni_Star', 'Zufi_Queen', 'Amani_Ace', 'Nebi_Winner', 'Bisri_Champ', 'Brooki_King'
   ];
 
   const phonePrefixes = ['911', '912', '913', '914', '915', '920', '921', '922', '923', '924', '930', '933', '940', '944', '955', '966', '977', '701', '711'];
-  const avatars = ['🦁', '👑', '⚡', '🌟', '💎', '🔥', '🎯', '🦅', '🍀', '🏆', '🍋', '⚽', '🥇', '🚀', '✨', '🐺', '🦊', '🐯', '🎩', '🎲', '🧿', '🔥', '💰'];
+  const avatars = ['🦁', '👑', '⚡', '🌟', '💎', '🔥', '🎯', '🦅', '🍀', '🏆', '🍋', '⚽', '🥇', '🚀', '✨', '🐺', '🦊', '🐯', '🎩', '🎲', '🧿', '💰', '🎮', '🦄'];
 
   const bots: BotPlayer[] = [];
   const usedNames = new Set<string>();
   const usedPhones = new Set<string>();
 
-  let fnIdx = 0;
-  let lnIdx = 0;
+  for (let i = 0; i < dynamicIdentities.length; i++) {
+    const rawName = dynamicIdentities[i];
+    if (usedNames.has(rawName)) continue;
+    usedNames.add(rawName);
 
-  while (bots.length < 260) {
-    const fn = firstNames[fnIdx % firstNames.length];
-    const ln = lastNames[lnIdx % lastNames.length];
-
-    // Create unique identity (Full Name or Distinct Format)
-    const candidateName = (bots.length % 2 === 0)
-      ? `${fn} ${ln}`
-      : `${fn} ${ln.charAt(0)}. (${ln.slice(1, 4)})`;
-
-    if (!usedNames.has(candidateName)) {
-      usedNames.add(candidateName);
-
-      const prefix = phonePrefixes[bots.length % phonePrefixes.length];
-      let numPart = 100000 + (bots.length * 3137) % 899999;
-      let phoneStr = `+251 ${prefix} ${numPart.toString().slice(0, 3)} ${numPart.toString().slice(3)}`;
-      while (usedPhones.has(phoneStr)) {
-        numPart = (numPart + 7919) % 899999;
-        phoneStr = `+251 ${prefix} ${numPart.toString().slice(0, 3)} ${numPart.toString().slice(3)}`;
-      }
-      usedPhones.add(phoneStr);
-
-      bots.push({
-        id: `bot-${bots.length + 1}`,
-        name: candidateName,
-        phone: phoneStr,
-        avatar: avatars[bots.length % avatars.length],
-        cartelasPlayed: 15 + ((bots.length * 7) % 95),
-        winsCount: 1 + ((bots.length * 3) % 21),
-        isBot: true
-      });
+    const prefix = phonePrefixes[bots.length % phonePrefixes.length];
+    let numPart = 100000 + ((bots.length * 3719 + 17) % 899999);
+    let phoneStr = `+251 ${prefix} ${numPart.toString().slice(0, 3)} ${numPart.toString().slice(3)}`;
+    while (usedPhones.has(phoneStr)) {
+      numPart = (numPart + 7919) % 899999;
+      phoneStr = `+251 ${prefix} ${numPart.toString().slice(0, 3)} ${numPart.toString().slice(3)}`;
     }
+    usedPhones.add(phoneStr);
 
-    lnIdx++;
-    if (lnIdx % lastNames.length === 0) {
-      fnIdx++;
-    }
+    bots.push({
+      id: `bot-${bots.length + 1}`,
+      name: rawName,
+      phone: phoneStr,
+      avatar: avatars[bots.length % avatars.length],
+      cartelasPlayed: 15 + ((bots.length * 7 + 13) % 95),
+      winsCount: 1 + ((bots.length * 3 + 5) % 22),
+      isBot: true
+    });
+
+    if (bots.length >= 260) break;
   }
 
   return bots;
