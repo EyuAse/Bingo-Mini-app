@@ -1,21 +1,13 @@
 import React from 'react';
-import { TopHeader } from '../components/common/TopHeader.tsx';
-import { BalanceBar } from '../components/common/BalanceBar.tsx';
 import { BigBingoCard } from '../components/games/BigBingoCard.tsx';
 import { MoreGamesGrid } from '../components/games/MoreGamesGrid.tsx';
-import { BottomNav } from '../components/common/BottomNav.tsx';
+import { TreasureRewardBanner } from '../components/games/TreasureRewardBanner.tsx';
 
 export const GamesPage: React.FC = () => {
   return (
     <div className="page active page-lobby-fresh" id="page-games">
-      {/* 1. Top Header with LOMII BINGO Branding */}
-      <TopHeader />
-
       <main className="lobby-content-scroll-container">
-        {/* 2. Interactive Balance Bar */}
-        <BalanceBar />
-
-        {/* 3. "Ready to Play?" Mini Banner */}
+        {/* 1. "Ready to Play?" Mini Banner */}
         <div className="lobby-ready-play-card">
           <div className="ready-lemon-slice-bg"></div>
           <div className="ready-text-group">
@@ -38,43 +30,15 @@ export const GamesPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 4. Hero Fast Bingo (75-Ball) Feature Card */}
+        {/* 2. Hero Fast Bingo (75-Ball) Feature Card */}
         <BigBingoCard />
 
-        {/* 5. "More fun, More wins!" Reward Banner */}
-        <div className="lobby-rewards-chest-card">
-          <div className="chest-balls-left">
-            <div className="chest-ball ball-b7">
-              <span>7</span>
-            </div>
-            <div className="chest-ball ball-g32">
-              <span>32</span>
-            </div>
-            <div className="chest-ball ball-p61">
-              <span>61</span>
-            </div>
-          </div>
+        {/* 3. "More fun, More wins!" Reward Banner with 75-Ball and Golden Treasure Chest */}
+        <TreasureRewardBanner />
 
-          <div className="chest-center-text">
-            <h3 className="chest-title-bold">More fun, More wins!</h3>
-            <p className="chest-sub-txt">Play, Win & Enjoy Big Rewards!</p>
-          </div>
-
-          <div className="chest-graphic-right">
-            <div className="treasure-chest-3d-box">
-              <div className="chest-glow-aura"></div>
-              <span className="chest-emoji-art">👑</span>
-              <span className="chest-gold-coins">✨💰</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 6. "More Games" 2x2 Grid */}
+        {/* 4. "More Games" 2x2 Grid */}
         <MoreGamesGrid />
       </main>
-
-      {/* 7. Bottom Navigation Bar */}
-      <BottomNav />
     </div>
   );
 };
