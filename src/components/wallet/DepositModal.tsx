@@ -15,7 +15,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
   const { t } = useLanguage();
 
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
-  const [amount, setAmount] = useState<number>(100);
+  const [amount, setAmount] = useState<number>(200);
   const [playerPhone, setPlayerPhone] = useState<string>('0911234567');
   const [transactionRef, setTransactionRef] = useState<string>('');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
@@ -25,8 +25,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
   if (!isOpen) return null;
 
   const quickAmounts = [50, 100, 200, 500, 1000, 2000];
-  const receiverPhone = '0998983344';
+
+  // Official Receiver Details
+  const telebirrReceiverPhone = '0998983344';
+  const cbeReceiverAccount = '100098983344';
   const receiverName = 'Mekonen Woldekidane';
+
+  const activeReceiverNumber = selectedMethod === 'Telebirr' ? telebirrReceiverPhone : cbeReceiverAccount;
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -63,7 +68,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
 
     const assignedRef = transactionRef.trim()
       ? transactionRef.trim().toUpperCase()
-      : `TX-TB-${Math.floor(100000 + Math.random() * 900000)}`;
+      : `${selectedMethod === 'Telebirr' ? 'TX-TB-' : 'TX-CBE-'}${Math.floor(100000 + Math.random() * 900000)}`;
 
     addDepositRequest(
       'usr-me',
@@ -71,7 +76,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
       playerPhone,
       amount,
       selectedMethod,
-      receiverPhone,
+      activeReceiverNumber,
       receiptImage || undefined,
       assignedRef
     );
@@ -91,7 +96,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
   return (
     <div className="custom-modal-backdrop" onClick={handleResetAndClose}>
       <div className="custom-modal-card wallet-deposit-card" onClick={e => e.stopPropagation()}>
-        {/* Header */}
+        {/* Modal Header */}
         <div className="modal-header">
           <div className="modal-title-wrap">
             <i className="fa-solid fa-wallet modal-icon gold"></i>
@@ -122,21 +127,21 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
               Deposit Request Submitted!
             </h4>
             <p style={{ color: '#94a3b8', fontSize: '0.8125rem', maxWidth: '340px', margin: '0 auto 16px' }}>
-              Our Telebirr Cashier is verifying your payment. Your wallet balance will automatically update in 1–2 minutes.
+              Our {selectedMethod} Cashier Desk is verifying your payment reference. Your wallet will be credited automatically.
             </p>
 
             <div className="receipt-summary-box">
               <div className="summary-line">
                 <span>Amount:</span>
-                <strong style={{ color: '#4ade80' }}>+{amount.toFixed(2)} ETB</strong>
+                <strong style={{ color: '#4ade80', fontSize: '1.1rem' }}>+{amount.toFixed(2)} ETB</strong>
               </div>
               <div className="summary-line">
                 <span>Reference ID:</span>
                 <strong style={{ fontFamily: 'monospace', color: '#facc15' }}>{submittedRef}</strong>
               </div>
               <div className="summary-line">
-                <span>Receiver:</span>
-                <span>{receiverName} ({receiverPhone})</span>
+                <span>Sent To:</span>
+                <span>{receiverName} ({activeReceiverNumber})</span>
               </div>
               <div className="summary-line">
                 <span>Status:</span>
@@ -155,21 +160,21 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
           </div>
         ) : (
           /* ============================================================
-             MAIN DEPOSIT FORM
+             MAIN CLEAN DEPOSIT FORM
              ============================================================ */
           <form onSubmit={handleDepositSubmit}>
-            {/* 1. Payment Provider Selection with Real Vector Logos */}
+            {/* 1. Payment Provider Selection with Real Official Logos */}
             <div className="payment-methods-grid">
               <div
                 className={`payment-method-card ${selectedMethod === 'Telebirr' ? 'active' : ''}`}
                 onClick={() => setSelectedMethod('Telebirr')}
               >
                 <div className="pm-logo-wrap">
-                  <TelebirrLogo size={36} />
+                  <TelebirrLogo size={32} />
                 </div>
                 <div className="pm-info">
                   <span className="pm-name">Telebirr</span>
-                  <span className="pm-sub">Instant *127# or App</span>
+                  <span className="pm-sub">0998983344</span>
                 </div>
                 <i className={`fa-solid ${selectedMethod === 'Telebirr' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
               </div>
@@ -179,17 +184,17 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                 onClick={() => setSelectedMethod('CBE')}
               >
                 <div className="pm-logo-wrap">
-                  <CBELogo size={36} />
+                  <CBELogo size={32} />
                 </div>
                 <div className="pm-info">
-                  <span className="pm-name">CBE Birr</span>
-                  <span className="pm-sub">Mobile & Bank App</span>
+                  <span className="pm-name">CBE Bank</span>
+                  <span className="pm-sub">1000...</span>
                 </div>
                 <i className={`fa-solid ${selectedMethod === 'CBE' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
               </div>
             </div>
 
-            {/* 2. Official Receiver Card (0998983344 - Mekonen Woldekidane) */}
+            {/* 2. Official Receiver Card (Dynamic per Telebirr or CBE selection) */}
             <div className="official-receiver-card">
               <div className="receiver-header">
                 <span className="receiver-tag">
@@ -200,13 +205,15 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
 
               <div className="receiver-details-grid">
                 <div className="receiver-item">
-                  <span className="rcv-lbl">Send Telebirr / CBE to:</span>
+                  <span className="rcv-lbl">
+                    {selectedMethod === 'Telebirr' ? 'Send Telebirr to:' : 'Send CBE Bank Transfer to:'}
+                  </span>
                   <div className="rcv-copy-row">
-                    <strong className="rcv-phone">{receiverPhone}</strong>
+                    <strong className="rcv-phone">{activeReceiverNumber}</strong>
                     <button
                       type="button"
                       className="btn-copy-mini"
-                      onClick={() => handleCopy(receiverPhone, 'Receiver Phone')}
+                      onClick={() => handleCopy(activeReceiverNumber, selectedMethod === 'Telebirr' ? 'Telebirr Phone' : 'CBE Account Number')}
                     >
                       <i className="fa-regular fa-copy"></i> Copy
                     </button>
@@ -268,22 +275,22 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                   required
                   value={playerPhone}
                   onChange={e => setPlayerPhone(e.target.value)}
-                  placeholder="0911..."
+                  placeholder="0911234567"
                 />
               </div>
             </div>
 
-            {/* 4. Telebirr SMS Ref ID or Receipt Image Proof */}
+            {/* 4. Telebirr / CBE SMS Ref ID or Receipt Image Proof */}
             <div className="proof-submission-section">
               <div className="modal-input-group" style={{ marginBottom: '10px' }}>
                 <label>
-                  Telebirr SMS Transaction ID / Reference (Recommended)
+                  {selectedMethod === 'Telebirr' ? 'Telebirr SMS Transaction ID / Reference' : 'CBE Transaction / SMS Reference ID'}
                 </label>
                 <input
                   type="text"
                   value={transactionRef}
                   onChange={e => setTransactionRef(e.target.value)}
-                  placeholder="e.g. CFA492810 or SMS Reference"
+                  placeholder={selectedMethod === 'Telebirr' ? 'e.g. CFA492810 or SMS Reference' : 'e.g. FT2490182390 or CBE Ref'}
                 />
               </div>
 
@@ -324,12 +331,12 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
               </div>
             </div>
 
-            {/* Submit Action */}
+            {/* Prominent Submit Button */}
             <button
               type="submit"
               className="btn-modal-submit"
               disabled={amount < 50}
-              style={{ marginTop: '14px' }}
+              style={{ marginTop: '16px', padding: '14px' }}
             >
               <i className="fa-solid fa-paper-plane"></i> Submit Deposit ({amount} ETB)
             </button>
