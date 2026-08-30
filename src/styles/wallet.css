@@ -3123,5 +3123,246 @@
   color: #0f172a;
 }
 
+/* ============================================================
+   DEDICATED FULL-SCREEN SUBPAGES (Account Info, Help, About)
+   ============================================================ */
+.page-subpage-dedicated {
+  min-height: 100vh;
+  background: #fbf9ef;
+  color: #0f172a;
+  padding: 8px 14px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subpage-back-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 2px;
+}
+
+.btn-subpage-back {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.btn-subpage-back:hover {
+  background: #fefce8;
+  border-color: #eab308;
+}
+
+.subpage-header-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+  font-family: var(--font-display), 'Outfit', sans-serif;
+}
+
+.subpage-content-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Telegram Linking Card */
+.telegram-linking-card {
+  background: #f0f9ff;
+  border: 1.5px solid #bae6fd;
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tg-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tg-logo-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tg-card-icon {
+  font-size: 1.5rem;
+  color: #0284c7;
+}
+
+.tg-card-title {
+  font-size: 0.8125rem;
+  font-weight: 900;
+  color: #0f172a;
+  display: block;
+}
+
+.tg-card-sub {
+  font-size: 0.625rem;
+  color: #64748b;
+  display: block;
+}
+
+.btn-change-tg {
+  background: #ffffff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: #0284c7;
+  cursor: pointer;
+}
+
+.tg-status-display-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #e0f2fe;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.tg-handle-txt {
+  font-family: monospace;
+  font-size: 0.875rem;
+  font-weight: 900;
+  color: #0369a1;
+}
+
+.tg-connected-badge {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tg-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tg-input-wrapper {
+  background: #ffffff;
+  border: 1.5px solid #0284c7;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  gap: 4px;
+}
+
+.tg-at-symbol {
+  font-weight: 900;
+  color: #0284c7;
+  font-size: 0.875rem;
+}
+
+.tg-input-wrapper input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tg-form-btns-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-tg-verify-save {
+  flex: 1;
+  background: #0284c7;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.btn-tg-cancel {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+}
+
+/* Telebirr and CBE ONLY Type Selector with Logos */
+.add-acc-type-selector-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-type-card-logo {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.btn-type-card-logo.active {
+  background: #fefce8;
+  border-color: #eab308;
+  box-shadow: 0 2px 8px rgba(234, 179, 8, 0.2);
+}
+
+.type-card-label {
+  font-size: 0.8125rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.check-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: #eab308;
+  font-size: 0.75rem;
+}
+
+
 
 

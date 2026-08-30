@@ -16,6 +16,9 @@ import { LeaderPage } from './pages/LeaderPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
 import { BingoPage } from './pages/BingoPage.tsx';
 import { AffiliatePage } from './pages/AffiliatePage.tsx';
+import { AccountInfoPage } from './pages/AccountInfoPage.tsx';
+import { HelpCenterPage } from './pages/HelpCenterPage.tsx';
+import { AboutLomiPage } from './pages/AboutLomiPage.tsx';
 import { AdminPage } from './pages/AdminPage.tsx';
 
 export const App: React.FC = () => {
@@ -55,6 +58,9 @@ export const App: React.FC = () => {
       {currentPage === 'profile' && <ProfilePage />}
       {currentPage === 'bingo' && <BingoPage />}
       {currentPage === 'affiliate' && <AffiliatePage />}
+      {currentPage === 'account-info' && <AccountInfoPage />}
+      {currentPage === 'help' && <HelpCenterPage />}
+      {currentPage === 'about' && <AboutLomiPage />}
 
       {/* Bottom Navigation */}
       {!isStandalonePage && <BottomNav />}
@@ -64,4 +70,3 @@ export const App: React.FC = () => {
     </div>
   );
 };
-

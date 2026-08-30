@@ -11,6 +11,9 @@ export type PageId =
   | 'profile'
   | 'bingo'
   | 'affiliate'
+  | 'account-info'
+  | 'help'
+  | 'about'
   | 'admin';
 
 interface AppContextType {

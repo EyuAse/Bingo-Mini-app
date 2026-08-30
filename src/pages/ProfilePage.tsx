@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { ProfileHeader } from '../components/wallet/ProfileHeader.tsx';
-import { AccountInfoModal } from '../components/profile/AccountInfoModal.tsx';
-import { HelpCenterModal } from '../components/profile/HelpCenterModal.tsx';
-import { AboutLomiModal } from '../components/profile/AboutLomiModal.tsx';
 
 export const ProfilePage: React.FC = () => {
   const { switchPage, showToast } = useApp();
@@ -12,11 +9,6 @@ export const ProfilePage: React.FC = () => {
 
   // Stateful Theme Toggle (Light / Dark)
   const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark'>('light');
-
-  // Modal Visibility States
-  const [isAccountInfoOpen, setIsAccountInfoOpen] = useState<boolean>(false);
-  const [isHelpCenterOpen, setIsHelpCenterOpen] = useState<boolean>(false);
-  const [isAboutLomiOpen, setIsAboutLomiOpen] = useState<boolean>(false);
 
   const handleLogout = () => {
     showToast('👋 You have been logged out.');
@@ -26,7 +18,7 @@ export const ProfilePage: React.FC = () => {
   return (
     <div className="page active page-profile-fresh" id="page-profile">
       {/* 1. User Profile Banner Card (Image 1) */}
-      <ProfileHeader onEditClick={() => setIsAccountInfoOpen(true)} />
+      <ProfileHeader onEditClick={() => switchPage('account-info')} />
 
       <div className="profile-settings-content-scroll">
         {/* ============================================================
@@ -39,14 +31,14 @@ export const ProfilePage: React.FC = () => {
             {/* Account Information */}
             <div
               className="settings-row-item"
-              onClick={() => setIsAccountInfoOpen(true)}
+              onClick={() => switchPage('account-info')}
             >
               <div className="settings-row-icon-circ">
                 <i className="fa-regular fa-user"></i>
               </div>
               <div className="settings-row-text-col">
                 <strong className="settings-row-title">Account Information</strong>
-                <span className="settings-row-sub">Identity, attached payout accounts & KYC</span>
+                <span className="settings-row-sub">Identity, attached payout accounts & Telegram</span>
               </div>
               <i className="fa-solid fa-chevron-right settings-chevron"></i>
             </div>
@@ -120,7 +112,7 @@ export const ProfilePage: React.FC = () => {
             {/* Help Center */}
             <div
               className="settings-row-item"
-              onClick={() => setIsHelpCenterOpen(true)}
+              onClick={() => switchPage('help')}
             >
               <div className="settings-row-icon-circ">
                 <i className="fa-solid fa-headset"></i>
@@ -135,7 +127,7 @@ export const ProfilePage: React.FC = () => {
             {/* About Lomii Bingo */}
             <div
               className="settings-row-item"
-              onClick={() => setIsAboutLomiOpen(true)}
+              onClick={() => switchPage('about')}
             >
               <div className="settings-row-icon-circ">
                 <i className="fa-solid fa-circle-info"></i>
@@ -164,22 +156,6 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Production-Grade Modals */}
-      <AccountInfoModal
-        isOpen={isAccountInfoOpen}
-        onClose={() => setIsAccountInfoOpen(false)}
-      />
-
-      <HelpCenterModal
-        isOpen={isHelpCenterOpen}
-        onClose={() => setIsHelpCenterOpen(false)}
-      />
-
-      <AboutLomiModal
-        isOpen={isAboutLomiOpen}
-        onClose={() => setIsAboutLomiOpen(false)}
-      />
     </div>
   );
 };
