@@ -309,14 +309,13 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   }, []);
 
-  // Trigger Winner Showcase with 5s Auto-Restart
+  // Trigger Winner Showcase (Persistent until player clicks claim or next round)
   const triggerWinnerShowcase = useCallback(
     (result: WinResult) => {
       stopGame();
       setRoundPhase('winner');
       setWinResult(result);
       setShowWinModal(true);
-      setWinnerCountdown(5);
 
       if (result.winType === 'user_solo') {
         soundEngine.playWinFanfare();
@@ -330,19 +329,6 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         soundEngine.playPop();
         soundEngine.speakPhrase('opp_win');
       }
-
-      // 5-second winner podium countdown
-      if (winnerTimerRef.current) clearInterval(winnerTimerRef.current);
-      winnerTimerRef.current = window.setInterval(() => {
-        setWinnerCountdown(prev => {
-          if (prev <= 1) {
-            if (winnerTimerRef.current) clearInterval(winnerTimerRef.current);
-            closeWinModalAndRestart();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
     },
     [addBalance, stopGame]
   );
@@ -365,7 +351,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       avatar: avatarClasses[idx % avatarClasses.length],
       initials: bot.name.split(' ').map(p => p[0]).join('').slice(0, 2),
       cards: Math.random() < 0.45 ? 2 : 1,
-      marksNeeded: Math.floor(3 + Math.random() * 3),
+      marksNeeded: Math.floor(4 + Math.random() * 3),
       status: 'In Game'
     }));
   }, [botPool]);
@@ -387,7 +373,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setSpherePop(true);
       setTimeout(() => setSpherePop(false), 300);
 
-      // Loud & Clear Audio with Amharic caller
+      // Loud & Clear Audio with caller
       soundEngine.playPop();
       soundEngine.speakBall(col, num);
 
@@ -417,13 +403,13 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         });
       }
 
-      // Opponents simulation & 30% bot winning check
+      // Opponents simulation & realistic multiplayer room winning check
       setOpponents(prevOpponents => {
         let opponentHasWon = false;
         let winningOpponentName = '';
 
         const updated = prevOpponents.map(opp => {
-          if (Math.random() < 0.35) {
+          if (Math.random() < 0.32) {
             const nextNeeded = Math.max(0, opp.marksNeeded - 1);
             if (nextNeeded === 0 && !opponentHasWon) {
               opponentHasWon = true;
@@ -438,14 +424,13 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           return opp;
         });
 
-        // 30% Bot Winning Distribution Trigger (configured via botWinRate)
-        const botWinProbability = ((botWinRate || 30) / 100) * 0.35;
-        if (opponentHasWon && Math.random() < botWinProbability) {
+        // Trigger winner when an opponent in the room completes their Cartela
+        if (opponentHasWon) {
           triggerWinnerShowcase({
             winType: 'opponent_win',
             winningCartelaNumber: Math.floor(1 + Math.random() * 400),
             winningLine: [],
-            winnerName: winningOpponentName || 'Abebe K.',
+            winnerName: winningOpponentName || 'Sami_Lucky',
             coWinners: [],
             totalPot: prizePool,
             userShare: 0
@@ -457,7 +442,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       return nextPool;
     });
-  }, [botWinRate, prizePool, showToast, stopGame, triggerWinnerShowcase]);
+  }, [prizePool, showToast, stopGame, triggerWinnerShowcase]);
 
   // Start Live Draw Round
   const startLiveRound = useCallback(() => {

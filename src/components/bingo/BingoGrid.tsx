@@ -12,7 +12,14 @@ export const BingoGrid: React.FC = () => {
     winResult
   } = useBingo();
 
-  const columns = ['B', 'I', 'N', 'G', 'O'];
+  const columns = [
+    { letter: 'B', colorClass: 'col-b' },
+    { letter: 'I', colorClass: 'col-i' },
+    { letter: 'N', colorClass: 'col-n' },
+    { letter: 'G', colorClass: 'col-g' },
+    { letter: 'O', colorClass: 'col-o' }
+  ];
+
   const currentCardData = activeCartelaIndex === 0 ? cartela1Data : cartela2Data;
 
   // Calculate marked count for 1TG / 2TG badges
@@ -39,41 +46,57 @@ export const BingoGrid: React.FC = () => {
 
   const c1Status = getCardStatus(cartela1Data);
   const c2Status = cardQuantity > 1 ? getCardStatus(cartela2Data) : null;
+  const currentStatus = activeCartelaIndex === 0 ? c1Status : c2Status;
 
   return (
-    <div className="bingo-card-area">
-      {/* Dual Cartela Tabs (When playing with 2 Cartelas) */}
-      {cardQuantity > 1 && (
-        <div className="cartela-tabs-row">
-          <button
-            className={`cartela-tab-btn ${activeCartelaIndex === 0 ? 'active' : ''}`}
-            onClick={() => setActiveCartelaIndex(0)}
-          >
-            <span>Cartela #1</span>
-            {c1Status && <span className={`cartela-status-pill ${c1Status.includes('1') ? 'hot' : ''}`}>{c1Status}</span>}
-          </button>
-          <button
-            className={`cartela-tab-btn ${activeCartelaIndex === 1 ? 'active' : ''}`}
-            onClick={() => setActiveCartelaIndex(1)}
-          >
-            <span>Cartela #2</span>
-            {c2Status && <span className={`cartela-status-pill ${c2Status.includes('1') ? 'hot' : ''}`}>{c2Status}</span>}
-          </button>
-        </div>
-      )}
+    <div className="fresh-cartela-play-card">
+      {/* Top Cartela Header & Dual Tabs */}
+      <div className="cartela-card-header-bar">
+        {cardQuantity > 1 ? (
+          <div className="cartela-switch-tabs">
+            <button
+              type="button"
+              className={`btn-cartela-tab ${activeCartelaIndex === 0 ? 'active' : ''}`}
+              onClick={() => setActiveCartelaIndex(0)}
+            >
+              <span>Card 1</span>
+            </button>
+            <button
+              type="button"
+              className={`btn-cartela-tab ${activeCartelaIndex === 1 ? 'active' : ''}`}
+              onClick={() => setActiveCartelaIndex(1)}
+            >
+              <span>Card 2</span>
+            </button>
+          </div>
+        ) : (
+          <div className="cartela-single-title">
+            <i className="fa-solid fa-ticket gold"></i>
+            <span>YOUR CARTELA</span>
+          </div>
+        )}
 
-      <div className="bingo-card-container">
-        {/* Colorful Column Headers */}
-        <div className="bingo-header-row">
-          {columns.map(col => (
-            <div key={col} className={`bingo-col-header col-${col.toLowerCase()}`}>
-              <span>{col}</span>
+        {/* Live To-Go Radar Status Badge */}
+        {currentStatus && (
+          <span className={`cartela-radar-badge ${currentStatus.includes('1') ? 'radar-hot' : ''}`}>
+            {currentStatus}
+          </span>
+        )}
+      </div>
+
+      {/* 5x5 Matrix Matrix Container */}
+      <div className="cartela-5x5-matrix-wrap">
+        {/* Top 5 Colored Column Headers: B I N G O */}
+        <div className="cartela-header-cols-row">
+          {columns.map(c => (
+            <div key={c.letter} className={`cartela-col-hdr ${c.colorClass}`}>
+              {c.letter}
             </div>
           ))}
         </div>
 
-        {/* 5x5 Number Grid */}
-        <div className="bingo-grid" id="bingo-grid">
+        {/* 5x5 Grid Cells */}
+        <div className="cartela-5x5-grid">
           {currentCardData.map(cell => {
             const isWinningCell =
               winResult &&
@@ -83,26 +106,25 @@ export const BingoGrid: React.FC = () => {
             return (
               <div
                 key={`${activeCartelaIndex}-${cell.index}`}
-                className={`bingo-cell ${cell.marked ? 'marked' : 'unmarked'} ${
-                  cell.isFree ? 'free-cell' : ''
-                } ${isWinningCell ? 'winning-cell' : ''}`}
-                data-index={cell.index}
-                data-col={cell.colLetter}
-                data-val={cell.val}
+                className={`cartela-num-cell ${cell.marked ? 'daubed' : 'unmarked'} ${
+                  cell.isFree ? 'free-star-cell' : ''
+                } ${isWinningCell ? 'winning-glow-cell' : ''}`}
                 onClick={() => handleManualDaub(activeCartelaIndex, cell.index)}
               >
                 {cell.isFree ? (
-                  <>
-                    <span className="free-star">★</span>
-                    <span className="free-text">★FREE★</span>
-                  </>
-                ) : cell.marked ? (
-                  <>
-                    <div className="token-star">★</div>
-                    <span className="cell-num">{cell.val}</span>
-                  </>
+                  <div className="free-cell-content">
+                    <span className="star-icon">★</span>
+                    <span className="free-lbl">FREE</span>
+                  </div>
                 ) : (
-                  <span className="cell-num">{cell.val}</span>
+                  <>
+                    <span className="cell-num-txt">{cell.val}</span>
+                    {cell.marked && (
+                      <div className="daub-stamp-circle">
+                        <i className="fa-solid fa-check"></i>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             );

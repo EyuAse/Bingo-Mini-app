@@ -1,6 +1,5 @@
 import React from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
-import { useLanguage } from '../../context/LanguageContext.tsx';
 
 export const BingoActions: React.FC = () => {
   const {
@@ -11,41 +10,41 @@ export const BingoActions: React.FC = () => {
     claimBingo,
     canWin
   } = useBingo();
-  const { t } = useLanguage();
 
   return (
-    <div className="bingo-actions">
+    <div className="fresh-bingo-actions-bar">
+      {/* 1. Auto-Daub Toggle Button */}
       <button
-        className={`bingo-action-btn auto-mark-btn ${autoMark ? 'active' : ''}`}
-        id="auto-mark-btn"
-        title="Toggle Auto Daubing"
+        type="button"
+        className={`btn-bingo-action-pill auto-daub-btn ${autoMark ? 'active-green' : ''}`}
         onClick={toggleAutoMark}
+        title="Toggle Auto Daubing"
       >
         <i className="fa-solid fa-bolt"></i>
-        <span>{t('bingo.autoMark')}</span>
+        <span>{autoMark ? 'Auto ON' : 'Auto OFF'}</span>
       </button>
 
+      {/* 2. Big Glowing BINGO Call Button */}
       <button
-        className={`bingo-btn-main ${canWin ? 'can-win' : ''}`}
-        id="bingo-call-btn"
+        type="button"
+        className={`btn-claim-bingo-gold ${canWin ? 'can-claim-pulsing' : ''}`}
         onClick={claimBingo}
       >
-        <span className="bingo-btn-star star-1">★</span>
-        <span className="bingo-btn-text">{t('bingo.callBingo')}</span>
-        <span className="bingo-btn-star star-2">★</span>
+        <i className="fa-solid fa-star"></i>
+        <span>BINGO!</span>
+        <i className="fa-solid fa-star"></i>
       </button>
 
+      {/* 3. Lucky Pick Power-Up Button */}
       <button
-        className="bingo-action-btn lucky-pick-btn"
-        id="lucky-pick-btn"
-        title="Use Lucky Pick Power-Up"
+        type="button"
+        className="btn-bingo-action-pill lucky-btn"
         onClick={useLuckyPick}
+        title="Use Lucky Pick"
       >
         <i className="fa-solid fa-wand-magic-sparkles"></i>
-        <span>{t('bingo.luckyPick')}</span>
-        <span className="action-badge" id="lucky-pick-count">
-          {luckyPicks}
-        </span>
+        <span>Pick</span>
+        <span className="lucky-count-tag">{luckyPicks}</span>
       </button>
     </div>
   );
