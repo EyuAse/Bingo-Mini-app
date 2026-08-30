@@ -16,6 +16,7 @@ export interface UserAccount {
 
 export interface TransactionRequest {
   id: string;
+  referenceNumber: string; // e.g. TX-TB-894210
   userId: string;
   userName: string;
   phone: string;
@@ -24,7 +25,12 @@ export interface TransactionRequest {
   amount: number;
   accountNumber: string;
   status: 'pending' | 'approved' | 'rejected';
+  riskScore: 'verified' | 'low' | 'review';
+  userLifetimeDeposits: number;
+  userLifetimeWithdrawals: number;
   createdAt: string;
+  processedAt?: string;
+  adminNote?: string;
 }
 
 export interface BotPlayer {
@@ -52,6 +58,10 @@ interface AdminContextType {
   logoutAdmin: () => void;
   adminPin: string;
   setAdminPin: (pin: string) => void;
+
+  // Sidebar state
+  isSidebarCollapsed: boolean;
+  toggleSidebar: () => void;
 
   // Commission & House Cut
   houseCommissionEnabled: boolean;
@@ -91,15 +101,17 @@ interface AdminContextType {
   adjustUserBalance: (userId: string, amount: number, isBonus?: boolean) => void;
   toggleUserStatus: (userId: string) => void;
 
-  // Deposit & Withdraw Desk
+  // Deposit & Withdraw Cashier Desk
   transactions: TransactionRequest[];
-  approveTransaction: (id: string) => void;
-  rejectTransaction: (id: string) => void;
+  approveAndReleaseTransaction: (id: string, note?: string) => void;
+  rejectTransaction: (id: string, note?: string) => void;
   addDepositRequest: (userId: string, userName: string, phone: string, amount: number, method: 'Telebirr' | 'CBE', accountNumber: string) => void;
   addWithdrawRequest: (userId: string, userName: string, phone: string, amount: number, method: 'Telebirr' | 'CBE', accountNumber: string) => void;
 
-  // Financial Stats
+  // Financial Summary Stats
   totalHouseProfit: number;
+  totalDepositedToday: number;
+  totalWithdrawnToday: number;
   recordHouseCommission: (amount: number) => void;
 }
 
@@ -215,12 +227,25 @@ const initialUsers: UserAccount[] = [
     totalWithdrawn: 0.0,
     status: 'active',
     createdAt: '2026-08-28'
+  },
+  {
+    id: 'usr-4',
+    name: 'Marta Worku',
+    phone: '+251 944 112 233',
+    balance: 1450.0,
+    bonus: 50.0,
+    referralCount: 6,
+    totalDeposited: 2500.0,
+    totalWithdrawn: 1100.0,
+    status: 'active',
+    createdAt: '2026-08-10'
   }
 ];
 
 const initialTransactions: TransactionRequest[] = [
   {
     id: 'tx-101',
+    referenceNumber: 'TX-TB-894210',
     userId: 'usr-1',
     userName: 'Abebe Bikila',
     phone: '+251 911 234 567',
@@ -229,10 +254,14 @@ const initialTransactions: TransactionRequest[] = [
     amount: 500.0,
     accountNumber: '0911234567',
     status: 'pending',
-    createdAt: '2026-08-30 18:45'
+    riskScore: 'verified',
+    userLifetimeDeposits: 1200.0,
+    userLifetimeWithdrawals: 450.0,
+    createdAt: 'Today, 18:45'
   },
   {
     id: 'tx-102',
+    referenceNumber: 'TX-CBE-551980',
     userId: 'usr-2',
     userName: 'Selam Tesfaye',
     phone: '+251 922 876 543',
@@ -241,13 +270,50 @@ const initialTransactions: TransactionRequest[] = [
     amount: 200.0,
     accountNumber: '100023456789',
     status: 'pending',
-    createdAt: '2026-08-30 19:10'
+    riskScore: 'verified',
+    userLifetimeDeposits: 500.0,
+    userLifetimeWithdrawals: 180.0,
+    createdAt: 'Today, 19:10'
+  },
+  {
+    id: 'tx-103',
+    referenceNumber: 'TX-TB-773120',
+    userId: 'usr-4',
+    userName: 'Marta Worku',
+    phone: '+251 944 112 233',
+    method: 'Telebirr',
+    type: 'deposit',
+    amount: 1000.0,
+    accountNumber: '0944112233',
+    status: 'pending',
+    riskScore: 'verified',
+    userLifetimeDeposits: 2500.0,
+    userLifetimeWithdrawals: 1100.0,
+    createdAt: 'Today, 19:35'
+  },
+  {
+    id: 'tx-104',
+    referenceNumber: 'TX-TB-662910',
+    userId: 'usr-3',
+    userName: 'Dawit Mengistu',
+    phone: '+251 933 555 123',
+    method: 'Telebirr',
+    type: 'deposit',
+    amount: 100.0,
+    accountNumber: '0933555123',
+    status: 'approved',
+    riskScore: 'low',
+    userLifetimeDeposits: 100.0,
+    userLifetimeWithdrawals: 0.0,
+    createdAt: 'Today, 17:15',
+    processedAt: 'Today, 17:18'
   }
 ];
 
 export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [brandName, setBrandName] = useState<string>('Lomi Bingo');
   const [adminPin, setAdminPin] = useState<string>('1234');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return sessionStorage.getItem('lomibingo_admin_auth') === 'true';
   });
@@ -297,6 +363,9 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return saved ? parseFloat(saved) : 18450.0;
   });
 
+  const [totalDepositedToday, setTotalDepositedToday] = useState<number>(28500.0);
+  const [totalWithdrawnToday, setTotalWithdrawnToday] = useState<number>(14200.0);
+
   // Save changes
   useEffect(() => {
     localStorage.setItem('lb_house_commission_enabled', String(houseCommissionEnabled));
@@ -321,6 +390,10 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   useEffect(() => {
     localStorage.setItem('lb_total_house_profit', totalHouseProfit.toFixed(2));
   }, [totalHouseProfit]);
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(prev => !prev);
+  };
 
   const loginAdmin = (pin: string): boolean => {
     if (pin === adminPin || pin === '1234' || pin === 'admin') {
@@ -374,30 +447,45 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     );
   };
 
-  const approveTransaction = (id: string) => {
+  const approveAndReleaseTransaction = (id: string, note?: string) => {
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setTransactions(prev =>
       prev.map(tx => {
         if (tx.id === id) {
-          // If deposit, add to user balance
+          // If deposit, release cash into user live wallet
           if (tx.type === 'deposit') {
             adjustUserBalance(tx.userId, tx.amount);
+            setTotalDepositedToday(d => d + tx.amount);
+          } else {
+            setTotalWithdrawnToday(w => w + tx.amount);
           }
-          return { ...tx, status: 'approved' };
+          return {
+            ...tx,
+            status: 'approved',
+            processedAt: `Today, ${nowTime}`,
+            adminNote: note || 'Approved & Released by Admin'
+          };
         }
         return tx;
       })
     );
   };
 
-  const rejectTransaction = (id: string) => {
+  const rejectTransaction = (id: string, note?: string) => {
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setTransactions(prev =>
       prev.map(tx => {
         if (tx.id === id) {
-          // If rejected withdrawal, refund user balance
+          // If rejected withdrawal, refund user wallet
           if (tx.type === 'withdrawal') {
             adjustUserBalance(tx.userId, tx.amount);
           }
-          return { ...tx, status: 'rejected' };
+          return {
+            ...tx,
+            status: 'rejected',
+            processedAt: `Today, ${nowTime}`,
+            adminNote: note || 'Rejected by Admin'
+          };
         }
         return tx;
       })
@@ -412,8 +500,10 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     method: 'Telebirr' | 'CBE',
     accountNumber: string
   ) => {
+    const randomRef = `${method === 'Telebirr' ? 'TX-TB-' : 'TX-CBE-'}${Math.floor(100000 + Math.random() * 900000)}`;
     const newTx: TransactionRequest = {
       id: `tx-${Date.now().toString().slice(-4)}`,
+      referenceNumber: randomRef,
       userId,
       userName,
       phone,
@@ -422,7 +512,10 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       amount,
       accountNumber,
       status: 'pending',
-      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      riskScore: 'verified',
+      userLifetimeDeposits: 500,
+      userLifetimeWithdrawals: 0,
+      createdAt: `Today, ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
     };
     setTransactions(prev => [newTx, ...prev]);
   };
@@ -435,8 +528,10 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     method: 'Telebirr' | 'CBE',
     accountNumber: string
   ) => {
+    const randomRef = `${method === 'Telebirr' ? 'TX-TB-' : 'TX-CBE-'}${Math.floor(100000 + Math.random() * 900000)}`;
     const newTx: TransactionRequest = {
       id: `tx-${Date.now().toString().slice(-4)}`,
+      referenceNumber: randomRef,
       userId,
       userName,
       phone,
@@ -445,7 +540,10 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       amount,
       accountNumber,
       status: 'pending',
-      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      riskScore: 'verified',
+      userLifetimeDeposits: 1000,
+      userLifetimeWithdrawals: 200,
+      createdAt: `Today, ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
     };
     setTransactions(prev => [newTx, ...prev]);
   };
@@ -460,6 +558,8 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         logoutAdmin,
         adminPin,
         setAdminPin,
+        isSidebarCollapsed,
+        toggleSidebar,
         houseCommissionEnabled,
         setHouseCommissionEnabled,
         commissionRate,
@@ -487,11 +587,13 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         adjustUserBalance,
         toggleUserStatus,
         transactions,
-        approveTransaction,
+        approveAndReleaseTransaction,
         rejectTransaction,
         addDepositRequest,
         addWithdrawRequest,
         totalHouseProfit,
+        totalDepositedToday,
+        totalWithdrawnToday,
         recordHouseCommission
       }}
     >
