@@ -34,15 +34,14 @@ export const App: React.FC = () => {
   const isStandalonePage =
     currentPage === 'landing' ||
     currentPage === 'login' ||
-    currentPage === 'signup' ||
-    currentPage === 'bingo';
+    currentPage === 'signup';
 
   return (
     <div className="app-container">
-      {/* Top Header for main views */}
+      {/* Top Header for all main game & user views */}
       {!isStandalonePage && <TopHeader />}
 
-      {/* Balance Bar for main views */}
+      {/* Balance Bar for all main game & user views */}
       {!isStandalonePage && <BalanceBar />}
 
       {/* Active Page View */}
