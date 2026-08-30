@@ -117,7 +117,7 @@ body {
   margin: 0 auto;
   min-height: 100vh;
   position: relative;
-  background: var(--bg-primary);
+  background: #fbf9ef;
   overflow: hidden;
 }
 

@@ -8,37 +8,39 @@ export const BalanceBar: React.FC = () => {
 
   return (
     <>
-      <div className="lobby-fresh-balance-bar">
-        {/* Left: Yellow Wallet Icon */}
-        <div className="balance-wallet-icon-circle">
-          <i className="fa-solid fa-wallet"></i>
-        </div>
+      <div className="lobby-balance-bar-wrapper">
+        <div className="lobby-fresh-balance-bar">
+          {/* Left: Bright Yellow Circle with White Wallet Icon */}
+          <div className="balance-wallet-icon-circle">
+            <i className="fa-solid fa-wallet"></i>
+          </div>
 
-        {/* Center: Amount & Eye Toggle */}
-        <div className="balance-amount-center">
-          <span className="balance-val-text">
-            {isBalanceVisible ? `${balance.toFixed(2)} ETB` : '•••••• ETB'}
-          </span>
+          {/* Center: Amount & Eye Toggle */}
+          <div className="balance-amount-center">
+            <span className="balance-val-text">
+              {isBalanceVisible ? `${balance.toFixed(2)} ETB` : '•••••• ETB'}
+            </span>
+            <button
+              type="button"
+              className="btn-balance-eye-toggle"
+              onClick={toggleBalanceVisibility}
+              title={isBalanceVisible ? 'Hide Balance' : 'Show Balance'}
+            >
+              <i className={`fa-regular ${isBalanceVisible ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+            </button>
+          </div>
+
+          {/* Right: + Deposit Green Pill Button */}
           <button
             type="button"
-            className="btn-balance-eye-toggle"
-            onClick={toggleBalanceVisibility}
-            title={isBalanceVisible ? 'Hide Balance' : 'Show Balance'}
+            className="btn-fresh-deposit"
+            id="header-deposit"
+            onClick={() => setIsDepositOpen(true)}
           >
-            <i className={`fa-regular ${isBalanceVisible ? 'fa-eye' : 'fa-eye-slash'}`}></i>
+            <i className="fa-solid fa-circle-plus"></i>
+            <span>Deposit</span>
           </button>
         </div>
-
-        {/* Right: + Deposit Green Button */}
-        <button
-          type="button"
-          className="btn-fresh-deposit"
-          id="header-deposit"
-          onClick={() => setIsDepositOpen(true)}
-        >
-          <i className="fa-solid fa-circle-plus"></i>
-          <span>Deposit</span>
-        </button>
       </div>
 
       {/* 1-Tap Deposit Modal */}

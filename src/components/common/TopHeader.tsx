@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { LanguageDropdown } from './LanguageDropdown.tsx';
-import { LomiLogo } from './LomiLogo.tsx';
 import { DepositModal } from '../wallet/DepositModal.tsx';
 
 export const TopHeader: React.FC = () => {
@@ -34,12 +33,19 @@ export const TopHeader: React.FC = () => {
             <span className="brand-lomi-txt">L</span>
             <span className="brand-lemon-o">
               <svg className="mini-lemon-svg" viewBox="0 0 40 40" fill="none">
-                <path d="M19 10C17 6 13 4 10 5C11 9 13 11 17 12L19 10Z" fill="#22c55e" />
-                <path d="M21 10C24 6 28 5 31 7C29 10 27 12 23 12L21 10Z" fill="#16a34a" />
-                <ellipse cx="20" cy="23" rx="14" ry="12" fill="url(#mini-lemon-grad)" />
-                <ellipse cx="16" cy="18" rx="6" ry="3" transform="rotate(-20 16 18)" fill="white" fillOpacity="0.4" />
+                {/* Leaves */}
+                <path d="M19 11C16 7 11 5 8 7C9 11 12 13 16 13L19 11Z" fill="#22c55e" />
+                <path d="M21 11C24 7 29 5 32 7C31 11 28 13 24 13L21 11Z" fill="#16a34a" />
+                {/* Lemon Body */}
+                <ellipse cx="20" cy="24" rx="14" ry="12" fill="url(#mini-lemon-grad)" />
+                <ellipse cx="20" cy="24" rx="13.5" ry="11.5" stroke="#eab308" strokeWidth="0.5" />
+                {/* Left & Right Lemon Tips */}
+                <path d="M6 24C5 24 4 24.5 4 25C4 25.5 5 26 6 26L7 25L6 24Z" fill="#facc15" />
+                <path d="M34 24C35 24 36 24.5 36 25C36 25.5 35 26 34 26L33 25L34 24Z" fill="#facc15" />
+                {/* White Gloss */}
+                <ellipse cx="16" cy="19" rx="5" ry="2.5" transform="rotate(-20 16 19)" fill="white" fillOpacity="0.5" />
                 <defs>
-                  <radialGradient id="mini-lemon-grad" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(16 19) rotate(45) scale(16 14)">
+                  <radialGradient id="mini-lemon-grad" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(16 20) rotate(45) scale(16 14)">
                     <stop stopColor="#fef08a" />
                     <stop offset="0.6" stopColor="#facc15" />
                     <stop offset="1" stopColor="#eab308" />
