@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useApp } from '../../context/AppContext.tsx';
 
 export const DailyTimer: React.FC = () => {
-  // Start with 9h 54m 35s = 35675 seconds
-  const [totalSeconds, setTotalSeconds] = useState<number>(35675);
+  const { switchPage } = useApp();
+  // Start with 9h 54m 28s = 35668 seconds
+  const [totalSeconds, setTotalSeconds] = useState<number>(35668);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTotalSeconds(prev => (prev > 0 ? prev - 1 : 0));
+      setTotalSeconds(prev => (prev > 0 ? prev - 1 : 86400));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -16,31 +18,45 @@ export const DailyTimer: React.FC = () => {
   const seconds = totalSeconds % 60;
 
   return (
-    <div className="daily-leaderboard">
-      <div className="leaderboard-title">
-        <i className="fa-regular fa-clock"></i>
-        Daily Leaderboard
+    <div className="fresh-leaderboard-countdown-card">
+      {/* Top Title & View Link */}
+      <div className="leaderboard-card-header">
+        <div className="leaderboard-title-left">
+          <div className="trophy-icon-circ">
+            <i className="fa-solid fa-trophy"></i>
+          </div>
+          <h3 className="leaderboard-heading-txt">Daily Leaderboard</h3>
+        </div>
+
+        <button
+          type="button"
+          className="btn-view-leaderboard-gold"
+          onClick={() => switchPage('leader')}
+        >
+          <span>View Leaderboard</span>
+          <i className="fa-solid fa-chevron-right"></i>
+        </button>
       </div>
-      <div className="countdown-timer" id="daily-countdown">
-        <div className="timer-block">
-          <div className="timer-number" id="timer-hours">
-            {hours.toString().padStart(2, '0')}
-          </div>
-          <span className="timer-label">HRS</span>
+
+      {/* 3 Yellow Countdown Block Digits */}
+      <div className="countdown-blocks-row">
+        <div className="time-digit-block">
+          <span className="digit-huge">{hours.toString().padStart(2, '0')}</span>
+          <span className="digit-unit-lbl">HRS</span>
         </div>
-        <span className="timer-separator">:</span>
-        <div className="timer-block">
-          <div className="timer-number" id="timer-minutes">
-            {minutes.toString().padStart(2, '0')}
-          </div>
-          <span className="timer-label">MIN</span>
+
+        <span className="time-digit-sep">:</span>
+
+        <div className="time-digit-block">
+          <span className="digit-huge">{minutes.toString().padStart(2, '0')}</span>
+          <span className="digit-unit-lbl">MIN</span>
         </div>
-        <span className="timer-separator">:</span>
-        <div className="timer-block">
-          <div className="timer-number" id="timer-seconds">
-            {seconds.toString().padStart(2, '0')}
-          </div>
-          <span className="timer-label">SEC</span>
+
+        <span className="time-digit-sep">:</span>
+
+        <div className="time-digit-block">
+          <span className="digit-huge">{seconds.toString().padStart(2, '0')}</span>
+          <span className="digit-unit-lbl">SEC</span>
         </div>
       </div>
     </div>

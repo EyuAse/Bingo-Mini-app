@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
-import { useLanguage } from '../../context/LanguageContext.tsx';
+import { useBingo } from '../../context/BingoContext.tsx';
 import { LanguageDropdown } from './LanguageDropdown.tsx';
 import { DepositModal } from '../wallet/DepositModal.tsx';
 
 export const TopHeader: React.FC = () => {
   const { switchPage, showToast } = useApp();
-  const { t } = useLanguage();
+  const { isMuted, toggleMute } = useBingo();
   const [isDepositOpen, setIsDepositOpen] = useState(false);
 
   return (
@@ -58,19 +58,30 @@ export const TopHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Language Pill & Notification Bell */}
+        {/* Right: Language Pill, Sound Toggle, Notification Bell */}
         <div className="lobby-header-right">
           <LanguageDropdown />
 
+          {/* Sound Mute/Unmute */}
+          <button
+            type="button"
+            className="btn-lobby-sound"
+            onClick={toggleMute}
+            title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
+          >
+            <i className={`fa-solid ${isMuted ? 'fa-volume-xmark' : 'fa-volume-high'}`}></i>
+          </button>
+
+          {/* Notification Button with Badge 3 */}
           <button
             type="button"
             className="btn-lobby-notif"
             id="header-notif-btn"
-            onClick={() => showToast('🔔 You have 4 new bonuses & winner notifications!')}
+            onClick={() => showToast('🔔 You have 3 new messages and rewards!')}
             title="Notifications"
           >
             <i className="fa-regular fa-bell"></i>
-            <span className="notif-pill-badge">4</span>
+            <span className="notif-pill-badge">3</span>
           </button>
         </div>
       </header>

@@ -8,8 +8,8 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'games', label: 'Home', icon: 'fa-solid fa-house' },
-  { id: 'history', label: 'History', icon: 'fa-solid fa-clock-rotate-left' },
+  { id: 'landing', label: 'Home', icon: 'fa-solid fa-house' },
+  { id: 'games', label: 'Games', icon: 'fa-solid fa-gamepad' },
   { id: 'wallet', label: 'Wallet', icon: 'fa-solid fa-wallet' },
   { id: 'affiliate', label: 'Rewards', icon: 'fa-solid fa-gift' },
   { id: 'profile', label: 'Profile', icon: 'fa-regular fa-user' }
@@ -23,11 +23,11 @@ export const BottomNav: React.FC = () => {
       {navItems.map(item => {
         const isActive =
           currentPage === item.id ||
-          (item.id === 'games' && currentPage === 'landing');
+          (item.id === 'games' && currentPage === 'bingo');
 
         return (
           <button
-            key={item.id}
+            key={item.id + item.label}
             type="button"
             className={`fresh-nav-item ${isActive ? 'active' : ''}`}
             id={`nav-${item.id}`}
