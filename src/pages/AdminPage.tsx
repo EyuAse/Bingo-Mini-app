@@ -152,19 +152,6 @@ export const AdminPage: React.FC = () => {
               </h2>
             </div>
           </div>
-
-          <div className="viewport-header-right">
-            <button
-              className="btn-admin-preview"
-              onClick={() => {
-                window.location.hash = '';
-                switchPage('bingo');
-              }}
-              title="Open Live Game Room"
-            >
-              <i className="fa-solid fa-gamepad"></i> Open Bingo Room
-            </button>
-          </div>
         </header>
 
         {/* Tab Content Panes */}

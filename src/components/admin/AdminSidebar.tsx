@@ -205,30 +205,18 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </div>
         )}
 
-        {/* 5. Bottom Shortcuts & Lock Action */}
+        {/* 5. Bottom Logout Action */}
         <div className="sidebar-footer-actions">
           <button
-            className="sidebar-action-btn btn-room"
-            onClick={() => {
-              window.location.hash = '';
-              switchPage('bingo');
-            }}
-            title="Open Live Game Room"
-          >
-            <i className="fa-solid fa-gamepad"></i>
-            {!isSidebarCollapsed && <span>Play Game</span>}
-          </button>
-
-          <button
-            className="sidebar-action-btn btn-lock"
+            className="sidebar-action-btn btn-logout"
             onClick={() => {
               logoutAdmin();
-              showToast('🔒 Admin Portal Locked');
+              showToast('👋 Logged out from Admin Portal');
             }}
-            title="Lock Portal"
+            title="Logout of Admin"
           >
-            <i className="fa-solid fa-lock"></i>
-            {!isSidebarCollapsed && <span>Lock</span>}
+            <i className="fa-solid fa-right-from-bracket"></i>
+            {!isSidebarCollapsed && <span>Logout</span>}
           </button>
         </div>
       </aside>

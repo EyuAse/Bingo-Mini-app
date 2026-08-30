@@ -219,50 +219,71 @@ export const CashierDesk: React.FC = () => {
                 key={tx.id}
                 className={`tx-card-item ${isPending ? 'pending-card' : 'settled-card'}`}
               >
-                {/* Card Header: Method, Ref, Time */}
+                {/* 1. Card Top Bar: Method Badge + Ref Code + Status */}
                 <div className="tx-card-top">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span className={`method-logo-badge ${txMethod.toLowerCase()}`}>
-                      {txMethod === 'Telebirr' ? '📱 TB' : '🏦 CBE'}
+                      {txMethod === 'Telebirr' ? '📱 Telebirr' : '🏦 CBE Bank'}
                     </span>
                     <span className={`tx-type-pill ${txType}`}>
-                      {txType.toUpperCase()}
+                      {txType === 'deposit' ? '📥 DEPOSIT' : '📤 WITHDRAWAL'}
                     </span>
-                    <strong className="tx-ref-code">{txRef}</strong>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className={`status-pill ${tx.status || 'pending'}`}>
-                      {isPending && <span className="pulsing-amber-dot"></span>}
-                      {(tx.status || 'pending').toUpperCase()}
+                  <span className={`status-pill ${tx.status || 'pending'}`}>
+                    {isPending && <span className="pulsing-amber-dot"></span>}
+                    {(tx.status || 'pending').toUpperCase()}
+                  </span>
+                </div>
+
+                {/* 2. Transaction Clear Details Section */}
+                <div className="tx-details-box">
+                  <div className="tx-detail-row">
+                    <span className="tx-detail-lbl">Transaction ID:</span>
+                    <span
+                      className="tx-ref-clickable"
+                      onClick={() => {
+                        navigator.clipboard.writeText(txRef);
+                        showToast(`📋 Copied ${txRef}`);
+                      }}
+                      title="Click to copy Transaction ID"
+                    >
+                      <code>{txRef}</code>
+                      <i className="fa-regular fa-copy"></i>
                     </span>
+                  </div>
+
+                  <div className="tx-detail-row">
+                    <span className="tx-detail-lbl">Player / Account:</span>
+                    <span className="tx-detail-val">
+                      <strong>{tx.userName || 'Player'}</strong> ({tx.phone || '+251 9...'})
+                    </span>
+                  </div>
+
+                  <div className="tx-detail-row">
+                    <span className="tx-detail-lbl">Provider Account:</span>
+                    <span className="tx-detail-val font-mono">{tx.accountNumber || '0900000000'}</span>
+                  </div>
+
+                  <div className="tx-detail-row">
+                    <span className="tx-detail-lbl">Request Time:</span>
+                    <span className="tx-detail-val muted">{tx.createdAt || 'Today'}</span>
                   </div>
                 </div>
 
-                {/* Card Body: Player & Large Amount */}
+                {/* 3. Player Stats & Large Amount Row */}
                 <div className="tx-card-body">
-                  <div className="tx-player-meta">
-                    <div className="player-main-name">
-                      <i className="fa-solid fa-user-circle"></i>
-                      <strong>{tx.userName || 'Player'}</strong>
-                    </div>
-                    <div className="player-phone-row">
-                      <span>📞 {tx.phone || '+251 9...'}</span>
-                      <span>·</span>
-                      <span className="account-tag">Acc: {tx.accountNumber || '0900000000'}</span>
-                    </div>
-                    <div className="player-stats-micro">
-                      <span className={`risk-badge ${txRisk}`}>
-                        <i className="fa-solid fa-shield-check"></i> {txRisk.toUpperCase()}
-                      </span>
-                      <span style={{ color: '#64748b', fontSize: '0.6875rem' }}>
-                        {tx.createdAt || 'Today'}
-                      </span>
-                    </div>
+                  <div className="tx-player-micro-stats">
+                    <span className={`risk-badge ${txRisk}`}>
+                      <i className="fa-solid fa-shield-check"></i> {txRisk.toUpperCase()}
+                    </span>
+                    <span className="lifetime-deposits-tag">
+                      Lifetime In: {(Number(tx.userLifetimeDeposits) || 0).toFixed(0)} ETB
+                    </span>
                   </div>
 
                   <div className="tx-amount-col">
-                    <span className="tx-amount-label">Requested</span>
+                    <span className="tx-amount-label">Amount</span>
                     <div className={`tx-amount-huge ${txType}`}>
                       {txType === 'deposit' ? '+' : '-'}{txAmt.toFixed(2)}
                       <span className="currency-unit"> ETB</span>
@@ -270,7 +291,7 @@ export const CashierDesk: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card Actions: 1-Click Approve, Reject & Inspect */}
+                {/* 4. Action Buttons */}
                 <div className="tx-card-actions">
                   {isPending ? (
                     <>
@@ -287,7 +308,7 @@ export const CashierDesk: React.FC = () => {
                         onClick={() => setInspectTx(tx)}
                         title="Review Full Details & Notes"
                       >
-                        <i className="fa-solid fa-magnifying-glass"></i>
+                        <i className="fa-solid fa-magnifying-glass"></i> Full Slip
                       </button>
                       <button
                         type="button"
@@ -295,12 +316,12 @@ export const CashierDesk: React.FC = () => {
                         onClick={() => handleReject(tx)}
                         title="Reject Request"
                       >
-                        <i className="fa-solid fa-xmark"></i>
+                        <i className="fa-solid fa-xmark"></i> Reject
                       </button>
                     </>
                   ) : (
                     <div className="tx-card-settled-info">
-                      <span>Processed: {tx.processedAt || 'Settled'}</span>
+                      <span>✓ Processed: {tx.processedAt || 'Settled'}</span>
                       <span>· Note: {tx.adminNote || 'Verified'}</span>
                     </div>
                   )}
