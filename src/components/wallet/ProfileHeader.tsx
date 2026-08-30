@@ -1,8 +1,20 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 
-export const ProfileHeader: React.FC = () => {
-  const { switchPage, showToast } = useApp();
+interface ProfileHeaderProps {
+  onEditClick?: () => void;
+}
+
+export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ onEditClick }) => {
+  const { switchPage } = useApp();
+
+  const handleAction = () => {
+    if (onEditClick) {
+      onEditClick();
+    } else {
+      switchPage('profile');
+    }
+  };
 
   return (
     <div className="fresh-profile-banner-card">
@@ -16,15 +28,15 @@ export const ProfileHeader: React.FC = () => {
         <button
           type="button"
           className="btn-avatar-edit-pencil"
-          onClick={() => showToast('✏️ Edit profile details')}
-          title="Edit Profile"
+          onClick={handleAction}
+          title="Edit Profile & Accounts"
         >
           <i className="fa-solid fa-pencil"></i>
         </button>
       </div>
 
       {/* Profile Name & Phone */}
-      <div className="profile-details-group">
+      <div className="profile-details-group" onClick={handleAction} style={{ cursor: 'pointer' }}>
         <h2 className="profile-name-bold">Eyu Ase</h2>
         <span className="profile-phone-sub">251983624574</span>
       </div>
@@ -33,8 +45,8 @@ export const ProfileHeader: React.FC = () => {
       <button
         type="button"
         className="btn-profile-arrow-circ"
-        onClick={() => switchPage('profile')}
-        title="View Profile"
+        onClick={handleAction}
+        title="View Profile & Accounts"
       >
         <i className="fa-solid fa-chevron-right"></i>
       </button>

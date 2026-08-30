@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { ProfileHeader } from '../components/wallet/ProfileHeader.tsx';
+import { AccountInfoModal } from '../components/profile/AccountInfoModal.tsx';
+import { HelpCenterModal } from '../components/profile/HelpCenterModal.tsx';
+import { AboutLomiModal } from '../components/profile/AboutLomiModal.tsx';
 
 export const ProfilePage: React.FC = () => {
   const { switchPage, showToast } = useApp();
@@ -9,6 +12,11 @@ export const ProfilePage: React.FC = () => {
 
   // Stateful Theme Toggle (Light / Dark)
   const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark'>('light');
+
+  // Modal Visibility States
+  const [isAccountInfoOpen, setIsAccountInfoOpen] = useState<boolean>(false);
+  const [isHelpCenterOpen, setIsHelpCenterOpen] = useState<boolean>(false);
+  const [isAboutLomiOpen, setIsAboutLomiOpen] = useState<boolean>(false);
 
   const handleLogout = () => {
     showToast('👋 You have been logged out.');
@@ -18,7 +26,7 @@ export const ProfilePage: React.FC = () => {
   return (
     <div className="page active page-profile-fresh" id="page-profile">
       {/* 1. User Profile Banner Card (Image 1) */}
-      <ProfileHeader />
+      <ProfileHeader onEditClick={() => setIsAccountInfoOpen(true)} />
 
       <div className="profile-settings-content-scroll">
         {/* ============================================================
@@ -31,14 +39,14 @@ export const ProfilePage: React.FC = () => {
             {/* Account Information */}
             <div
               className="settings-row-item"
-              onClick={() => showToast('👤 Name: Eyu Ase | Phone: 251983624574')}
+              onClick={() => setIsAccountInfoOpen(true)}
             >
               <div className="settings-row-icon-circ">
                 <i className="fa-regular fa-user"></i>
               </div>
               <div className="settings-row-text-col">
                 <strong className="settings-row-title">Account Information</strong>
-                <span className="settings-row-sub">View and update your personal info</span>
+                <span className="settings-row-sub">Identity, attached payout accounts & KYC</span>
               </div>
               <i className="fa-solid fa-chevron-right settings-chevron"></i>
             </div>
@@ -112,14 +120,14 @@ export const ProfilePage: React.FC = () => {
             {/* Help Center */}
             <div
               className="settings-row-item"
-              onClick={() => showToast('🎧 24/7 Live Support via Telegram @LomiBingoHelp')}
+              onClick={() => setIsHelpCenterOpen(true)}
             >
               <div className="settings-row-icon-circ">
                 <i className="fa-solid fa-headset"></i>
               </div>
               <div className="settings-row-text-col">
                 <strong className="settings-row-title">Help Center</strong>
-                <span className="settings-row-sub">Get help and support</span>
+                <span className="settings-row-sub">24/7 Telegram support & FAQs</span>
               </div>
               <i className="fa-solid fa-chevron-right settings-chevron"></i>
             </div>
@@ -127,14 +135,14 @@ export const ProfilePage: React.FC = () => {
             {/* About Lomii Bingo */}
             <div
               className="settings-row-item"
-              onClick={() => showToast('🍋 Lomi Bingo v3.4.0 • 75-Ball Express Game Engine')}
+              onClick={() => setIsAboutLomiOpen(true)}
             >
               <div className="settings-row-icon-circ">
                 <i className="fa-solid fa-circle-info"></i>
               </div>
               <div className="settings-row-text-col">
                 <strong className="settings-row-title">About Lomii Bingo</strong>
-                <span className="settings-row-sub">App version, terms and policies</span>
+                <span className="settings-row-sub">NLA license, RNG fairness & version</span>
               </div>
               <i className="fa-solid fa-chevron-right settings-chevron"></i>
             </div>
@@ -156,6 +164,22 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Production-Grade Modals */}
+      <AccountInfoModal
+        isOpen={isAccountInfoOpen}
+        onClose={() => setIsAccountInfoOpen(false)}
+      />
+
+      <HelpCenterModal
+        isOpen={isHelpCenterOpen}
+        onClose={() => setIsHelpCenterOpen(false)}
+      />
+
+      <AboutLomiModal
+        isOpen={isAboutLomiOpen}
+        onClose={() => setIsAboutLomiOpen(false)}
+      />
     </div>
   );
 };
