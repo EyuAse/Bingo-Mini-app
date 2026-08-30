@@ -1,8 +1,10 @@
 import React from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 
 export const SpectatorCard: React.FC = () => {
   const { buyTicket, lobbyCountdown, roundPhase, hasPreBoughtNext, preBuyNextRound } = useBingo();
+  const { t } = useLanguage();
 
   const formattedCountdown = `00:${lobbyCountdown < 10 ? `0${lobbyCountdown}` : lobbyCountdown}`;
 
@@ -33,14 +35,14 @@ export const SpectatorCard: React.FC = () => {
       </div>
 
       {/* Title & Subtitle */}
-      <h3 className="spectator-card-title">Spectator Mode</h3>
+      <h3 className="spectator-card-title">{t('bingo.spectatorTitle')}</h3>
       <p className="spectator-card-sub">
-        You have not bought a card for <span className="highlight-gold">this round.</span>
+        {t('bingo.spectatorSub')}
       </p>
 
       {/* Next Round Countdown Card */}
       <div className="spectator-countdown-pill-card">
-        <span className="countdown-tiny-lbl">Next Round Countdown</span>
+        <span className="countdown-tiny-lbl">{t('bingo.nextRoundIn')}</span>
         <strong className="countdown-digits-huge">{formattedCountdown}</strong>
       </div>
 
@@ -51,7 +53,7 @@ export const SpectatorCard: React.FC = () => {
         onClick={roundPhase === 'lobby' ? buyTicket : preBuyNextRound}
       >
         <i className="fa-solid fa-ticket"></i>
-        <span>{hasPreBoughtNext ? 'TICKET PRE-BOUGHT ✓' : 'BUY TICKET'}</span>
+        <span>{hasPreBoughtNext ? 'TICKET PRE-BOUGHT ✓' : t('bingo.buyTicket')}</span>
       </button>
     </div>
   );

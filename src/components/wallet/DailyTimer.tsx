@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 
 export const DailyTimer: React.FC = () => {
   const { switchPage } = useApp();
+  const { t } = useLanguage();
   // Start with 9h 54m 28s = 35668 seconds
   const [totalSeconds, setTotalSeconds] = useState<number>(35668);
 
@@ -25,7 +27,7 @@ export const DailyTimer: React.FC = () => {
           <div className="trophy-icon-circ">
             <i className="fa-solid fa-trophy"></i>
           </div>
-          <h3 className="leaderboard-heading-txt">Daily Leaderboard</h3>
+          <h3 className="leaderboard-heading-txt">{t('wallet.dailyLeaderboard')}</h3>
         </div>
 
         <button
@@ -33,7 +35,7 @@ export const DailyTimer: React.FC = () => {
           className="btn-view-leaderboard-gold"
           onClick={() => switchPage('leader')}
         >
-          <span>View Leaderboard</span>
+          <span>{t('wallet.viewLeaderboard')}</span>
           <i className="fa-solid fa-chevron-right"></i>
         </button>
       </div>
@@ -42,21 +44,21 @@ export const DailyTimer: React.FC = () => {
       <div className="countdown-blocks-row">
         <div className="time-digit-block">
           <span className="digit-huge">{hours.toString().padStart(2, '0')}</span>
-          <span className="digit-unit-lbl">HRS</span>
+          <span className="digit-unit-lbl">{t('wallet.hrs')}</span>
         </div>
 
         <span className="time-digit-sep">:</span>
 
         <div className="time-digit-block">
           <span className="digit-huge">{minutes.toString().padStart(2, '0')}</span>
-          <span className="digit-unit-lbl">MIN</span>
+          <span className="digit-unit-lbl">{t('wallet.min')}</span>
         </div>
 
         <span className="time-digit-sep">:</span>
 
         <div className="time-digit-block">
           <span className="digit-huge">{seconds.toString().padStart(2, '0')}</span>
-          <span className="digit-unit-lbl">SEC</span>
+          <span className="digit-unit-lbl">{t('wallet.sec')}</span>
         </div>
       </div>
     </div>

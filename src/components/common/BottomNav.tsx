@@ -1,21 +1,23 @@
 import React from 'react';
 import { useApp, PageId } from '../../context/AppContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 
 interface NavItem {
   id: PageId;
-  label: string;
+  labelKey: string;
   icon: string;
 }
 
 const navItems: NavItem[] = [
-  { id: 'games', label: 'Games', icon: 'fa-solid fa-gamepad' },
-  { id: 'wallet', label: 'Wallet', icon: 'fa-solid fa-wallet' },
-  { id: 'affiliate', label: 'Rewards', icon: 'fa-solid fa-gift' },
-  { id: 'profile', label: 'Profile', icon: 'fa-regular fa-user' }
+  { id: 'games', labelKey: 'nav.games', icon: 'fa-solid fa-gamepad' },
+  { id: 'wallet', labelKey: 'nav.wallet', icon: 'fa-solid fa-wallet' },
+  { id: 'affiliate', labelKey: 'nav.rewards', icon: 'fa-solid fa-gift' },
+  { id: 'profile', labelKey: 'nav.profile', icon: 'fa-regular fa-user' }
 ];
 
 export const BottomNav: React.FC = () => {
   const { currentPage, switchPage } = useApp();
+  const { t } = useLanguage();
 
   return (
     <nav className="lobby-fresh-bottom-nav">
@@ -27,14 +29,14 @@ export const BottomNav: React.FC = () => {
 
         return (
           <button
-            key={item.id + item.label}
+            key={item.id}
             type="button"
             className={`fresh-nav-item ${isActive ? 'active' : ''}`}
             id={`nav-${item.id}`}
             onClick={() => switchPage(item.id)}
           >
             <i className={item.icon}></i>
-            <span>{item.label}</span>
+            <span>{t(item.labelKey)}</span>
           </button>
         );
       })}

@@ -5,7 +5,7 @@ import { ProfileHeader } from '../components/wallet/ProfileHeader.tsx';
 
 export const ProfilePage: React.FC = () => {
   const { switchPage, showToast } = useApp();
-  const { lang, toggleLang } = useLanguage();
+  const { lang, toggleLang, t } = useLanguage();
 
   // Stateful Theme Toggle (Light / Dark)
   const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark'>('light');
@@ -25,7 +25,7 @@ export const ProfilePage: React.FC = () => {
             CATEGORY 1: GENERAL SETTINGS
             ============================================================ */}
         <div className="profile-category-group">
-          <span className="category-section-title">GENERAL SETTINGS</span>
+          <span className="category-section-title">{t('profile.generalSettings')}</span>
 
           <div className="profile-settings-card">
             {/* Account Information */}
@@ -37,8 +37,8 @@ export const ProfilePage: React.FC = () => {
                 <i className="fa-regular fa-user"></i>
               </div>
               <div className="settings-row-text-col">
-                <strong className="settings-row-title">Account Information</strong>
-                <span className="settings-row-sub">Identity, attached payout accounts & Telegram</span>
+                <strong className="settings-row-title">{t('profile.accountInfo')}</strong>
+                <span className="settings-row-sub">{t('profile.accountInfoSub')}</span>
               </div>
               <i className="fa-solid fa-chevron-right settings-chevron"></i>
             </div>
@@ -49,7 +49,7 @@ export const ProfilePage: React.FC = () => {
             CATEGORY 2: PREFERENCES
             ============================================================ */}
         <div className="profile-category-group">
-          <span className="category-section-title">PREFERENCES</span>
+          <span className="category-section-title">{t('profile.preferences')}</span>
 
           <div className="profile-settings-card">
             {/* Language */}
@@ -58,8 +58,10 @@ export const ProfilePage: React.FC = () => {
                 <i className="fa-solid fa-globe"></i>
               </div>
               <div className="settings-row-text-col">
-                <strong className="settings-row-title">Language</strong>
-                <span className="settings-row-sub">Choose your preferred language</span>
+                <strong className="settings-row-title">{t('profile.language')}</strong>
+                <span className="settings-row-sub">
+                  {lang === 'am' ? 'የመተግበሪያውን ቋንቋ ይቀይሩ' : 'Choose your preferred language'}
+                </span>
               </div>
               <div className="settings-lang-pill-wrap">
                 <span className="lang-preview-pill">
@@ -76,8 +78,10 @@ export const ProfilePage: React.FC = () => {
                 <i className="fa-regular fa-moon"></i>
               </div>
               <div className="settings-row-text-col">
-                <strong className="settings-row-title">Theme</strong>
-                <span className="settings-row-sub">Choose your app appearance</span>
+                <strong className="settings-row-title">{t('profile.theme')}</strong>
+                <span className="settings-row-sub">
+                  {lang === 'am' ? 'የመተግበሪያውን ገጽታ ይምረጡ' : 'Choose your app appearance'}
+                </span>
               </div>
               <div className="theme-segmented-pill">
                 <button
@@ -85,7 +89,7 @@ export const ProfilePage: React.FC = () => {
                   className={`theme-segment-btn ${selectedTheme === 'light' ? 'active' : ''}`}
                   onClick={() => setSelectedTheme('light')}
                 >
-                  Light
+                  {t('profile.light')}
                 </button>
                 <button
                   type="button"
@@ -95,7 +99,7 @@ export const ProfilePage: React.FC = () => {
                     showToast('🌙 Dark mode is coming soon!');
                   }}
                 >
-                  Dark
+                  {t('profile.dark')}
                 </button>
               </div>
             </div>
@@ -106,7 +110,7 @@ export const ProfilePage: React.FC = () => {
             CATEGORY 3: SUPPORT & ABOUT
             ============================================================ */}
         <div className="profile-category-group">
-          <span className="category-section-title">SUPPORT & ABOUT</span>
+          <span className="category-section-title">{t('profile.supportAbout')}</span>
 
           <div className="profile-settings-card">
             {/* Help Center */}
@@ -118,8 +122,8 @@ export const ProfilePage: React.FC = () => {
                 <i className="fa-solid fa-headset"></i>
               </div>
               <div className="settings-row-text-col">
-                <strong className="settings-row-title">Help Center</strong>
-                <span className="settings-row-sub">24/7 Telegram support & FAQs</span>
+                <strong className="settings-row-title">{t('profile.helpCenter')}</strong>
+                <span className="settings-row-sub">{t('profile.helpCenterSub')}</span>
               </div>
               <i className="fa-solid fa-chevron-right settings-chevron"></i>
             </div>
@@ -133,8 +137,8 @@ export const ProfilePage: React.FC = () => {
                 <i className="fa-solid fa-circle-info"></i>
               </div>
               <div className="settings-row-text-col">
-                <strong className="settings-row-title">About Lomii Bingo</strong>
-                <span className="settings-row-sub">NLA license, RNG fairness & version</span>
+                <strong className="settings-row-title">{t('profile.aboutLomi')}</strong>
+                <span className="settings-row-sub">{t('profile.aboutLomiSub')}</span>
               </div>
               <i className="fa-solid fa-chevron-right settings-chevron"></i>
             </div>
@@ -148,8 +152,8 @@ export const ProfilePage: React.FC = () => {
                 <i className="fa-solid fa-arrow-right-from-bracket"></i>
               </div>
               <div className="settings-row-text-col">
-                <strong className="settings-row-title logout-txt">Logout</strong>
-                <span className="settings-row-sub">Sign out from your account</span>
+                <strong className="settings-row-title logout-txt">{t('profile.logout')}</strong>
+                <span className="settings-row-sub">{t('profile.logoutSub')}</span>
               </div>
               <i className="fa-solid fa-chevron-right settings-chevron"></i>
             </div>

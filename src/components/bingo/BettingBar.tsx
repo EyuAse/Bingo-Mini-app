@@ -1,6 +1,7 @@
 import React from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
 import { useWallet } from '../../context/WalletContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 
 export const BettingBar: React.FC = () => {
   const {
@@ -15,6 +16,7 @@ export const BettingBar: React.FC = () => {
     hasPreBoughtNext
   } = useBingo();
   const { balance, isBalanceVisible } = useWallet();
+  const { t } = useLanguage();
 
   const betChips = [10, 20, 50, 100];
   const totalCost = betAmount * cardQuantity;
@@ -37,12 +39,12 @@ export const BettingBar: React.FC = () => {
       <div className="betting-top-meta-row">
         <div className="betting-section-title">
           <i className="fa-solid fa-coins gold-coin-icon"></i>
-          <span>SELECT STAKE AMOUNT</span>
+          <span>{t('bingo.selectStake')}</span>
         </div>
 
         <div className="betting-user-balance-pill">
           <i className="fa-solid fa-wallet"></i>
-          <span>Your Balance</span>
+          <span>{t('common.balance')}</span>
           <strong>{isBalanceVisible ? `${balance.toFixed(2)} ETB` : '••••'}</strong>
         </div>
       </div>
@@ -66,7 +68,7 @@ export const BettingBar: React.FC = () => {
         {/* Left: Cartels Stepper */}
         <div className="cartels-stepper-group">
           <span className="cartels-label">
-            <i className="fa-solid fa-clone gold"></i> CARTELS
+            <i className="fa-solid fa-clone gold"></i> {t('bingo.cartels')}
           </span>
 
           <div className="stepper-controls-pill">
@@ -94,7 +96,7 @@ export const BettingBar: React.FC = () => {
             className="btn-max-cartels"
             onClick={handleSetMax}
           >
-            MAX 2
+            {t('bingo.maxCartels')}
           </button>
         </div>
 
@@ -110,7 +112,7 @@ export const BettingBar: React.FC = () => {
               ? `PLAYING (${totalCost} ETB)`
               : hasPreBoughtNext
               ? 'TICKET READY ✓'
-              : `BUY TICKET • ${totalCost} ETB`}
+              : `${t('bingo.buyTicket')} • ${totalCost} ETB`}
           </span>
         </button>
       </div>

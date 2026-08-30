@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext.tsx';
+import { useLanguage } from '../context/LanguageContext.tsx';
 import { TelebirrLogo, CBELogo } from '../components/wallet/PaymentLogos.tsx';
 
 interface AttachedAccount {
@@ -13,6 +14,7 @@ interface AttachedAccount {
 
 export const AccountInfoPage: React.FC = () => {
   const { switchPage, showToast } = useApp();
+  const { t, lang } = useLanguage();
 
   const [fullName, setFullName] = useState<string>('Eyu Ase');
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
@@ -50,7 +52,7 @@ export const AccountInfoPage: React.FC = () => {
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    showToast(`📋 Copied ${label}: ${text}`);
+    showToast(`📋 ${t('common.copied')}: ${label}`);
   };
 
   const handleSaveName = () => {
@@ -67,7 +69,7 @@ export const AccountInfoPage: React.FC = () => {
     }
     setTelegramUsername(cleanUsername);
     setIsEditingTelegram(false);
-    showToast(`✅ Telegram account @${cleanUsername} linked & verified!`);
+    showToast(`✅ Telegram @${cleanUsername} ${t('accountInfo.connected')}!`);
   };
 
   const handleSetDefault = (id: string) => {
@@ -121,9 +123,9 @@ export const AccountInfoPage: React.FC = () => {
           onClick={() => switchPage('profile')}
         >
           <i className="fa-solid fa-chevron-left"></i>
-          <span>Profile</span>
+          <span>{t('nav.profile')}</span>
         </button>
-        <h2 className="subpage-header-title">Account Information</h2>
+        <h2 className="subpage-header-title">{t('accountInfo.title')}</h2>
         <div style={{ width: '40px' }}></div>
       </div>
 
@@ -148,7 +150,7 @@ export const AccountInfoPage: React.FC = () => {
                     className="input-inline-name"
                   />
                   <button type="button" className="btn-save-name-tiny" onClick={handleSaveName}>
-                    Save
+                    {t('common.save')}
                   </button>
                 </div>
               ) : (
@@ -168,10 +170,10 @@ export const AccountInfoPage: React.FC = () => {
 
             <div className="user-meta-chips-row">
               <span className="meta-vip-tier-chip">
-                <i className="fa-solid fa-crown gold"></i> VIP Level 2 • Lemon Gold
+                <i className="fa-solid fa-crown gold"></i> {t('accountInfo.vipTier')}
               </span>
               <span className="meta-kyc-chip">
-                <i className="fa-solid fa-shield-halved green"></i> Level 1 KYC
+                <i className="fa-solid fa-shield-halved green"></i> {t('accountInfo.kycLevel')}
               </span>
             </div>
           </div>
@@ -180,7 +182,7 @@ export const AccountInfoPage: React.FC = () => {
         {/* 2. Telegram Account Link & Verification Card */}
         <div className="info-section-group">
           <span className="info-group-title">
-            <i className="fa-brands fa-telegram telegram-color"></i> LINKED TELEGRAM ACCOUNT
+            <i className="fa-brands fa-telegram telegram-color"></i> {t('accountInfo.telegramTitle')}
           </span>
 
           <div className="telegram-linking-card">
@@ -189,7 +191,7 @@ export const AccountInfoPage: React.FC = () => {
                 <i className="fa-brands fa-telegram tg-card-icon"></i>
                 <div>
                   <strong className="tg-card-title">Telegram Mini App Account</strong>
-                  <span className="tg-card-sub">Used for instant win notifications & bot alerts</span>
+                  <span className="tg-card-sub">{t('accountInfo.telegramSub')}</span>
                 </div>
               </div>
 
@@ -202,7 +204,7 @@ export const AccountInfoPage: React.FC = () => {
                     setIsEditingTelegram(true);
                   }}
                 >
-                  {telegramUsername ? 'Change' : '+ Add'}
+                  {telegramUsername ? t('accountInfo.change') : t('accountInfo.add')}
                 </button>
               )}
             </div>
@@ -221,14 +223,14 @@ export const AccountInfoPage: React.FC = () => {
                 </div>
                 <div className="tg-form-btns-row">
                   <button type="submit" className="btn-tg-verify-save">
-                    <i className="fa-solid fa-link"></i> Link & Verify Telegram
+                    <i className="fa-solid fa-link"></i> {t('accountInfo.linkVerify')}
                   </button>
                   <button
                     type="button"
                     className="btn-tg-cancel"
                     onClick={() => setIsEditingTelegram(false)}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                 </div>
               </form>
@@ -236,7 +238,7 @@ export const AccountInfoPage: React.FC = () => {
               <div className="tg-status-display-row">
                 <strong className="tg-handle-txt">@{telegramUsername}</strong>
                 <span className="tg-connected-badge">
-                  <i className="fa-solid fa-circle-check"></i> Connected & Verified
+                  <i className="fa-solid fa-circle-check"></i> {t('accountInfo.connected')}
                 </span>
               </div>
             )}
@@ -247,21 +249,23 @@ export const AccountInfoPage: React.FC = () => {
         <div className="info-section-group">
           <div className="section-title-with-btn">
             <span className="info-group-title">
-              <i className="fa-solid fa-wallet gold"></i> ATTACHED PAYOUT ACCOUNTS
+              <i className="fa-solid fa-wallet gold"></i> {t('accountInfo.attachedAccounts')}
             </span>
             <button
               type="button"
               className="btn-attach-new-acc"
               onClick={() => setShowAddAccount(!showAddAccount)}
             >
-              <i className="fa-solid fa-plus"></i> Attach Account
+              <i className="fa-solid fa-plus"></i> {t('accountInfo.attachAccount')}
             </button>
           </div>
 
           {/* Add New Account Form (Telebirr & CBE ONLY) */}
           {showAddAccount && (
             <form className="add-attached-acc-form" onSubmit={handleAddNewAccount}>
-              <div className="form-head-title">Attach Telebirr or CBE Bank Account</div>
+              <div className="form-head-title">
+                {lang === 'am' ? 'የቴሌብር ወይም የንግድ ባንክ አካውንት አያይዝ' : 'Attach Telebirr or CBE Bank Account'}
+              </div>
 
               {/* 2-Option Selector with Official Logos */}
               <div className="add-acc-type-selector-two">
@@ -292,7 +296,7 @@ export const AccountInfoPage: React.FC = () => {
                   type="text"
                   value={newAccName}
                   onChange={e => setNewAccName(e.target.value)}
-                  placeholder="Account Holder Full Name"
+                  placeholder={lang === 'am' ? 'የአካውንት ባለቤት ሙሉ ስም' : 'Account Holder Full Name'}
                   required
                 />
               </div>
@@ -303,21 +307,21 @@ export const AccountInfoPage: React.FC = () => {
                   type="text"
                   value={newAccNumber}
                   onChange={e => setNewAccNumber(e.target.value)}
-                  placeholder={newAccType === 'Telebirr' ? 'Telebirr Phone Number (e.g. 0911234567)' : 'CBE Bank Account Number'}
+                  placeholder={newAccType === 'Telebirr' ? (lang === 'am' ? 'የቴሌብር ስልክ ቁጥር (ምሳሌ፡ 0911234567)' : 'Telebirr Phone Number') : (lang === 'am' ? 'የኢትዮጵያ ንግድ ባንክ ሒሳብ ቁጥር' : 'CBE Bank Account Number')}
                   required
                 />
               </div>
 
               <div className="add-acc-actions-row">
                 <button type="submit" className="btn-confirm-add-acc">
-                  <i className="fa-solid fa-check"></i> Save & Attach Account
+                  <i className="fa-solid fa-check"></i> {t('accountInfo.attachAccount')}
                 </button>
                 <button
                   type="button"
                   className="btn-cancel-add-acc"
                   onClick={() => setShowAddAccount(false)}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -338,7 +342,7 @@ export const AccountInfoPage: React.FC = () => {
                 <div className="attached-acc-info-col">
                   <div className="acc-name-badge-row">
                     <strong className="acc-type-title">{acc.name}</strong>
-                    {acc.isDefault && <span className="default-payout-pill">⭐ Default Payout</span>}
+                    {acc.isDefault && <span className="default-payout-pill">⭐ {t('common.defaultPayout')}</span>}
                   </div>
                   <span className="acc-num-mono">{acc.accountNumber}</span>
                 </div>
@@ -351,7 +355,7 @@ export const AccountInfoPage: React.FC = () => {
                       onClick={() => handleSetDefault(acc.id)}
                       title="Set as Default Payout Method"
                     >
-                      Set Default
+                      {t('common.defaultPayout')}
                     </button>
                   )}
                   <button
@@ -371,12 +375,12 @@ export const AccountInfoPage: React.FC = () => {
         {/* 4. Credentials & Registration Details Strip */}
         <div className="info-section-group">
           <span className="info-group-title">
-            <i className="fa-solid fa-shield gold"></i> CREDENTIALS & SECURITY
+            <i className="fa-solid fa-shield gold"></i> {t('accountInfo.credentials')}
           </span>
 
           <div className="credentials-grid-strip">
             <div className="cred-item-box">
-              <span className="cred-lbl">USER ID</span>
+              <span className="cred-lbl">{t('accountInfo.userId')}</span>
               <div className="cred-val-copy-row">
                 <strong className="cred-mono">UID-8839201</strong>
                 <button
@@ -390,20 +394,20 @@ export const AccountInfoPage: React.FC = () => {
             </div>
 
             <div className="cred-item-box">
-              <span className="cred-lbl">PHONE NUMBER</span>
+              <span className="cred-lbl">{t('accountInfo.phoneNumber')}</span>
               <div className="cred-val-copy-row">
                 <strong className="cred-mono">+251 98 362 4574</strong>
-                <span className="verified-dot-tag">✓ Verified</span>
+                <span className="verified-dot-tag">✓ {t('common.verified')}</span>
               </div>
             </div>
 
             <div className="cred-item-box">
-              <span className="cred-lbl">ACTIVE DEVICE</span>
+              <span className="cred-lbl">{t('accountInfo.activeDevice')}</span>
               <span className="cred-val-txt">Telegram Mini App (Web)</span>
             </div>
 
             <div className="cred-item-box">
-              <span className="cred-lbl">REGISTERED</span>
+              <span className="cred-lbl">{t('accountInfo.registered')}</span>
               <span className="cred-val-txt">August 14, 2026</span>
             </div>
           </div>

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useWallet } from '../../context/WalletContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 import { DepositModal } from '../wallet/DepositModal.tsx';
 
 export const BalanceBar: React.FC = () => {
   const { balance, isBalanceVisible, toggleBalanceVisibility } = useWallet();
+  const { t } = useLanguage();
   const [isDepositOpen, setIsDepositOpen] = useState(false);
 
   return (
@@ -38,7 +40,7 @@ export const BalanceBar: React.FC = () => {
             onClick={() => setIsDepositOpen(true)}
           >
             <i className="fa-solid fa-circle-plus"></i>
-            <span>Deposit</span>
+            <span>{t('common.deposit')}</span>
           </button>
         </div>
       </div>

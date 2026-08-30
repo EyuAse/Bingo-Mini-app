@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useAdmin } from '../../context/AdminContext.tsx';
 
 interface WalletMenuProps {
@@ -8,6 +9,7 @@ interface WalletMenuProps {
 
 export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
   const { switchPage, showToast } = useApp();
+  const { t, lang } = useLanguage();
   const { transactions } = useAdmin();
 
   const myTransactions = (transactions || []).filter(
@@ -28,8 +30,10 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
           <i className="fa-solid fa-arrow-down"></i>
         </div>
         <div className="menu-row-info-text">
-          <strong className="menu-row-title">Deposit History</strong>
-          <span className="menu-row-sub">Track your Telebirr & CBE deposits</span>
+          <strong className="menu-row-title">{t('wallet.depositHistory')}</strong>
+          <span className="menu-row-sub">
+            {lang === 'am' ? 'የቴሌብር እና ንግድ ባንክ ተቀማጭዎን ይከታተሉ' : 'Track your Telebirr & CBE deposits'}
+          </span>
         </div>
         <div className="menu-row-action-right">
           <span className="menu-counter-badge green">{depositsCount}</span>
@@ -46,8 +50,10 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
           <i className="fa-solid fa-arrow-up-from-bracket"></i>
         </div>
         <div className="menu-row-info-text">
-          <strong className="menu-row-title">Withdrawal History</strong>
-          <span className="menu-row-sub">Track your payouts & cashouts</span>
+          <strong className="menu-row-title">{t('wallet.withdrawalHistory')}</strong>
+          <span className="menu-row-sub">
+            {lang === 'am' ? 'የገንዘብ ወጪዎችዎን እና ክፍያዎችን ይከታተሉ' : 'Track your payouts & cashouts'}
+          </span>
         </div>
         <div className="menu-row-action-right">
           <span className="menu-counter-badge red">{withdrawalsCount}</span>
@@ -64,11 +70,13 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
           <i className="fa-solid fa-users"></i>
         </div>
         <div className="menu-row-info-text">
-          <strong className="menu-row-title">Affiliate Program</strong>
-          <span className="menu-row-sub">Earn 10% on every 1st deposit</span>
+          <strong className="menu-row-title">{t('wallet.affiliateProgram')}</strong>
+          <span className="menu-row-sub">
+            {lang === 'am' ? 'በእያንዳንዱ 1ኛ ተቀማጭ የ10% ቦነስ ያግኙ' : 'Earn 10% on every 1st deposit'}
+          </span>
         </div>
         <div className="menu-row-action-right">
-          <span className="menu-tag-pill gold">10% BONUS</span>
+          <span className="menu-tag-pill gold">{t('wallet.bonusTag')}</span>
           <i className="fa-solid fa-chevron-right menu-chevron"></i>
         </div>
       </div>
@@ -76,14 +84,16 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
       {/* Row 4: Help & Support */}
       <div
         className="fresh-menu-row-item"
-        onClick={() => showToast('🎧 24/7 Live Support via Telegram @LomiBingoHelp')}
+        onClick={() => switchPage('help')}
       >
         <div className="menu-row-icon-box purple">
           <i className="fa-solid fa-headset"></i>
         </div>
         <div className="menu-row-info-text">
-          <strong className="menu-row-title">Help & Support</strong>
-          <span className="menu-row-sub">24/7 Live customer assistance</span>
+          <strong className="menu-row-title">{t('wallet.helpSupport')}</strong>
+          <span className="menu-row-sub">
+            {lang === 'am' ? 'የ24/7 የቀጥታ የደንበኞች ድጋፍ' : '24/7 Live customer assistance'}
+          </span>
         </div>
         <div className="menu-row-action-right">
           <i className="fa-solid fa-chevron-right menu-chevron"></i>

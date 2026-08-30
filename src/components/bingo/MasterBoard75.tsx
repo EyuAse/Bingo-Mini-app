@@ -1,8 +1,10 @@
 import React from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 
 export const MasterBoard75: React.FC = () => {
   const { calledNumbers } = useBingo();
+  const { t } = useLanguage();
 
   const columns = [
     { letter: 'B', colorClass: 'col-b', min: 1, max: 15 },
@@ -14,7 +16,7 @@ export const MasterBoard75: React.FC = () => {
 
   return (
     <div className="fresh-master-board-card">
-      <h3 className="master-board-main-title">MASTER BOARD</h3>
+      <h3 className="master-board-main-title">{t('bingo.masterBoard')}</h3>
 
       <div className="master-board-table-grid">
         {/* Column Headers: B I N G O */}

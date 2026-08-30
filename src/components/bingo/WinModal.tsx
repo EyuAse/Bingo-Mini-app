@@ -1,6 +1,7 @@
 import React from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 
 export const WinModal: React.FC = () => {
   const {
@@ -9,6 +10,7 @@ export const WinModal: React.FC = () => {
     closeWinModalAndRestart
   } = useBingo();
   const { showToast } = useApp();
+  const { t } = useLanguage();
 
   if (!winResult || !showWinModal) return null;
 
@@ -89,22 +91,22 @@ export const WinModal: React.FC = () => {
         {/* Title & Celebration Heading */}
         <h2 className="victory-celebration-title">
           {isOpponentWin
-            ? '🏆 ROUND COMPLETE • WINNER FOUND!'
-            : '🎉 BINGO! YOU WON! 🎉'}
+            ? t('bingo.opponentWinTitle')
+            : t('bingo.soloWinTitle')}
         </h2>
 
         <p className="victory-celebration-sub">
           {isOpponentWin
-            ? `Player ${winResult.winnerName} called Bingo with Cartela #${winResult.winningCartelaNumber}!`
+            ? t('bingo.opponentWinSub', { winner: winResult.winnerName, cartela: String(winResult.winningCartelaNumber) })
             : isSolo
-            ? `Congratulations! You claimed the full jackpot with Cartela #${winResult.winningCartelaNumber || '1'}!`
-            : `Shared Win with ${winResult.coWinners.join(', ')}!`}
+            ? t('bingo.soloWinSub', { cartela: String(winResult.winningCartelaNumber || '1') })
+            : t('bingo.splitWinSub', { winners: winResult.coWinners.join(', ') })}
         </p>
 
         {/* Prize Box */}
         <div className="victory-prize-display-card">
           <span className="victory-prize-label">
-            {isOpponentWin ? 'ROUND PRIZE POOL' : 'YOUR WINNING SHARE'}
+            {isOpponentWin ? t('bingo.roundPool') : t('bingo.yourShare')}
           </span>
           <strong className={`victory-prize-amount ${isOpponentWin ? 'gold' : 'green'}`}>
             {isOpponentWin
@@ -113,8 +115,8 @@ export const WinModal: React.FC = () => {
           </strong>
           <span className="victory-credited-tag">
             {isOpponentWin
-              ? '🍀 Better luck on the next round!'
-              : '✓ Automatically Credited to Balance'}
+              ? t('bingo.betterLuck')
+              : t('bingo.autoCredited')}
           </span>
         </div>
 
@@ -126,7 +128,7 @@ export const WinModal: React.FC = () => {
             onClick={closeWinModalAndRestart}
           >
             <i className="fa-solid fa-play"></i>
-            <span>{isOpponentWin ? 'Play Next Round' : 'Claim & Play Next Round'}</span>
+            <span>{isOpponentWin ? t('bingo.playNextRound') : t('bingo.claimPlayNext')}</span>
           </button>
 
           {!isOpponentWin && (
@@ -136,7 +138,7 @@ export const WinModal: React.FC = () => {
               onClick={handleShareWin}
             >
               <i className="fa-brands fa-telegram"></i>
-              <span>Share Win with Friends</span>
+              <span>{t('bingo.shareWin')}</span>
             </button>
           )}
         </div>

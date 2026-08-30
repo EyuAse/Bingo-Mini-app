@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useWallet } from '../../context/WalletContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 import { DepositModal } from './DepositModal.tsx';
 import { WithdrawModal } from './WithdrawModal.tsx';
 
 export const BalanceCard: React.FC = () => {
   const { balance, bonus } = useWallet();
+  const { t } = useLanguage();
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
 
@@ -18,7 +20,7 @@ export const BalanceCard: React.FC = () => {
             <i className="fa-solid fa-wallet"></i>
           </div>
           <div className="overview-col-text">
-            <span className="overview-col-lbl">Total Balance</span>
+            <span className="overview-col-lbl">{t('wallet.totalBalance')}</span>
             <strong className="overview-col-val">{balance.toFixed(2)} ETB</strong>
           </div>
         </div>
@@ -31,7 +33,7 @@ export const BalanceCard: React.FC = () => {
             <i className="fa-solid fa-gift"></i>
           </div>
           <div className="overview-col-text">
-            <span className="overview-col-lbl">Bonus Balance</span>
+            <span className="overview-col-lbl">{t('wallet.bonusBalance')}</span>
             <strong className="overview-col-val">{bonus.toFixed(2)} ETB</strong>
           </div>
         </div>
@@ -46,7 +48,7 @@ export const BalanceCard: React.FC = () => {
           onClick={() => setIsWithdrawOpen(true)}
         >
           <i className="fa-solid fa-arrow-up-from-bracket"></i>
-          <span>Withdraw</span>
+          <span>{t('wallet.withdrawBtn')}</span>
         </button>
 
         <button
@@ -56,11 +58,11 @@ export const BalanceCard: React.FC = () => {
           onClick={() => setIsDepositOpen(true)}
         >
           <i className="fa-solid fa-arrow-down"></i>
-          <span>Deposit Now</span>
+          <span>{t('wallet.depositNowBtn')}</span>
         </button>
       </div>
 
-      {/* Modals */}
+      {/* Luxury Modals */}
       <DepositModal isOpen={isDepositOpen} onClose={() => setIsDepositOpen(false)} />
       <WithdrawModal isOpen={isWithdrawOpen} onClose={() => setIsWithdrawOpen(false)} />
     </>

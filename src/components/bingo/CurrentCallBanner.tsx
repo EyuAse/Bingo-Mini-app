@@ -64,10 +64,10 @@ export const CurrentCallBanner: React.FC = () => {
         ) : (
           <div className="waiting-call-row">
             <h2 className="waiting-call-heading">
-              {roundPhase === 'lobby' ? 'WAITING FOR ROUND...' : 'WAITING FOR CALL...'}
+              {t('bingo.waitingCall')}
             </h2>
             <p className="waiting-call-sub">
-              Good luck! The next number could be yours.
+              {t('bingo.goodLuckSub')}
             </p>
           </div>
         )}

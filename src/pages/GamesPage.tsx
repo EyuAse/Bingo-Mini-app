@@ -1,9 +1,12 @@
 import React from 'react';
+import { useLanguage } from '../context/LanguageContext.tsx';
 import { BigBingoCard } from '../components/games/BigBingoCard.tsx';
 import { MoreGamesGrid } from '../components/games/MoreGamesGrid.tsx';
 import { TreasureRewardBanner } from '../components/games/TreasureRewardBanner.tsx';
 
 export const GamesPage: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <div className="page active page-lobby-fresh" id="page-games">
       <main className="lobby-content-scroll-container">
@@ -11,9 +14,9 @@ export const GamesPage: React.FC = () => {
         <div className="lobby-ready-play-card">
           <div className="ready-lemon-slice-bg"></div>
           <div className="ready-text-group">
-            <h2 className="ready-title-bold">Ready to Play?</h2>
+            <h2 className="ready-title-bold">{t('games.readyToPlay')}</h2>
             <p className="ready-subtitle-txt">
-              Pick a room and let the bingo fun begin! 🎉
+              {t('games.startWinning')}
             </p>
           </div>
 

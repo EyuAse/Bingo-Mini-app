@@ -1,8 +1,10 @@
 import React from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 
 export const StatsStrip: React.FC = () => {
   const { betAmount, prizePool, playersCount, calledNumbers } = useBingo();
+  const { t } = useLanguage();
 
   return (
     <div className="fresh-bingo-stats-grid">
@@ -12,7 +14,7 @@ export const StatsStrip: React.FC = () => {
           <i className="fa-solid fa-coins"></i>
         </div>
         <div className="stat-text-group">
-          <span className="stat-label">Stake</span>
+          <span className="stat-label">{t('bingo.stake')}</span>
           <strong className="stat-val gold">{betAmount} ETB</strong>
         </div>
       </div>
@@ -23,7 +25,7 @@ export const StatsStrip: React.FC = () => {
           <i className="fa-solid fa-trophy"></i>
         </div>
         <div className="stat-text-group">
-          <span className="stat-label">Prize Amount</span>
+          <span className="stat-label">{t('bingo.winningAmount')}</span>
           <strong className="stat-val green">{prizePool.toLocaleString()} ETB</strong>
         </div>
       </div>
@@ -34,7 +36,7 @@ export const StatsStrip: React.FC = () => {
           <i className="fa-solid fa-users"></i>
         </div>
         <div className="stat-text-group">
-          <span className="stat-label">Players</span>
+          <span className="stat-label">{t('bingo.players')}</span>
           <strong className="stat-val purple">{playersCount}</strong>
         </div>
       </div>
@@ -45,7 +47,7 @@ export const StatsStrip: React.FC = () => {
           <i className="fa-solid fa-dice"></i>
         </div>
         <div className="stat-text-group">
-          <span className="stat-label">Called Balls</span>
+          <span className="stat-label">{t('bingo.calledBalls')}</span>
           <strong className="stat-val slate">
             {calledNumbers.length > 0 ? `${calledNumbers.length}/75` : '--'}
           </strong>
