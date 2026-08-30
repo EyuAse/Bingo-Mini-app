@@ -1,47 +1,43 @@
 import React, { useState } from 'react';
 import { useWallet } from '../../context/WalletContext.tsx';
-import { useLanguage } from '../../context/LanguageContext.tsx';
 import { DepositModal } from '../wallet/DepositModal.tsx';
 
 export const BalanceBar: React.FC = () => {
-  const { balance, isBalanceVisible, toggleBalanceVisibility, refreshBalance, isRefreshing } = useWallet();
-  const { t } = useLanguage();
+  const { balance, isBalanceVisible, toggleBalanceVisibility } = useWallet();
   const [isDepositOpen, setIsDepositOpen] = useState(false);
 
   return (
     <>
-      <div className="balance-bar">
-        <div className="balance-logo">
-          <i className="fa-solid fa-globe"></i>
+      <div className="lobby-fresh-balance-bar">
+        {/* Left: Yellow Wallet Icon */}
+        <div className="balance-wallet-icon-circle">
+          <i className="fa-solid fa-wallet"></i>
         </div>
-        <div className="balance-info">
-          <i
-            className="fa-solid fa-rotate refresh-icon"
-            id="refresh-balance"
-            onClick={refreshBalance}
-            style={{
-              transform: isRefreshing ? 'rotate(360deg)' : 'none',
-              transition: isRefreshing ? 'transform 0.5s ease' : 'none'
-            }}
-            title="Refresh"
-          ></i>
-          <span className="balance-text">
-            {isBalanceVisible ? `${balance.toFixed(2)} ETB` : '•••• ETB'}
+
+        {/* Center: Amount & Eye Toggle */}
+        <div className="balance-amount-center">
+          <span className="balance-val-text">
+            {isBalanceVisible ? `${balance.toFixed(2)} ETB` : '•••••• ETB'}
           </span>
-          <i
-            className={`fa-solid ${isBalanceVisible ? 'fa-eye-slash' : 'fa-eye'} eye-icon`}
-            id="toggle-balance"
+          <button
+            type="button"
+            className="btn-balance-eye-toggle"
             onClick={toggleBalanceVisibility}
-            title={isBalanceVisible ? 'Hide' : 'Show'}
-          ></i>
+            title={isBalanceVisible ? 'Hide Balance' : 'Show Balance'}
+          >
+            <i className={`fa-regular ${isBalanceVisible ? 'fa-eye' : 'fa-eye-slash'}`}></i>
+          </button>
         </div>
+
+        {/* Right: + Deposit Green Button */}
         <button
-          className="deposit-btn"
+          type="button"
+          className="btn-fresh-deposit"
           id="header-deposit"
           onClick={() => setIsDepositOpen(true)}
         >
-          <i className="fa-solid fa-credit-card"></i>
-          {t('nav.deposit')}
+          <i className="fa-solid fa-circle-plus"></i>
+          <span>Deposit</span>
         </button>
       </div>
 

@@ -1,57 +1,70 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
-import { useBingo } from '../../context/BingoContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { LanguageDropdown } from './LanguageDropdown.tsx';
+import { LomiLogo } from './LomiLogo.tsx';
 import { DepositModal } from '../wallet/DepositModal.tsx';
 
 export const TopHeader: React.FC = () => {
-  const { switchPage } = useApp();
-  const { isMuted, toggleMute } = useBingo();
+  const { switchPage, showToast } = useApp();
   const { t } = useLanguage();
   const [isDepositOpen, setIsDepositOpen] = useState(false);
 
   return (
     <>
-      <header className="top-header">
+      <header className="lobby-fresh-header">
+        {/* Left: Hamburger Drawer Toggle */}
         <button
-          className="header-menu-btn"
+          type="button"
+          className="btn-lobby-hamburger"
           id="header-menu-btn"
-          title={t('nav.menu')}
           onClick={() => switchPage('landing')}
+          title="Menu"
         >
           <i className="fa-solid fa-bars"></i>
         </button>
 
-        {/* Lomi Bingo Logo Branding */}
+        {/* Center: Exact LOMII BINGO Logo */}
         <div
-          className="header-world-bingo-logo"
+          className="lobby-brand-center"
           onClick={() => switchPage('games')}
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+          style={{ cursor: 'pointer' }}
         >
-          <div className="lomi-logo-badge">
-            <span className="lomi-icon">🍋</span>
-            <span className="lomi-title">LOMI BINGO</span>
+          <div className="lomi-brand-logo-inline">
+            <span className="brand-lomi-txt">L</span>
+            <span className="brand-lemon-o">
+              <svg className="mini-lemon-svg" viewBox="0 0 40 40" fill="none">
+                <path d="M19 10C17 6 13 4 10 5C11 9 13 11 17 12L19 10Z" fill="#22c55e" />
+                <path d="M21 10C24 6 28 5 31 7C29 10 27 12 23 12L21 10Z" fill="#16a34a" />
+                <ellipse cx="20" cy="23" rx="14" ry="12" fill="url(#mini-lemon-grad)" />
+                <ellipse cx="16" cy="18" rx="6" ry="3" transform="rotate(-20 16 18)" fill="white" fillOpacity="0.4" />
+                <defs>
+                  <radialGradient id="mini-lemon-grad" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(16 19) rotate(45) scale(16 14)">
+                    <stop stopColor="#fef08a" />
+                    <stop offset="0.6" stopColor="#facc15" />
+                    <stop offset="1" stopColor="#eab308" />
+                  </radialGradient>
+                </defs>
+              </svg>
+            </span>
+            <span className="brand-lomi-txt">MII</span>
+            <span className="brand-bingo-gold">BINGO</span>
           </div>
         </div>
 
-        <div className="header-actions-group">
-          {/* Custom Country Flag Language Dropdown */}
+        {/* Right: Language Pill & Notification Bell */}
+        <div className="lobby-header-right">
           <LanguageDropdown />
 
-          {/* Sound Mute/Unmute */}
           <button
-            className="header-sound-btn"
-            onClick={toggleMute}
-            title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
+            type="button"
+            className="btn-lobby-notif"
+            id="header-notif-btn"
+            onClick={() => showToast('🔔 You have 4 new bonuses & winner notifications!')}
+            title="Notifications"
           >
-            <i className={`fa-solid ${isMuted ? 'fa-volume-xmark' : 'fa-volume-high'}`}></i>
-          </button>
-
-          {/* Notification Button */}
-          <button className="header-notif-btn" id="header-notif-btn" title={t('nav.notifications')}>
-            <i className="fa-solid fa-bell"></i>
-            <span className="notif-badge">3</span>
+            <i className="fa-regular fa-bell"></i>
+            <span className="notif-pill-badge">4</span>
           </button>
         </div>
       </header>

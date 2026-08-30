@@ -1,103 +1,104 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext.tsx';
-import { useLanguage } from '../../context/LanguageContext.tsx';
 
-interface MiniGame {
+interface GameCardItem {
   id: string;
-  nameKey: string;
-  categoryKey: string;
+  title: string;
+  subtitle: string;
   img: string;
-  badge?: string;
-  isAviator?: boolean;
+  playerCount: string;
+  tag?: string;
 }
 
-const miniGames: MiniGame[] = [
+const gameList: GameCardItem[] = [
   {
     id: 'lucky-mines',
-    nameKey: 'games.luckyMines',
-    categoryKey: 'games.minesTag',
-    img: '/assets/images/lucky-mines.jpg'
+    title: 'Lucky Mines',
+    subtitle: 'Diamond Multiplier',
+    img: '/assets/images/lucky-mines.jpg',
+    playerCount: '1,024',
+    tag: 'SOON'
   },
   {
     id: 'fast-keno',
-    nameKey: 'games.fastKeno',
-    categoryKey: 'games.instantWinTag',
+    title: 'Fast Keno',
+    subtitle: 'Instant Win',
     img: '/assets/images/fast-keno.jpg',
-    badge: 'fa-check'
+    playerCount: '543',
+    tag: 'SOON'
   },
   {
     id: 'aviator',
-    nameKey: 'games.aviator',
-    categoryKey: 'games.crashTag',
+    title: 'Aviator',
+    subtitle: 'Crash Multiplier',
     img: '/assets/images/aviator.png',
-    isAviator: true
+    playerCount: '312',
+    tag: 'SOON'
   },
   {
     id: 'chicken-road',
-    nameKey: 'games.chickenRoad',
-    categoryKey: 'games.arcadeTag',
-    img: '/assets/images/chicken-road.jpg'
+    title: 'Chicken Road',
+    subtitle: 'Mini Arcade',
+    img: '/assets/images/chicken-road.jpg',
+    playerCount: '278',
+    tag: 'SOON'
   }
 ];
 
 export const MoreGamesGrid: React.FC = () => {
   const { showToast } = useApp();
-  const { lang, t } = useLanguage();
 
-  const handleGameClick = (game: MiniGame) => {
-    const gameName = t(game.nameKey);
-    const msg =
-      lang === 'am'
-        ? `🚀 ${gameName} በቅርብ ቀን ይጠብቁን! (Coming Soon)`
-        : `🚀 ${gameName} is coming soon!`;
-    showToast(msg);
+  const handleGameClick = (game: GameCardItem) => {
+    showToast(`🚀 ${game.title} is coming soon! Instant Play will be unlocked in the next release.`);
   };
 
   return (
-    <div className="more-games-section">
-      <div className="section-header">
-        <h3 className="section-title">
-          <i className="fa-solid fa-shapes"></i>
-          {t('games.moreGames')}
-        </h3>
+    <section className="fresh-more-games-section">
+      {/* Section Header: All Games | View All ➔ */}
+      <div className="fresh-games-section-header">
+        <div className="section-title-left">
+          <span className="lemon-emoji-title">🍋</span>
+          <h2 className="title-text-bold">More Games</h2>
+        </div>
+
+        <button
+          type="button"
+          className="btn-view-all-green"
+          onClick={() => showToast('✨ Showing all upcoming mini-games!')}
+        >
+          <span>View All</span>
+          <i className="fa-solid fa-arrow-right"></i>
+        </button>
       </div>
-      <div className="more-games-grid">
-        {miniGames.map(game => (
+
+      {/* 2x2 Grid of Game Cards */}
+      <div className="fresh-game-cards-grid">
+        {gameList.map(game => (
           <div
             key={game.id}
-            className={`game-card ${game.isAviator ? 'aviator' : ''}`}
+            className="fresh-mini-game-card"
             onClick={() => handleGameClick(game)}
-            title={lang === 'am' ? 'በቅርብ ቀን ይጠብቁን' : 'Coming Soon'}
           >
-            <div className="game-card-thumb-wrapper">
-              <img
-                src={game.img}
-                alt={t(game.nameKey)}
-                className="game-card-img"
-                onError={e => {
-                  const target = e.currentTarget;
-                  if (game.id === 'lucky-mines') target.src = '/assets/images/room-30-ball.svg';
-                  else if (game.id === 'fast-keno') target.src = '/assets/images/room-special.svg';
-                  else if (game.id === 'aviator') target.src = '/assets/images/room-75-ball.svg';
-                  else if (game.id === 'chicken-road') target.src = '/assets/images/room-90-ball.svg';
-                }}
-              />
-              <span className="coming-soon-badge">
-                {lang === 'am' ? 'በቅርብ ቀን' : 'SOON'}
-              </span>
-              {game.badge && (
-                <div className="check-badge">
-                  <i className={`fa-solid ${game.badge}`}></i>
-                </div>
-              )}
+            {/* Image Artwork Container */}
+            <div className="game-card-thumbnail-wrap">
+              <img src={game.img} alt={game.title} className="game-card-img" />
+
+              {/* Player Count & SOON Badge */}
+              <div className="game-card-top-pill">
+                <i className="fa-solid fa-user-group"></i>
+                <span>{game.playerCount}</span>
+                {game.tag && <span className="tag-soon-mini">{game.tag}</span>}
+              </div>
             </div>
-            <div className="game-card-footer">
-              <span className="game-card-name">{t(game.nameKey)}</span>
-              <span className="game-card-cat">{t(game.categoryKey)}</span>
+
+            {/* Game Meta Labels */}
+            <div className="game-card-meta">
+              <h3 className="game-card-name">{game.title}</h3>
+              <span className="game-card-category">{game.subtitle}</span>
             </div>
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 };
