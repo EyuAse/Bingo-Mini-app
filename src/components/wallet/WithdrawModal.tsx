@@ -149,34 +149,32 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
               <span className="w-amount">{balance.toFixed(2)} ETB</span>
             </div>
 
-            {/* Provider Selection */}
+            {/* Provider Selection: Full-Width Official Logos */}
             <div className="payment-methods-grid">
               <div
                 className={`payment-method-card ${selectedMethod === 'Telebirr' ? 'active' : ''}`}
                 onClick={() => setSelectedMethod('Telebirr')}
               >
-                <div className="pm-logo-wrap">
-                  <TelebirrLogo size={36} />
+                <div className="pm-full-logo-box">
+                  <TelebirrLogo size={46} />
                 </div>
-                <div className="pm-info">
+                <div className="pm-card-bottom">
                   <span className="pm-name">Telebirr</span>
-                  <span className="pm-sub">Direct to Mobile</span>
+                  <i className={`fa-solid ${selectedMethod === 'Telebirr' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
                 </div>
-                <i className={`fa-solid ${selectedMethod === 'Telebirr' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
               </div>
 
               <div
                 className={`payment-method-card ${selectedMethod === 'CBE' ? 'active' : ''}`}
                 onClick={() => setSelectedMethod('CBE')}
               >
-                <div className="pm-logo-wrap">
-                  <CBELogo size={36} />
+                <div className="pm-full-logo-box">
+                  <CBELogo size={46} />
                 </div>
-                <div className="pm-info">
+                <div className="pm-card-bottom">
                   <span className="pm-name">CBE Bank</span>
-                  <span className="pm-sub">Direct Bank Payout</span>
+                  <i className={`fa-solid ${selectedMethod === 'CBE' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
                 </div>
-                <i className={`fa-solid ${selectedMethod === 'CBE' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
               </div>
             </div>
 

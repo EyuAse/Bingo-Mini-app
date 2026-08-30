@@ -15,7 +15,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
   const { t } = useLanguage();
 
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
-  const [amount, setAmount] = useState<number>(200);
+  const [amount, setAmount] = useState<number>(100);
   const [playerPhone, setPlayerPhone] = useState<string>('0911234567');
   const [transactionRef, setTransactionRef] = useState<string>('');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
@@ -23,8 +23,6 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
   const [submittedRef, setSubmittedRef] = useState<string>('');
 
   if (!isOpen) return null;
-
-  const quickAmounts = [50, 100, 200, 500, 1000, 2000];
 
   // Official Receiver Details
   const telebirrReceiverPhone = '0998983344';
@@ -163,38 +161,36 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
              MAIN CLEAN DEPOSIT FORM
              ============================================================ */
           <form onSubmit={handleDepositSubmit}>
-            {/* 1. Payment Provider Selection with Real Official Logos */}
+            {/* 1. Payment Provider Selection: Full-Width Official Logos (No Account Number Inside Card) */}
             <div className="payment-methods-grid">
               <div
                 className={`payment-method-card ${selectedMethod === 'Telebirr' ? 'active' : ''}`}
                 onClick={() => setSelectedMethod('Telebirr')}
               >
-                <div className="pm-logo-wrap">
-                  <TelebirrLogo size={32} />
+                <div className="pm-full-logo-box">
+                  <TelebirrLogo size={46} />
                 </div>
-                <div className="pm-info">
+                <div className="pm-card-bottom">
                   <span className="pm-name">Telebirr</span>
-                  <span className="pm-sub">0998983344</span>
+                  <i className={`fa-solid ${selectedMethod === 'Telebirr' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
                 </div>
-                <i className={`fa-solid ${selectedMethod === 'Telebirr' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
               </div>
 
               <div
                 className={`payment-method-card ${selectedMethod === 'CBE' ? 'active' : ''}`}
                 onClick={() => setSelectedMethod('CBE')}
               >
-                <div className="pm-logo-wrap">
-                  <CBELogo size={32} />
+                <div className="pm-full-logo-box">
+                  <CBELogo size={46} />
                 </div>
-                <div className="pm-info">
+                <div className="pm-card-bottom">
                   <span className="pm-name">CBE Bank</span>
-                  <span className="pm-sub">1000...</span>
+                  <i className={`fa-solid ${selectedMethod === 'CBE' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
                 </div>
-                <i className={`fa-solid ${selectedMethod === 'CBE' ? 'fa-circle-check active-check' : 'fa-circle'}`}></i>
               </div>
             </div>
 
-            {/* 2. Official Receiver Card (Dynamic per Telebirr or CBE selection) */}
+            {/* 2. Official Verified Receiver Details Card */}
             <div className="official-receiver-card">
               <div className="receiver-header">
                 <span className="receiver-tag">
@@ -236,28 +232,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
               </div>
             </div>
 
-            {/* 3. Quick Amount Preset Chips (Minimum 50 ETB) */}
-            <div className="quick-amounts-label">
-              <span>Select Deposit Amount</span>
-              <span style={{ fontSize: '0.6875rem', color: '#facc15' }}>Min 50 ETB</span>
-            </div>
-            <div className="quick-amounts-row">
-              {quickAmounts.map(val => (
-                <button
-                  type="button"
-                  key={val}
-                  className={`quick-amt-chip ${amount === val ? 'active' : ''}`}
-                  onClick={() => setAmount(val)}
-                >
-                  {val} ETB
-                </button>
-              ))}
-            </div>
-
-            {/* Custom Amount & Sender Phone */}
-            <div className="input-duo-grid">
+            {/* 3. Direct Amount & Phone Input (Preset chips section removed for clean UI) */}
+            <div className="input-duo-grid" style={{ marginTop: 0 }}>
               <div className="modal-input-group">
-                <label>Amount (ETB)</label>
+                <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Amount (ETB)</span>
+                  <span style={{ color: '#facc15', fontSize: '0.6875rem' }}>Min: 50 ETB</span>
+                </label>
                 <input
                   type="number"
                   min="50"
