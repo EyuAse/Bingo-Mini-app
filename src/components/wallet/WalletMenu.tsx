@@ -87,12 +87,12 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
           <div
             className="menu-item"
             id="menu-affiliate"
-            onClick={() => showToast('👥 Invite friends and earn up to 500 ETB!')}
+            onClick={() => switchPage('affiliate')}
           >
             <div className="menu-item-icon">
               <i className="fa-solid fa-people-group"></i>
             </div>
-            <span className="menu-item-text">Affiliate</span>
+            <span className="menu-item-text">Affiliate (10%)</span>
             <i className="fa-solid fa-chevron-right menu-item-arrow"></i>
           </div>
 

@@ -15,6 +15,7 @@ import { HistoryPage } from './pages/HistoryPage.tsx';
 import { LeaderPage } from './pages/LeaderPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
 import { BingoPage } from './pages/BingoPage.tsx';
+import { AffiliatePage } from './pages/AffiliatePage.tsx';
 import { AdminPage } from './pages/AdminPage.tsx';
 
 export const App: React.FC = () => {
@@ -54,6 +55,7 @@ export const App: React.FC = () => {
       {currentPage === 'leader' && <LeaderPage />}
       {currentPage === 'profile' && <ProfilePage />}
       {currentPage === 'bingo' && <BingoPage />}
+      {currentPage === 'affiliate' && <AffiliatePage />}
 
       {/* Bottom Navigation */}
       {!isStandalonePage && <BottomNav />}

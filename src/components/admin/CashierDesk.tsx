@@ -525,6 +525,21 @@ export const CashierDesk: React.FC = () => {
             {/* Quick Structured Metrics Box */}
             <div className="inspect-metrics-box">
               <div className="inspect-info-row">
+                <span className="inspect-lbl">Transaction ID:</span>
+                <span
+                  className="tx-ref-clickable"
+                  onClick={() => {
+                    navigator.clipboard.writeText(inspectTx.referenceNumber);
+                    showToast(`📋 Copied ${inspectTx.referenceNumber}`);
+                  }}
+                  title="Click to copy Transaction ID"
+                >
+                  <code style={{ fontSize: '0.875rem', fontWeight: 800 }}>{inspectTx.referenceNumber}</code>
+                  <i className="fa-regular fa-copy"></i>
+                </span>
+              </div>
+
+              <div className="inspect-info-row">
                 <span className="inspect-lbl">Order Type:</span>
                 <span className={`tx-type-pill ${inspectTx.type || 'deposit'}`}>
                   {(inspectTx.type || 'deposit') === 'deposit' ? '📥 DEPOSIT' : '📤 WITHDRAWAL'}

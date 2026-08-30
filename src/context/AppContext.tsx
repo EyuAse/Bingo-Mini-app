@@ -10,6 +10,7 @@ export type PageId =
   | 'leader'
   | 'profile'
   | 'bingo'
+  | 'affiliate'
   | 'admin';
 
 interface AppContextType {
