@@ -1,35 +1,39 @@
 import React from 'react';
-import { useLanguage } from '../../context/LanguageContext.tsx';
 
 export const TrustFooter: React.FC = () => {
-  const { t } = useLanguage();
-
   return (
-    <footer className="trust-footer-bar">
-      <div className="trust-item">
-        <div className="trust-icon-circle icon-shield">
+    <footer className="landing-fresh-trust-bar">
+      <div className="trust-pillar-item">
+        <div className="pillar-icon-box gold">
           <i className="fa-solid fa-shield-halved"></i>
         </div>
-        <div className="trust-text">
-          <span className="trust-title">{t('landing.fairCertified')}</span>
+        <div className="pillar-text-group">
+          <strong className="pillar-title">100% Secure</strong>
+          <span className="pillar-sub">Safe & Fair Play</span>
         </div>
       </div>
 
-      <div className="trust-item">
-        <div className="trust-icon-circle icon-support">
+      <div className="trust-pillar-sep"></div>
+
+      <div className="trust-pillar-item">
+        <div className="pillar-icon-box gold">
           <i className="fa-solid fa-bolt"></i>
         </div>
-        <div className="trust-text">
-          <span className="trust-title">{t('landing.instantTelebirr')}</span>
+        <div className="pillar-text-group">
+          <strong className="pillar-title">Instant Payouts</strong>
+          <span className="pillar-sub">Fast & Reliable</span>
         </div>
       </div>
 
-      <div className="trust-item">
-        <div className="trust-icon-circle icon-offers">
-          <i className="fa-solid fa-users"></i>
+      <div className="trust-pillar-sep"></div>
+
+      <div className="trust-pillar-item">
+        <div className="pillar-icon-box gold">
+          <i className="fa-solid fa-headset"></i>
         </div>
-        <div className="trust-text">
-          <span className="trust-title">{t('landing.live247')}</span>
+        <div className="pillar-text-group">
+          <strong className="pillar-title">24/7 Support</strong>
+          <span className="pillar-sub">We're here for you</span>
         </div>
       </div>
     </footer>
