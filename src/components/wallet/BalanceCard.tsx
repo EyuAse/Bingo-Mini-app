@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useWallet } from '../../context/WalletContext.tsx';
+import { useApp } from '../../context/AppContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
-import { DepositModal } from './DepositModal.tsx';
-import { WithdrawModal } from './WithdrawModal.tsx';
 
 export const BalanceCard: React.FC = () => {
   const { balance, bonus } = useWallet();
+  const { switchPage } = useApp();
   const { t } = useLanguage();
-  const [isDepositOpen, setIsDepositOpen] = useState(false);
-  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
 
   return (
     <>
@@ -39,13 +37,13 @@ export const BalanceCard: React.FC = () => {
         </div>
       </div>
 
-      {/* 2 Quick Action Buttons: Withdraw & Deposit Now */}
+      {/* 2 Quick Action Buttons: Withdraw & Deposit Now -> Dedicated Pages */}
       <div className="fresh-wallet-action-row">
         <button
           type="button"
           className="btn-wallet-action-white"
           id="withdraw-btn"
-          onClick={() => setIsWithdrawOpen(true)}
+          onClick={() => switchPage('withdraw')}
         >
           <i className="fa-solid fa-arrow-up-from-bracket"></i>
           <span>{t('wallet.withdrawBtn')}</span>
@@ -55,16 +53,12 @@ export const BalanceCard: React.FC = () => {
           type="button"
           className="btn-wallet-action-gold"
           id="deposit-btn"
-          onClick={() => setIsDepositOpen(true)}
+          onClick={() => switchPage('deposit')}
         >
           <i className="fa-solid fa-arrow-down"></i>
           <span>{t('wallet.depositNowBtn')}</span>
         </button>
       </div>
-
-      {/* Luxury Modals */}
-      <DepositModal isOpen={isDepositOpen} onClose={() => setIsDepositOpen(false)} />
-      <WithdrawModal isOpen={isWithdrawOpen} onClose={() => setIsWithdrawOpen(false)} />
     </>
   );
 };

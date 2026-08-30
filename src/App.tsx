@@ -11,6 +11,8 @@ import { LoginPage } from './pages/LoginPage.tsx';
 import { SignupPage } from './pages/SignupPage.tsx';
 import { GamesPage } from './pages/GamesPage.tsx';
 import { WalletPage } from './pages/WalletPage.tsx';
+import { DepositPage } from './pages/DepositPage.tsx';
+import { WithdrawPage } from './pages/WithdrawPage.tsx';
 import { HistoryPage } from './pages/HistoryPage.tsx';
 import { LeaderPage } from './pages/LeaderPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
@@ -39,13 +41,20 @@ export const App: React.FC = () => {
     currentPage === 'login' ||
     currentPage === 'signup';
 
+  const isSubpage =
+    currentPage === 'account-info' ||
+    currentPage === 'help' ||
+    currentPage === 'about' ||
+    currentPage === 'deposit' ||
+    currentPage === 'withdraw';
+
   return (
     <div className="app-container">
       {/* Top Header for all main game & user views */}
-      {!isStandalonePage && <TopHeader />}
+      {!isStandalonePage && !isSubpage && <TopHeader />}
 
       {/* Balance Bar for all main game & user views */}
-      {!isStandalonePage && <BalanceBar />}
+      {!isStandalonePage && !isSubpage && <BalanceBar />}
 
       {/* Active Page View */}
       {currentPage === 'landing' && <LandingPage />}
@@ -53,6 +62,8 @@ export const App: React.FC = () => {
       {currentPage === 'signup' && <SignupPage />}
       {currentPage === 'games' && <GamesPage />}
       {currentPage === 'wallet' && <WalletPage />}
+      {currentPage === 'deposit' && <DepositPage />}
+      {currentPage === 'withdraw' && <WithdrawPage />}
       {currentPage === 'history' && <HistoryPage />}
       {currentPage === 'leader' && <LeaderPage />}
       {currentPage === 'profile' && <ProfilePage />}

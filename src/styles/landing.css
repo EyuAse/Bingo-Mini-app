@@ -5,14 +5,14 @@
 
 .page-landing-fresh,
 .page-auth-fresh {
-  min-height: 100vh;
+  min-height: 100%;
   background: radial-gradient(ellipse at 50% 0%, #fffdf8 0%, #fefce8 50%, #fef9c3 100%);
   color: #0f172a;
   position: relative;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  padding-bottom: 20px;
+  padding-bottom: 8px;
 }
 
 /* Floating Background Lemon Slices & Leaves */
@@ -988,4 +988,80 @@
   width: 1px;
   height: 26px;
   background: #e2e8f0;
+}
+
+/* ============================================================
+   MOBILE RESPONSIVENESS (320px - 440px)
+   ============================================================ */
+@media (max-width: 440px) {
+  .auth-fresh-container {
+    padding: 12px 10px;
+  }
+
+  .auth-fresh-card {
+    padding: 20px 14px;
+    border-radius: 20px;
+  }
+
+  .auth-card-title {
+    font-size: 1.45rem;
+  }
+
+  .ball-left-yellow {
+    left: -8px;
+    width: 40px;
+    height: 40px;
+    bottom: 20px;
+  }
+
+  .ball-right-green {
+    right: -8px;
+    width: 40px;
+    height: 40px;
+    bottom: 18px;
+  }
+
+  .ball-num {
+    width: 22px;
+    height: 22px;
+    font-size: 0.8rem;
+  }
+
+  .landing-fresh-trust-bar {
+    padding: 10px 10px;
+    gap: 4px;
+  }
+
+  .pillar-icon-box.gold {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+
+  .pillar-title {
+    font-size: 0.6875rem;
+  }
+
+  .pillar-sub {
+    font-size: 0.5375rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .flanking-ball-ornament {
+    display: none;
+  }
+
+  .auth-social-row {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-fresh-trust-bar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .trust-pillar-sep {
+    display: none;
+  }
 }

@@ -6,6 +6,8 @@ export type PageId =
   | 'signup'
   | 'games'
   | 'wallet'
+  | 'deposit'
+  | 'withdraw'
   | 'history'
   | 'leader'
   | 'profile'
