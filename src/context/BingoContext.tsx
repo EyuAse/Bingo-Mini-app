@@ -113,6 +113,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     houseCommissionEnabled,
     commissionRate,
     simulatedPlayerCount,
+    botPool,
+    botWinRate,
     recordHouseCommission
   } = useAdmin();
 
@@ -342,11 +344,33 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         });
       }, 1000);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [addBalance, stopGame]
   );
 
-  // Draw Next Ball
+  // Generate realistic dynamic opponents sampled from the 260+ botPool
+  const generateLiveOpponents = useCallback((): Opponent[] => {
+    const avatarClasses = ['av-purple', 'av-green', 'av-orange', 'av-blue', 'av-pink'];
+    const source = (botPool && botPool.length > 0) ? botPool : initialOpponents.map((o, i) => ({
+      id: `bot-${i}`,
+      name: o.name,
+      phone: '+251 911 000 000',
+      avatar: '🦁',
+      cartelasPlayed: 20,
+      winsCount: 5,
+      isBot: true
+    }));
+    const sample = [...source].sort(() => Math.random() - 0.5).slice(0, 6);
+    return sample.map((bot, idx) => ({
+      name: bot.name,
+      avatar: avatarClasses[idx % avatarClasses.length],
+      initials: bot.name.split(' ').map(p => p[0]).join('').slice(0, 2),
+      cards: Math.random() < 0.45 ? 2 : 1,
+      marksNeeded: Math.floor(3 + Math.random() * 3),
+      status: 'In Game'
+    }));
+  }, [botPool]);
+
+  // Draw Next Number from Pool
   const drawNextBall = useCallback(() => {
     setDrawPool(prevPool => {
       if (prevPool.length === 0) {
@@ -393,7 +417,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         });
       }
 
-      // Opponents simulation & random opponent win check
+      // Opponents simulation & 30% bot winning check
       setOpponents(prevOpponents => {
         let opponentHasWon = false;
         let winningOpponentName = '';
@@ -414,13 +438,14 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           return opp;
         });
 
-        // If opponent won and user hasn't claimed yet after 25+ calls
-        if (opponentHasWon && Math.random() < 0.25) {
+        // 30% Bot Winning Distribution Trigger (configured via botWinRate)
+        const botWinProbability = ((botWinRate || 30) / 100) * 0.35;
+        if (opponentHasWon && Math.random() < botWinProbability) {
           triggerWinnerShowcase({
             winType: 'opponent_win',
-            winningCartelaNumber: 1,
+            winningCartelaNumber: Math.floor(1 + Math.random() * 400),
             winningLine: [],
-            winnerName: winningOpponentName,
+            winnerName: winningOpponentName || 'Abebe K.',
             coWinners: [],
             totalPot: prizePool,
             userShare: 0
@@ -432,14 +457,14 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       return nextPool;
     });
-  }, [prizePool, showToast, stopGame, triggerWinnerShowcase]);
+  }, [botWinRate, prizePool, showToast, stopGame, triggerWinnerShowcase]);
 
   // Start Live Draw Round
   const startLiveRound = useCallback(() => {
     stopGame();
     setRoundPhase('playing');
     setGameActive(true);
-    setOpponents(initialOpponents);
+    setOpponents(generateLiveOpponents());
 
     // If pre-bought or has ticket, activate cards
     if (hasPreBoughtNext) {

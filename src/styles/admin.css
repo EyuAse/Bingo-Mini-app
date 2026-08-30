@@ -1516,9 +1516,9 @@ input:checked + .slider-round:before {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 14px;
-  max-height: 480px;
+  max-height: 520px;
   overflow-y: auto;
-  padding: 10px;
+  padding: 14px;
   background: rgba(15, 7, 40, 0.5);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1528,8 +1528,14 @@ input:checked + .slider-round:before {
   background: #130a30;
   border: 1px solid rgba(168, 85, 247, 0.3);
   border-radius: 10px;
-  padding: 8px;
+  padding: 10px;
   text-align: center;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.mini-cartela-card:hover {
+  transform: translateY(-2px);
+  border-color: #facc15;
 }
 
 .mini-cartela-header {
@@ -1539,7 +1545,19 @@ input:checked + .slider-round:before {
   margin-bottom: 6px;
   font-size: 0.6875rem;
   font-weight: 800;
+}
+
+.card-number-badge {
+  background: rgba(250, 204, 21, 0.15);
   color: #facc15;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.card-serial-text {
+  color: #94a3b8;
+  font-family: monospace;
 }
 
 .mini-grid-5x5 {
@@ -1560,6 +1578,74 @@ input:checked + .slider-round:before {
 .mini-cell.free {
   background: rgba(236, 72, 153, 0.3);
   color: #ec4899;
+}
+
+/* Cartela Pagination Bar */
+.cartela-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  margin-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn-pagination {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 7px 14px;
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-pagination:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-pagination:not(:disabled):hover {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: #a855f7;
+}
+
+.pagination-page-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.page-pill-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.page-pill-btn:hover {
+  background: rgba(168, 85, 247, 0.2);
+  color: #ffffff;
+}
+
+.page-pill-btn.active {
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  border-color: #ec4899;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
 }
 
 /* ============================================================

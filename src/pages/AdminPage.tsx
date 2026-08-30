@@ -49,6 +49,7 @@ export const AdminPage: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
   const [botSearch, setBotSearch] = useState('');
   const [cartelaSearch, setCartelaSearch] = useState('');
+  const [cartelaPage, setCartelaPage] = useState(1);
 
   // Add User Modal State
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -467,7 +468,7 @@ export const AdminPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredBots.slice(0, 50).map(bot => (
+                      {filteredBots.map(bot => (
                         <tr key={bot.id}>
                           <td style={{ fontSize: '1.2rem' }}>{bot.avatar}</td>
                           <td>
@@ -634,49 +635,102 @@ export const AdminPage: React.FC = () => {
           )}
 
           {/* TAB 6: 400 CARTELA CARDS */}
-          {activeTab === 'cartelas' && (
-            <div className="tab-pane">
-              <div className="admin-card">
-                <div className="admin-card-header">
-                  <h3 className="admin-card-title">
-                    <i className="fa-solid fa-layer-group"></i> 400 Serial Cartela Cards Library
-                  </h3>
-                  <input
-                    type="text"
-                    placeholder="Search Card Serial (e.g. LB-0042)..."
-                    value={cartelaSearch}
-                    onChange={e => setCartelaSearch(e.target.value)}
-                    style={{
-                      background: '#0f0724',
-                      border: '1px solid rgba(255,255,255,0.15)',
-                      borderRadius: '8px',
-                      padding: '6px 12px',
-                      color: '#fff',
-                      fontSize: '0.8125rem'
-                    }}
-                  />
-                </div>
+          {activeTab === 'cartelas' && (() => {
+            const cardsPerPage = 50;
+            const totalPages = Math.ceil(filteredCartelas.length / cardsPerPage) || 1;
+            const currentPageSafe = Math.min(cartelaPage, totalPages);
+            const startIdx = (currentPageSafe - 1) * cardsPerPage;
+            const paginatedCartelas = filteredCartelas.slice(startIdx, startIdx + cardsPerPage);
 
-                <div className="cartela-grid-browser">
-                  {filteredCartelas.slice(0, 60).map(card => (
-                    <div key={card.id} className="mini-cartela-card">
-                      <div className="mini-cartela-header">
-                        <span>Card #{card.id}</span>
-                        <span>{card.serialNumber}</span>
+            return (
+              <div className="tab-pane">
+                <div className="admin-card">
+                  <div className="admin-card-header">
+                    <div>
+                      <h3 className="admin-card-title">
+                        <i className="fa-solid fa-layer-group"></i> 400 Serial Cartela Cards Library
+                      </h3>
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        Showing Cards {startIdx + 1}–{Math.min(startIdx + cardsPerPage, filteredCartelas.length)} of {filteredCartelas.length} Total Pool
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <input
+                        type="text"
+                        placeholder="Search Card # (1-400) or LB-0042..."
+                        value={cartelaSearch}
+                        onChange={e => {
+                          setCartelaSearch(e.target.value);
+                          setCartelaPage(1);
+                        }}
+                        style={{
+                          background: '#0f0724',
+                          border: '1px solid rgba(255,255,255,0.15)',
+                          borderRadius: '8px',
+                          padding: '6px 12px',
+                          color: '#fff',
+                          fontSize: '0.8125rem'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 400 Cards Grid */}
+                  <div className="cartela-grid-browser">
+                    {paginatedCartelas.map(card => (
+                      <div key={card.id} className="mini-cartela-card">
+                        <div className="mini-cartela-header">
+                          <span className="card-number-badge">#{card.id}</span>
+                          <span className="card-serial-text">{card.serialNumber}</span>
+                        </div>
+                        <div className="mini-grid-5x5">
+                          {card.grid.map((num, idx) => (
+                            <div key={idx} className={`mini-cell ${num === 0 ? 'free' : ''}`}>
+                              {num === 0 ? '★' : num}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="mini-grid-5x5">
-                        {card.grid.map((num, idx) => (
-                          <div key={idx} className={`mini-cell ${num === 0 ? 'free' : ''}`}>
-                            {num === 0 ? '★' : num}
-                          </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="cartela-pagination-bar">
+                      <button
+                        className="btn-pagination"
+                        disabled={currentPageSafe === 1}
+                        onClick={() => setCartelaPage(p => Math.max(1, p - 1))}
+                      >
+                        <i className="fa-solid fa-chevron-left"></i> Previous
+                      </button>
+
+                      <div className="pagination-page-pills">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                          <button
+                            key={pageNum}
+                            className={`page-pill-btn ${currentPageSafe === pageNum ? 'active' : ''}`}
+                            onClick={() => setCartelaPage(pageNum)}
+                          >
+                            {pageNum}
+                          </button>
                         ))}
                       </div>
+
+                      <button
+                        className="btn-pagination"
+                        disabled={currentPageSafe === totalPages}
+                        onClick={() => setCartelaPage(p => Math.min(totalPages, p + 1))}
+                      >
+                        Next <i className="fa-solid fa-chevron-right"></i>
+                      </button>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </main>
       </div>
 

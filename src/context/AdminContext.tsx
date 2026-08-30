@@ -117,7 +117,7 @@ interface AdminContextType {
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
-// Generate 200+ realistic Ethiopian bot profiles
+// Generate 260+ realistic & undetectable Ethiopian bot profiles
 const generateEthiopianBots = (): BotPlayer[] => {
   const firstNames = [
     'Abebe', 'Almaz', 'Bekele', 'Chala', 'Dawit', 'Ephrem', 'Fikirte', 'Getachew',
@@ -125,28 +125,33 @@ const generateEthiopianBots = (): BotPlayer[] => {
     'Selam', 'Tariku', 'Tewodros', 'Yared', 'Zinash', 'Bilen', 'Desta', 'Ermias',
     'Fasil', 'Genet', 'Hana', 'Kiros', 'Mulugeta', 'Netsanet', 'Robel', 'Senait',
     'Tadesse', 'Wondwosen', 'Yordanos', 'Zelalem', 'Abinet', 'Bethel', 'Daniel',
-    'Eskinder', 'Frehiwot', 'Girum', 'Hiwot', 'Kalkidan', 'Mahlet', 'Nahom'
+    'Eskinder', 'Frehiwot', 'Girum', 'Hiwot', 'Kalkidan', 'Mahlet', 'Nahom',
+    'Surafel', 'Biruk', 'Meron', 'Henok', 'Tigist', 'Yohannes', 'Fitsum', 'Kalid',
+    'Sintayehu', 'Meseret', 'Solomon', 'Tsion', 'Binyam', 'Eden', 'Kenenisa'
   ];
   const lastNames = [
     'Bikila', 'Kebede', 'Mengistu', 'Alemu', 'Tadesse', 'Tesfaye', 'Haile', 'Worku',
     'Assefa', 'Girma', 'Demissie', 'Bogale', 'Wolde', 'Dibaba', 'Tolessa', 'Berhanu',
-    'Kassa', 'Legesse', 'Negash', 'Mekonnen', 'Alemayehu', 'Zewde', 'Tefera', 'Shiferaw'
+    'Kassa', 'Legesse', 'Negash', 'Mekonnen', 'Alemayehu', 'Zewde', 'Tefera', 'Shiferaw',
+    'Gashaw', 'Belay', 'Aysele', 'Kassaye', 'Ayele', 'Derese', 'Tilahun', 'Feyissa'
   ];
-  const avatars = ['🦁', '👑', '⚡', '🌟', '💎', '🔥', '🎯', '🦅', '🍀', '🏆', '🍋', '⚽'];
+  const phonePrefixes = ['911', '912', '913', '914', '915', '920', '921', '922', '923', '924', '930', '933', '940', '944', '955', '966', '977', '701', '711'];
+  const avatars = ['🦁', '👑', '⚡', '🌟', '💎', '🔥', '🎯', '🦅', '🍀', '🏆', '🍋', '⚽', '🥇', '🚀', '✨', '🐺', '🦊', '🐯'];
 
   const bots: BotPlayer[] = [];
   let count = 0;
   for (const fn of firstNames) {
     for (const ln of lastNames) {
-      if (count >= 220) break;
+      if (count >= 260) break;
+      const prefix = phonePrefixes[count % phonePrefixes.length];
       const numPart = Math.floor(100000 + Math.random() * 900000);
       bots.push({
         id: `bot-${count + 1}`,
         name: `${fn} ${ln.charAt(0)}.`,
-        phone: `+251 9${Math.floor(10 + Math.random() * 89)} ${numPart.toString().slice(0, 3)} ${numPart.toString().slice(3)}`,
+        phone: `+251 ${prefix} ${numPart.toString().slice(0, 3)} ${numPart.toString().slice(3)}`,
         avatar: avatars[count % avatars.length],
-        cartelasPlayed: Math.floor(12 + Math.random() * 88),
-        winsCount: Math.floor(1 + Math.random() * 15),
+        cartelasPlayed: Math.floor(15 + Math.random() * 120),
+        winsCount: Math.floor(1 + Math.random() * 22),
         isBot: true
       });
       count++;
