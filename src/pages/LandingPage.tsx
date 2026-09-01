@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LandingNavbar } from '../components/landing/LandingNavbar.tsx';
+import { BlumOnboardingCarousel } from '../components/landing/BlumOnboardingCarousel.tsx';
 import { TrustFooter } from '../components/landing/TrustFooter.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
@@ -13,7 +14,7 @@ import { User } from '../types/auth.ts';
 export const LandingPage: React.FC = () => {
   const { switchPage, showToast } = useApp();
   const { t, lang } = useLanguage();
-  const { loginWithTelegram, telegramUser, isInsideTelegram } = useAuth();
+  const { loginWithTelegram, telegramUser } = useAuth();
   const { addUser, registerBonus } = useAdmin();
   const { addBonus } = useWallet();
 
@@ -83,70 +84,41 @@ export const LandingPage: React.FC = () => {
       <div className="bg-floating-leaf leaf-bottom-right"></div>
 
       {/* 2. Hero Content Section */}
-      <main className="landing-fresh-hero-container">
-        {/* Pretitle */}
-        <p className="hero-fresh-pretitle">{t('landing.pretitle')}</p>
+      <main className="landing-fresh-hero-container" style={{ padding: '14px 14px 28px 14px' }}>
+        {/* Blum-Style Interactive 3D Onboarding Story Card */}
+        <BlumOnboardingCarousel
+          onClaimBonus={handleClaimBonusClick}
+          isLoading={isLoading}
+        />
 
-        {/* Main Title: Play Bingo with floating lemon */}
-        <h1 className="hero-fresh-title">
-          {t('landing.title')}
-          <span className="hero-lemon-icon">🍋</span>
-        </h1>
-
-        {/* Tagline */}
-        <p className="hero-fresh-tagline">{t('landing.tagline')}</p>
-
-        {/* Promo Deposit Bonus Block */}
-        <div className="hero-promo-block">
-          <span className="promo-lbl">{t('landing.firstDepositBonus')}</span>
-          <div className="promo-bonus-huge">{t('landing.bonus200')}</div>
-          <div className="promo-bonus-sub">{t('landing.freeTickets')}</div>
-        </div>
-
-        {/* Dynamic Action Button (New: "Get 10 birr Bonus" vs Existing: "Log in as [Name]") */}
-        <button
-          type="button"
-          className="btn-hero-fresh-cta"
-          id="landing-claim-bonus-btn"
-          onClick={handleClaimBonusClick}
-          disabled={isLoading}
-          style={{
-            background: isExistingAccount
-              ? 'linear-gradient(135deg, #2AABEE 0%, #229ED9 50%, #0284c7 100%)'
-              : 'linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%)',
-            boxShadow: isExistingAccount
-              ? '0 8px 25px rgba(34, 158, 217, 0.45)'
-              : '0 8px 25px rgba(234, 179, 8, 0.45)'
-          }}
-        >
-          <span className="cta-gift-icon">
-            {isExistingAccount ? '⚡' : '🎁'}
-          </span>
-          <span>
-            {isLoading
-              ? lang === 'am'
-                ? 'በመግባት ላይ...'
-                : 'Connecting...'
-              : isExistingAccount
-              ? lang === 'am'
+        {/* Dynamic Secondary Action Button (If already registered: "Log in as [Name]") */}
+        {isExistingAccount && (
+          <button
+            type="button"
+            className="btn-hero-fresh-cta"
+            id="landing-claim-bonus-btn"
+            onClick={handleClaimBonusClick}
+            disabled={isLoading}
+            style={{
+              background: 'linear-gradient(135deg, #2AABEE 0%, #229ED9 50%, #0284c7 100%)',
+              boxShadow: '0 8px 25px rgba(34, 158, 217, 0.45)',
+              marginBottom: '16px'
+            }}
+          >
+            <span className="cta-gift-icon">⚡</span>
+            <span>
+              {isLoading
+                ? lang === 'am'
+                  ? 'በመግባት ላይ...'
+                  : 'Connecting...'
+                : lang === 'am'
                 ? `⚡ እንደ ${displayName} ግባ`
-                : `⚡ Log in as ${displayName}`
-              : lang === 'am'
-              ? '🎁 የ10 ብር መመዝገቢያ ቦነስ አሁኑኑ ያግኙ'
-              : '🎁 Get 10 birr sign up Bonus Now'}
-          </span>
-        </button>
+                : `⚡ Log in as ${displayName}`}
+            </span>
+          </button>
+        )}
 
-        {/* 3. Hero 3D Artwork Card (75-Ball & Cartelas) */}
-        <div className="hero-fresh-artwork-card">
-          <img
-            src="/assets/images/lomi-hero-75.jpg"
-            alt="75-Ball Lomi Bingo 3D Cards and Balls"
-            className="hero-artwork-img"
-          />
-        </div>
-
-        {/* 4. Exact 3-Pillar Trust Footer */}
+        {/* 3. 3-Pillar Trust Footer */}
         <TrustFooter />
       </main>
 

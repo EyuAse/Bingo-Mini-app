@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from './context/AppContext.tsx';
 import { useAuth } from './context/AuthContext.tsx';
 import { useAdmin } from './context/AdminContext.tsx';
 import { useWallet } from './context/WalletContext.tsx';
 import { TopHeader } from './components/common/TopHeader.tsx';
 import { BalanceBar } from './components/common/BalanceBar.tsx';
+import { LiveSocialProofTicker } from './components/common/LiveSocialProofTicker.tsx';
 import { BottomNav } from './components/common/BottomNav.tsx';
 import { Toast } from './components/common/Toast.tsx';
 import { NewPlayerWelcomeModal } from './components/auth/NewPlayerWelcomeModal.tsx';
+import { DailyStreakModal } from './components/rewards/DailyStreakModal.tsx';
 
 // Pages
 import { LandingPage } from './pages/LandingPage.tsx';
@@ -28,11 +30,12 @@ import { AdminPage } from './pages/AdminPage.tsx';
 
 export const App: React.FC = () => {
   const { currentPage, switchPage } = useApp();
-  const { user, isAuthenticated, isInsideTelegram, isFirstTimeTelegramUser, dismissFirstTimeModal } = useAuth();
+  const { user, isAuthenticated, isFirstTimeTelegramUser, dismissFirstTimeModal } = useAuth();
   const { addUser, registerBonus } = useAdmin();
   const { addBonus } = useWallet();
+  const [isDailyStreakOpen, setIsDailyStreakOpen] = useState(false);
 
-  // Seamless zero-form routing: If user is authenticated in Telegram, jump straight into games!
+  // Seamless routing: If user is authenticated in Telegram, jump straight into games!
   useEffect(() => {
     if (isAuthenticated && (currentPage === 'landing' || currentPage === 'login' || currentPage === 'signup')) {
       switchPage('games');
@@ -84,6 +87,11 @@ export const App: React.FC = () => {
       {/* Balance Bar for all main game & user views */}
       {!isStandalonePage && !isSubpage && <BalanceBar />}
 
+      {/* Phase 3: Live Online Players & Winners Ticker */}
+      {!isStandalonePage && !isSubpage && (
+        <LiveSocialProofTicker onOpenStreak={() => setIsDailyStreakOpen(true)} />
+      )}
+
       {/* Active Page View */}
       {currentPage === 'landing' && <LandingPage />}
       {currentPage === 'login' && <LoginPage />}
@@ -103,12 +111,18 @@ export const App: React.FC = () => {
       {/* Bottom Navigation */}
       {!isStandalonePage && <BottomNav />}
 
-      {/* First-time registration celebration modal */}
+      {/* Phase 1: First-time registration celebration modal */}
       <NewPlayerWelcomeModal
         isOpen={isFirstTimeTelegramUser}
         user={user}
         bonusAmount={registerBonus}
         onClose={dismissFirstTimeModal}
+      />
+
+      {/* Phase 2: Daily Login Streak Calendar Modal */}
+      <DailyStreakModal
+        isOpen={isDailyStreakOpen}
+        onClose={() => setIsDailyStreakOpen(false)}
       />
 
       {/* Global Toast */}
