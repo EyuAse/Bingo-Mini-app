@@ -14,18 +14,23 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ onEditClick }) => 
     if (onEditClick) {
       onEditClick();
     } else {
-      switchPage('profile');
+      switchPage('account-info');
     }
   };
 
-  const displayName = user?.fullName || 'Eyu Ase';
-  const displayPhone = user?.nationalPhone || user?.phone || '0983624574';
+  const displayName = user?.fullName || (user?.telegramUsername ? `@${user.telegramUsername}` : 'Telegram Player');
+  const hasRealPhone = user?.phone && !user.id.includes(user.phone.slice(-6)) && user.phone.length >= 10 && !user.phone.startsWith('+25198888');
+  
+  const displayHandle = user?.telegramUsername
+    ? `@${user.telegramUsername}`
+    : (user?.formattedPhone || user?.phone || 'Telegram Account');
+
   const initials = displayName
     .split(' ')
     .map(p => p[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2) || 'EA';
+    .slice(0, 2) || (user?.telegramUsername ? user.telegramUsername.slice(0, 2).toUpperCase() : 'TG');
 
   return (
     <div className="fresh-profile-banner-card">
@@ -50,8 +55,10 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ onEditClick }) => 
       <div className="profile-details-group" onClick={handleAction} style={{ cursor: 'pointer' }}>
         <h2 className="profile-name-bold">{displayName}</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span className="profile-phone-sub">{displayPhone}</span>
-          {user?.carrier && (
+          <span className="profile-phone-sub">
+            {hasRealPhone ? user?.formattedPhone : displayHandle}
+          </span>
+          {hasRealPhone && user?.carrier && (
             <span
               style={{
                 fontSize: '10px',
@@ -66,18 +73,22 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ onEditClick }) => 
               {user.carrier === 'ethiotelecom' ? 'EthioTel' : 'Safaricom'}
             </span>
           )}
+          {!hasRealPhone && (
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                padding: '1px 6px',
+                borderRadius: '999px',
+                background: '#e0f2fe',
+                color: '#0369a1'
+              }}
+            >
+              Telegram
+            </span>
+          )}
         </div>
       </div>
-
-      {/* Right Arrow Button */}
-      <button
-        type="button"
-        className="btn-profile-arrow-circ"
-        onClick={handleAction}
-        title="View Profile & Accounts"
-      >
-        <i className="fa-solid fa-chevron-right"></i>
-      </button>
     </div>
   );
 };

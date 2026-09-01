@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { validateEthiopianPhone } from '../services/ethiopianPhoneValidator';
 import { TelebirrLogo, CBELogo } from '../components/wallet/PaymentLogos';
 
 interface AttachedAccount {
@@ -18,45 +19,46 @@ export const AccountInfoPage: React.FC = () => {
   const { t, lang } = useLanguage();
   const { user, updateProfile } = useAuth();
 
-  const [fullName, setFullName] = useState<string>(user?.fullName || 'Eyob Asefa');
+  const [fullName, setFullName] = useState<string>(user?.fullName || 'Telegram Player');
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
 
+  // Phone Number Linking / Editing State
+  const hasRealPhone = user?.phone && !user.id.includes(user.phone.slice(-6)) && user.phone.length >= 10 && !user.phone.startsWith('+25198888');
+  const [phoneInput, setPhoneInput] = useState<string>(hasRealPhone ? (user?.nationalPhone || '') : '');
+  const [isEditingPhone, setIsEditingPhone] = useState<boolean>(false);
+
   // Telegram Account Linking State
-  const [telegramUsername, setTelegramUsername] = useState<string>(user?.telegramUsername || 'eyu_ase');
+  const [telegramUsername, setTelegramUsername] = useState<string>(user?.telegramUsername || '');
   const [isEditingTelegram, setIsEditingTelegram] = useState<boolean>(false);
-  const [tempTelegramInput, setTempTelegramInput] = useState<string>(user?.telegramUsername || 'eyu_ase');
+  const [tempTelegramInput, setTempTelegramInput] = useState<string>(user?.telegramUsername || '');
 
   // Attached Accounts List (Telebirr & CBE ONLY)
   const [attachedAccounts, setAttachedAccounts] = useState<AttachedAccount[]>(() => {
-    const userPhone = user?.nationalPhone || '0983624574';
-    const userName = user?.fullName || 'Eyob Asefa';
-    return [
-      {
-        id: 'acc-1',
-        type: 'Telebirr',
-        name: `${userName} (Telebirr)`,
-        accountNumber: userPhone,
-        isDefault: true,
-        isVerified: true
-      },
-      {
-        id: 'acc-2',
-        type: 'CBE',
-        name: 'Commercial Bank of Ethiopia',
-        accountNumber: '100098983344',
-        isDefault: false,
-        isVerified: true
-      }
-    ];
+    if (hasRealPhone && user?.nationalPhone) {
+      return [
+        {
+          id: 'acc-1',
+          type: 'Telebirr',
+          name: `${user.fullName} (Telebirr)`,
+          accountNumber: user.nationalPhone,
+          isDefault: true,
+          isVerified: true
+        }
+      ];
+    }
+    return [];
   });
 
   // Sync state if user changes
   useEffect(() => {
     if (user) {
-      setFullName(user.fullName);
+      setFullName(user.fullName || (user.telegramUsername ? `@${user.telegramUsername}` : 'Telegram Player'));
       if (user.telegramUsername) {
         setTelegramUsername(user.telegramUsername);
         setTempTelegramInput(user.telegramUsername);
+      }
+      if (hasRealPhone && user.nationalPhone) {
+        setPhoneInput(user.nationalPhone);
       }
     }
   }, [user]);
@@ -64,7 +66,7 @@ export const AccountInfoPage: React.FC = () => {
   // New Account Form State (Telebirr & CBE ONLY)
   const [showAddAccount, setShowAddAccount] = useState<boolean>(false);
   const [newAccType, setNewAccType] = useState<'Telebirr' | 'CBE'>('Telebirr');
-  const [newAccName, setNewAccName] = useState<string>(user?.fullName || 'Eyob Asefa');
+  const [newAccName, setNewAccName] = useState<string>(user?.fullName || 'Telegram Player');
   const [newAccNumber, setNewAccNumber] = useState<string>('');
 
   const handleCopy = (text: string, label: string) => {
@@ -80,6 +82,44 @@ export const AccountInfoPage: React.FC = () => {
     updateProfile({ fullName: fullName.trim() });
     setIsEditingName(false);
     showToast('✅ Full Name updated successfully!');
+  };
+
+  const handleSavePhone = (e: React.FormEvent) => {
+    e.preventDefault();
+    const validation = validateEthiopianPhone(phoneInput);
+    if (!validation.isValid) {
+      showToast(validation.errorMessage || '⚠️ Please enter a valid Ethiopian phone number (09... or 07...).');
+      return;
+    }
+
+    updateProfile({
+      phone: validation.canonicalNumber,
+      nationalPhone: validation.nationalNumber,
+      formattedPhone: validation.formattedDisplay,
+      carrier: validation.carrier || undefined
+    });
+
+    // Auto add as default telebirr account if not existing
+    if (!attachedAccounts.some(a => a.type === 'Telebirr')) {
+      setAttachedAccounts(prev => [
+        {
+          id: `acc-${Date.now()}`,
+          type: 'Telebirr',
+          name: `${fullName} (Telebirr)`,
+          accountNumber: validation.nationalNumber,
+          isDefault: true,
+          isVerified: true
+        },
+        ...prev
+      ]);
+    }
+
+    setIsEditingPhone(false);
+    showToast(
+      lang === 'am'
+        ? `✅ ስልክ ቁጥርዎ (${validation.formattedDisplay}) በተሳካ ሁኔታ ተያይዟል!`
+        : `✅ Phone number (${validation.formattedDisplay}) linked successfully!`
+    );
   };
 
   const handleLinkTelegram = (e: React.FormEvent) => {
@@ -106,10 +146,6 @@ export const AccountInfoPage: React.FC = () => {
   };
 
   const handleRemoveAccount = (id: string) => {
-    if (attachedAccounts.length <= 1) {
-      showToast('⚠️ You must have at least one attached payout account.');
-      return;
-    }
     setAttachedAccounts(prev => prev.filter(a => a.id !== id));
     showToast('🗑️ Attached account removed.');
   };
@@ -126,7 +162,7 @@ export const AccountInfoPage: React.FC = () => {
       type: newAccType,
       name: newAccName || `${newAccType} Account`,
       accountNumber: newAccNumber.trim(),
-      isDefault: false,
+      isDefault: attachedAccounts.length === 0,
       isVerified: true
     };
 
@@ -141,13 +177,12 @@ export const AccountInfoPage: React.FC = () => {
     .map(p => p[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2) || 'EA';
+    .slice(0, 2) || (user?.telegramUsername ? user.telegramUsername.slice(0, 2).toUpperCase() : 'TG');
 
-  const userPhoneDisplay = user?.formattedPhone || '+251 98 362 4574';
-  const userIdDisplay = user?.id || 'UID-8839201';
+  const userIdDisplay = user?.id || 'UID-TG-USER';
   const registeredDate = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : 'August 14, 2026';
+    : 'Today';
 
   return (
     <div className="page active page-subpage-dedicated" id="page-account-info">
@@ -170,7 +205,7 @@ export const AccountInfoPage: React.FC = () => {
         <div className="user-kyc-hero-box">
           <div className="kyc-avatar-wrap">
             <span className="avatar-letters">{initials}</span>
-            <span className="kyc-verified-badge" title="KYC Level 1 Verified">
+            <span className="kyc-verified-badge" title="Verified Player">
               <i className="fa-solid fa-circle-check"></i>
             </span>
           </div>
@@ -215,7 +250,86 @@ export const AccountInfoPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. Telegram Account Link & Verification Card */}
+        {/* 2. Real Ethiopian Phone / Telebirr Number Card */}
+        <div className="info-section-group">
+          <span className="info-group-title">
+            <i className="fa-solid fa-mobile-screen gold"></i>{' '}
+            {lang === 'am' ? 'የቴሌብር / ስልክ ቁጥር' : 'Telebirr / Payout Phone'}
+          </span>
+
+          <div className="telegram-linking-card">
+            <div className="tg-card-top-row">
+              <div className="tg-logo-name-wrap">
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    background: '#ecfdf5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    color: '#16a34a'
+                  }}
+                >
+                  <i className="fa-solid fa-phone"></i>
+                </div>
+                <div>
+                  <strong className="tg-card-title">
+                    {hasRealPhone ? user?.formattedPhone : (lang === 'am' ? 'ስልክ ቁጥር አልተያያዘም' : 'No Phone Linked')}
+                  </strong>
+                  <span className="tg-card-sub">
+                    {hasRealPhone
+                      ? (user?.carrier === 'safaricom' ? '🔴 Safaricom Ethiopia' : '🟢 Ethio Telecom')
+                      : (lang === 'am' ? 'ለፈጣን ወጪ ክፍያ ስልክዎን ያያይዙ' : 'Link for instant Telebirr cashouts')}
+                  </span>
+                </div>
+              </div>
+
+              {!isEditingPhone && (
+                <button
+                  type="button"
+                  className="btn-change-tg"
+                  onClick={() => setIsEditingPhone(true)}
+                >
+                  {hasRealPhone ? (lang === 'am' ? 'ቀይር' : 'Change') : (lang === 'am' ? 'አያይዝ' : 'Link Phone')}
+                </button>
+              )}
+            </div>
+
+            {isEditingPhone && (
+              <form className="tg-edit-form" onSubmit={handleSavePhone} style={{ marginTop: '12px' }}>
+                <div className="tg-input-wrapper">
+                  <span className="tg-at-prefix">+251</span>
+                  <input
+                    type="tel"
+                    value={phoneInput.replace(/^\+251|^0/, '')}
+                    onChange={e => setPhoneInput('0' + e.target.value.replace(/\D/g, ''))}
+                    placeholder="911234567"
+                    className="input-tg-handle"
+                    autoFocus
+                    required
+                  />
+                </div>
+                <div className="tg-form-actions-row">
+                  <button type="submit" className="btn-tg-save">
+                    <i className="fa-solid fa-check"></i> {lang === 'am' ? 'አስቀምጥ' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-tg-cancel"
+                    onClick={() => setIsEditingPhone(false)}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* 3. Telegram Account Link & Verification Card */}
         <div className="info-section-group">
           <span className="info-group-title">
             <i className="fa-brands fa-telegram telegram-color"></i> {t('accountInfo.telegramTitle')}
@@ -226,7 +340,7 @@ export const AccountInfoPage: React.FC = () => {
               <div className="tg-logo-name-wrap">
                 <i className="fa-brands fa-telegram tg-card-icon"></i>
                 <div>
-                  <strong className="tg-card-title">Telegram Mini App Account</strong>
+                  <strong className="tg-card-title">Telegram Mini App</strong>
                   <span className="tg-card-sub">{t('accountInfo.telegramSub')}</span>
                 </div>
               </div>
@@ -248,18 +362,19 @@ export const AccountInfoPage: React.FC = () => {
             {isEditingTelegram ? (
               <form className="tg-edit-form" onSubmit={handleLinkTelegram}>
                 <div className="tg-input-wrapper">
-                  <span className="tg-at-symbol">@</span>
+                  <span className="tg-at-prefix">@</span>
                   <input
                     type="text"
                     value={tempTelegramInput}
                     onChange={e => setTempTelegramInput(e.target.value)}
-                    placeholder="your_telegram_username"
-                    required
+                    placeholder="username"
+                    className="input-tg-handle"
+                    autoFocus
                   />
                 </div>
-                <div className="tg-form-btns-row">
-                  <button type="submit" className="btn-tg-verify-save">
-                    <i className="fa-solid fa-link"></i> {t('accountInfo.linkVerify')}
+                <div className="tg-form-actions-row">
+                  <button type="submit" className="btn-tg-save">
+                    {t('common.save')}
                   </button>
                   <button
                     type="button"
@@ -272,7 +387,7 @@ export const AccountInfoPage: React.FC = () => {
               </form>
             ) : (
               <div className="tg-status-display-row">
-                <strong className="tg-handle-txt">@{telegramUsername}</strong>
+                <strong className="tg-handle-txt">@{telegramUsername || 'Telegram User'}</strong>
                 <span className="tg-connected-badge">
                   <i className="fa-solid fa-circle-check"></i> {t('accountInfo.connected')}
                 </span>
@@ -281,7 +396,7 @@ export const AccountInfoPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 3. Attached Payout Accounts (Telebirr & CBE ONLY with Official Logos) */}
+        {/* 4. Attached Payout Accounts (Telebirr & CBE ONLY with Official Logos) */}
         <div className="info-section-group">
           <div className="section-title-with-btn">
             <span className="info-group-title">
@@ -365,50 +480,56 @@ export const AccountInfoPage: React.FC = () => {
 
           {/* List of Attached Accounts with Logos */}
           <div className="attached-accounts-list">
-            {attachedAccounts.map(acc => (
-              <div key={acc.id} className={`attached-account-card ${acc.isDefault ? 'default-card' : ''}`}>
-                <div className="attached-acc-logo-wrap">
-                  {acc.type === 'Telebirr' ? (
-                    <TelebirrLogo size={28} />
-                  ) : (
-                    <CBELogo size={28} />
-                  )}
-                </div>
-
-                <div className="attached-acc-info-col">
-                  <div className="acc-name-badge-row">
-                    <strong className="acc-type-title">{acc.name}</strong>
-                    {acc.isDefault && <span className="default-payout-pill">⭐ {t('common.defaultPayout')}</span>}
+            {attachedAccounts.length > 0 ? (
+              attachedAccounts.map(acc => (
+                <div key={acc.id} className={`attached-account-card ${acc.isDefault ? 'default-card' : ''}`}>
+                  <div className="attached-acc-logo-wrap">
+                    {acc.type === 'Telebirr' ? (
+                      <TelebirrLogo size={28} />
+                    ) : (
+                      <CBELogo size={28} />
+                    )}
                   </div>
-                  <span className="acc-num-mono">{acc.accountNumber}</span>
-                </div>
 
-                <div className="attached-acc-actions-col">
-                  {!acc.isDefault && (
+                  <div className="attached-acc-info-col">
+                    <div className="acc-name-badge-row">
+                      <strong className="acc-type-title">{acc.name}</strong>
+                      {acc.isDefault && <span className="default-payout-pill">⭐ {t('common.defaultPayout')}</span>}
+                    </div>
+                    <span className="acc-num-mono">{acc.accountNumber}</span>
+                  </div>
+
+                  <div className="attached-acc-actions-col">
+                    {!acc.isDefault && (
+                      <button
+                        type="button"
+                        className="btn-set-default"
+                        onClick={() => handleSetDefault(acc.id)}
+                        title="Set as Default Payout Method"
+                      >
+                        {t('common.defaultPayout')}
+                      </button>
+                    )}
                     <button
                       type="button"
-                      className="btn-set-default"
-                      onClick={() => handleSetDefault(acc.id)}
-                      title="Set as Default Payout Method"
+                      className="btn-trash-acc"
+                      onClick={() => handleRemoveAccount(acc.id)}
+                      title="Remove Account"
                     >
-                      {t('common.defaultPayout')}
+                      <i className="fa-regular fa-trash-can"></i>
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    className="btn-trash-acc"
-                    onClick={() => handleRemoveAccount(acc.id)}
-                    title="Remove Account"
-                  >
-                    <i className="fa-regular fa-trash-can"></i>
-                  </button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div style={{ textAlign: 'center', padding: '16px', color: '#64748b', fontSize: '13px', background: '#ffffff', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
+                {lang === 'am' ? 'ምንም የተያያዘ የክፍያ አካውንት የለም። ከላይ "+" በመንካት የቴሌብር ቁጥርዎን ያያይዙ።' : 'No payout accounts linked yet. Tap "+" above to link your Telebirr or CBE account.'}
               </div>
-            ))}
+            )}
           </div>
         </div>
 
-        {/* 4. Credentials & Registration Details Strip */}
+        {/* 5. Credentials & Registration Details Strip */}
         <div className="info-section-group">
           <span className="info-group-title">
             <i className="fa-solid fa-shield gold"></i> {t('accountInfo.credentials')}
@@ -432,15 +553,15 @@ export const AccountInfoPage: React.FC = () => {
             <div className="cred-item-box">
               <span className="cred-lbl">{t('accountInfo.phoneNumber')}</span>
               <div className="cred-val-copy-row">
-                <strong className="cred-mono">{userPhoneDisplay}</strong>
-                <span className="verified-dot-tag">✓ {t('common.verified')}</span>
+                <strong className="cred-mono">{hasRealPhone ? user?.formattedPhone : (lang === 'am' ? 'አልተያያዘም' : 'Not Linked')}</strong>
+                {hasRealPhone && <span className="verified-dot-tag">✓ {t('common.verified')}</span>}
               </div>
             </div>
 
             <div className="cred-item-box">
               <span className="cred-lbl">Network Operator</span>
               <span className="cred-val-txt" style={{ textTransform: 'capitalize', fontWeight: 700 }}>
-                {user?.carrier === 'safaricom' ? '🔴 Safaricom Ethiopia' : '🟢 Ethio Telecom'}
+                {hasRealPhone ? (user?.carrier === 'safaricom' ? '🔴 Safaricom Ethiopia' : '🟢 Ethio Telecom') : '⚡ Telegram Web'}
               </span>
             </div>
 
