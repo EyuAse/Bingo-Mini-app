@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { useAdmin } from '../context/AdminContext.tsx';
 import { useWallet } from '../context/WalletContext.tsx';
 import { authService } from '../services/authService.ts';
+import { TelegramRegisterModal } from '../components/auth/TelegramRegisterModal.tsx';
 import { NewPlayerWelcomeModal } from '../components/auth/NewPlayerWelcomeModal.tsx';
 import { User } from '../types/auth.ts';
 
@@ -20,6 +21,7 @@ export const LandingPage: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [createdUser, setCreatedUser] = useState<User | null>(null);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [isExistingAccount, setIsExistingAccount] = useState(false);
 
@@ -32,10 +34,18 @@ export const LandingPage: React.FC = () => {
     }
   }, [telegramUser]);
 
-  const handleClaimBonusClick = async () => {
+  // When new user taps "Claim 10 ETB Bonus" on Slide 3 -> Open clean registration modal
+  const handleOpenRegisterModal = () => {
+    setShowRegisterModal(true);
+  };
+
+  // When user confirms registration inside TelegramRegisterModal
+  const handleConfirmRegistration = async () => {
     setIsLoading(true);
     try {
       const { user, isNewUser } = await loginWithTelegram(telegramUser || undefined);
+
+      setShowRegisterModal(false);
 
       if (isNewUser) {
         addUser({
@@ -60,6 +70,24 @@ export const LandingPage: React.FC = () => {
         );
         switchPage('games');
       }
+    } catch (err: any) {
+      showToast(`⚠️ ${err?.message || 'Registration failed.'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // When existing user clicks "Continue as [Name]"
+  const handleExistingUserLogin = async () => {
+    setIsLoading(true);
+    try {
+      const { user } = await loginWithTelegram(telegramUser || undefined);
+      showToast(
+        lang === 'am'
+          ? `እንኳን ደህና መጡ፣ ${user.fullName}!`
+          : `Welcome back, ${user.fullName}!`
+      );
+      switchPage('games');
     } catch (err: any) {
       showToast(`⚠️ ${err?.message || 'Login failed.'}`);
     } finally {
@@ -89,9 +117,9 @@ export const LandingPage: React.FC = () => {
           /* A. NEW USERS: Exact Reference 3-Slide Interactive Onboarding */
           <div style={{ padding: '0 4px' }}>
             <BlumOnboardingCarousel
-              onClaimBonus={handleClaimBonusClick}
+              onClaimBonus={handleOpenRegisterModal}
               isLoading={isLoading}
-              onSkip={handleClaimBonusClick}
+              onSkip={handleOpenRegisterModal}
             />
           </div>
         ) : (
@@ -121,7 +149,7 @@ export const LandingPage: React.FC = () => {
               type="button"
               className="btn-hero-fresh-cta"
               id="landing-continue-btn"
-              onClick={handleClaimBonusClick}
+              onClick={handleExistingUserLogin}
               disabled={isLoading}
               style={{
                 background: 'linear-gradient(135deg, #2AABEE 0%, #229ED9 50%, #0284c7 100%)',
@@ -156,7 +184,16 @@ export const LandingPage: React.FC = () => {
         )}
       </main>
 
-      {/* Hamster Kombat Style Level 1 Welcome Card Modal */}
+      {/* 1. Pure Telegram Registration Confirmation Modal */}
+      <TelegramRegisterModal
+        isOpen={showRegisterModal}
+        bonusAmount={registerBonus}
+        isLoading={isLoading}
+        onConfirm={handleConfirmRegistration}
+        onClose={() => setShowRegisterModal(false)}
+      />
+
+      {/* 2. Hamster Kombat Style Level 1 Welcome Card Modal */}
       <NewPlayerWelcomeModal
         isOpen={showWelcomeModal}
         user={createdUser}

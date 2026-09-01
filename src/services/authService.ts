@@ -2,9 +2,9 @@ import { User, RegisterPayload, LoginPayload, OtpChallengeResponse, OtpVerificat
 import { validateEthiopianPhone } from './ethiopianPhoneValidator';
 import { smsGateway } from './smsGatewayAdapter';
 
-const USERS_STORAGE_KEY = 'lomi_registered_users_v4';
-const SESSION_STORAGE_KEY = 'lomi_auth_session_v4';
-const OTP_STORAGE_KEY = 'lomi_active_otps_v4';
+const USERS_STORAGE_KEY = 'lomi_registered_users_v5';
+const SESSION_STORAGE_KEY = 'lomi_auth_session_v5';
+const OTP_STORAGE_KEY = 'lomi_active_otps_v5';
 
 interface StoredUser extends User {
   pin: string;
@@ -42,17 +42,20 @@ class AuthService {
   private ensureInitialized() {
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
     try {
-      // Purge old test data
+      // Purge all legacy test data
       const legacyKeys = [
         'lomi_registered_users',
         'lomi_registered_users_v2',
         'lomi_registered_users_v3',
+        'lomi_registered_users_v4',
         'lomi_auth_session',
         'lomi_auth_session_v2',
         'lomi_auth_session_v3',
+        'lomi_auth_session_v4',
         'lomi_active_otps',
         'lomi_active_otps_v2',
         'lomi_active_otps_v3',
+        'lomi_active_otps_v4',
         'lomi_explicit_logout'
       ];
       legacyKeys.forEach(k => localStorage.removeItem(k));
