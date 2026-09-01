@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
   const [isFirstTimeTelegramUser, setIsFirstTimeTelegramUser] = useState<boolean>(false);
 
-  // Initialize Telegram WebApp, Auto-Authenticate & Restore Session
+  // Initialize Telegram WebApp, Auto-Authenticate & Account Sync
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -46,22 +46,46 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsInsideTelegram(isTg);
         setTelegramUser(tgUser);
 
-        // 2. If inside Telegram: Auto-login EXISTING players immediately!
+        const isExplicitlyLoggedOut = typeof window !== 'undefined' && localStorage.getItem('lomi_explicit_logout') === 'true';
+
+        // 2. Multi-Account Handling on Same Device
         if (isTg && tgUser) {
-          const existingUser = authService.checkTelegramUserExists(tgUser.id, tgUser.username);
-          if (existingUser) {
+          const session = authService.getSession();
+          const activeTgId = `UID-TG-${tgUser.id}`;
+          const activeTgUsername = tgUser.username ? tgUser.username.replace(/^@/, '') : '';
+
+          // If session belongs to a different Telegram account on the same phone, clear it!
+          if (session && session.user && session.user.id !== activeTgId && session.user.telegramUsername !== activeTgUsername) {
+            authService.clearSession();
+            localStorage.removeItem('lomi_explicit_logout');
+          }
+
+          const existingAccount = authService.checkTelegramUserExists(tgUser.id, tgUser.username);
+
+          // If account exists and user didn't explicitly click "Log Out", auto-login into active account!
+          if (existingAccount && !isExplicitlyLoggedOut) {
             const result = await authService.loginWithTelegram(tgUser);
             setUser(result.user);
             setToken(result.token);
             return;
           }
+
+          // If account is brand new on this Telegram account, ensure clean state for Landing page
+          if (!existingAccount) {
+            authService.clearSession();
+            setUser(null);
+            setToken(null);
+            return;
+          }
         }
 
-        // 3. Otherwise restore saved session if present
-        const session = authService.getSession();
-        if (session && session.user && session.token) {
-          setUser(session.user);
-          setToken(session.token);
+        // 3. Browser fallback session restore
+        if (!isExplicitlyLoggedOut) {
+          const session = authService.getSession();
+          if (session && session.user && session.token) {
+            setUser(session.user);
+            setToken(session.token);
+          }
         }
       } catch (err) {
         console.error('Error initializing Telegram WebApp auth:', err);
@@ -89,6 +113,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
       const result = await authService.register(payload);
+      localStorage.removeItem('lomi_explicit_logout');
       setUser(result.user);
       setToken(result.token);
       return result.user;
@@ -101,6 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
       const result = await authService.login(payload);
+      localStorage.removeItem('lomi_explicit_logout');
       setUser(result.user);
       setToken(result.token);
       return result.user;
@@ -120,6 +146,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
       const result = await authService.loginWithTelegram(tgUser, customPhone);
+      localStorage.removeItem('lomi_explicit_logout');
       setUser(result.user);
       setToken(result.token);
       telegramService.triggerHaptic('success');
@@ -131,6 +158,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     authService.clearSession();
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lomi_explicit_logout', 'true');
+    }
     setUser(null);
     setToken(null);
   };

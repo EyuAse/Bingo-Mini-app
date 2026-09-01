@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LandingNavbar } from '../components/landing/LandingNavbar.tsx';
 import { TrustFooter } from '../components/landing/TrustFooter.tsx';
 import { useApp } from '../context/AppContext.tsx';
@@ -6,19 +6,30 @@ import { useLanguage } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useAdmin } from '../context/AdminContext.tsx';
 import { useWallet } from '../context/WalletContext.tsx';
+import { authService } from '../services/authService.ts';
 import { NewPlayerWelcomeModal } from '../components/auth/NewPlayerWelcomeModal.tsx';
 import { User } from '../types/auth.ts';
 
 export const LandingPage: React.FC = () => {
   const { switchPage, showToast } = useApp();
   const { t, lang } = useLanguage();
-  const { loginWithTelegram, telegramUser } = useAuth();
+  const { loginWithTelegram, telegramUser, isInsideTelegram } = useAuth();
   const { addUser, registerBonus } = useAdmin();
   const { addBonus } = useWallet();
 
   const [isLoading, setIsLoading] = useState(false);
   const [createdUser, setCreatedUser] = useState<User | null>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [isExistingAccount, setIsExistingAccount] = useState(false);
+
+  useEffect(() => {
+    if (telegramUser?.id) {
+      const existing = authService.checkTelegramUserExists(telegramUser.id, telegramUser.username);
+      setIsExistingAccount(!!existing);
+    } else {
+      setIsExistingAccount(false);
+    }
+  }, [telegramUser]);
 
   const handleClaimBonusClick = async () => {
     setIsLoading(true);
@@ -39,6 +50,7 @@ export const LandingPage: React.FC = () => {
         addBonus(registerBonus);
         setCreatedUser(user);
         setShowWelcomeModal(true);
+        setIsExistingAccount(true);
       } else {
         showToast(
           lang === 'am'
@@ -53,6 +65,10 @@ export const LandingPage: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  const displayName = telegramUser
+    ? `${telegramUser.first_name || ''} ${telegramUser.last_name || ''}`.trim() || `@${telegramUser.username}`
+    : 'Telegram Player';
 
   return (
     <div className="page active page-landing-fresh" id="page-landing">
@@ -87,7 +103,7 @@ export const LandingPage: React.FC = () => {
           <div className="promo-bonus-sub">{t('landing.freeTickets')}</div>
         </div>
 
-        {/* Big Glowing Hamster-Style Bonus CTA Button */}
+        {/* Dynamic Action Button (New: "Get 10 birr Bonus" vs Existing: "Log in as [Name]") */}
         <button
           type="button"
           className="btn-hero-fresh-cta"
@@ -95,16 +111,26 @@ export const LandingPage: React.FC = () => {
           onClick={handleClaimBonusClick}
           disabled={isLoading}
           style={{
-            background: 'linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%)',
-            boxShadow: '0 8px 25px rgba(234, 179, 8, 0.45)'
+            background: isExistingAccount
+              ? 'linear-gradient(135deg, #2AABEE 0%, #229ED9 50%, #0284c7 100%)'
+              : 'linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%)',
+            boxShadow: isExistingAccount
+              ? '0 8px 25px rgba(34, 158, 217, 0.45)'
+              : '0 8px 25px rgba(234, 179, 8, 0.45)'
           }}
         >
-          <span className="cta-gift-icon">🎁</span>
+          <span className="cta-gift-icon">
+            {isExistingAccount ? '⚡' : '🎁'}
+          </span>
           <span>
             {isLoading
               ? lang === 'am'
                 ? 'በመግባት ላይ...'
                 : 'Connecting...'
+              : isExistingAccount
+              ? lang === 'am'
+                ? `⚡ እንደ ${displayName} ግባ`
+                : `⚡ Log in as ${displayName}`
               : lang === 'am'
               ? '🎁 የ10 ብር መመዝገቢያ ቦነስ አሁኑኑ ያግኙ'
               : '🎁 Get 10 birr sign up Bonus Now'}
