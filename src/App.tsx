@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useApp } from './context/AppContext.tsx';
+import { useAuth } from './context/AuthContext.tsx';
+import { useAdmin } from './context/AdminContext.tsx';
+import { useWallet } from './context/WalletContext.tsx';
 import { TopHeader } from './components/common/TopHeader.tsx';
 import { BalanceBar } from './components/common/BalanceBar.tsx';
 import { BottomNav } from './components/common/BottomNav.tsx';
 import { Toast } from './components/common/Toast.tsx';
+import { NewPlayerWelcomeModal } from './components/auth/NewPlayerWelcomeModal.tsx';
 
 // Pages
 import { LandingPage } from './pages/LandingPage.tsx';
@@ -23,7 +27,34 @@ import { AboutLomiPage } from './pages/AboutLomiPage.tsx';
 import { AdminPage } from './pages/AdminPage.tsx';
 
 export const App: React.FC = () => {
-  const { currentPage } = useApp();
+  const { currentPage, switchPage } = useApp();
+  const { user, isAuthenticated, isInsideTelegram, isFirstTimeTelegramUser, dismissFirstTimeModal } = useAuth();
+  const { addUser, registerBonus } = useAdmin();
+  const { addBonus } = useWallet();
+
+  // Seamless zero-form routing: If user is authenticated in Telegram, jump straight into games!
+  useEffect(() => {
+    if (isAuthenticated && (currentPage === 'landing' || currentPage === 'login' || currentPage === 'signup')) {
+      switchPage('games');
+    }
+  }, [isAuthenticated, currentPage, switchPage]);
+
+  // Handle first-time Telegram registration bonus credit
+  useEffect(() => {
+    if (isFirstTimeTelegramUser && user) {
+      addUser({
+        name: user.fullName,
+        phone: user.formattedPhone,
+        balance: 0,
+        bonus: registerBonus,
+        referralCount: 0,
+        totalDeposited: 0,
+        totalWithdrawn: 0,
+        status: 'active'
+      });
+      addBonus(registerBonus);
+    }
+  }, [isFirstTimeTelegramUser, user, addUser, addBonus, registerBonus]);
 
   // If on Admin portal route, render full-screen bypassing 480px app-container
   if (currentPage === 'admin') {
@@ -71,6 +102,14 @@ export const App: React.FC = () => {
 
       {/* Bottom Navigation */}
       {!isStandalonePage && <BottomNav />}
+
+      {/* First-time registration celebration modal */}
+      <NewPlayerWelcomeModal
+        isOpen={isFirstTimeTelegramUser}
+        user={user}
+        bonusAmount={registerBonus}
+        onClose={dismissFirstTimeModal}
+      />
 
       {/* Global Toast */}
       <Toast />

@@ -12,6 +12,8 @@ interface AuthContextType {
   isLoading: boolean;
   isInsideTelegram: boolean;
   telegramUser: TelegramUser | null;
+  isFirstTimeTelegramUser: boolean;
+  dismissFirstTimeModal: () => void;
   sendOtp: (phone: string) => Promise<OtpChallengeResponse>;
   verifyOtp: (phone: string, code: string) => OtpVerificationResult;
   register: (payload: RegisterPayload) => Promise<User>;
@@ -31,29 +33,49 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isInsideTelegram, setIsInsideTelegram] = useState<boolean>(false);
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
+  const [isFirstTimeTelegramUser, setIsFirstTimeTelegramUser] = useState<boolean>(false);
 
-  // Initialize Telegram WebApp and Restore Session
+  // Initialize Telegram WebApp, Auto-Authenticate & Restore Session
   useEffect(() => {
-    try {
-      // 1. Initialize TMA
-      telegramService.initWebApp();
-      const tgUser = telegramService.getTelegramUser();
-      const isTg = telegramService.isTelegram() || !!tgUser;
-      setIsInsideTelegram(isTg);
-      setTelegramUser(tgUser);
+    const initAuth = async () => {
+      try {
+        // 1. Initialize Telegram WebApp SDK
+        telegramService.initWebApp();
+        const tgUser = telegramService.getTelegramUser();
+        const isTg = telegramService.isTelegram() || !!tgUser;
+        setIsInsideTelegram(isTg);
+        setTelegramUser(tgUser);
 
-      // 2. Restore active session
-      const session = authService.getSession();
-      if (session && session.user && session.token) {
-        setUser(session.user);
-        setToken(session.token);
+        // 2. If inside Telegram with valid Telegram user, perform instant zero-form auto-login!
+        if (isTg && tgUser) {
+          const result = await authService.loginWithTelegram(tgUser);
+          setUser(result.user);
+          setToken(result.token);
+          if (result.isNewUser) {
+            setIsFirstTimeTelegramUser(true);
+          }
+          return;
+        }
+
+        // 3. Otherwise restore saved session
+        const session = authService.getSession();
+        if (session && session.user && session.token) {
+          setUser(session.user);
+          setToken(session.token);
+        }
+      } catch (err) {
+        console.error('Error initializing Telegram WebApp auth:', err);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Error initializing Telegram WebApp auth:', err);
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    initAuth();
   }, []);
+
+  const dismissFirstTimeModal = () => {
+    setIsFirstTimeTelegramUser(false);
+  };
 
   const sendOtp = async (phone: string): Promise<OtpChallengeResponse> => {
     return await authService.requestOtp(phone, lang as 'en' | 'am');
@@ -132,6 +154,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoading,
         isInsideTelegram,
         telegramUser,
+        isFirstTimeTelegramUser,
+        dismissFirstTimeModal,
         sendOtp,
         verifyOtp,
         register,
