@@ -77,6 +77,7 @@ export interface TelegramWebApp {
   openTelegramLink: (url: string) => void;
   showAlert: (message: string, callback?: () => void) => void;
   showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void;
+  requestContact?: (callback: (shared: boolean, event?: { response?: string; status?: string }) => void) => void;
 }
 
 declare global {

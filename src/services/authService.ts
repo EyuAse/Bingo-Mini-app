@@ -238,14 +238,17 @@ class AuthService {
   }
 
   /**
-   * 1-Click Login / Register with Telegram WebApp Account
+   * 1-Click Login / Register with Telegram WebApp Account & Phone Number
    */
-  public async loginWithTelegram(tgUser: {
-    id: number;
-    first_name: string;
-    last_name?: string;
-    username?: string;
-  }): Promise<{ user: User; token: string; isNewUser: boolean }> {
+  public async loginWithTelegram(
+    tgUser: {
+      id: number;
+      first_name: string;
+      last_name?: string;
+      username?: string;
+    },
+    customPhone?: string
+  ): Promise<{ user: User; token: string; isNewUser: boolean }> {
     const users = this.getStoredUsers();
     const tgUsername = tgUser.username ? tgUser.username.replace(/^@/, '') : `tg_${tgUser.id}`;
     const fullName = `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() || tgUsername;
@@ -258,13 +261,15 @@ class AuthService {
     let isNewUser = false;
     if (!user) {
       isNewUser = true;
-      const defaultPhone = `+2519${String(tgUser.id).slice(-8).padStart(8, '8')}`;
+      let finalPhone = customPhone || `+2519${String(tgUser.id).slice(-8).padStart(8, '8')}`;
+      const validation = validateEthiopianPhone(finalPhone);
+
       user = {
         id: `UID-TG-${tgUser.id}`,
-        phone: defaultPhone,
-        nationalPhone: `0${defaultPhone.slice(4)}`,
-        formattedPhone: `+251 ${defaultPhone.slice(4, 6)} ${defaultPhone.slice(6, 9)} ${defaultPhone.slice(9)}`,
-        carrier: 'ethiotelecom',
+        phone: validation.canonicalNumber || finalPhone,
+        nationalPhone: validation.nationalNumber || `0${finalPhone.slice(-9)}`,
+        formattedPhone: validation.formattedDisplay || finalPhone,
+        carrier: validation.carrier || 'ethiotelecom',
         fullName: fullName,
         telegramUsername: tgUsername,
         isPhoneVerified: true,
@@ -277,8 +282,17 @@ class AuthService {
       this.saveStoredUsers(users);
     } else {
       user.lastLogin = new Date().toISOString();
-      if (fullName && user.fullName === 'Lomi Player') {
+      if (fullName && (user.fullName === 'Lomi Player' || user.fullName.startsWith('tg_'))) {
         user.fullName = fullName;
+      }
+      if (customPhone) {
+        const validation = validateEthiopianPhone(customPhone);
+        if (validation.isValid) {
+          user.phone = validation.canonicalNumber;
+          user.nationalPhone = validation.nationalNumber;
+          user.formattedPhone = validation.formattedDisplay;
+          user.carrier = validation.carrier || user.carrier;
+        }
       }
       this.saveStoredUsers(users);
     }

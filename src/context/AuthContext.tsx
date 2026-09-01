@@ -16,7 +16,7 @@ interface AuthContextType {
   verifyOtp: (phone: string, code: string) => OtpVerificationResult;
   register: (payload: RegisterPayload) => Promise<User>;
   login: (payload: LoginPayload) => Promise<User>;
-  loginWithTelegram: (tgUser?: TelegramUser) => Promise<{ user: User; isNewUser: boolean }>;
+  loginWithTelegram: (tgUser?: TelegramUser, customPhone?: string) => Promise<{ user: User; isNewUser: boolean }>;
   logout: () => void;
   resetPin: (phone: string, otpCode: string, newPin: string) => Promise<boolean>;
   updateProfile: (data: Partial<User>) => void;
@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const loginWithTelegram = async (customTgUser?: TelegramUser): Promise<{ user: User; isNewUser: boolean }> => {
+  const loginWithTelegram = async (customTgUser?: TelegramUser, customPhone?: string): Promise<{ user: User; isNewUser: boolean }> => {
     const tgUser = customTgUser || telegramUser || {
       id: 8839201,
       first_name: 'Eyob',
@@ -97,7 +97,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setIsLoading(true);
     try {
-      const result = await authService.loginWithTelegram(tgUser);
+      const result = await authService.loginWithTelegram(tgUser, customPhone);
       setUser(result.user);
       setToken(result.token);
       telegramService.triggerHaptic('success');

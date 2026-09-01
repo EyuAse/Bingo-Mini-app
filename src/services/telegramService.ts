@@ -21,7 +21,7 @@ export class TelegramService {
 
   public isTelegram(): boolean {
     const tg = this.webApp;
-    return !!(tg && tg.initData && tg.initData.length > 0);
+    return !!(tg && (tg.initData?.length > 0 || tg.initDataUnsafe?.user));
   }
 
   public getTelegramUser(): TelegramUser | null {
@@ -37,28 +37,22 @@ export class TelegramService {
     if (!tg) return;
 
     try {
-      // 1. Tell Telegram the Mini App is ready
       tg.ready();
-
-      // 2. Expand full height
       tg.expand();
 
-      // 3. Set header color to match Lemon fresh theme
       if (tg.setHeaderColor) {
         tg.setHeaderColor('#fffdf8');
       }
 
-      // 4. Set background color
       if (tg.setBackgroundColor) {
         tg.setBackgroundColor('#fefce8');
       }
 
-      // 5. Prevent accidental pull-to-close during live game
       if (tg.enableClosingConfirmation) {
         tg.enableClosingConfirmation();
       }
 
-      console.log('🚀 Telegram Mini App initialized successfully:', {
+      console.log('🚀 Telegram Mini App initialized:', {
         platform: tg.platform,
         version: tg.version,
         user: tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name
@@ -66,6 +60,36 @@ export class TelegramService {
     } catch (err) {
       console.warn('Telegram WebApp init notice:', err);
     }
+  }
+
+  /**
+   * Request verified phone number from Telegram
+   */
+  public async requestTelegramPhone(): Promise<string | null> {
+    const tg = this.webApp;
+    if (!tg) return null;
+
+    return new Promise((resolve) => {
+      if (tg.requestContact) {
+        tg.requestContact((shared: boolean, event?: any) => {
+          if (shared) {
+            const rawPhone =
+              event?.response?.phone_number ||
+              event?.phone_number ||
+              tg.initDataUnsafe?.user?.id?.toString() ||
+              '';
+            console.log('📱 Telegram phone shared successfully:', rawPhone);
+            resolve(rawPhone || null);
+          } else {
+            console.log('User declined Telegram phone sharing');
+            resolve(null);
+          }
+        });
+      } else {
+        // Not supported on older client versions
+        resolve(null);
+      }
+    });
   }
 
   /**
@@ -82,7 +106,7 @@ export class TelegramService {
         tg.HapticFeedback.impactOccurred(type);
       }
     } catch (e) {
-      // Haptics not supported on desktop Telegram
+      // Haptics not supported on desktop
     }
   }
 
