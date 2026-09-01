@@ -3,6 +3,7 @@ import { useAdmin } from '../context/AdminContext.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { AdminPINModal } from '../components/admin/AdminPINModal.tsx';
 import { AdminSidebar, AdminTab } from '../components/admin/AdminSidebar.tsx';
+import { AdminBottomNav } from '../components/admin/AdminBottomNav.tsx';
 import { DashboardOverview } from '../components/admin/DashboardOverview.tsx';
 import { CashierDesk } from '../components/admin/CashierDesk.tsx';
 import { CashFlowAnalytics } from '../components/admin/CashFlowAnalytics.tsx';
@@ -123,6 +124,9 @@ export const AdminPage: React.FC = () => {
           {/* TAB 7: SYSTEM & COMMISSION SETTINGS */}
           {activeTab === 'settings' && <AdminSettings />}
         </main>
+
+        {/* 3. Mobile App-Style Bottom Navigation Bar (< 768px) */}
+        <AdminBottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
     </div>
   );

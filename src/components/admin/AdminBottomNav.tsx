@@ -1,0 +1,104 @@
+import React from 'react';
+import { useAdmin } from '../../context/AdminContext.tsx';
+import { AdminTab } from './AdminSidebar.tsx';
+
+interface AdminBottomNavProps {
+  activeTab: AdminTab;
+  setActiveTab: (tab: AdminTab) => void;
+}
+
+interface TabDef {
+  id: AdminTab;
+  label: string;
+  amharicLabel: string;
+  iconClass: string;
+  badge?: number;
+}
+
+export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({
+  activeTab,
+  setActiveTab
+}) => {
+  const { transactions } = useAdmin();
+
+  const pendingCashierCount = (transactions || []).filter(t => t.status === 'pending').length;
+
+  const tabs: TabDef[] = [
+    {
+      id: 'overview',
+      label: 'Dashboard',
+      amharicLabel: 'ዳሽቦርድ',
+      iconClass: 'fa-solid fa-house'
+    },
+    {
+      id: 'cashier',
+      label: 'Cashier',
+      amharicLabel: 'ካሺየር',
+      iconClass: 'fa-solid fa-inbox',
+      badge: pendingCashierCount || 3
+    },
+    {
+      id: 'cashflow',
+      label: 'Cash Flow',
+      amharicLabel: 'የገንዘብ ፍሰት',
+      iconClass: 'fa-solid fa-scale-balanced'
+    },
+    {
+      id: 'users',
+      label: 'Players',
+      amharicLabel: 'ተጫዋቾች',
+      iconClass: 'fa-solid fa-user-group'
+    },
+    {
+      id: 'bots',
+      label: '200+ Bots',
+      amharicLabel: 'ቦቶች',
+      iconClass: 'fa-solid fa-robot'
+    },
+    {
+      id: 'cartelas',
+      label: '400 Cards',
+      amharicLabel: 'ካርቴላዎች',
+      iconClass: 'fa-solid fa-layer-group'
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      amharicLabel: 'ማስተካከያ',
+      iconClass: 'fa-solid fa-gear'
+    }
+  ];
+
+  return (
+    <nav className="admin-bottom-nav">
+      <div className="admin-bottom-nav-scroll">
+        {tabs.map(tab => {
+          const isActive = activeTab === tab.id;
+
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              className={`admin-bottom-nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab(tab.id);
+                // Smooth scroll to top of page on tab switch
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              title={tab.label}
+            >
+              <div className="admin-bottom-nav-icon-wrap">
+                <i className={tab.iconClass}></i>
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span className="admin-bottom-nav-badge">{tab.badge}</span>
+                )}
+              </div>
+              <span className="admin-bottom-nav-label">{tab.label}</span>
+              {isActive && <div className="admin-bottom-nav-active-pill" />}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+};

@@ -6832,4 +6832,378 @@ input:checked + .slider-round:before {
   color: #cbd5e1;
 }
 
+/* ============================================================
+   11. ADMIN MOBILE APP-STYLE BOTTOM NAVIGATION BAR (< 768px)
+   ============================================================ */
+.admin-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1.5px solid #f1f5f9;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+  z-index: 1000;
+  padding: 4px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+}
+
+.admin-bottom-nav-scroll {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.admin-bottom-nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-bottom-nav-item {
+  flex: 1;
+  min-width: 48px;
+  background: none;
+  border: none;
+  padding: 6px 4px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  position: relative;
+  color: #64748b;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 10px;
+}
+
+.admin-bottom-nav-item:active {
+  transform: scale(0.92);
+}
+
+.admin-bottom-nav-item.active {
+  color: #0f172a;
+}
+
+.admin-bottom-nav-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.admin-bottom-nav-item.active .admin-bottom-nav-icon-wrap {
+  background: #fefce8;
+  color: #ca8a04;
+  box-shadow: 0 2px 8px rgba(250, 204, 21, 0.3);
+}
+
+.admin-bottom-nav-badge {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.5625rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 9999px;
+  border: 1.5px solid #ffffff;
+  line-height: 1;
+}
+
+.admin-bottom-nav-label {
+  font-size: 0.625rem;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: -0.1px;
+}
+
+.admin-bottom-nav-item.active .admin-bottom-nav-label {
+  font-weight: 950;
+  color: #0f172a;
+}
+
+.admin-bottom-nav-active-pill {
+  width: 14px;
+  height: 2.5px;
+  border-radius: 9999px;
+  background: #facc15;
+  margin-top: 1px;
+}
+
+/* ============================================================
+   12. COMPREHENSIVE RESPONSIVE STYLING FOR MOBILE (< 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Show Mobile Bottom Nav */
+  .admin-bottom-nav {
+    display: block !important;
+  }
+
+  /* Hide Desktop Sidebar & Desktop Backdrops */
+  .admin-sidebar-light {
+    display: none !important;
+  }
+
+  .admin-sidebar-backdrop {
+    display: none !important;
+  }
+
+  .admin-mobile-toggle-light {
+    display: none !important;
+  }
+
+  /* Main Viewport Adjustments */
+  .admin-main-viewport {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 10px 12px calc(80px + env(safe-area-inset-bottom, 16px)) !important;
+    overflow-x: hidden;
+  }
+
+  .admin-layout-shell {
+    display: block !important;
+  }
+
+  /* Header Bar on Mobile */
+  .admin-viewport-header-light {
+    padding: 10px 12px !important;
+    margin-bottom: 12px !important;
+    border-radius: 14px !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .viewport-page-main-heading {
+    font-size: 0.875rem !important;
+  }
+
+  .viewport-page-amharic-sub {
+    font-size: 0.625rem !important;
+  }
+
+  .admin-profile-pill-light {
+    padding: 4px 8px !important;
+  }
+
+  .profile-name {
+    font-size: 0.6875rem !important;
+  }
+
+  .profile-role {
+    display: none;
+  }
+
+  /* 4 KPI Grids -> 2x2 on Mobile */
+  .dash-kpi-grid,
+  .cflow-kpi-grid,
+  .player-kpi-grid,
+  .bots-kpi-grid,
+  .cartelas-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .pkpi-value,
+  .bkpi-value,
+  .ckpi-value,
+  .cf-kpi-value,
+  .dash-kpi-value {
+    font-size: 1.25rem !important;
+  }
+
+  /* Hero Banners Stacking */
+  .dash-hero-banner,
+  .cflow-hero-banner,
+  .player-hero-banner,
+  .bots-hero-banner,
+  .cartelas-hero-banner,
+  .settings-hero-banner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 14px 14px !important;
+    border-radius: 16px !important;
+    gap: 12px !important;
+  }
+
+  .dash-hero-right,
+  .cflow-hero-right,
+  .player-hero-right,
+  .bots-hero-right,
+  .cartelas-hero-right,
+  .settings-hero-right {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+
+  .player-hero-action-buttons {
+    width: 100% !important;
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-player-hero-register,
+  .btn-player-hero-export {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.75rem !important;
+    padding: 8px 10px !important;
+  }
+
+  /* Section Cards */
+  .dash-white-section-card,
+  .cflow-white-card,
+  .player-white-section-card,
+  .bots-white-section-card,
+  .cartelas-white-section-card,
+  .settings-white-card {
+    padding: 14px 14px !important;
+    border-radius: 16px !important;
+    gap: 12px !important;
+  }
+
+  /* Sliders and Controls */
+  .dash-control-cell,
+  .bots-control-cell,
+  .settings-control-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 12px 12px !important;
+    gap: 12px !important;
+  }
+
+  .bcell-left-meta,
+  .control-left-meta {
+    max-width: 100% !important;
+  }
+
+  .bcell-slider-interactive,
+  .dash-slider-interactive,
+  .settings-slider-box {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .slider-presets-row {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  .btn-dash-preset-chip {
+    padding: 4px 8px !important;
+    font-size: 0.6875rem !important;
+  }
+
+  /* Filter and Search Rows */
+  .player-controls-row,
+  .bots-roster-controls,
+  .cartelas-controls-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .player-filter-pills-group,
+  .bots-filter-pills-group,
+  .cartelas-range-pills-group {
+    overflow-x: auto !important;
+    scrollbar-width: none;
+    flex-wrap: nowrap !important;
+    padding-bottom: 2px;
+  }
+
+  .player-search-box input,
+  .bots-search-box input,
+  .cartelas-search-box input {
+    width: 100% !important;
+  }
+
+  .player-search-box,
+  .bots-search-box,
+  .cartelas-search-box {
+    width: 100% !important;
+  }
+
+  /* Settings Grid */
+  .settings-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .settings-inline-form {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .form-input-action-row {
+    width: 100% !important;
+  }
+
+  .settings-text-input {
+    flex: 1;
+  }
+
+  /* Cartela 5x5 Mini Cards Grid */
+  .cartelas-mini-grid-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* Modals on Mobile */
+  .modal-box-light {
+    max-width: calc(100vw - 20px) !important;
+    margin: 10px !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  .modal-form-body {
+    padding: 14px 16px !important;
+    gap: 10px !important;
+  }
+
+  .modal-form-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .dossier-metrics-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+/* ============================================================
+   13. ULTRA-COMPACT MOBILE (< 400px)
+   ============================================================ */
+@media (max-width: 400px) {
+  .dash-kpi-grid,
+  .cflow-kpi-grid,
+  .player-kpi-grid,
+  .bots-kpi-grid,
+  .cartelas-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cartelas-mini-grid-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
 
