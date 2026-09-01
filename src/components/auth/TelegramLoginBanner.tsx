@@ -38,21 +38,8 @@ export const TelegramLoginBanner: React.FC<TelegramLoginBannerProps> = ({ onSucc
   const handleTelegramAuth = async () => {
     setIsConnecting(true);
     try {
-      // 1. Try to request native Telegram phone if supported
-      let detectedPhone: string | undefined = undefined;
-      if (isInsideTelegram) {
-        try {
-          const sharedPhone = await telegramService.requestTelegramPhone();
-          if (sharedPhone) {
-            detectedPhone = sharedPhone;
-          }
-        } catch (e) {
-          // Continue with profile
-        }
-      }
-
-      // 2. Log in with Telegram user and detected phone
-      const { user, isNewUser } = await loginWithTelegram(telegramUser || undefined, detectedPhone);
+      // Direct seamless Telegram authentication with ZERO popups/warnings
+      const { user, isNewUser } = await loginWithTelegram(telegramUser || undefined);
 
       if (isNewUser) {
         addUser({
