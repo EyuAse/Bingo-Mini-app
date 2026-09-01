@@ -189,11 +189,11 @@ export const BingoGrid: React.FC = () => {
         onDaub={handleManualDaub}
       />
 
-      {/* Auto-Play Indicator */}
+      {/* Auto-Play Indicator Micro Tag */}
       {autoPlay && (
         <div className="cartela-autoplay-active-tag">
           <i className="fa-solid fa-bolt"></i>
-          <span>Auto-Play Active — All {totalPlayableCards} Cartelas daubed instantly</span>
+          <span>Auto-Play Active &bull; All {totalPlayableCards} Cartelas daubed instantly</span>
         </div>
       )}
     </div>

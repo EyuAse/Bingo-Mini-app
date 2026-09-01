@@ -27,7 +27,46 @@ export const BettingBar: React.FC = () => {
   const totalCost = betAmount * cardQuantity;
   const canBuy = roundPhase === 'lobby';
   const hasBonus = cardQuantity >= 2 && buy2Get1Bonus;
+  const isPlayingWithTicket = roundPhase === 'playing' && hasTicket;
 
+  // If currently in active live game with ticket, render a compact in-game live status bar
+  if (isPlayingWithTicket) {
+    return (
+      <div className="fresh-bingo-bottom-live-bar">
+        <div className="live-bar-left-info">
+          <span className="live-pulse-dot"></span>
+          <div className="live-bar-text-wrap">
+            <span className="live-bar-status-title">
+              LIVE GAME IN PROGRESS &bull; {totalPlayableCards} CARDS
+            </span>
+            <span className="live-bar-sub">
+              Stake: <strong>{betAmount} ETB</strong> &bull; Cartelas: #{selectedCartelaIds.slice(0, totalPlayableCards).join(', #')}
+            </span>
+          </div>
+        </div>
+
+        <div className="live-bar-right-actions">
+          {hasPreBoughtNext ? (
+            <span className="prebuy-confirmed-pill">
+              <i className="fa-solid fa-check"></i> Next Round Ready
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="btn-live-prebuy-mini"
+              onClick={preBuyNextRound}
+              title="Pre-buy your ticket for the next upcoming round"
+            >
+              <i className="fa-solid fa-bolt"></i>
+              <span>Pre-Buy Next ({totalCost} ETB)</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise (Lobby or Spectator), render the full interactive Betting & Ticket Bar
   return (
     <div className="fresh-bingo-bottom-betting-bar">
       {/* Top Header: Select Stake & Balance */}
