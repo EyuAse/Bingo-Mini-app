@@ -1,24 +1,25 @@
 /* 1. Global Shell - Light Modern Theme */
 .admin-fullscreen-root {
-  width: 100vw;
-  max-width: 100vw;
-  height: 100vh;
+  width: 100%;
+  min-height: 100vh;
   margin: 0;
   padding: 0;
   background: #f8fafc;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-layout-shell {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
   background: #f8fafc;
   color: #0f172a;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* ============================================================
@@ -6967,37 +6968,88 @@ input:checked + .slider-round:before {
     display: none !important;
   }
 
-  /* Main Viewport Adjustments */
+  /* Main Viewport Adjustments - Smooth Mobile Scrolling */
   .admin-main-viewport {
     margin-left: 0 !important;
     width: 100% !important;
-    padding: 10px 12px calc(80px + env(safe-area-inset-bottom, 16px)) !important;
-    overflow-x: hidden;
+    min-height: 100vh !important;
+    height: auto !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 8px 10px calc(85px + env(safe-area-inset-bottom, 16px)) !important;
   }
 
   .admin-layout-shell {
     display: block !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
   }
 
-  /* Header Bar on Mobile */
+  .admin-tab-content {
+    overflow: visible !important;
+    padding-bottom: 20px !important;
+  }
+
+  /* Header Bar on Mobile - Clean & Compact */
   .admin-viewport-header-light {
     padding: 10px 12px !important;
-    margin-bottom: 12px !important;
+    margin-bottom: 10px !important;
     border-radius: 14px !important;
-    flex-wrap: wrap;
-    gap: 8px;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .viewport-header-left-light {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .viewport-page-title-box {
+    flex: 1 !important;
   }
 
   .viewport-page-main-heading {
-    font-size: 0.875rem !important;
+    font-size: 0.8125rem !important;
+    line-height: 1.25 !important;
   }
 
   .viewport-page-amharic-sub {
     font-size: 0.625rem !important;
+    margin-top: 2px !important;
+    display: block !important;
+    color: #64748b !important;
+  }
+
+  .viewport-header-right-light {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    width: 100% !important;
+    padding-top: 4px !important;
+    border-top: 1px solid #f1f5f9 !important;
+  }
+
+  .admin-lang-pill-light {
+    padding: 3px 6px !important;
+    font-size: 0.625rem !important;
+  }
+
+  .admin-bell-btn-light {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.75rem !important;
   }
 
   .admin-profile-pill-light {
-    padding: 4px 8px !important;
+    padding: 3px 6px !important;
+    gap: 5px !important;
   }
 
   .profile-name {
@@ -7008,25 +7060,8 @@ input:checked + .slider-round:before {
     display: none;
   }
 
-  /* 4 KPI Grids -> 2x2 on Mobile */
-  .dash-kpi-grid,
-  .cflow-kpi-grid,
-  .player-kpi-grid,
-  .bots-kpi-grid,
-  .cartelas-kpi-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-  }
-
-  .pkpi-value,
-  .bkpi-value,
-  .ckpi-value,
-  .cf-kpi-value,
-  .dash-kpi-value {
-    font-size: 1.25rem !important;
-  }
-
-  /* Hero Banners Stacking */
+  /* Cashier Hero Banner & All Desks Hero Banners */
+  .cashier-hero-desk-banner,
   .dash-hero-banner,
   .cflow-hero-banner,
   .player-hero-banner,
@@ -7035,9 +7070,48 @@ input:checked + .slider-round:before {
   .settings-hero-banner {
     flex-direction: column !important;
     align-items: flex-start !important;
-    padding: 14px 14px !important;
+    padding: 12px 14px !important;
     border-radius: 16px !important;
-    gap: 12px !important;
+    gap: 10px !important;
+  }
+
+  .hero-banner-left {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .hero-bank-icon-box {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .hero-main-title {
+    font-size: 0.875rem !important;
+  }
+
+  .hero-sub-title {
+    font-size: 0.6875rem !important;
+  }
+
+  .hero-banner-right {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
+  .hero-lemon-art {
+    display: none !important;
+  }
+
+  .btn-hero-new-order {
+    width: 100% !important;
+    justify-content: center !important;
+    font-size: 0.75rem !important;
+    padding: 9px 12px !important;
   }
 
   .dash-hero-right,
@@ -7063,6 +7137,61 @@ input:checked + .slider-round:before {
     justify-content: center;
     font-size: 0.75rem !important;
     padding: 8px 10px !important;
+  }
+
+  /* Cashier Filters & Controls */
+  .cashier-filters-search-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .cashier-status-pills-group {
+    display: flex !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 2px !important;
+    width: 100% !important;
+  }
+
+  .cashier-status-pills-group::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .btn-cashier-filter-pill {
+    padding: 6px 10px !important;
+    font-size: 0.6875rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  .cashier-sub-filter-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+  }
+
+  .cashier-search-input-wrap {
+    width: 100% !important;
+  }
+
+  /* 4 KPI Grids -> 2x2 on Mobile */
+  .dash-kpi-grid,
+  .cflow-kpi-grid,
+  .player-kpi-grid,
+  .bots-kpi-grid,
+  .cartelas-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .pkpi-value,
+  .bkpi-value,
+  .ckpi-value,
+  .cf-kpi-value,
+  .dash-kpi-value {
+    font-size: 1.25rem !important;
   }
 
   /* Section Cards */
