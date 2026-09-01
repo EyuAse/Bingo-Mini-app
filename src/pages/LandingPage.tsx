@@ -83,60 +83,50 @@ export const LandingPage: React.FC = () => {
       <div className="bg-floating-lemon-slice lemon-bottom-left"></div>
       <div className="bg-floating-leaf leaf-bottom-right"></div>
 
-      {/* 2. Main Content */}
-      <main className="landing-fresh-hero-container" style={{ padding: '8px 12px 28px 12px' }}>
+      {/* 2. Main Content Area */}
+      <main className="landing-fresh-hero-container">
         {!isExistingAccount ? (
-          /* A. NEW USER: Exact Reference 3-Slide Interactive Onboarding */
-          <BlumOnboardingCarousel
-            onClaimBonus={handleClaimBonusClick}
-            isLoading={isLoading}
-            onSkip={handleClaimBonusClick}
-          />
+          /* A. NEW USERS: Exact Reference 3-Slide Interactive Onboarding */
+          <div style={{ padding: '0 4px' }}>
+            <BlumOnboardingCarousel
+              onClaimBonus={handleClaimBonusClick}
+              isLoading={isLoading}
+              onSkip={handleClaimBonusClick}
+            />
+          </div>
         ) : (
-          /* B. EXISTING LOGGED-OUT USER: Clean Hero with Instant Re-Login */
-          <div style={{ textAlign: 'center', width: '100%', maxWidth: '380px', margin: '20px auto 0 auto' }}>
-            <div
-              style={{
-                width: '84px',
-                height: '84px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #fef08a 0%, #facc15 50%, #eab308 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '44px',
-                margin: '0 auto 16px auto',
-                boxShadow: '0 8px 24px rgba(234, 179, 8, 0.4)'
-              }}
-            >
-              🍋
+          /* B. EXISTING USERS: The Beautiful Iconic 3D Casino Landing Layout */
+          <>
+            {/* Pretitle */}
+            <p className="hero-fresh-pretitle">{t('landing.pretitle')}</p>
+
+            {/* Main Title: Play Bingo with floating lemon */}
+            <h1 className="hero-fresh-title">
+              {t('landing.title')}
+              <span className="hero-lemon-icon">🍋</span>
+            </h1>
+
+            {/* Tagline */}
+            <p className="hero-fresh-tagline">{t('landing.tagline')}</p>
+
+            {/* Promo Deposit Bonus Block */}
+            <div className="hero-promo-block">
+              <span className="promo-lbl">{t('landing.firstDepositBonus')}</span>
+              <div className="promo-bonus-huge">{t('landing.bonus200')}</div>
+              <div className="promo-bonus-sub">{t('landing.freeTickets')}</div>
             </div>
 
-            <h1 style={{ fontSize: '26px', fontWeight: '900', color: '#0f172a', margin: '0 0 6px 0', letterSpacing: '-0.5px' }}>
-              {lang === 'am' ? `እንኳን ደህና መጡ!` : `Welcome Back!`}
-            </h1>
-            <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 24px 0' }}>
-              {lang === 'am'
-                ? `እንደ @${telegramUser?.username || displayName} የቀጥታ 75-ኳስ ቢንጎ ጨዋታዎን ይቀጥሉ`
-                : `Continue playing live 75-ball express bingo as @${telegramUser?.username || displayName}`}
-            </p>
-
+            {/* Glowing 1-Click Action Button */}
             <button
               type="button"
               className="btn-hero-fresh-cta"
-              id="landing-claim-bonus-btn"
+              id="landing-continue-btn"
               onClick={handleClaimBonusClick}
               disabled={isLoading}
               style={{
-                width: '100%',
                 background: 'linear-gradient(135deg, #2AABEE 0%, #229ED9 50%, #0284c7 100%)',
-                color: '#ffffff',
-                fontSize: '16px',
-                fontWeight: '900',
-                padding: '16px 20px',
-                borderRadius: '999px',
                 boxShadow: '0 8px 25px rgba(34, 158, 217, 0.45)',
-                marginBottom: '20px'
+                color: '#ffffff'
               }}
             >
               <span className="cta-gift-icon">⚡</span>
@@ -151,8 +141,18 @@ export const LandingPage: React.FC = () => {
               </span>
             </button>
 
+            {/* 3. Hero 3D Artwork Card (75-Ball & Cartelas) */}
+            <div className="hero-fresh-artwork-card">
+              <img
+                src="/assets/images/lomi-hero-75.jpg"
+                alt="75-Ball Lomi Bingo 3D Cards and Balls"
+                className="hero-artwork-img"
+              />
+            </div>
+
+            {/* 4. Exact 3-Pillar Trust Footer */}
             <TrustFooter />
-          </div>
+          </>
         )}
       </main>
 
