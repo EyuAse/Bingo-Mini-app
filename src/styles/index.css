@@ -252,3 +252,26 @@ ul, ol {
   }
 }
 
+/* ===== Permanently Disable Netlify Drawer & Feedback Badge for all users ===== */
+#netlify-drawer-container,
+.netlify-drawer-container,
+[id*="netlify-drawer"],
+[class*="netlify-drawer"],
+iframe[src*="netlify"],
+iframe[id*="netlify-drawer"],
+iframe[title*="Netlify"],
+div[data-netlify-deploy-id],
+.netlify-feedback-widget,
+.netlify-badge {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  z-index: -99999 !important;
+  height: 0 !important;
+  width: 0 !important;
+  position: absolute !important;
+  bottom: -9999px !important;
+}
+
+
