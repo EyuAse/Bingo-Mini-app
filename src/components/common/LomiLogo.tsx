@@ -78,7 +78,6 @@ export const LomiLogo: React.FC<LomiLogoProps> = ({ size = 'md', onClick }) => {
         </span>
         <span className="lomi-char">M</span>
         <span className="lomi-char">I</span>
-        <span className="lomi-char">I</span>
       </div>
       <div className="lomi-logo-sub">
         <span>•</span>
