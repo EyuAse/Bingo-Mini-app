@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAdmin } from '../../context/AdminContext';
 import { useWallet } from '../../context/WalletContext';
 import { telegramService } from '../../services/telegramService';
+import { authService } from '../../services/authService';
+import { NewPlayerWelcomeModal } from './NewPlayerWelcomeModal';
+import { User } from '../../types/auth';
 
 interface TelegramLoginBannerProps {
   onSuccess?: () => void;
@@ -17,6 +20,20 @@ export const TelegramLoginBanner: React.FC<TelegramLoginBannerProps> = ({ onSucc
   const { addUser, registerBonus } = useAdmin();
   const { addBonus } = useWallet();
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const [isExistingAccount, setIsExistingAccount] = useState<boolean>(false);
+  const [newlyCreatedUser, setNewlyCreatedUser] = useState<User | null>(null);
+  const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState<boolean>(false);
+
+  // Check if account already exists
+  useEffect(() => {
+    if (telegramUser?.id) {
+      const existing = authService.checkTelegramUserExists(telegramUser.id, telegramUser.username);
+      setIsExistingAccount(!!existing);
+    } else {
+      const fallbackTg = authService.checkTelegramUserExists(8839201, 'eyu_ase');
+      setIsExistingAccount(!!fallbackTg);
+    }
+  }, [telegramUser]);
 
   const handleTelegramAuth = async () => {
     setIsConnecting(true);
@@ -49,23 +66,20 @@ export const TelegramLoginBanner: React.FC<TelegramLoginBannerProps> = ({ onSucc
           status: 'active'
         });
         addBonus(registerBonus);
-        showToast(
-          lang === 'am'
-            ? `🎉 እንኳን ደህና መጡ ${user.fullName}! የ${registerBonus} ብር ነፃ ቦነስ ተጨምሯል!`
-            : `🎉 Welcome ${user.fullName}! +${registerBonus} ETB Bonus Added!`
-        );
+        setNewlyCreatedUser(user);
+        setIsWelcomeModalOpen(true);
+        setIsExistingAccount(true);
       } else {
         showToast(
           lang === 'am'
             ? `እንኳን ደህና መጡ፣ ${user.fullName}!`
             : `Welcome back, ${user.fullName}!`
         );
-      }
-
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        switchPage('games');
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          switchPage('games');
+        }
       }
     } catch (err: any) {
       showToast(`⚠️ ${err?.message || 'Telegram connection failed.'}`);
@@ -79,57 +93,80 @@ export const TelegramLoginBanner: React.FC<TelegramLoginBannerProps> = ({ onSucc
     : 'Telegram Player';
 
   return (
-    <div className="tg-one-click-container">
-      <button
-        type="button"
-        className="btn-tg-one-click-cta"
-        onClick={handleTelegramAuth}
-        disabled={isConnecting}
-        title="1-Click Instant Login with Telegram"
-      >
-        <div className="tg-btn-left-icon">
-          {isConnecting ? (
-            <i className="fa-solid fa-spinner fa-spin"></i>
-          ) : (
-            <i className="fa-brands fa-telegram"></i>
-          )}
-        </div>
-        <div className="tg-btn-text-wrap">
-          <span className="tg-btn-main-txt">
-            {isConnecting
-              ? lang === 'am'
-                ? 'በመገናኘት ላይ...'
-                : 'Connecting to Telegram...'
-              : isInsideTelegram && telegramUser
-              ? lang === 'am'
-                ? `እንደ ${displayName} ቀጥል ⚡`
-                : `Continue as ${displayName} ⚡`
-              : lang === 'am'
-              ? '⚡ በቴሌግራም ፈጣን መግቢያ'
-              : '⚡ 1-Click Telegram Login'}
-          </span>
-          <span className="tg-btn-user-sub">
-            {isInsideTelegram
-              ? lang === 'am'
-                ? 'የቴሌግራም መለያዎን ወዲያውኑ ያገናኙ'
-                : 'Instant verified Telegram authentication'
-              : lang === 'am'
-              ? 'ያለ SMS ክፍያ ወዲያውኑ ይጫወቱ'
-              : 'Zero SMS fees • No password needed'}
-          </span>
-        </div>
-        <div className="tg-btn-free-badge">
-          <span>{isInsideTelegram ? 'VERIFIED' : '0 ETB'}</span>
-        </div>
-      </button>
+    <>
+      <div className="tg-one-click-container">
+        <button
+          type="button"
+          className={`btn-tg-one-click-cta ${!isExistingAccount ? 'is-new-register' : ''}`}
+          onClick={handleTelegramAuth}
+          disabled={isConnecting}
+          title={isExistingAccount ? 'Log in with Telegram' : 'Register with Telegram & Get Bonus'}
+        >
+          <div className="tg-btn-left-icon">
+            {isConnecting ? (
+              <i className="fa-solid fa-spinner fa-spin"></i>
+            ) : !isExistingAccount ? (
+              <i className="fa-solid fa-gift"></i>
+            ) : (
+              <i className="fa-brands fa-telegram"></i>
+            )}
+          </div>
+          <div className="tg-btn-text-wrap">
+            <span className="tg-btn-main-txt">
+              {isConnecting
+                ? lang === 'am'
+                  ? 'በመገናኘት ላይ...'
+                  : 'Connecting to Telegram...'
+                : !isExistingAccount
+                ? lang === 'am'
+                  ? '🎁 በቴሌግራም ተመዝገብ (+10 ETB)'
+                  : '🎁 Register via Telegram (+10 ETB)'
+                : isInsideTelegram && telegramUser
+                ? lang === 'am'
+                  ? `እንደ ${displayName} ግባ ⚡`
+                  : `Log in as ${displayName} ⚡`
+                : lang === 'am'
+                ? '⚡ በቴሌግራም ፈጣን መግቢያ'
+                : '⚡ Continue with Telegram'}
+            </span>
+            <span className="tg-btn-user-sub">
+              {!isExistingAccount
+                ? lang === 'am'
+                  ? 'አዲስ መለያ ይፍጠሩ እና 10 ብር ነፃ ቦነስ ያግኙ'
+                  : 'Instant registration • +10 ETB Free Welcome Bonus'
+                : isInsideTelegram
+                ? lang === 'am'
+                  ? 'የተረጋገጠ መለያዎን ይቀጥሉ'
+                  : 'Existing verified account • 1-Click Access'
+                : lang === 'am'
+                ? 'ያለ የይለፍ ቃል ወዲያውኑ ይግቡ'
+                : '1-Click instant login'}
+            </span>
+          </div>
+          <div className="tg-btn-free-badge">
+            <span>{!isExistingAccount ? '+10 ETB' : 'LOGIN'}</span>
+          </div>
+        </button>
 
-      <div className="tg-or-divider">
-        <span className="tg-divider-line"></span>
-        <span className="tg-divider-text">
-          {lang === 'am' ? 'ወይም በስልክ ቁጥር' : 'OR WITH PHONE'}
-        </span>
-        <span className="tg-divider-line"></span>
+        <div className="tg-or-divider">
+          <span className="tg-divider-line"></span>
+          <span className="tg-divider-text">
+            {lang === 'am' ? 'ወይም በስልክ ቁጥር' : 'OR WITH PHONE'}
+          </span>
+          <span className="tg-divider-line"></span>
+        </div>
       </div>
-    </div>
+
+      {/* First-time registration celebration popup */}
+      <NewPlayerWelcomeModal
+        isOpen={isWelcomeModalOpen}
+        user={newlyCreatedUser}
+        bonusAmount={registerBonus}
+        onClose={() => {
+          setIsWelcomeModalOpen(false);
+          if (onSuccess) onSuccess();
+        }}
+      />
+    </>
   );
 };

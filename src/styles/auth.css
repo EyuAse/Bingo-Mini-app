@@ -156,6 +156,17 @@
   box-sizing: border-box;
 }
 
+.btn-tg-one-click-cta.is-new-register {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #7c3aed 100%);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+}
+
+.btn-tg-one-click-cta.is-new-register .tg-btn-free-badge {
+  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  color: #713f12;
+  font-weight: 900;
+}
+
 .btn-tg-one-click-cta:hover {
   transform: translateY(-1.5px);
   box-shadow: 0 6px 18px rgba(34, 158, 217, 0.45);

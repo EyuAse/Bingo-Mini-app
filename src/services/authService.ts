@@ -238,6 +238,19 @@ class AuthService {
   }
 
   /**
+   * Check if a Telegram user already has an account
+   */
+  public checkTelegramUserExists(tgId: number, username?: string): StoredUser | null {
+    const users = this.getStoredUsers();
+    const tgUsername = username ? username.replace(/^@/, '') : `tg_${tgId}`;
+    return (
+      users.find(
+        u => u.telegramUsername === tgUsername || u.id === `UID-TG-${tgId}`
+      ) || null
+    );
+  }
+
+  /**
    * 1-Click Login / Register with Telegram WebApp Account & Phone Number
    */
   public async loginWithTelegram(
