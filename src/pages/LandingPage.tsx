@@ -137,11 +137,11 @@ export const LandingPage: React.FC = () => {
             {/* Tagline */}
             <p className="hero-fresh-tagline">{t('landing.tagline')}</p>
 
-            {/* Promo Deposit Bonus Block */}
+            {/* Promo 10 ETB Welcome Bonus Block */}
             <div className="hero-promo-block">
-              <span className="promo-lbl">{t('landing.firstDepositBonus')}</span>
-              <div className="promo-bonus-huge">{t('landing.bonus200')}</div>
-              <div className="promo-bonus-sub">{t('landing.freeTickets')}</div>
+              <span className="promo-lbl">{lang === 'am' ? 'የነፃ መመዝገቢያ ስጦታ' : 'FREE SIGN UP BONUS'}</span>
+              <div className="promo-bonus-huge">+10.00 ETB</div>
+              <div className="promo-bonus-sub">{lang === 'am' ? 'ምንም ቅድመ ክፍያ አያስፈልግም • ፈጣን የቴሌብር ክፍያ' : 'Free Welcome Bonus • 0 Deposit Needed'}</div>
             </div>
 
             {/* Glowing 1-Click Action Button */}

@@ -18,13 +18,13 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
   const [hasClaimedToday, setHasClaimedToday] = useState(false);
 
   const streakDays = [
-    { day: 1, reward: '10 ETB', rewardNum: 10, icon: '🎁', desc: lang === 'am' ? 'የመጀመሪያ ቀን' : 'Welcome Pack' },
-    { day: 2, reward: '2 ETB', rewardNum: 2, icon: '💰', desc: lang === 'am' ? 'ቀን 2 ቦነስ' : 'Daily Coin' },
-    { day: 3, reward: '1 Cartela', rewardNum: 3, icon: '🎟️', desc: lang === 'am' ? 'ነፃ ካርቴላ' : 'Free Ticket' },
-    { day: 4, reward: '4 ETB', rewardNum: 4, icon: '⚡', desc: lang === 'am' ? 'ቀን 4 ቦነስ' : 'Energy Bonus' },
-    { day: 5, reward: '5 ETB', rewardNum: 5, icon: '💎', desc: lang === 'am' ? 'ቀን 5 ጀሞች' : 'Ruby Gift' },
-    { day: 6, reward: '7 ETB', rewardNum: 7, icon: '🔥', desc: lang === 'am' ? 'ቀን 6 ሱፐር' : 'Super Streak' },
-    { day: 7, reward: '25 ETB', rewardNum: 25, icon: '🏆', desc: lang === 'am' ? 'ጃክፖት ፓስ' : 'Mega Jackpot' }
+    { day: 1, reward: '+10 ETB', rewardNum: 10, icon: '🎁', desc: 'Gift Box' },
+    { day: 2, reward: '+2 ETB', rewardNum: 2, icon: '💰', desc: 'Money Bag' },
+    { day: 3, reward: '+1 Cartela', rewardNum: 3, icon: '🎟️', desc: 'Ticket' },
+    { day: 4, reward: '+4 ETB', rewardNum: 4, icon: '⚡', desc: 'Lightning' },
+    { day: 5, reward: '+5 ETB', rewardNum: 5, icon: '💎', desc: 'Diamond' },
+    { day: 6, reward: '+7 ETB', rewardNum: 6, icon: '🔥', desc: 'Fire' },
+    { day: 7, reward: '+25 ETB', rewardNum: 25, icon: '🏆', desc: 'Trophy' }
   ];
 
   useEffect(() => {
@@ -43,10 +43,10 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
   const handleClaimToday = () => {
     telegramService.triggerHaptic('success');
     const todayReward = streakDays.find(d => d.day === currentStreakDay) || streakDays[0];
-    
+
     addBonus(todayReward.rewardNum);
     localStorage.setItem('lomi_streak_last_claim', new Date().toDateString());
-    
+
     const nextDay = currentStreakDay >= 7 ? 1 : currentStreakDay + 1;
     localStorage.setItem('lomi_streak_current_day', nextDay.toString());
     setCurrentStreakDay(nextDay);
@@ -54,93 +54,264 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
 
     showToast(
       lang === 'am'
-        ? `🎉 የቀን ${todayReward.day} ቦነስ +${todayReward.reward} ተቀብለዋል!`
-        : `🎉 Day ${todayReward.day} Streak Bonus +${todayReward.reward} Claimed!`
+        ? `🎉 የቀን ${todayReward.day} ቦነስ ${todayReward.reward} ተቀብለዋል!`
+        : `🎉 Day ${todayReward.day} Streak Bonus ${todayReward.reward} Claimed!`
     );
   };
 
   return (
-    <div className="otp-modal-overlay">
+    <div className="otp-modal-overlay" style={{ zIndex: 99999 }}>
+      {/* Dark backdrop */}
       <div className="otp-modal-backdrop" onClick={onClose}></div>
+
+      {/* Main Exact White Card Shell */}
       <div
-        className="otp-modal-card daily-streak-card"
+        className="exact-ref-modal-card"
         style={{
-          maxWidth: '420px',
-          background: 'linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%)',
-          color: '#ffffff',
-          borderRadius: '28px',
-          padding: '24px 18px',
-          border: '1.5px solid rgba(250, 204, 21, 0.4)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 25px rgba(234, 179, 8, 0.25)',
-          textAlign: 'center'
+          position: 'relative',
+          zIndex: 10,
+          background: '#ffffff',
+          borderRadius: '32px',
+          width: '100%',
+          maxWidth: '385px',
+          padding: '24px 18px 18px 18px',
+          boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.35)',
+          textAlign: 'center',
+          boxSizing: 'border-box',
+          animation: 'modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
       >
-        {/* Close Button */}
+        {/* Top-Right Circular Close Button */}
         <button
           type="button"
-          className="btn-otp-modal-close"
           onClick={onClose}
           title="Close"
-          style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#cbd5e1' }}
+          style={{
+            position: 'absolute',
+            top: '16px',
+            right: '16px',
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            background: '#f1f5f9',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#64748b',
+            cursor: 'pointer',
+            fontSize: '14px',
+            transition: 'all 0.15s ease'
+          }}
         >
           <i className="fa-solid fa-xmark"></i>
         </button>
 
-        {/* Fire Streak Mascot */}
-        <div style={{ fontSize: '44px', marginBottom: '8px' }}>🔥</div>
+        {/* 1. Mascot: Glowing Halo with Fire Flame & Golden Sparkles */}
+        <div style={{ position: 'relative', display: 'inline-block', margin: '4px auto 10px auto' }}>
+          {/* Left Sparkle Star */}
+          <span
+            style={{
+              position: 'absolute',
+              left: '-24px',
+              top: '28px',
+              color: '#facc15',
+              fontSize: '16px',
+              fontWeight: '900'
+            }}
+          >
+            ✦
+          </span>
 
-        <h3 style={{ fontSize: '21px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '-0.3px' }}>
-          {lang === 'am' ? 'የየዕለቱ የገቢ ቦነስ' : 'Daily Streak Calendar'}
-        </h3>
-        <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '0 0 16px 0' }}>
-          {lang === 'am'
-            ? 'በየቀኑ በመግባት ነፃ የቢንጎ ቦነስ እና የጃክፖት ትኬቶችን ያግኙ!'
-            : 'Log in every day without breaking your streak to claim up to 25 ETB!'}
-        </p>
+          {/* Halo Circle with Fire Flame */}
+          <div
+            style={{
+              width: '74px',
+              height: '74px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, #fef08a 0%, #fef9c3 60%, rgba(254, 240, 138, 0) 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '40px',
+              position: 'relative'
+            }}
+          >
+            <span>🔥</span>
+          </div>
 
-        {/* 7 Days Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '18px' }}>
-          {streakDays.map((s) => {
-            const isCompleted = s.day < currentStreakDay || (s.day === currentStreakDay && hasClaimedToday);
-            const isToday = s.day === currentStreakDay && !hasClaimedToday;
-            const isFuture = s.day > currentStreakDay;
-
-            return (
-              <div
-                key={s.day}
-                style={{
-                  gridColumn: s.day === 7 ? 'span 2' : 'auto',
-                  background: isToday
-                    ? 'linear-gradient(135deg, rgba(250, 204, 21, 0.25) 0%, rgba(202, 138, 4, 0.3) 100%)'
-                    : isCompleted
-                    ? 'rgba(34, 197, 94, 0.12)'
-                    : 'rgba(255, 255, 255, 0.05)',
-                  border: isToday
-                    ? '1.5px solid #facc15'
-                    : isCompleted
-                    ? '1px solid #22c55e'
-                    : '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '14px',
-                  padding: '10px 6px',
-                  position: 'relative'
-                }}
-              >
-                <div style={{ fontSize: '10.5px', fontWeight: '800', color: isToday ? '#fde047' : isCompleted ? '#86efac' : '#94a3b8' }}>
-                  {lang === 'am' ? `ቀን ${s.day}` : `Day ${s.day}`}
-                </div>
-                <div style={{ fontSize: '20px', margin: '4px 0' }}>{s.icon}</div>
-                <div style={{ fontSize: '12px', fontWeight: '900', color: isToday ? '#facc15' : '#ffffff' }}>
-                  +{s.reward}
-                </div>
-                {isCompleted && (
-                  <span style={{ fontSize: '10px', color: '#22c55e', fontWeight: '800' }}>✓ CLAIMED</span>
-                )}
-              </div>
-            );
-          })}
+          {/* Right Sparkle Star */}
+          <span
+            style={{
+              position: 'absolute',
+              right: '-24px',
+              top: '32px',
+              color: '#facc15',
+              fontSize: '14px',
+              fontWeight: '900'
+            }}
+          >
+            ✦
+          </span>
         </div>
 
-        {/* Claim Action Button */}
+        {/* 2. Main Title & Subtitle */}
+        <h2
+          style={{
+            fontSize: '23px',
+            fontWeight: '900',
+            color: '#0f172a',
+            margin: '0 0 4px 0',
+            letterSpacing: '-0.4px',
+            lineHeight: 1.2
+          }}
+        >
+          {lang === 'am' ? 'የየዕለቱ የገቢ ቦነስ' : 'Daily Streak Calendar'}
+        </h2>
+
+        <p
+          style={{
+            fontSize: '12px',
+            color: '#64748b',
+            margin: '0 0 16px 0',
+            lineHeight: 1.35
+          }}
+        >
+          {lang === 'am' ? (
+            <>በየቀኑ ሳይቋረጡ በመግባት እስከ <span style={{ color: '#16a34a', fontWeight: '800' }}>25 ብር</span> ድረስ ያግኙ!</>
+          ) : (
+            <>Log in every day without breaking your streak to claim up to <span style={{ color: '#16a34a', fontWeight: '800' }}>25 ETB!</span></>
+          )}
+        </p>
+
+        {/* 3. Exact 7-Day Grid */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+          {/* Row 1: Days 1 to 4 (4 Columns) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+            {streakDays.slice(0, 4).map((s) => {
+              const isCompleted = s.day < currentStreakDay || (s.day === currentStreakDay && hasClaimedToday);
+              const isToday = s.day === currentStreakDay;
+
+              return (
+                <div
+                  key={s.day}
+                  style={{
+                    background: isToday ? '#fefce8' : '#ffffff',
+                    border: isToday ? '1.5px solid #facc15' : '1px solid #f1f5f9',
+                    borderRadius: '16px',
+                    padding: '10px 4px 8px 4px',
+                    textAlign: 'center',
+                    boxShadow: isToday ? '0 4px 12px rgba(234, 179, 8, 0.15)' : '0 1px 4px rgba(0, 0, 0, 0.03)',
+                    position: 'relative'
+                  }}
+                >
+                  {/* Top-Right Green Checkmark Badge if Claimed */}
+                  {isCompleted && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        width: '14px',
+                        height: '14px',
+                        borderRadius: '50%',
+                        background: '#16a34a',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '8px'
+                      }}
+                    >
+                      <i className="fa-solid fa-check"></i>
+                    </span>
+                  )}
+
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', marginBottom: '2px' }}>
+                    {lang === 'am' ? `ቀን ${s.day}` : `Day ${s.day}`}
+                  </div>
+
+                  <div style={{ fontSize: '24px', margin: '4px 0' }}>{s.icon}</div>
+
+                  <div
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: '900',
+                      color: isToday ? '#16a34a' : '#0f172a',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {s.reward}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Row 2: Days 5 to 7 (3 Columns) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+            {streakDays.slice(4, 7).map((s) => {
+              const isCompleted = s.day < currentStreakDay || (s.day === currentStreakDay && hasClaimedToday);
+              const isToday = s.day === currentStreakDay;
+
+              return (
+                <div
+                  key={s.day}
+                  style={{
+                    background: isToday ? '#fefce8' : '#ffffff',
+                    border: isToday ? '1.5px solid #facc15' : '1px solid #f1f5f9',
+                    borderRadius: '16px',
+                    padding: '10px 4px 8px 4px',
+                    textAlign: 'center',
+                    boxShadow: isToday ? '0 4px 12px rgba(234, 179, 8, 0.15)' : '0 1px 4px rgba(0, 0, 0, 0.03)',
+                    position: 'relative'
+                  }}
+                >
+                  {/* Top-Right Green Checkmark Badge if Claimed */}
+                  {isCompleted && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        width: '14px',
+                        height: '14px',
+                        borderRadius: '50%',
+                        background: '#16a34a',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '8px'
+                      }}
+                    >
+                      <i className="fa-solid fa-check"></i>
+                    </span>
+                  )}
+
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', marginBottom: '2px' }}>
+                    {lang === 'am' ? `ቀን ${s.day}` : `Day ${s.day}`}
+                  </div>
+
+                  <div style={{ fontSize: '24px', margin: '4px 0' }}>{s.icon}</div>
+
+                  <div
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: '900',
+                      color: isToday ? '#16a34a' : '#0f172a',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {s.reward}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 4. Action CTA Button */}
         <button
           type="button"
           onClick={handleClaimToday}
@@ -148,27 +319,29 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
           style={{
             width: '100%',
             background: hasClaimedToday
-              ? 'rgba(255, 255, 255, 0.1)'
-              : 'linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%)',
-            color: hasClaimedToday ? '#94a3b8' : '#0f172a',
-            fontSize: '15px',
+              ? '#e2e8f0'
+              : 'linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%)',
+            color: hasClaimedToday ? '#94a3b8' : '#ffffff',
+            fontSize: '14.5px',
             fontWeight: '900',
             border: 'none',
             borderRadius: '999px',
-            padding: '13px',
+            padding: '14px 18px',
             cursor: hasClaimedToday ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            boxShadow: hasClaimedToday ? 'none' : '0 6px 20px rgba(234, 179, 8, 0.45)',
-            textTransform: 'uppercase'
+            boxShadow: hasClaimedToday ? 'none' : '0 8px 24px rgba(22, 163, 74, 0.4)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.4px',
+            transition: 'all 0.15s ease'
           }}
         >
           {hasClaimedToday ? (
             <span>
               <i className="fa-solid fa-check"></i>{' '}
-              {lang === 'am' ? 'ዛሬ ተቀብለዋል • ነገ ይመለሱ' : 'Claimed Today • Come Back Tomorrow'}
+              {lang === 'am' ? 'ዛሬ ተቀብለዋል • ነገ ይመለሱ' : 'CLAIMED TODAY • COME BACK TOMORROW'}
             </span>
           ) : (
             <span>
@@ -177,6 +350,64 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
             </span>
           )}
         </button>
+
+        {/* 5. Exact 3-Column Trust Bar */}
+        <div
+          style={{
+            marginTop: '14px',
+            paddingTop: '12px',
+            borderTop: '1px solid #f1f5f9',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '4px',
+            textAlign: 'left'
+          }}
+        >
+          {/* Column 1 */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
+            <span style={{ color: '#16a34a', fontSize: '12px', marginTop: '1px' }}>
+              <i className="fa-solid fa-shield-halved"></i>
+            </span>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>
+                {lang === 'am' ? 'ሳይቋረጡ ይቀጥሉ' : 'Keep your streak'}
+              </div>
+              <div style={{ fontSize: '8.5px', color: '#64748b' }}>
+                {lang === 'am' ? 'ቦነስዎን ያሳድጉ' : 'Maximize your rewards'}
+              </div>
+            </div>
+          </div>
+
+          {/* Column 2 */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '5px', borderLeft: '1px solid #f1f5f9', paddingLeft: '4px' }}>
+            <span style={{ color: '#16a34a', fontSize: '12px', marginTop: '1px' }}>
+              <i className="fa-regular fa-calendar-check"></i>
+            </span>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>
+                {lang === 'am' ? 'በየቀኑ ይግቡ' : 'Login daily'}
+              </div>
+              <div style={{ fontSize: '8.5px', color: '#64748b' }}>
+                {lang === 'am' ? '7 ቀናት፣ ትልቅ ሽልማት' : '7 days, bigger rewards'}
+              </div>
+            </div>
+          </div>
+
+          {/* Column 3 */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '5px', borderLeft: '1px solid #f1f5f9', paddingLeft: '4px' }}>
+            <span style={{ color: '#16a34a', fontSize: '12px', marginTop: '1px' }}>
+              <i className="fa-solid fa-wallet"></i>
+            </span>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>
+                {lang === 'am' ? 'ወዲያውኑ ገቢ' : 'Instant credit'}
+              </div>
+              <div style={{ fontSize: '8.5px', color: '#64748b' }}>
+                {lang === 'am' ? 'ቀጥታ ወደ ቦርሳዎ' : 'Direct to your wallet'}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
