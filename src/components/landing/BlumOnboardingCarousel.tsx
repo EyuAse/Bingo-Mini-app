@@ -5,11 +5,13 @@ import { telegramService } from '../../services/telegramService';
 interface BlumOnboardingCarouselProps {
   onClaimBonus: () => void;
   isLoading: boolean;
+  onSkip?: () => void;
 }
 
 export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
   onClaimBonus,
-  isLoading
+  isLoading,
+  onSkip
 }) => {
   const { lang } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -17,30 +19,93 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
   const slides = [
     {
       id: 0,
-      badge: lang === 'am' ? '⚡ የቀጥታ 75-ኳስ ቢንጎ' : '⚡ LIVE 75-BALL BINGO',
-      title: lang === 'am' ? 'የኢትዮጵያ #1 ፈጣን የቢንጎ ጨዋታ' : "Ethiopia's #1 Express Bingo Game",
-      sub: lang === 'am' ? 'በየደቂቃው የቀጥታ ዙሮች፣ ከፍተኛ ጃክፖት እና እውነተኛ አሸናፊዎች!' : 'Live rounds every 60s, massive jackpots, and thousands of real winners daily!',
+      badge: lang === 'am' ? '⚡ የቀጥታ 75-ኳስ ቢንጎ' : '⚡ 🎯 75-BALL EXPRESS',
+      title1: lang === 'am' ? 'የቀጥታ ቢንጎ ይጫወቱ' : 'Play Live Bingo',
+      title2: lang === 'am' ? 'ከፍተኛ ጃክፖት ያሸንፉ' : 'Win Huge Jackpots',
+      sub: lang === 'am'
+        ? 'በየ60 ሰከንዱ የቀጥታ ዙሮች፣ ከፍተኛ የገንዘብ ሽልማቶች እና ሺዎች የሚቆጠሩ እውነተኛ ኢትዮጵያውያን ተጫዋቾች!'
+        : 'Fast-paced 75-ball express rounds with thousands of real Ethiopian players daily.',
       art: '/assets/images/lomi-hero-75.jpg',
-      icon: '🍋',
-      highlight: '75-BALL EXPRESS'
+      features: [
+        {
+          icon: '⚡',
+          iconBg: '#ecfdf5',
+          title: lang === 'am' ? 'የ60 ሰከንድ የቀጥታ ዙሮች' : 'Express Rounds',
+          desc: lang === 'am' ? 'የማያቋርጥ ፈጣን የቀጥታ ጨዋታ' : '60-second non-stop live action'
+        },
+        {
+          icon: '🏆',
+          iconBg: '#fef9c3',
+          title: lang === 'am' ? 'የየዕለቱ ጃክፖቶች' : 'Daily Jackpots',
+          desc: lang === 'am' ? 'እስከ 50,000 ብር የሚደርሱ ሽልማቶች' : 'Up to 50,000 ETB prize pools'
+        },
+        {
+          icon: '🎮',
+          iconBg: '#eff6ff',
+          title: lang === 'am' ? 'ራስ-ሰር ምልክት ማድረጊያ' : 'Auto-Marking',
+          desc: lang === 'am' ? 'የአሸናፊ ቁጥር እንዳያመልጥዎ' : 'Never miss a winning number'
+        }
+      ]
     },
     {
       id: 1,
-      badge: lang === 'am' ? '💸 ፈጣን ክፍያ' : '💸 INSTANT PAYOUTS',
-      title: lang === 'am' ? 'በቴሌብር እና በንግድ ባንክ ወዲያውኑ ወጪ ያድርጉ' : 'Withdraw Instantly to Telebirr & CBE',
-      sub: lang === 'am' ? 'ያሸነፉትን ገንዘብ በሰከንዶች ውስጥ ወደ ስልክዎ ያስገቡ። 0% ኮሚሽን!' : 'Instant cashouts directly to your Telebirr or CBE Bank in 0-60 seconds. 0% fees!',
+      badge: lang === 'am' ? '⚡ 💸 ፈጣን ክፍያ' : '⚡ 💸 INSTANT PAYOUTS',
+      title1: lang === 'am' ? 'ያሸነፉትን ገንዘብ' : 'Cashout Instantly',
+      title2: lang === 'am' ? 'ወዲያውኑ ወጪ ያድርጉ' : 'When You Win',
+      sub: lang === 'am'
+        ? 'ያሸነፉትን ገንዘብ በሰከንዶች ውስጥ በቀጥታ ወደ ቴሌብር ወይም ንግድ ባንክ ያስገቡ። 0% ክፍያ። 100% አስተማማኝ።'
+        : 'Withdraw your winnings directly to Telebirr or CBE Bank in seconds. 0% fees. 100% secure.',
       art: '/assets/images/auth-header-75.jpg',
-      icon: '⚡',
-      highlight: '0-60s PAYOUTS'
+      features: [
+        {
+          icon: '⚡',
+          iconBg: '#ecfdf5',
+          title: lang === 'am' ? 'ፈጣን ዝውውር' : 'Instant Transfers',
+          desc: lang === 'am' ? 'ገንዘብዎ በ0-60 ሰከንድ ውስጥ ይደርሳል' : 'Get your winnings in 0–60 seconds'
+        },
+        {
+          icon: '🛡️',
+          iconBg: '#fef3c7',
+          title: lang === 'am' ? '100% አስተማማኝ' : '100% Secure',
+          desc: lang === 'am' ? 'ደህንነቱ የተጠበቀና የታመነ አሰራር' : 'Safe, fair & encrypted transactions'
+        },
+        {
+          icon: '🎧',
+          iconBg: '#ecfdf5',
+          title: lang === 'am' ? 'የ24/7 ድጋፍ' : '24/7 Support',
+          desc: lang === 'am' ? 'በማንኛውም ሰዓት ከጎንዎ ነን' : "We're here for you anytime"
+        }
+      ]
     },
     {
       id: 2,
-      badge: lang === 'am' ? '🎁 የነፃ መመዝገቢያ ስጦታ' : '🎁 STARTER REWARD PACK',
-      title: lang === 'am' ? 'የ10 ብር ነፃ ቦነስዎን አሁኑኑ ያግኙ!' : 'Claim Your 10 ETB Free Starter Pack!',
-      sub: lang === 'am' ? 'ያለ ምንም ቅድመ ክፍያ ወዲያውኑ መጫወት ይጀምሩ እና እውነተኛ ብር ያሸንፉ!' : 'Start playing instantly with zero deposit required and win real cash payouts!',
+      badge: lang === 'am' ? '🎁 👑 የነፃ መመዝገቢያ ስጦታ' : '🎁 👑 STARTER REWARD PACK',
+      title1: lang === 'am' ? 'በ10 ብር ቦነስ ይጀምሩ' : 'Start With 10 ETB',
+      title2: lang === 'am' ? 'ያለ ምንም ቅድመ ክፍያ' : 'Zero Deposit Needed',
+      sub: lang === 'am'
+        ? 'በቴሌግራም በአንድ ንክኪ ይመዝገቡና የ10 ብር ነፃ ቦነስዎን ወዲያውኑ ተቀብለው መጫወት ይጀምሩ!'
+        : 'Create your account in 1-tap via Telegram and receive 10 ETB free welcome bonus right now.',
       art: '/assets/images/lomi-hero-75.jpg',
-      icon: '👑',
-      highlight: '+10.00 ETB FREE'
+      features: [
+        {
+          icon: '🎁',
+          iconBg: '#fef9c3',
+          title: lang === 'am' ? 'የ10 ብር ነፃ ስጦታ' : 'Free Starter Pack',
+          desc: lang === 'am' ? '+10.00 ብር ቦነስ ወደ ቦርሳዎ ገቢ ይሆናል' : '+10.00 ETB added directly to wallet'
+        },
+        {
+          icon: '⚡',
+          iconBg: '#eff6ff',
+          title: lang === 'am' ? '1-ንክኪ ቴሌግራም' : '1-Click Telegram',
+          desc: lang === 'am' ? 'የይለፍ ቃል ወይም ረጅም ፎርም አያስፈልግም' : 'Zero passwords or forms needed'
+        },
+        {
+          icon: '💰',
+          iconBg: '#ecfdf5',
+          title: lang === 'am' ? 'እውነተኛ የብር ሽልማቶች' : 'Real Cash Prizes',
+          desc: lang === 'am' ? 'ያሸነፉትን ወዲያውኑ ወጪ ያድርጉ' : 'Play & withdraw real Ethiopian Birr'
+        }
+      ]
     }
   ];
 
@@ -53,55 +118,54 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
     }
   };
 
-  const handleDotClick = (idx: number) => {
+  const handleSkipClick = () => {
     telegramService.triggerHaptic('light');
-    setCurrentSlide(idx);
+    if (onSkip) {
+      onSkip();
+    } else {
+      onClaimBonus();
+    }
   };
 
   const slide = slides[currentSlide];
+  const isLastSlide = currentSlide === slides.length - 1;
 
   return (
-    <div className="blum-onboarding-wrapper" style={{ margin: '0 0 16px 0', width: '100%' }}>
-      {/* Slide Glass Card */}
+    <div
+      className="exact-ref-onboarding-container"
+      style={{
+        width: '100%',
+        maxWidth: '430px',
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '10px 4px 20px 4px',
+        boxSizing: 'border-box'
+      }}
+    >
+      {/* 1. Progress Segments & Skip Button Row */}
       <div
-        className="blum-story-card"
         style={{
-          background: 'linear-gradient(180deg, rgba(30, 27, 75, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)',
-          borderRadius: '24px',
-          border: '1.5px solid rgba(250, 204, 21, 0.35)',
-          padding: '20px 16px',
-          color: '#ffffff',
-          textAlign: 'center',
-          boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5), 0 0 20px rgba(234, 179, 8, 0.15)',
-          position: 'relative',
-          overflow: 'hidden'
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          padding: '0 4px'
         }}
       >
-        {/* Glow backdrop */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '-40px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '180px',
-            height: '180px',
-            background: 'radial-gradient(circle, rgba(250, 204, 21, 0.25) 0%, transparent 70%)',
-            pointerEvents: 'none'
-          }}
-        ></div>
-
-        {/* Top Story Progress Bars */}
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+        {/* 3 Rounded Segment Bars */}
+        <div style={{ display: 'flex', gap: '6px', flex: 1, maxWidth: '180px' }}>
           {slides.map((s, idx) => (
             <div
               key={s.id}
-              onClick={() => handleDotClick(idx)}
+              onClick={() => setCurrentSlide(idx)}
               style={{
                 flex: 1,
-                height: '4px',
+                height: '6px',
                 borderRadius: '999px',
-                background: idx <= currentSlide ? '#facc15' : 'rgba(255, 255, 255, 0.2)',
+                background: idx <= currentSlide ? '#eab308' : '#e2e8f0',
                 cursor: 'pointer',
                 transition: 'all 0.25s ease'
               }}
@@ -109,127 +173,236 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
           ))}
         </div>
 
-        {/* Badge Pill */}
-        <div
+        {/* Skip Pill Button */}
+        <button
+          type="button"
+          onClick={handleSkipClick}
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'rgba(250, 204, 21, 0.15)',
-            border: '1px solid #facc15',
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
             borderRadius: '999px',
-            padding: '4px 12px',
-            fontSize: '11px',
-            fontWeight: '800',
-            color: '#fde047',
-            letterSpacing: '0.8px',
-            marginBottom: '12px'
+            padding: '6px 16px',
+            fontSize: '13px',
+            fontWeight: '700',
+            color: '#0f172a',
+            cursor: 'pointer',
+            boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)'
           }}
         >
-          <span>{slide.icon}</span>
-          <span>{slide.badge}</span>
-        </div>
+          {lang === 'am' ? 'ዝለል' : 'Skip'}
+        </button>
+      </div>
 
-        {/* Artwork Image */}
-        <div
-          style={{
-            width: '100%',
-            height: '150px',
-            borderRadius: '16px',
-            overflow: 'hidden',
-            marginBottom: '14px',
-            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.4)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
-          }}
-        >
-          <img
-            src={slide.art}
-            alt={slide.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        </div>
+      {/* 2. Centered Badge Tag */}
+      <div
+        style={{
+          background: 'rgba(236, 253, 245, 0.9)',
+          border: '1px solid #a7f3d0',
+          borderRadius: '999px',
+          padding: '5px 16px',
+          fontSize: '11.5px',
+          fontWeight: '800',
+          color: '#047857',
+          letterSpacing: '0.8px',
+          textTransform: 'uppercase',
+          marginBottom: '14px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px'
+        }}
+      >
+        <span>{slide.badge}</span>
+      </div>
 
-        {/* Title */}
-        <h2
-          style={{
-            fontSize: '19px',
-            fontWeight: '900',
-            margin: '0 0 6px 0',
-            letterSpacing: '-0.3px',
-            color: '#ffffff',
-            lineHeight: 1.3
-          }}
-        >
-          {slide.title}
-        </h2>
+      {/* 3. Dual-Tone Heading */}
+      <h1
+        style={{
+          fontSize: '28px',
+          fontWeight: '900',
+          lineHeight: '1.2',
+          margin: '0 0 8px 0',
+          textAlign: 'center',
+          letterSpacing: '-0.5px'
+        }}
+      >
+        <div style={{ color: '#0f172a' }}>{slide.title1}</div>
+        <div style={{ color: isLastSlide ? '#ca8a04' : '#16a34a' }}>{slide.title2}</div>
+      </h1>
 
-        {/* Subtitle */}
-        <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '0 0 16px 0', lineHeight: 1.4 }}>
-          {slide.sub}
-        </p>
+      {/* 4. Subtitle */}
+      <p
+        style={{
+          fontSize: '13.5px',
+          color: '#64748b',
+          textAlign: 'center',
+          lineHeight: '1.45',
+          margin: '0 0 20px 0',
+          maxWidth: '320px'
+        }}
+      >
+        {slide.sub}
+      </p>
 
-        {/* Action Button */}
-        {currentSlide === slides.length - 1 ? (
-          <button
-            type="button"
-            className="btn-hero-fresh-cta"
-            onClick={onClaimBonus}
-            disabled={isLoading}
+      {/* 5. 3D Artwork Frame */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '360px',
+          height: '190px',
+          borderRadius: '24px',
+          overflow: 'hidden',
+          marginBottom: '18px',
+          boxShadow: '0 12px 25px -8px rgba(0, 0, 0, 0.12)',
+          border: '2px solid rgba(255, 255, 255, 0.8)',
+          background: '#fefce8'
+        }}
+      >
+        <img
+          src={slide.art}
+          alt={slide.title1}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      </div>
+
+      {/* 6. Exact 3 Stacked White Checklist Cards */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '360px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          marginBottom: '22px'
+        }}
+      >
+        {slide.features.map((feat, idx) => (
+          <div
+            key={idx}
             style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%)',
-              color: '#0f172a',
-              fontSize: '15.5px',
-              fontWeight: '900',
-              border: 'none',
-              borderRadius: '999px',
-              padding: '14px',
-              cursor: 'pointer',
+              background: '#ffffff',
+              borderRadius: '16px',
+              padding: '12px 16px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 6px 20px rgba(234, 179, 8, 0.5)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              gap: '12px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              border: '1px solid #f1f5f9'
             }}
           >
-            <span>🎁</span>
+            {/* Icon Bubble */}
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '12px',
+                background: feat.iconBg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '18px',
+                flexShrink: 0
+              }}
+            >
+              {feat.icon}
+            </div>
+
+            {/* Texts */}
+            <div style={{ flex: 1, textAlign: 'left' }}>
+              <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a' }}>
+                {feat.title}
+              </div>
+              <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: '500' }}>
+                {feat.desc}
+              </div>
+            </div>
+
+            {/* Green Checkmark Badge */}
+            <div
+              style={{
+                width: '22px',
+                height: '22px',
+                borderRadius: '50%',
+                background: '#16a34a',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                flexShrink: 0
+              }}
+            >
+              <i className="fa-solid fa-check"></i>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 7. Action CTA Button (Lush Green / Gold) */}
+      <div style={{ width: '100%', maxWidth: '360px' }}>
+        <button
+          type="button"
+          onClick={handleNext}
+          disabled={isLoading}
+          style={{
+            width: '100%',
+            background: isLastSlide
+              ? 'linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%)'
+              : 'linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%)',
+            color: isLastSlide ? '#0f172a' : '#ffffff',
+            fontSize: '16px',
+            fontWeight: '900',
+            border: 'none',
+            borderRadius: '999px',
+            padding: '16px 20px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            boxShadow: isLastSlide
+              ? '0 8px 24px rgba(234, 179, 8, 0.45)'
+              : '0 8px 24px rgba(22, 163, 74, 0.45)',
+            letterSpacing: '0.2px',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          {isLastSlide ? (
             <span>
               {isLoading
                 ? lang === 'am'
                   ? 'በመግባት ላይ...'
                   : 'Connecting...'
                 : lang === 'am'
-                ? '🎁 የ10 ብር ቦነስ አሁኑኑ ያግኙ'
-                : '🎁 Claim 10 ETB Bonus & Play'}
+                ? '🎁 የ10 ብር ቦነስዎን ተቀብለው ይጫወቱ ➔'
+                : '🎁 Claim 10 ETB Bonus & Play ➔'}
             </span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleNext}
-            style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, #2AABEE 0%, #229ED9 100%)',
-              color: '#ffffff',
-              fontSize: '15px',
-              fontWeight: '800',
-              border: 'none',
-              borderRadius: '999px',
-              padding: '13px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 16px rgba(34, 158, 217, 0.4)'
-            }}
-          >
-            <span>{lang === 'am' ? 'ቀጣይ' : 'Next'}</span>
-            <i className="fa-solid fa-arrow-right"></i>
-          </button>
-        )}
+          ) : (
+            <>
+              <span>{lang === 'am' ? 'ቀጣይ' : 'Next'}</span>
+              <i className="fa-solid fa-arrow-right"></i>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* 8. Bottom Trust Badge */}
+      <div
+        style={{
+          marginTop: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '11.5px',
+          color: '#475569',
+          fontWeight: '600'
+        }}
+      >
+        <span style={{ color: '#16a34a' }}>🛡️</span>
+        <span>
+          {lang === 'am'
+            ? 'ፈጣን • ታማኝ • 100% አስተማማኝ'
+            : 'Licensed • Trusted • Reliable'}
+        </span>
       </div>
     </div>
   );
