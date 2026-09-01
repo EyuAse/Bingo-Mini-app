@@ -84,58 +84,50 @@ export const TelegramRegisterModal: React.FC<TelegramRegisterModalProps> = ({
           <i className="fa-solid fa-xmark"></i>
         </button>
 
-        {/* 1. Mascot: Glowing Halo with Crowned Lemon & Sparkles */}
-        <div style={{ position: 'relative', display: 'inline-block', margin: '4px auto 12px auto' }}>
+        {/* 1. Mascot: 3D Crowned Lemon Transparent Badge & Sparkles */}
+        <div style={{ position: 'relative', display: 'inline-block', margin: '4px auto 10px auto' }}>
           {/* Left Sparkle Star */}
           <span
             style={{
               position: 'absolute',
-              left: '-22px',
-              top: '24px',
+              left: '-24px',
+              top: '28px',
               color: '#facc15',
-              fontSize: '14px'
+              fontSize: '16px',
+              fontWeight: '900'
             }}
           >
             ✦
           </span>
 
-          {/* Halo Circle with 3D Lemon */}
+          {/* 3D Crowned Lemon Transparent PNG */}
           <div
             style={{
-              width: '74px',
-              height: '74px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, #fef08a 0%, #fef9c3 60%, rgba(254, 240, 138, 0) 100%)',
+              width: '82px',
+              height: '82px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '40px',
-              position: 'relative'
+              margin: '0 auto',
+              filter: 'drop-shadow(0 8px 16px rgba(234, 179, 8, 0.35))'
             }}
           >
-            <span>🍋</span>
-
-            {/* Crown on top-right of lemon */}
-            <span
-              style={{
-                position: 'absolute',
-                top: '-4px',
-                right: '4px',
-                fontSize: '20px'
-              }}
-            >
-              👑
-            </span>
+            <img
+              src="/assets/images/lomi_crowned_lemon_badge.png"
+              alt="Lomi Crowned Lemon"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
           </div>
 
           {/* Right Sparkle Star */}
           <span
             style={{
               position: 'absolute',
-              right: '-22px',
-              top: '28px',
+              right: '-24px',
+              top: '32px',
               color: '#facc15',
-              fontSize: '12px'
+              fontSize: '14px',
+              fontWeight: '900'
             }}
           >
             ✦
@@ -242,16 +234,17 @@ export const TelegramRegisterModal: React.FC<TelegramRegisterModalProps> = ({
             </div>
           </div>
 
-          {/* Right: 3D Stack of Gold Coins Image */}
+          {/* Right: 3D Stack of Gold Coins Image (Transparent PNG) */}
           <div
             style={{
-              width: '68px',
-              height: '68px',
+              width: '72px',
+              height: '72px',
               flexShrink: 0,
               zIndex: 2,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              filter: 'drop-shadow(0 6px 12px rgba(202, 138, 4, 0.3))'
             }}
           >
             <img

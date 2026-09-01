@@ -58,34 +58,25 @@ export const NewPlayerWelcomeModal: React.FC<NewPlayerWelcomeModalProps> = ({
           <i className="fa-solid fa-xmark"></i>
         </button>
 
-        {/* 3D Lemon Character Avatar with Crown */}
+        {/* 3D Crowned Lemon Transparent Badge */}
         <div style={{ position: 'relative', display: 'inline-block', marginBottom: '14px' }}>
           <div
             style={{
-              width: '84px',
-              height: '84px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #fef08a 0%, #facc15 50%, #eab308 100%)',
+              width: '90px',
+              height: '90px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '44px',
-              boxShadow: '0 0 25px rgba(250, 204, 21, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.8)',
-              margin: '0 auto'
+              margin: '0 auto',
+              filter: 'drop-shadow(0 10px 25px rgba(250, 204, 21, 0.5))'
             }}
           >
-            🍋
+            <img
+              src="/assets/images/lomi_crowned_lemon_badge.png"
+              alt="Lomi Crowned Lemon"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
           </div>
-          <span
-            style={{
-              position: 'absolute',
-              top: '-10px',
-              right: '-6px',
-              fontSize: '24px'
-            }}
-          >
-            👑
-          </span>
         </div>
 
         {/* Level 1 Badge */}
