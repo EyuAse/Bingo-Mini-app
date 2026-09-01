@@ -7060,83 +7060,163 @@ input:checked + .slider-round:before {
     display: none;
   }
 
-  /* Cashier Hero Banner & All Desks Hero Banners */
+  /* ── All 7 Desks Hero Banners (Mobile Full Width Stacking) ── */
+  .dashboard-hero-banner,
+  .cashflow-hero-banner,
   .cashier-hero-desk-banner,
-  .dash-hero-banner,
-  .cflow-hero-banner,
   .player-hero-banner,
   .bots-hero-banner,
   .cartelas-hero-banner,
   .settings-hero-banner {
+    display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
     padding: 12px 14px !important;
     border-radius: 16px !important;
     gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
-  .hero-banner-left {
+  .dash-hero-left,
+  .cf-hero-left,
+  .hero-banner-left,
+  .player-hero-left,
+  .bots-hero-left,
+  .cartelas-hero-left,
+  .settings-hero-left {
+    display: flex !important;
     flex-direction: row !important;
-    align-items: center !important;
+    align-items: flex-start !important;
     gap: 10px !important;
     width: 100% !important;
   }
 
-  .hero-bank-icon-box {
-    width: 40px !important;
-    height: 40px !important;
+  .dash-hero-icon-box,
+  .cf-hero-icon-box,
+  .hero-bank-icon-box,
+  .player-hero-icon-box,
+  .bots-hero-icon-box,
+  .cartelas-hero-icon-box,
+  .settings-hero-icon-box {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 1.1rem !important;
+    border-radius: 10px !important;
+    flex-shrink: 0 !important;
   }
 
-  .hero-main-title {
-    font-size: 0.875rem !important;
-  }
-
-  .hero-sub-title {
-    font-size: 0.6875rem !important;
-  }
-
-  .hero-banner-right {
-    width: 100% !important;
+  .dash-hero-titles,
+  .cf-hero-titles,
+  .hero-banner-titles,
+  .player-hero-titles,
+  .bots-hero-titles,
+  .cartelas-hero-titles,
+  .settings-hero-titles {
+    flex: 1 !important;
+    min-width: 0 !important;
     display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 8px !important;
+    flex-direction: column !important;
   }
 
-  .hero-lemon-art {
+  .dash-hero-badge-row,
+  .cf-hero-badge-row,
+  .player-hero-badge-row,
+  .bots-hero-badge-row,
+  .cartelas-hero-badge-row,
+  .settings-hero-badge-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .dash-live-badge,
+  .dash-uptime-tag,
+  .cf-live-badge,
+  .cf-settlement-tag,
+  .player-live-badge,
+  .bots-live-badge,
+  .cartelas-live-badge,
+  .settings-live-badge {
+    padding: 2px 6px !important;
+    font-size: 0.5625rem !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
+    border-radius: 6px !important;
+  }
+
+  .dash-hero-main-title,
+  .cf-hero-main-title,
+  .hero-main-title,
+  .player-hero-main-title,
+  .bots-hero-main-title,
+  .cartelas-hero-main-title,
+  .settings-hero-main-title {
+    font-size: 0.8125rem !important;
+    font-weight: 950 !important;
+    line-height: 1.25 !important;
+    letter-spacing: 0.2px !important;
+    margin: 0 !important;
+  }
+
+  .dash-hero-sub-title,
+  .cf-hero-sub-title,
+  .hero-sub-title,
+  .player-hero-sub-title,
+  .bots-hero-sub-title,
+  .cartelas-hero-sub-title,
+  .settings-hero-sub-title {
+    font-size: 0.625rem !important;
+    line-height: 1.35 !important;
+    margin: 2px 0 0 !important;
+    color: #64748b !important;
+  }
+
+  /* Decorative Art - Hide on mobile to prevent squishing */
+  .dash-hero-lemon-art,
+  .cf-hero-lemon-art,
+  .hero-lemon-art,
+  .player-hero-lemon-art,
+  .bots-hero-lemon-art,
+  .cartelas-hero-lemon-art,
+  .settings-hero-lemon-art {
     display: none !important;
   }
 
-  .btn-hero-new-order {
-    width: 100% !important;
-    justify-content: center !important;
-    font-size: 0.75rem !important;
-    padding: 9px 12px !important;
-  }
-
+  /* Action Buttons Row */
   .dash-hero-right,
-  .cflow-hero-right,
+  .cf-hero-right,
+  .hero-banner-right,
   .player-hero-right,
   .bots-hero-right,
   .cartelas-hero-right,
-  .settings-hero-right {
-    width: 100% !important;
-    justify-content: flex-start !important;
-    flex-wrap: wrap !important;
-  }
-
+  .settings-hero-right,
+  .dash-hero-action-buttons,
   .player-hero-action-buttons {
+    display: flex !important;
     width: 100% !important;
-    display: flex;
-    gap: 8px;
+    justify-content: stretch !important;
+    gap: 8px !important;
   }
 
+  .btn-dash-hero-cashier,
+  .btn-cf-hero-export,
+  .btn-hero-new-order,
   .btn-player-hero-register,
-  .btn-player-hero-export {
-    flex: 1;
-    justify-content: center;
+  .btn-player-hero-export,
+  .btn-bots-hero-density,
+  .btn-cartelas-hero-pool,
+  .btn-settings-hero-save {
+    width: 100% !important;
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     font-size: 0.75rem !important;
-    padding: 8px 10px !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    white-space: nowrap !important;
   }
 
   /* Cashier Filters & Controls */
