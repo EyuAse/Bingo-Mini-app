@@ -14,26 +14,29 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
   const { addBonus } = useWallet();
   const { showToast } = useApp();
 
-  const [currentStreakDay, setCurrentStreakDay] = useState(1);
+  // Day 1 is always claimed upon signup (+10 ETB Welcome Pack)
+  const [currentStreakDay, setCurrentStreakDay] = useState(2);
   const [hasClaimedToday, setHasClaimedToday] = useState(false);
 
   const streakDays = [
-    { day: 1, reward: '+10 ETB', rewardNum: 10, icon: '🎁', desc: 'Gift Box' },
-    { day: 2, reward: '+2 ETB', rewardNum: 2, icon: '💰', desc: 'Money Bag' },
-    { day: 3, reward: '+1 Cartela', rewardNum: 3, icon: '🎟️', desc: 'Ticket' },
-    { day: 4, reward: '+4 ETB', rewardNum: 4, icon: '⚡', desc: 'Lightning' },
-    { day: 5, reward: '+5 ETB', rewardNum: 5, icon: '💎', desc: 'Diamond' },
-    { day: 6, reward: '+7 ETB', rewardNum: 6, icon: '🔥', desc: 'Fire' },
-    { day: 7, reward: '+25 ETB', rewardNum: 25, icon: '🏆', desc: 'Trophy' }
+    { day: 1, reward: '+10 ETB', rewardNum: 10, icon: '🎁', desc: 'Welcome Bonus' },
+    { day: 2, reward: '+2 ETB', rewardNum: 2, icon: '💰', desc: 'Daily Bonus' },
+    { day: 3, reward: '+1 Cartela', rewardNum: 3, icon: '🎟️', desc: 'Free Ticket' },
+    { day: 4, reward: '+4 ETB', rewardNum: 4, icon: '⚡', desc: 'Lightning Bonus' },
+    { day: 5, reward: '+5 ETB', rewardNum: 5, icon: '💎', desc: 'Ruby Gift' },
+    { day: 6, reward: '+7 ETB', rewardNum: 6, icon: '🔥', desc: 'Super Streak' },
+    { day: 7, reward: '+25 ETB', rewardNum: 25, icon: '🏆', desc: 'Mega Jackpot' }
   ];
 
   useEffect(() => {
     try {
-      const savedDay = parseInt(localStorage.getItem('lomi_streak_current_day') || '1', 10);
+      const savedDay = parseInt(localStorage.getItem('lomi_streak_current_day') || '2', 10);
       const lastClaimDate = localStorage.getItem('lomi_streak_last_claim');
       const todayStr = new Date().toDateString();
 
-      setCurrentStreakDay(savedDay);
+      // Ensure Day 1 is never re-prompts since it's the welcome pack
+      const activeDay = Math.max(2, savedDay);
+      setCurrentStreakDay(activeDay);
       setHasClaimedToday(lastClaimDate === todayStr);
     } catch {}
   }, [isOpen]);
@@ -42,12 +45,12 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
 
   const handleClaimToday = () => {
     telegramService.triggerHaptic('success');
-    const todayReward = streakDays.find(d => d.day === currentStreakDay) || streakDays[0];
+    const todayReward = streakDays.find(d => d.day === currentStreakDay) || streakDays[1];
 
     addBonus(todayReward.rewardNum);
     localStorage.setItem('lomi_streak_last_claim', new Date().toDateString());
 
-    const nextDay = currentStreakDay >= 7 ? 1 : currentStreakDay + 1;
+    const nextDay = currentStreakDay >= 7 ? 2 : currentStreakDay + 1;
     localStorage.setItem('lomi_streak_current_day', nextDay.toString());
     setCurrentStreakDay(nextDay);
     setHasClaimedToday(true);
@@ -189,15 +192,16 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
           {/* Row 1: Days 1 to 4 (4 Columns) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
             {streakDays.slice(0, 4).map((s) => {
-              const isCompleted = s.day < currentStreakDay || (s.day === currentStreakDay && hasClaimedToday);
-              const isToday = s.day === currentStreakDay;
+              // Day 1 is always completed because of +10 ETB welcome bonus
+              const isCompleted = s.day === 1 || s.day < currentStreakDay || (s.day === currentStreakDay && hasClaimedToday);
+              const isToday = s.day === currentStreakDay && !hasClaimedToday;
 
               return (
                 <div
                   key={s.day}
                   style={{
-                    background: isToday ? '#fefce8' : '#ffffff',
-                    border: isToday ? '1.5px solid #facc15' : '1px solid #f1f5f9',
+                    background: isToday ? '#fefce8' : (s.day === 1 ? 'rgba(254, 252, 232, 0.6)' : '#ffffff'),
+                    border: isToday ? '1.5px solid #facc15' : (s.day === 1 ? '1.5px solid #fde047' : '1px solid #f1f5f9'),
                     borderRadius: '16px',
                     padding: '10px 4px 8px 4px',
                     textAlign: 'center',
@@ -237,7 +241,7 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
                     style={{
                       fontSize: '11px',
                       fontWeight: '900',
-                      color: isToday ? '#16a34a' : '#0f172a',
+                      color: isToday ? '#16a34a' : (s.day === 1 ? '#15803d' : '#0f172a'),
                       whiteSpace: 'nowrap'
                     }}
                   >
@@ -252,7 +256,7 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
             {streakDays.slice(4, 7).map((s) => {
               const isCompleted = s.day < currentStreakDay || (s.day === currentStreakDay && hasClaimedToday);
-              const isToday = s.day === currentStreakDay;
+              const isToday = s.day === currentStreakDay && !hasClaimedToday;
 
               return (
                 <div
@@ -346,7 +350,7 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
           ) : (
             <span>
               <i className="fa-solid fa-gift"></i>{' '}
-              {lang === 'am' ? 'የዛሬን ቦነስ ተቀበል' : 'CLAIM TODAY BONUS'}
+              {lang === 'am' ? `የቀን ${currentStreakDay} ቦነስ ተቀበል` : `CLAIM DAY ${currentStreakDay} BONUS`}
             </span>
           )}
         </button>

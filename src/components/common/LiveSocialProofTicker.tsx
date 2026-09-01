@@ -7,24 +7,37 @@ interface LiveSocialProofTickerProps {
 
 export const LiveSocialProofTicker: React.FC<LiveSocialProofTickerProps> = ({ onOpenStreak }) => {
   const { lang } = useLanguage();
-  const [onlineCount, setOnlineCount] = useState(1842);
+  const [onlineCount, setOnlineCount] = useState(1843);
   const [winnerIndex, setWinnerIndex] = useState(0);
+  const [isSliding, setIsSliding] = useState(false);
 
   const winners = [
-    { name: 'Dawit_M', amount: 1450, room: 'Room 75' },
-    { name: 'Abebe_K', amount: 850, room: 'Express 75' },
-    { name: 'Selam_T', amount: 2100, room: 'Jackpot Live' },
-    { name: 'Yonas_B', amount: 500, room: 'Room 75' },
-    { name: 'Eden_Rose', amount: 3200, room: 'VIP Mega' },
-    { name: 'Nati_Boss', amount: 1120, room: 'Express 75' }
+    { name: 'Selam_T', amount: 2100 },
+    { name: 'Dawit_M', amount: 1450 },
+    { name: 'Abebe_K', amount: 850 },
+    { name: 'Eden_Rose', amount: 3200 },
+    { name: 'Yonas_B', amount: 500 },
+    { name: 'Sami_Lucky', amount: 1800 },
+    { name: 'Nati_Boss', amount: 1120 },
+    { name: 'Hanna_Addis', amount: 2500 },
+    { name: 'Kidus_99', amount: 650 },
+    { name: 'Miki_Star', amount: 4100 },
+    { name: 'Tariku_King', amount: 920 },
+    { name: 'Beti_Gold', amount: 1350 }
   ];
 
-  // Rotate winners & randomize online players slightly
+  // Rotate winners with smooth right-to-left slide transition & slight online count fluctuation
   useEffect(() => {
     const interval = setInterval(() => {
-      setWinnerIndex(prev => (prev + 1) % winners.length);
+      setIsSliding(true);
+      setTimeout(() => {
+        setWinnerIndex(prev => (prev + 1) % winners.length);
+        setIsSliding(false);
+      }, 300);
+
+      // Organic online player fluctuation
       setOnlineCount(prev => prev + (Math.floor(Math.random() * 7) - 3));
-    }, 4000);
+    }, 3200);
 
     return () => clearInterval(interval);
   }, [winners.length]);
@@ -44,7 +57,8 @@ export const LiveSocialProofTicker: React.FC<LiveSocialProofTickerProps> = ({ on
         fontSize: '11.5px',
         color: '#ffffff',
         gap: '8px',
-        zIndex: 50
+        zIndex: 50,
+        overflow: 'hidden'
       }}
     >
       {/* Left: Online Players Pulse */}
@@ -59,12 +73,12 @@ export const LiveSocialProofTicker: React.FC<LiveSocialProofTickerProps> = ({ on
             display: 'inline-block'
           }}
         ></span>
-        <span style={{ fontWeight: '700', color: '#86efac' }}>
+        <span style={{ fontWeight: '700', color: '#86efac', letterSpacing: '0.2px' }}>
           {onlineCount.toLocaleString()} {lang === 'am' ? 'በመስመር ላይ' : 'Live'}
         </span>
       </div>
 
-      {/* Center: Live Winners Ticker */}
+      {/* Center: Dynamic Right-to-Left Sliding Winner Ticker */}
       <div
         style={{
           flex: 1,
@@ -72,12 +86,28 @@ export const LiveSocialProofTicker: React.FC<LiveSocialProofTickerProps> = ({ on
           whiteSpace: 'nowrap',
           textAlign: 'center',
           color: '#fde047',
-          fontWeight: '700'
+          fontWeight: '700',
+          position: 'relative',
+          height: '18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
       >
-        <span style={{ color: '#facc15' }}>🏆 @{currentWinner.name}</span>{' '}
-        <span style={{ color: '#ffffff' }}>{lang === 'am' ? 'አሸነፈ' : 'won'}</span>{' '}
-        <span style={{ color: '#4ade80', fontWeight: '900' }}>+{currentWinner.amount} ETB</span>
+        <div
+          style={{
+            transform: isSliding ? 'translateX(-30px)' : 'translateX(0)',
+            opacity: isSliding ? 0 : 1,
+            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <span style={{ color: '#facc15' }}>🏆 @{currentWinner.name}</span>{' '}
+          <span style={{ color: '#ffffff' }}>{lang === 'am' ? 'አሸነፈ' : 'won'}</span>{' '}
+          <span style={{ color: '#4ade80', fontWeight: '900' }}>+{currentWinner.amount} ETB</span>
+        </div>
       </div>
 
       {/* Right: Daily Streak Button */}
