@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAdmin } from '../../context/AdminContext.tsx';
 import { AdminTab } from './AdminSidebar.tsx';
 
@@ -20,6 +20,8 @@ export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({
   setActiveTab
 }) => {
   const { transactions } = useAdmin();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const activeTabRef = useRef<HTMLButtonElement>(null);
 
   const pendingCashierCount = (transactions || []).filter(t => t.status === 'pending').length;
 
@@ -69,20 +71,31 @@ export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({
     }
   ];
 
+  // Auto-scroll active tab into view when activeTab changes
+  useEffect(() => {
+    if (activeTabRef.current && scrollContainerRef.current) {
+      activeTabRef.current.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest'
+      });
+    }
+  }, [activeTab]);
+
   return (
     <nav className="admin-bottom-nav">
-      <div className="admin-bottom-nav-scroll">
+      <div className="admin-bottom-nav-scroll" ref={scrollContainerRef}>
         {tabs.map(tab => {
           const isActive = activeTab === tab.id;
 
           return (
             <button
               key={tab.id}
+              ref={isActive ? activeTabRef : null}
               type="button"
               className={`admin-bottom-nav-item ${isActive ? 'active' : ''}`}
               onClick={() => {
                 setActiveTab(tab.id);
-                // Smooth scroll to top of page on tab switch
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               title={tab.label}
