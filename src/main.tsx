@@ -6,6 +6,7 @@ import { LanguageProvider } from './context/LanguageContext.tsx';
 import { WalletProvider } from './context/WalletContext.tsx';
 import { BingoProvider } from './context/BingoContext.tsx';
 import { AdminProvider } from './context/AdminContext.tsx';
+import { AuthProvider } from './context/AuthContext.tsx';
 
 // FontAwesome Local Bundle
 import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -19,18 +20,21 @@ import './styles/navigation.css';
 import './styles/bingo.css';
 import './styles/landing.css';
 import './styles/admin.css';
+import './styles/auth.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <LanguageProvider>
       <AdminProvider>
-        <AppProvider>
-          <WalletProvider>
-            <BingoProvider>
-              <App />
-            </BingoProvider>
-          </WalletProvider>
-        </AppProvider>
+        <AuthProvider>
+          <AppProvider>
+            <WalletProvider>
+              <BingoProvider>
+                <App />
+              </BingoProvider>
+            </WalletProvider>
+          </AppProvider>
+        </AuthProvider>
       </AdminProvider>
     </LanguageProvider>
   </React.StrictMode>

@@ -2,6 +2,7 @@ import {
   getHumanCallParts,
   gamePhrases
 } from './amharicVoice.ts';
+import { telegramService } from './telegramService.ts';
 
 /**
  * Web Audio API Broadcast Master & Dynamic Audio Sound Pack Engine
@@ -282,6 +283,7 @@ class AudioEngineService {
 
   // Fanfare Celebration on Bingo Win
   playFanfare() {
+    telegramService.triggerHaptic('success');
     if (this.isMuted) return;
     try {
       this.initCtx();
@@ -325,6 +327,7 @@ class AudioEngineService {
    * 3. If not found: Executes live two-stage human caller engine.
    */
   async speakBall(col: string, num: number) {
+    telegramService.triggerHaptic('medium');
     if (this.isMuted) return;
 
     // 1. Play presence cue

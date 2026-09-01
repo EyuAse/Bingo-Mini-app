@@ -69,7 +69,14 @@ export const translations = {
       noAccount: "Don't have an account?",
       haveAccount: 'Already have an account?',
       registerNow: 'Register Now',
-      loginNow: 'Log In'
+      loginNow: 'Log In',
+      forgotPin: 'Forgot PIN?',
+      verifyPhone: 'Verify Phone Number',
+      phoneVerified: 'Phone Verified',
+      ethioTelecom: 'Ethio Telecom',
+      safaricom: 'Safaricom Ethiopia',
+      resendCode: 'Resend Code',
+      demoAccounts: 'Quick Test Accounts'
     },
     games: {
       readyToPlay: 'Ready to Play?',
@@ -322,7 +329,14 @@ export const translations = {
       noAccount: 'መለያ የለዎትም?',
       haveAccount: 'መለያ አለዎት?',
       registerNow: 'አሁን ይመዝገቡ',
-      loginNow: 'ግባ'
+      loginNow: 'ግባ',
+      forgotPin: 'ሚስጥር ቁጥር ረሱ?',
+      verifyPhone: 'ስልክ ቁጥርዎን ያረጋግጡ',
+      phoneVerified: 'ስልክ ቁጥር ተረጋግጧል',
+      ethioTelecom: 'ኢትዮ ቴሌኮም',
+      safaricom: 'ሳፋሪኮም ኢትዮጵያ',
+      resendCode: 'ኮድ በድጋሚ ላክ',
+      demoAccounts: 'የሙከራ መለያዎች'
     },
     games: {
       readyToPlay: 'ለመጫወት ዝግጁ ኖት?',

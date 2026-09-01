@@ -1,0 +1,583 @@
+/* ============================================================
+   ETHIOPIAN PHONE AUTHENTICATION & OTP MODAL STYLES
+   ============================================================ */
+
+/* Ethiopian Phone Input Container */
+.eth-phone-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.eth-phone-input-box {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9999px;
+  padding: 4px 12px 4px 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  gap: 8px;
+}
+
+.eth-phone-input-box:focus-within {
+  background: #ffffff;
+  border-color: #eab308;
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2);
+}
+
+.eth-phone-input-box.valid {
+  border-color: #22c55e;
+  background: #ffffff;
+}
+
+.eth-phone-input-box.invalid {
+  border-color: #ef4444;
+}
+
+.eth-flag-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.eth-flag-emoji {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.eth-dial-code {
+  font-family: inherit;
+  letter-spacing: -0.2px;
+}
+
+.eth-phone-native-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: 0.5px;
+  padding: 6px 0;
+  min-width: 0;
+}
+
+.eth-phone-native-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+/* Carrier Badge Pills */
+.eth-carrier-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.eth-carrier-pill.ethiotelecom {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.eth-carrier-pill.ethiotelecom .carrier-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.eth-carrier-pill.safaricom {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.eth-carrier-pill.safaricom .carrier-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+.eth-phone-error-hint {
+  font-size: 11.5px;
+  color: #ef4444;
+  font-weight: 500;
+  padding-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ============================================================
+   TELEGRAM 1-CLICK AUTH CTA & DIVIDER
+   ============================================================ */
+.tg-one-click-container {
+  margin-bottom: 14px;
+  width: 100%;
+}
+
+.btn-tg-one-click-cta {
+  width: 100%;
+  background: linear-gradient(135deg, #2AABEE 0%, #229ED9 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(34, 158, 217, 0.35);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.btn-tg-one-click-cta:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(34, 158, 217, 0.45);
+  background: linear-gradient(135deg, #32b4f5 0%, #1f94cc 100%);
+}
+
+.tg-btn-left-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.tg-btn-text-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  text-align: left;
+}
+
+.tg-btn-main-txt {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: #ffffff;
+}
+
+.tg-btn-user-sub {
+  font-size: 11px;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.tg-btn-free-badge {
+  background: rgba(255, 255, 255, 0.25);
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.tg-or-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 10px 0;
+}
+
+.tg-divider-line {
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.tg-divider-text {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.8px;
+}
+
+/* ============================================================
+   OTP VERIFICATION MODAL
+   ============================================================ */
+.otp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.otp-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.otp-modal-card {
+  position: relative;
+  z-index: 10;
+  background: #ffffff;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 380px;
+  padding: 24px 20px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(254, 240, 138, 0.4);
+  text-align: center;
+  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.btn-otp-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s ease;
+}
+
+.btn-otp-modal-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.otp-icon-header {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.otp-sms-icon-bubble {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fef08a 0%, #facc15 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #713f12;
+  box-shadow: 0 8px 16px -4px rgba(234, 179, 8, 0.35);
+}
+
+.otp-sms-icon-bubble.gold {
+  background: linear-gradient(135deg, #fde047 0%, #ca8a04 100%);
+  color: #ffffff;
+}
+
+.otp-modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.3px;
+}
+
+.otp-modal-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.otp-phone-display-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  margin-bottom: 16px;
+}
+
+.otp-phone-txt {
+  font-family: inherit;
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+}
+
+.carrier-tag-small {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.carrier-tag-small.ethiotelecom {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.carrier-tag-small.safaricom {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Dev helper strip */
+.otp-dev-helper-strip {
+  background: #eff6ff;
+  border: 1px dashed #60a5fa;
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.otp-dev-helper-strip:hover {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.dev-pill-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.dev-otp-number {
+  font-family: monospace;
+  font-size: 16px;
+  font-weight: 800;
+  color: #1d4ed8;
+  letter-spacing: 2px;
+}
+
+.dev-click-paste {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* 6-Digit Box Inputs */
+.otp-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.otp-digit-box {
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 52px;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.otp-digit-box:focus {
+  border-color: #eab308;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.25);
+  transform: translateY(-2px);
+}
+
+.otp-digit-box.filled {
+  border-color: #0f172a;
+  background: #ffffff;
+}
+
+.otp-digit-box.has-error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.otp-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+}
+
+.btn-confirm-otp-cta {
+  width: 100%;
+  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 800;
+  border: none;
+  border-radius: 9999px;
+  padding: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(234, 179, 8, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-confirm-otp-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(234, 179, 8, 0.45);
+}
+
+.btn-confirm-otp-cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.otp-resend-row {
+  margin-top: 14px;
+}
+
+.otp-timer-txt {
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.btn-resend-sms-active {
+  background: none;
+  border: none;
+  color: #ca8a04;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s ease;
+}
+
+.btn-resend-sms-active:hover {
+  color: #a16207;
+  text-decoration: underline;
+}
+
+/* Quick test accounts strip for LoginPage */
+.demo-accounts-strip {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-top: 14px;
+  text-align: left;
+}
+
+.demo-accounts-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.demo-pills-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-demo-pill {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.btn-demo-pill:hover {
+  background: #fef9c3;
+  border-color: #facc15;
+  color: #854d0e;
+}
+
+@keyframes modalSlideUp {
+  0% { opacity: 0; transform: translateY(20px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}

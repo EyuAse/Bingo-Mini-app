@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
-import { useApp } from '../context/AppContext.tsx';
-import { useLanguage } from '../context/LanguageContext.tsx';
-import { ProfileHeader } from '../components/wallet/ProfileHeader.tsx';
-import { EthiopiaFlag, UKFlag } from '../components/common/FlagIcons.tsx';
+import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { ProfileHeader } from '../components/wallet/ProfileHeader';
+import { EthiopiaFlag, UKFlag } from '../components/common/FlagIcons';
 
 export const ProfilePage: React.FC = () => {
   const { switchPage, showToast } = useApp();
   const { lang, toggleLang, t } = useLanguage();
+  const { logout } = useAuth();
 
   // Stateful Theme Toggle (Light / Dark)
   const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark'>('light');
 
   const handleLogout = () => {
-    showToast('👋 You have been logged out.');
+    logout();
+    showToast(lang === 'am' ? '👋 በተሳካ ሁኔታ ወጥተዋል።' : '👋 You have been logged out.');
     switchPage('landing');
   };
 

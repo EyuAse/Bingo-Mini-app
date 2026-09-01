@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { useApp } from '../context/AppContext.tsx';
-import { useLanguage } from '../context/LanguageContext.tsx';
-import { TelebirrLogo, CBELogo } from '../components/wallet/PaymentLogos.tsx';
+import React, { useState, useEffect } from 'react';
+import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { TelebirrLogo, CBELogo } from '../components/wallet/PaymentLogos';
 
 interface AttachedAccount {
   id: string;
@@ -15,39 +16,55 @@ interface AttachedAccount {
 export const AccountInfoPage: React.FC = () => {
   const { switchPage, showToast } = useApp();
   const { t, lang } = useLanguage();
+  const { user, updateProfile } = useAuth();
 
-  const [fullName, setFullName] = useState<string>('Eyu Ase');
+  const [fullName, setFullName] = useState<string>(user?.fullName || 'Eyob Asefa');
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
 
   // Telegram Account Linking State
-  const [telegramUsername, setTelegramUsername] = useState<string>('eyu_ase');
+  const [telegramUsername, setTelegramUsername] = useState<string>(user?.telegramUsername || 'eyu_ase');
   const [isEditingTelegram, setIsEditingTelegram] = useState<boolean>(false);
-  const [tempTelegramInput, setTempTelegramInput] = useState<string>('eyu_ase');
+  const [tempTelegramInput, setTempTelegramInput] = useState<string>(user?.telegramUsername || 'eyu_ase');
 
   // Attached Accounts List (Telebirr & CBE ONLY)
-  const [attachedAccounts, setAttachedAccounts] = useState<AttachedAccount[]>([
-    {
-      id: 'acc-1',
-      type: 'Telebirr',
-      name: 'Primary Telebirr',
-      accountNumber: '0983624574',
-      isDefault: true,
-      isVerified: true
-    },
-    {
-      id: 'acc-2',
-      type: 'CBE',
-      name: 'Commercial Bank of Ethiopia',
-      accountNumber: '100098983344',
-      isDefault: false,
-      isVerified: true
+  const [attachedAccounts, setAttachedAccounts] = useState<AttachedAccount[]>(() => {
+    const userPhone = user?.nationalPhone || '0983624574';
+    const userName = user?.fullName || 'Eyob Asefa';
+    return [
+      {
+        id: 'acc-1',
+        type: 'Telebirr',
+        name: `${userName} (Telebirr)`,
+        accountNumber: userPhone,
+        isDefault: true,
+        isVerified: true
+      },
+      {
+        id: 'acc-2',
+        type: 'CBE',
+        name: 'Commercial Bank of Ethiopia',
+        accountNumber: '100098983344',
+        isDefault: false,
+        isVerified: true
+      }
+    ];
+  });
+
+  // Sync state if user changes
+  useEffect(() => {
+    if (user) {
+      setFullName(user.fullName);
+      if (user.telegramUsername) {
+        setTelegramUsername(user.telegramUsername);
+        setTempTelegramInput(user.telegramUsername);
+      }
     }
-  ]);
+  }, [user]);
 
   // New Account Form State (Telebirr & CBE ONLY)
   const [showAddAccount, setShowAddAccount] = useState<boolean>(false);
   const [newAccType, setNewAccType] = useState<'Telebirr' | 'CBE'>('Telebirr');
-  const [newAccName, setNewAccName] = useState<string>('Eyu Ase');
+  const [newAccName, setNewAccName] = useState<string>(user?.fullName || 'Eyob Asefa');
   const [newAccNumber, setNewAccNumber] = useState<string>('');
 
   const handleCopy = (text: string, label: string) => {
@@ -56,6 +73,11 @@ export const AccountInfoPage: React.FC = () => {
   };
 
   const handleSaveName = () => {
+    if (!fullName.trim()) {
+      showToast('⚠️ Please enter a valid name.');
+      return;
+    }
+    updateProfile({ fullName: fullName.trim() });
     setIsEditingName(false);
     showToast('✅ Full Name updated successfully!');
   };
@@ -68,6 +90,7 @@ export const AccountInfoPage: React.FC = () => {
       return;
     }
     setTelegramUsername(cleanUsername);
+    updateProfile({ telegramUsername: cleanUsername });
     setIsEditingTelegram(false);
     showToast(`✅ Telegram @${cleanUsername} ${t('accountInfo.connected')}!`);
   };
@@ -113,6 +136,19 @@ export const AccountInfoPage: React.FC = () => {
     showToast(`✅ ${newAccType} account attached successfully!`);
   };
 
+  const initials = fullName
+    .split(' ')
+    .map(p => p[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || 'EA';
+
+  const userPhoneDisplay = user?.formattedPhone || '+251 98 362 4574';
+  const userIdDisplay = user?.id || 'UID-8839201';
+  const registeredDate = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : 'August 14, 2026';
+
   return (
     <div className="page active page-subpage-dedicated" id="page-account-info">
       {/* Top Back Navigation Bar */}
@@ -133,7 +169,7 @@ export const AccountInfoPage: React.FC = () => {
         {/* 1. Identity & VIP Badge Hero Card */}
         <div className="user-kyc-hero-box">
           <div className="kyc-avatar-wrap">
-            <span className="avatar-letters">EA</span>
+            <span className="avatar-letters">{initials}</span>
             <span className="kyc-verified-badge" title="KYC Level 1 Verified">
               <i className="fa-solid fa-circle-check"></i>
             </span>
@@ -382,11 +418,11 @@ export const AccountInfoPage: React.FC = () => {
             <div className="cred-item-box">
               <span className="cred-lbl">{t('accountInfo.userId')}</span>
               <div className="cred-val-copy-row">
-                <strong className="cred-mono">UID-8839201</strong>
+                <strong className="cred-mono">{userIdDisplay}</strong>
                 <button
                   type="button"
                   className="btn-cred-copy"
-                  onClick={() => handleCopy('UID-8839201', 'User ID')}
+                  onClick={() => handleCopy(userIdDisplay, 'User ID')}
                 >
                   <i className="fa-regular fa-copy"></i>
                 </button>
@@ -396,19 +432,21 @@ export const AccountInfoPage: React.FC = () => {
             <div className="cred-item-box">
               <span className="cred-lbl">{t('accountInfo.phoneNumber')}</span>
               <div className="cred-val-copy-row">
-                <strong className="cred-mono">+251 98 362 4574</strong>
+                <strong className="cred-mono">{userPhoneDisplay}</strong>
                 <span className="verified-dot-tag">✓ {t('common.verified')}</span>
               </div>
             </div>
 
             <div className="cred-item-box">
-              <span className="cred-lbl">{t('accountInfo.activeDevice')}</span>
-              <span className="cred-val-txt">Telegram Mini App (Web)</span>
+              <span className="cred-lbl">Network Operator</span>
+              <span className="cred-val-txt" style={{ textTransform: 'capitalize', fontWeight: 700 }}>
+                {user?.carrier === 'safaricom' ? '🔴 Safaricom Ethiopia' : '🟢 Ethio Telecom'}
+              </span>
             </div>
 
             <div className="cred-item-box">
               <span className="cred-lbl">{t('accountInfo.registered')}</span>
-              <span className="cred-val-txt">August 14, 2026</span>
+              <span className="cred-val-txt">{registeredDate}</span>
             </div>
           </div>
         </div>

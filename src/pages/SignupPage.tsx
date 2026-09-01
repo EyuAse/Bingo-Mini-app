@@ -1,46 +1,154 @@
 import React, { useState } from 'react';
-import { useApp } from '../context/AppContext.tsx';
-import { useLanguage } from '../context/LanguageContext.tsx';
-import { useAdmin } from '../context/AdminContext.tsx';
-import { useWallet } from '../context/WalletContext.tsx';
-import { LanguageDropdown } from '../components/common/LanguageDropdown.tsx';
-import { TrustFooter } from '../components/landing/TrustFooter.tsx';
+import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
+import { useAdmin } from '../context/AdminContext';
+import { useWallet } from '../context/WalletContext';
+import { useAuth } from '../context/AuthContext';
+import { LanguageDropdown } from '../components/common/LanguageDropdown';
+import { TrustFooter } from '../components/landing/TrustFooter';
+import { EthiopianPhoneInput } from '../components/auth/EthiopianPhoneInput';
+import { OtpVerificationModal } from '../components/auth/OtpVerificationModal';
+import { TelegramLoginBanner } from '../components/auth/TelegramLoginBanner';
+import { validateEthiopianPhone } from '../services/ethiopianPhoneValidator';
 
 export const SignupPage: React.FC = () => {
   const { switchPage, showToast } = useApp();
   const { t, lang } = useLanguage();
   const { addUser, registerBonus } = useAdmin();
   const { addBonus } = useWallet();
+  const { sendOtp, verifyOtp, register } = useAuth();
 
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [referralCode, setReferralCode] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(true);
+  const [phone, setPhone] = useState<string>('');
+  const [fullName, setFullName] = useState<string>('');
+  const [pin, setPin] = useState<string>('');
+  const [confirmPin, setConfirmPin] = useState<string>('');
+  const [referralCode, setReferralCode] = useState<string>('');
+  const [showPin, setShowPin] = useState<boolean>(false);
+  const [agreeTerms, setAgreeTerms] = useState<boolean>(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone || phone.trim().length < 8) {
-      showToast('⚠️ Please enter a valid phone number or email.');
+  // OTP Verification States
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState<boolean>(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState<boolean>(false);
+  const [verifiedOtpCode, setVerifiedOtpCode] = useState<string>('');
+  const [devOtpCode, setDevOtpCode] = useState<string | undefined>(undefined);
+  const [isSendingOtp, setIsSendingOtp] = useState<boolean>(false);
+  const [isRegistering, setIsRegistering] = useState<boolean>(false);
+
+  const phoneValidation = validateEthiopianPhone(phone);
+
+  const handleRequestOtp = async () => {
+    if (!phoneValidation.isValid) {
+      showToast(
+        phoneValidation.errorMessage ||
+          (lang === 'am' ? '⚠️ ትክክለኛ የኢትዮጵያ ስልክ ቁጥር ያስገቡ።' : '⚠️ Please enter a valid Ethiopian phone number.')
+      );
       return;
     }
 
-    // Register user in Admin system with 10 ETB free registration bonus
-    addUser({
-      name: fullName.trim() || 'Lomi Player',
-      phone: phone.trim(),
-      balance: 0,
-      bonus: registerBonus,
-      referralCount: 0,
-      totalDeposited: 0,
-      totalWithdrawn: 0,
-      status: 'active'
-    });
+    setIsSendingOtp(true);
+    try {
+      const response = await sendOtp(phone);
+      setDevOtpCode(response.devCode);
+      setIsOtpModalOpen(true);
+      showToast(`📩 ${response.message}`);
+    } catch (err: any) {
+      showToast(`⚠️ ${err?.message || 'Failed to send SMS code.'}`);
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
 
-    addBonus(registerBonus);
-    showToast(`🎉 ${lang === 'am' ? `እንኳን ደህና መጡ ${fullName || 'ተጫዋች'}! የ10 ብር ነፃ ቦነስ ተጨምሯል!` : `Welcome ${fullName || 'Player'}! +${registerBonus} Birr Free Registration Bonus Added!`}`);
-    switchPage('games');
+  const handleVerifyOtp = (code: string): boolean => {
+    const result = verifyOtp(phone, code);
+    if (result.valid) {
+      setIsPhoneVerified(true);
+      setVerifiedOtpCode(code);
+      setTimeout(() => {
+        setIsOtpModalOpen(false);
+      }, 700);
+      showToast(
+        lang === 'am'
+          ? '✅ ስልክ ቁጥርዎ በተሳካ ሁኔታ ተረጋግጧል! አሁን ሙሉ ስምዎንና ፒን ያስገቡ።'
+          : '✅ Phone verified! Please enter your name & PIN below to finish.'
+      );
+      return true;
+    } else {
+      showToast(`⚠️ ${result.message}`);
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!phoneValidation.isValid) {
+      showToast('⚠️ Please enter a valid Ethiopian phone number.');
+      return;
+    }
+
+    // If phone is not verified yet, trigger OTP modal first
+    if (!isPhoneVerified) {
+      await handleRequestOtp();
+      return;
+    }
+
+    if (!fullName || fullName.trim().length < 2) {
+      showToast(lang === 'am' ? '⚠️ እባክዎ ሙሉ ስምዎን ያስገቡ።' : '⚠️ Please enter your full name.');
+      return;
+    }
+
+    if (!pin || pin.length < 4 || pin.length > 8) {
+      showToast(lang === 'am' ? '⚠️ ሚስጥር ቁጥር ከ4 እስከ 8 አሃዝ መሆን አለበት።' : '⚠️ PIN must be between 4 and 8 digits.');
+      return;
+    }
+
+    if (pin !== confirmPin) {
+      showToast(lang === 'am' ? '⚠️ የተሰጡት ሚስጥር ቁጥሮች አይመሳሰሉም።' : '⚠️ PIN numbers do not match.');
+      return;
+    }
+
+    if (!agreeTerms) {
+      showToast(lang === 'am' ? '⚠️ እባክዎ የአገልግሎት ውሎችን ይቀበሉ።' : '⚠️ Please agree to the Terms & Conditions.');
+      return;
+    }
+
+    setIsRegistering(true);
+    try {
+      const newUser = await register({
+        phone: phoneValidation.canonicalNumber,
+        fullName: fullName.trim(),
+        pin: pin.trim(),
+        referralCode: referralCode.trim() || undefined,
+        otpCode: verifiedOtpCode
+      });
+
+      // Register in Admin context
+      addUser({
+        name: newUser.fullName,
+        phone: newUser.formattedPhone,
+        balance: 0,
+        bonus: registerBonus,
+        referralCount: referralCode.trim() ? 1 : 0,
+        totalDeposited: 0,
+        totalWithdrawn: 0,
+        status: 'active'
+      });
+
+      // Credit 10 ETB free registration bonus
+      addBonus(registerBonus);
+
+      showToast(
+        `🎉 ${lang === 'am'
+          ? `እንኳን ደህና መጡ ${newUser.fullName}! የ${registerBonus} ብር ነፃ ቦነስ ተጨምሯል!`
+          : `Welcome ${newUser.fullName}! +${registerBonus} ETB Free Registration Bonus Credited!`}`
+      );
+
+      switchPage('games');
+    } catch (err: any) {
+      showToast(`⚠️ ${err?.message || 'Registration failed.'}`);
+    } finally {
+      setIsRegistering(false);
+    }
   };
 
   return (
@@ -67,7 +175,7 @@ export const SignupPage: React.FC = () => {
           <LanguageDropdown />
         </div>
 
-        {/* 2. 3D Header Graphic (Cartelas + Balls B, 75, 6) */}
+        {/* 2. 3D Header Graphic */}
         <div className="auth-header-artwork-wrap">
           <img
             src="/assets/images/auth-header-75.jpg"
@@ -76,14 +184,12 @@ export const SignupPage: React.FC = () => {
           />
         </div>
 
-        {/* 3. Main White Auth Card with Flanking Balls */}
+        {/* 3. Main White Auth Card */}
         <div className="auth-card-relative-shell">
-          {/* Left Flanking Ball (Yellow 3) */}
           <div className="flanking-ball-ornament ball-left-yellow">
             <span className="ball-num">3</span>
           </div>
 
-          {/* Right Flanking Ball (Green 9) */}
           <div className="flanking-ball-ornament ball-right-green">
             <span className="ball-num">9</span>
           </div>
@@ -94,8 +200,49 @@ export const SignupPage: React.FC = () => {
             </h1>
             <p className="auth-card-sub">{t('auth.signupSub')}</p>
 
+            {/* 1-Click Telegram Login */}
+            <TelegramLoginBanner />
+
             <form className="auth-fresh-form" onSubmit={handleSubmit}>
-              {/* Field 1: Full Name */}
+              {/* Field 1: Ethiopian Phone Number */}
+              <div className="auth-input-group">
+                <div className="label-with-action-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label className="auth-input-label" style={{ margin: 0 }}>
+                    {t('auth.phoneNumber')}
+                  </label>
+                  {isPhoneVerified ? (
+                    <span className="verified-dot-tag" style={{ background: '#dcfce7', color: '#15803d', fontSize: '11px', padding: '2px 8px', borderRadius: '999px', fontWeight: '700' }}>
+                      <i className="fa-solid fa-circle-check"></i> {t('auth.phoneVerified')}
+                    </span>
+                  ) : phoneValidation.isValid ? (
+                    <button
+                      type="button"
+                      className="btn-send-otp-inline"
+                      onClick={handleRequestOtp}
+                      disabled={isSendingOtp}
+                      style={{ background: 'none', border: 'none', color: '#ca8a04', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+                    >
+                      {isSendingOtp ? (
+                        <span><i className="fa-solid fa-spinner fa-spin"></i> {lang === 'am' ? 'በመላክ ላይ...' : 'Sending...'}</span>
+                      ) : (
+                        <span><i className="fa-solid fa-paper-plane"></i> {lang === 'am' ? 'ኮድ ላክ (SMS)' : 'Verify SMS'}</span>
+                      )}
+                    </button>
+                  ) : null}
+                </div>
+
+                <EthiopianPhoneInput
+                  value={phone}
+                  onChange={val => {
+                    setPhone(val);
+                    if (isPhoneVerified) setIsPhoneVerified(false);
+                  }}
+                  disabled={isPhoneVerified}
+                  autoFocus
+                />
+              </div>
+
+              {/* Field 2: Full Name */}
               <div className="auth-input-group">
                 <label className="auth-input-label">{t('auth.fullName')}</label>
                 <div className="auth-input-pill">
@@ -112,23 +259,6 @@ export const SignupPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Field 2: Email or Phone */}
-              <div className="auth-input-group">
-                <label className="auth-input-label">{t('auth.phoneNumber')}</label>
-                <div className="auth-input-pill">
-                  <div className="input-icon-wrap yellow">
-                    <i className="fa-solid fa-phone"></i>
-                  </div>
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    placeholder={t('auth.phonePlaceholder')}
-                    required
-                  />
-                </div>
-              </div>
-
               {/* Field 3: Create PIN */}
               <div className="auth-input-group">
                 <label className="auth-input-label">{t('auth.password')}</label>
@@ -137,23 +267,44 @@ export const SignupPage: React.FC = () => {
                     <i className="fa-solid fa-lock"></i>
                   </div>
                   <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    type={showPin ? 'text' : 'password'}
+                    inputMode="numeric"
+                    maxLength={8}
+                    value={pin}
+                    onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
                     placeholder={t('auth.passwordPlaceholder')}
                     required
                   />
                   <button
                     type="button"
                     className="btn-eye-toggle"
-                    onClick={() => setShowPassword(prev => !prev)}
+                    onClick={() => setShowPin(prev => !prev)}
                   >
-                    <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                    <i className={`fa-solid ${showPin ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
                 </div>
               </div>
 
-              {/* Field 4: Referral Code (Optional) */}
+              {/* Field 4: Confirm PIN */}
+              <div className="auth-input-group">
+                <label className="auth-input-label">{t('auth.confirmPassword')}</label>
+                <div className="auth-input-pill">
+                  <div className="input-icon-wrap gold">
+                    <i className="fa-solid fa-check-double"></i>
+                  </div>
+                  <input
+                    type={showPin ? 'text' : 'password'}
+                    inputMode="numeric"
+                    maxLength={8}
+                    value={confirmPin}
+                    onChange={e => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder={t('auth.confirmPlaceholder')}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Field 5: Referral Code (Optional) */}
               <div className="auth-input-group">
                 <label className="auth-input-label">
                   {lang === 'am' ? 'የመጋበዣ ኮድ (አስገዳጅ አይደለም)' : 'Referral Code (Optional)'}
@@ -187,14 +338,33 @@ export const SignupPage: React.FC = () => {
 
                 <div className="ssl-badge">
                   <i className="fa-solid fa-shield-halved"></i>
-                  <span>SSL Secured</span>
+                  <span>AfroMessage SSL</span>
                 </div>
               </div>
 
-              {/* Action Button: Sign Up ➔ */}
-              <button type="submit" className="btn-auth-golden-cta" id="signup-submit-btn">
-                <span>{t('auth.signupBtn')}</span>
-                <i className="fa-solid fa-arrow-right"></i>
+              {/* Action Button */}
+              <button
+                type="submit"
+                className="btn-auth-golden-cta"
+                id="signup-submit-btn"
+                disabled={isSendingOtp || isRegistering}
+              >
+                {isRegistering ? (
+                  <span>
+                    <i className="fa-solid fa-spinner fa-spin"></i>{' '}
+                    {lang === 'am' ? 'በመመዝገብ ላይ...' : 'Creating Account...'}
+                  </span>
+                ) : !isPhoneVerified ? (
+                  <span>
+                    <i className="fa-solid fa-shield-halved"></i>{' '}
+                    {lang === 'am' ? 'ስልክ ቁጥር አረጋግጥና ተመዝገብ' : 'Verify Phone & Create Account'}
+                  </span>
+                ) : (
+                  <span>
+                    <span>{t('auth.signupBtn')}</span>
+                    <i className="fa-solid fa-arrow-right"></i>
+                  </span>
+                )}
               </button>
             </form>
 
@@ -212,9 +382,19 @@ export const SignupPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 4. Bottom 3-Pillar Trust Footer */}
+        {/* Bottom Trust Footer */}
         <TrustFooter />
       </div>
+
+      {/* OTP Verification Modal */}
+      <OtpVerificationModal
+        isOpen={isOtpModalOpen}
+        phone={phone}
+        devCode={devOtpCode}
+        onVerify={handleVerifyOtp}
+        onResend={handleRequestOtp}
+        onClose={() => setIsOtpModalOpen(false)}
+      />
     </div>
   );
 };
