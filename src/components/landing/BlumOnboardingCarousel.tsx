@@ -23,8 +23,8 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
       title1: lang === 'am' ? 'የቀጥታ ቢንጎ ይጫወቱ' : 'Play Live Bingo',
       title2: lang === 'am' ? 'ከፍተኛ ጃክፖት ያሸንፉ' : 'Win Huge Jackpots',
       sub: lang === 'am'
-        ? 'በየ60 ሰከንዱ የቀጥታ ዙሮች፣ ከፍተኛ የገንዘብ ሽልማቶች እና ሺዎች የሚቆጠሩ እውነተኛ ኢትዮጵያውያን ተጫዋቾች!'
-        : 'Fast-paced 75-ball express rounds with thousands of real Ethiopian players daily.',
+        ? 'በየ60 ሰከንዱ የቀጥታ ዙሮች እና ሺዎች የሚቆጠሩ እውነተኛ ኢትዮጵያውያን ተጫዋቾች!'
+        : 'Fast-paced 75-ball express rounds with thousands of real Ethiopian players.',
       art: '/assets/images/lomi-hero-75.jpg',
       features: [
         {
@@ -37,7 +37,7 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
           icon: '🏆',
           iconBg: '#fef9c3',
           title: lang === 'am' ? 'የየዕለቱ ጃክፖቶች' : 'Daily Jackpots',
-          desc: lang === 'am' ? 'እስከ 50,000 ብር የሚደርሱ ሽልማቶች' : 'Up to 50,000 ETB prize pools'
+          desc: lang === 'am' ? 'እስከ 50,000 ብር ሽልማቶች' : 'Up to 50,000 ETB prize pools'
         },
         {
           icon: '🎮',
@@ -53,8 +53,8 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
       title1: lang === 'am' ? 'ያሸነፉትን ገንዘብ' : 'Cashout Instantly',
       title2: lang === 'am' ? 'ወዲያውኑ ወጪ ያድርጉ' : 'When You Win',
       sub: lang === 'am'
-        ? 'ያሸነፉትን ገንዘብ በሰከንዶች ውስጥ በቀጥታ ወደ ቴሌብር ወይም ንግድ ባንክ ያስገቡ። 0% ክፍያ። 100% አስተማማኝ።'
-        : 'Withdraw your winnings directly to Telebirr or CBE Bank in seconds. 0% fees. 100% secure.',
+        ? 'ያሸነፉትን ገንዘብ በሰከንዶች ውስጥ ወደ ቴሌብር ወይም ንግድ ባንክ ያስገቡ። 0% ክፍያ።'
+        : 'Withdraw your winnings directly to Telebirr or CBE in seconds. 0% fees.',
       art: '/assets/images/auth-header-75.jpg',
       features: [
         {
@@ -83,8 +83,8 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
       title1: lang === 'am' ? 'በ10 ብር ቦነስ ይጀምሩ' : 'Start With 10 ETB',
       title2: lang === 'am' ? 'ያለ ምንም ቅድመ ክፍያ' : 'Zero Deposit Needed',
       sub: lang === 'am'
-        ? 'በቴሌግራም በአንድ ንክኪ ይመዝገቡና የ10 ብር ነፃ ቦነስዎን ወዲያውኑ ተቀብለው መጫወት ይጀምሩ!'
-        : 'Create your account in 1-tap via Telegram and receive 10 ETB free welcome bonus right now.',
+        ? 'በቴሌግራም በአንድ ንክኪ ይመዝገቡና የ10 ብር ነፃ ቦነስዎን ወዲያውኑ ተቀብለው ይጫወቱ!'
+        : 'Create account in 1-tap via Telegram and claim 10 ETB welcome bonus now.',
       art: '/assets/images/lomi-hero-75.jpg',
       features: [
         {
@@ -97,7 +97,7 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
           icon: '⚡',
           iconBg: '#eff6ff',
           title: lang === 'am' ? '1-ንክኪ ቴሌግራም' : '1-Click Telegram',
-          desc: lang === 'am' ? 'የይለፍ ቃል ወይም ረጅም ፎርም አያስፈልግም' : 'Zero passwords or forms needed'
+          desc: lang === 'am' ? 'የይለፍ ቃል ወይም ፎርም አያስፈልግም' : 'Zero passwords or forms needed'
         },
         {
           icon: '💰',
@@ -135,12 +135,12 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
       className="exact-ref-onboarding-container"
       style={{
         width: '100%',
-        maxWidth: '430px',
+        maxWidth: '420px',
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '10px 4px 20px 4px',
+        padding: '2px 4px 6px 4px',
         boxSizing: 'border-box'
       }}
     >
@@ -151,19 +151,19 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '20px',
+          marginBottom: '10px',
           padding: '0 4px'
         }}
       >
         {/* 3 Rounded Segment Bars */}
-        <div style={{ display: 'flex', gap: '6px', flex: 1, maxWidth: '180px' }}>
+        <div style={{ display: 'flex', gap: '5px', flex: 1, maxWidth: '160px' }}>
           {slides.map((s, idx) => (
             <div
               key={s.id}
               onClick={() => setCurrentSlide(idx)}
               style={{
                 flex: 1,
-                height: '6px',
+                height: '5px',
                 borderRadius: '999px',
                 background: idx <= currentSlide ? '#eab308' : '#e2e8f0',
                 cursor: 'pointer',
@@ -173,7 +173,7 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
           ))}
         </div>
 
-        {/* Skip Pill Button */}
+        {/* Skip Pill Button (Opens Register Modal) */}
         <button
           type="button"
           onClick={handleSkipClick}
@@ -181,12 +181,12 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
             background: '#ffffff',
             border: '1px solid #e2e8f0',
             borderRadius: '999px',
-            padding: '6px 16px',
-            fontSize: '13px',
+            padding: '4px 14px',
+            fontSize: '12px',
             fontWeight: '700',
             color: '#0f172a',
             cursor: 'pointer',
-            boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)'
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
           }}
         >
           {lang === 'am' ? 'ዝለል' : 'Skip'}
@@ -196,19 +196,19 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
       {/* 2. Centered Badge Tag */}
       <div
         style={{
-          background: 'rgba(236, 253, 245, 0.9)',
+          background: 'rgba(236, 253, 245, 0.95)',
           border: '1px solid #a7f3d0',
           borderRadius: '999px',
-          padding: '5px 16px',
-          fontSize: '11.5px',
+          padding: '3px 12px',
+          fontSize: '10.5px',
           fontWeight: '800',
           color: '#047857',
-          letterSpacing: '0.8px',
+          letterSpacing: '0.6px',
           textTransform: 'uppercase',
-          marginBottom: '14px',
+          marginBottom: '6px',
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '6px'
+          gap: '4px'
         }}
       >
         <span>{slide.badge}</span>
@@ -217,12 +217,12 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
       {/* 3. Dual-Tone Heading */}
       <h1
         style={{
-          fontSize: '28px',
+          fontSize: '21px',
           fontWeight: '900',
-          lineHeight: '1.2',
-          margin: '0 0 8px 0',
+          lineHeight: '1.15',
+          margin: '0 0 4px 0',
           textAlign: 'center',
-          letterSpacing: '-0.5px'
+          letterSpacing: '-0.3px'
         }}
       >
         <div style={{ color: '#0f172a' }}>{slide.title1}</div>
@@ -232,28 +232,28 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
       {/* 4. Subtitle */}
       <p
         style={{
-          fontSize: '13.5px',
+          fontSize: '11.5px',
           color: '#64748b',
           textAlign: 'center',
-          lineHeight: '1.45',
-          margin: '0 0 20px 0',
-          maxWidth: '320px'
+          lineHeight: '1.35',
+          margin: '0 0 10px 0',
+          maxWidth: '310px'
         }}
       >
         {slide.sub}
       </p>
 
-      {/* 5. 3D Artwork Frame */}
+      {/* 5. 3D Artwork Frame (Compact for zero-scroll fit) */}
       <div
         style={{
           width: '100%',
-          maxWidth: '360px',
-          height: '190px',
-          borderRadius: '24px',
+          maxWidth: '340px',
+          height: '115px',
+          borderRadius: '18px',
           overflow: 'hidden',
-          marginBottom: '18px',
-          boxShadow: '0 12px 25px -8px rgba(0, 0, 0, 0.12)',
-          border: '2px solid rgba(255, 255, 255, 0.8)',
+          marginBottom: '10px',
+          boxShadow: '0 8px 20px -6px rgba(0, 0, 0, 0.12)',
+          border: '1.5px solid rgba(255, 255, 255, 0.8)',
           background: '#fefce8'
         }}
       >
@@ -264,15 +264,15 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
         />
       </div>
 
-      {/* 6. Exact 3 Stacked White Checklist Cards */}
+      {/* 6. Exact 3 Stacked White Checklist Cards (Compact) */}
       <div
         style={{
           width: '100%',
-          maxWidth: '360px',
+          maxWidth: '340px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px',
-          marginBottom: '22px'
+          gap: '6px',
+          marginBottom: '12px'
         }}
       >
         {slide.features.map((feat, idx) => (
@@ -280,26 +280,26 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
             key={idx}
             style={{
               background: '#ffffff',
-              borderRadius: '16px',
-              padding: '12px 16px',
+              borderRadius: '12px',
+              padding: '8px 12px',
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              gap: '10px',
+              boxShadow: '0 1px 4px rgba(0, 0, 0, 0.03)',
               border: '1px solid #f1f5f9'
             }}
           >
             {/* Icon Bubble */}
             <div
               style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '12px',
+                width: '30px',
+                height: '30px',
+                borderRadius: '8px',
                 background: feat.iconBg,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '18px',
+                fontSize: '15px',
                 flexShrink: 0
               }}
             >
@@ -307,11 +307,11 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
             </div>
 
             {/* Texts */}
-            <div style={{ flex: 1, textAlign: 'left' }}>
-              <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a' }}>
+            <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
+              <div style={{ fontSize: '12px', fontWeight: '800', color: '#0f172a' }}>
                 {feat.title}
               </div>
-              <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: '500' }}>
+              <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {feat.desc}
               </div>
             </div>
@@ -319,15 +319,15 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
             {/* Green Checkmark Badge */}
             <div
               style={{
-                width: '22px',
-                height: '22px',
+                width: '18px',
+                height: '18px',
                 borderRadius: '50%',
                 background: '#16a34a',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '11px',
+                fontSize: '9.5px',
                 flexShrink: 0
               }}
             >
@@ -338,7 +338,7 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
       </div>
 
       {/* 7. Action CTA Button (Lush Green / Gold) */}
-      <div style={{ width: '100%', maxWidth: '360px' }}>
+      <div style={{ width: '100%', maxWidth: '340px' }}>
         <button
           type="button"
           onClick={handleNext}
@@ -349,19 +349,19 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
               ? 'linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%)'
               : 'linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%)',
             color: isLastSlide ? '#0f172a' : '#ffffff',
-            fontSize: '16px',
+            fontSize: '14.5px',
             fontWeight: '900',
             border: 'none',
             borderRadius: '999px',
-            padding: '16px 20px',
+            padding: '13px 18px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '10px',
+            gap: '8px',
             boxShadow: isLastSlide
-              ? '0 8px 24px rgba(234, 179, 8, 0.45)'
-              : '0 8px 24px rgba(22, 163, 74, 0.45)',
+              ? '0 6px 20px rgba(234, 179, 8, 0.4)'
+              : '0 6px 20px rgba(22, 163, 74, 0.4)',
             letterSpacing: '0.2px',
             transition: 'all 0.15s ease'
           }}
@@ -388,11 +388,11 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
       {/* 8. Bottom Trust Badge */}
       <div
         style={{
-          marginTop: '16px',
+          marginTop: '8px',
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          fontSize: '11.5px',
+          gap: '5px',
+          fontSize: '10.5px',
           color: '#475569',
           fontWeight: '600'
         }}
