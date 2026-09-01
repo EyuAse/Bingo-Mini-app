@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 import { useWallet } from '../context/WalletContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
+import { telegramService } from '../services/telegramService.ts';
 
 interface ReferredFriend {
   id: string;
   name: string;
   avatar: string;
+  isPremium?: boolean;
   joinedAt: string;
-  firstDeposit: number;
   bonusEarned: number;
   status: 'paid' | 'pending_deposit';
 }
 
 export const AffiliatePage: React.FC = () => {
   const { switchPage, showToast } = useApp();
+  const { user } = useAuth();
   const { bonus } = useWallet();
   const { t, lang } = useLanguage();
 
-  const referralCode = 'LOMI-7842';
-  const referralLink = `https://t.me/LomiBingoBot?start=ref_${referralCode}`;
+  const referralCode = user?.id ? user.id.replace(/^UID-TG-/, 'LOMI-') : 'LOMI-7842';
+  const referralLink = `https://t.me/LomiBingobot/play?startapp=ref_${referralCode}`;
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -29,75 +32,76 @@ export const AffiliatePage: React.FC = () => {
       id: 'f-1',
       name: 'Sami_Lucky',
       avatar: '👑',
-      joinedAt: '2 days ago',
-      firstDeposit: 500,
-      bonusEarned: 50,
+      isPremium: true,
+      joinedAt: '2 hours ago',
+      bonusEarned: 20,
       status: 'paid'
     },
     {
       id: 'f-2',
       name: 'Eden_Rose',
       avatar: '💎',
+      isPremium: false,
       joinedAt: 'Yesterday',
-      firstDeposit: 1000,
-      bonusEarned: 100,
+      bonusEarned: 5,
       status: 'paid'
     },
     {
       id: 'f-3',
       name: 'Nati_Boss',
       avatar: '⚡',
-      joinedAt: '3 days ago',
-      firstDeposit: 200,
-      bonusEarned: 20,
+      isPremium: false,
+      joinedAt: '2 days ago',
+      bonusEarned: 5,
       status: 'paid'
     },
     {
       id: 'f-4',
       name: 'Dani_Addis',
       avatar: '🎯',
-      joinedAt: '4 days ago',
-      firstDeposit: 300,
-      bonusEarned: 30,
+      isPremium: true,
+      joinedAt: '3 days ago',
+      bonusEarned: 20,
       status: 'paid'
-    },
-    {
-      id: 'f-5',
-      name: 'Alex_King',
-      avatar: '🦁',
-      joinedAt: 'Today, 10:45 PM',
-      firstDeposit: 0,
-      bonusEarned: 0,
-      status: 'pending_deposit'
     }
   ];
 
   const totalInvited = friendsList.length;
-  const activeDepositors = friendsList.filter(f => f.status === 'paid').length;
   const totalEarned = friendsList.reduce((acc, f) => acc + f.bonusEarned, 0);
 
   const handleCopyLink = () => {
+    telegramService.triggerHaptic('light');
     navigator.clipboard.writeText(referralLink);
     setCopiedLink(true);
-    showToast(`📋 ${t('affiliate.copyLink')}: ${t('common.copied')}`);
+    showToast(
+      lang === 'am'
+        ? '📋 የግብዣ ሊንክ ተቀድቷል! ለጓደኞችዎ ያጋሩ።'
+        : '📋 Referral link copied to clipboard!'
+    );
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const handleCopyCode = () => {
+    telegramService.triggerHaptic('light');
     navigator.clipboard.writeText(referralCode);
     setCopiedCode(true);
-    showToast(`📋 ${t('affiliate.copyCode')} (${referralCode}) ${t('common.copied')}!`);
+    showToast(`📋 Code ${referralCode} copied!`);
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const handleShareTelegram = () => {
-    const text = encodeURIComponent(
-      `🍋 Join me on Lomi Bingo! Get 10 ETB free registration bonus and win big with 75-ball express: ${referralLink}`
+  const handleInviteTelegramFriends = () => {
+    telegramService.triggerHaptic('medium');
+    const shareText = encodeURIComponent(
+      `🍋 Join me on Lomi Bingo! Get 10 ETB Free Welcome Bonus to play live 75-Ball Express Bingo with instant Telebirr payouts! 🎁💰\n\nPlay here:`
     );
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${text}`, '_blank');
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${shareText}`;
+    
+    // Open native Telegram share dialog
+    telegramService.openTelegramLink(shareUrl);
   };
 
   const handleShareWhatsApp = () => {
+    telegramService.triggerHaptic('light');
     const text = encodeURIComponent(
       `🍋 Join me on Lomi Bingo! Get 10 ETB free registration bonus: ${referralLink}`
     );
@@ -111,214 +115,249 @@ export const AffiliatePage: React.FC = () => {
         <button
           type="button"
           className="btn-affiliate-back"
-          onClick={() => switchPage('wallet')}
+          onClick={() => switchPage('games')}
         >
           <i className="fa-solid fa-arrow-left"></i>
-          <span>{t('nav.wallet')}</span>
+          <span>{lang === 'am' ? 'ጨዋታዎች' : 'Games'}</span>
         </button>
-        <h2 className="affiliate-page-title">{t('nav.rewards')}</h2>
+        <h2 className="affiliate-page-title">
+          {lang === 'am' ? '🎁 ሽልማቶችና ግብዣ' : '🎁 Rewards & Invites'}
+        </h2>
       </div>
 
       <div className="affiliate-content-scroll">
         {/* 2. Hero Value Proposition Banner */}
-        <div className="affiliate-hero-banner">
-          <div className="hero-banner-decor-glow"></div>
-          <div className="hero-banner-tag">
-            <i className="fa-solid fa-gift"></i>
-            <span>10% REFERRAL BONUS PROGRAM</span>
+        <div
+          className="affiliate-hero-banner"
+          style={{
+            background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)',
+            border: '1.5px solid rgba(250, 204, 21, 0.35)',
+            borderRadius: '24px',
+            padding: '22px 18px',
+            textAlign: 'center',
+            color: '#ffffff',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)'
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(250, 204, 21, 0.15)',
+              border: '1px solid #facc15',
+              borderRadius: '999px',
+              padding: '4px 12px',
+              fontSize: '11px',
+              fontWeight: '800',
+              color: '#fde047',
+              letterSpacing: '0.8px',
+              marginBottom: '10px'
+            }}
+          >
+            <i className="fa-solid fa-users"></i>
+            <span>TELEGRAM VIRAL REWARDS</span>
           </div>
 
-          <h1 className="hero-banner-heading">
-            {t('affiliate.heroTitle')}
+          <h1 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0', letterSpacing: '-0.3px' }}>
+            {lang === 'am' ? 'ጓደኞችዎን ይጋብዙ • ገንዘብ ያግኙ!' : 'Invite Friends & Earn ETB!'}
           </h1>
-          <p className="hero-banner-sub">
-            {t('affiliate.heroSub')}
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+            {lang === 'am'
+              ? 'ለእያንዳንዱ የሚጋብዙት ጓደኛ ነፃ ቦነስ ያግኙ፤ እንዲሁም 10% የዕድሜ ልክ ኮሚሽን!'
+              : 'Earn free ETB bonus for every friend who joins, plus 10% lifetime commission on all wins!'}
           </p>
+
+          {/* Big Glowing 1-Click Telegram Invite Button (Notcoin / Hamster Style) */}
+          <button
+            type="button"
+            onClick={handleInviteTelegramFriends}
+            style={{
+              width: '100%',
+              background: 'linear-gradient(135deg, #2AABEE 0%, #229ED9 50%, #0284c7 100%)',
+              color: '#ffffff',
+              fontSize: '15.5px',
+              fontWeight: '900',
+              border: 'none',
+              borderRadius: '999px',
+              padding: '14px 20px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              boxShadow: '0 6px 20px rgba(34, 158, 217, 0.45)',
+              letterSpacing: '-0.2px',
+              marginBottom: '14px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <i className="fa-brands fa-telegram" style={{ fontSize: '20px' }}></i>
+            <span>
+              {lang === 'am'
+                ? '👥 ጓደኞችን በቴሌግራም ይጋብዙ'
+                : '👥 Invite Telegram Friends'}
+            </span>
+            <span
+              style={{
+                background: 'rgba(255, 255, 255, 0.25)',
+                padding: '2px 8px',
+                borderRadius: '999px',
+                fontSize: '11px',
+                fontWeight: '800'
+              }}
+            >
+              +5 ETB
+            </span>
+          </button>
+
+          {/* Copy Link Row */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '999px',
+              padding: '4px 6px 4px 14px',
+              gap: '8px'
+            }}
+          >
+            <span
+              style={{
+                flex: 1,
+                fontSize: '12px',
+                color: '#cbd5e1',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                textAlign: 'left',
+                fontFamily: 'monospace'
+              }}
+            >
+              {referralLink}
+            </span>
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              style={{
+                background: copiedLink ? '#22c55e' : '#facc15',
+                color: '#0f172a',
+                border: 'none',
+                borderRadius: '999px',
+                padding: '6px 14px',
+                fontSize: '12px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                flexShrink: 0
+              }}
+            >
+              <i className={`fa-solid ${copiedLink ? 'fa-check' : 'fa-copy'}`}></i>
+              <span>{copiedLink ? (lang === 'am' ? 'ተቀድቷል' : 'Copied') : (lang === 'am' ? 'ቅዳ' : 'Copy')}</span>
+            </button>
+          </div>
         </div>
 
-        {/* 3. Referral Link & Code Sharing Box */}
-        <div className="affiliate-share-box-card">
-          {/* Link Section */}
-          <div className="share-field-group">
-            <label className="share-field-lbl">
-              <i className="fa-solid fa-link"></i> {t('affiliate.yourLink')}
-            </label>
-            <div className="share-input-pill">
-              <input type="text" readOnly value={referralLink} />
-              <button
-                type="button"
-                className={`btn-copy-action ${copiedLink ? 'copied' : ''}`}
-                onClick={handleCopyLink}
-              >
-                <i className={`fa-solid ${copiedLink ? 'fa-check' : 'fa-copy'}`}></i>
-                <span>{copiedLink ? t('common.copied') : t('affiliate.copyLink')}</span>
-              </button>
-            </div>
+        {/* 3. Telegram Referral Reward Tiers (Hamster / Notcoin Style) */}
+        <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          {/* Regular Friend */}
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1.5px solid #e2e8f0',
+              borderRadius: '16px',
+              padding: '14px 12px',
+              textAlign: 'center',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+            }}
+          >
+            <div style={{ fontSize: '24px', marginBottom: '4px' }}>👤</div>
+            <strong style={{ display: 'block', fontSize: '13px', color: '#0f172a', marginBottom: '2px' }}>
+              {lang === 'am' ? 'መደበኛ ተጠቃሚ' : 'Regular Friend'}
+            </strong>
+            <div style={{ fontSize: '18px', fontWeight: '900', color: '#16a34a' }}>+5.00 ETB</div>
+            <span style={{ fontSize: '10.5px', color: '#64748b' }}>
+              {lang === 'am' ? 'ለእያንዳንዱ ምዝገባ' : 'Per registration'}
+            </span>
           </div>
 
-          {/* Code Section */}
-          <div className="share-field-group">
-            <label className="share-field-lbl">
-              <i className="fa-solid fa-ticket"></i> {t('affiliate.yourCode')}
-            </label>
-            <div className="share-input-pill">
-              <span className="ref-code-bold">{referralCode}</span>
-              <button
-                type="button"
-                className={`btn-copy-action ${copiedCode ? 'copied' : ''}`}
-                onClick={handleCopyCode}
-              >
-                <i className={`fa-solid ${copiedCode ? 'fa-check' : 'fa-copy'}`}></i>
-                <span>{copiedCode ? t('common.copied') : t('affiliate.copyCode')}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Social Share Buttons */}
-          <div className="social-share-actions-row">
-            <button
-              type="button"
-              className="btn-share-social telegram"
-              onClick={handleShareTelegram}
-            >
-              <i className="fa-brands fa-telegram"></i>
-              <span>{t('affiliate.shareTelegram')}</span>
-            </button>
-
-            <button
-              type="button"
-              className="btn-share-social whatsapp"
-              onClick={handleShareWhatsApp}
-            >
-              <i className="fa-brands fa-whatsapp"></i>
-              <span>{t('affiliate.shareWhatsApp')}</span>
-            </button>
+          {/* Telegram Premium Friend */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)',
+              border: '1.5px solid #facc15',
+              borderRadius: '16px',
+              padding: '14px 12px',
+              textAlign: 'center',
+              boxShadow: '0 2px 8px rgba(234, 179, 8, 0.15)'
+            }}
+          >
+            <div style={{ fontSize: '24px', marginBottom: '4px' }}>⭐️</div>
+            <strong style={{ display: 'block', fontSize: '13px', color: '#713f12', marginBottom: '2px' }}>
+              {lang === 'am' ? 'ቴሌግራም ፕሪሚየም' : 'Telegram Premium'}
+            </strong>
+            <div style={{ fontSize: '18px', fontWeight: '900', color: '#ca8a04' }}>+20.00 ETB</div>
+            <span style={{ fontSize: '10.5px', color: '#854d0e' }}>
+              {lang === 'am' ? 'ፕሪሚየም ላለው ተጠቃሚ' : 'For Premium users'}
+            </span>
           </div>
         </div>
 
         {/* 4. Analytics Barometer Grid */}
-        <div className="affiliate-analytics-grid">
+        <div className="affiliate-analytics-grid" style={{ marginTop: '16px' }}>
           <div className="analytics-kpi-card">
             <div className="kpi-icon-circ yellow">
               <i className="fa-solid fa-users"></i>
             </div>
             <div className="kpi-meta-text">
               <strong className="kpi-val">{totalInvited}</strong>
-              <span className="kpi-lbl">{t('affiliate.friendsInvited')}</span>
-              <span className="kpi-sub">
-                {lang === 'am' ? 'በሊንክ የተመዘገቡ' : 'Registered with Link'}
-              </span>
+              <span className="kpi-lbl">{lang === 'am' ? 'የተጋበዙ ጓደኞች' : 'Friends Invited'}</span>
             </div>
           </div>
 
           <div className="analytics-kpi-card">
             <div className="kpi-icon-circ green">
-              <i className="fa-solid fa-money-bill-wave"></i>
-            </div>
-            <div className="kpi-meta-text">
-              <strong className="kpi-val">{activeDepositors}</strong>
-              <span className="kpi-lbl">{t('affiliate.activeDepositors')}</span>
-              <span className="kpi-sub">
-                {lang === 'am' ? 'ገንዘብ ያስገቡ' : 'Completed 1st Deposit'}
-              </span>
-            </div>
-          </div>
-
-          <div className="analytics-kpi-card">
-            <div className="kpi-icon-circ gold">
-              <i className="fa-solid fa-sack-dollar"></i>
-            </div>
-            <div className="kpi-meta-text">
-              <strong className="kpi-val gold">{totalEarned.toFixed(2)} ETB</strong>
-              <span className="kpi-lbl">{t('affiliate.totalEarned')}</span>
-              <span className="kpi-sub">
-                {lang === 'am' ? '10% ቦነስ ገቢ' : '10% Bonus Credited'}
-              </span>
-            </div>
-          </div>
-
-          <div className="analytics-kpi-card">
-            <div className="kpi-icon-circ purple">
               <i className="fa-solid fa-gift"></i>
             </div>
             <div className="kpi-meta-text">
-              <strong className="kpi-val">{bonus.toFixed(2)} ETB</strong>
-              <span className="kpi-lbl">{t('affiliate.bonusBalance')}</span>
-              <span className="kpi-sub">
-                {lang === 'am' ? 'በዋሌት ያለ ቀሪ' : 'Available in Wallet'}
-              </span>
+              <strong className="kpi-val">{totalEarned}.00 ETB</strong>
+              <span className="kpi-lbl">{lang === 'am' ? 'የተገኘ ቦነስ' : 'Bonus Earned'}</span>
             </div>
           </div>
         </div>
 
-        {/* 5. 3-Step "How It Works" Card */}
-        <div className="affiliate-how-it-works-card">
-          <h3 className="how-title-bold">{t('affiliate.howItWorks')}</h3>
-
-          <div className="how-steps-list">
-            <div className="how-step-item">
-              <div className="step-num-circ">1</div>
-              <div className="step-content">
-                <strong>{t('affiliate.step1Title')}</strong>
-                <span>{t('affiliate.step1Sub')}</span>
-              </div>
-            </div>
-
-            <div className="how-step-item">
-              <div className="step-num-circ">2</div>
-              <div className="step-content">
-                <strong>{t('affiliate.step2Title')}</strong>
-                <span>{t('affiliate.step2Sub')}</span>
-              </div>
-            </div>
-
-            <div className="how-step-item">
-              <div className="step-num-circ">3</div>
-              <div className="step-content">
-                <strong>{t('affiliate.step3Title')}</strong>
-                <span>{t('affiliate.step3Sub')}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 6. Referred Friends Activity Ledger */}
-        <div className="affiliate-friends-ledger-card">
-          <div className="ledger-header-row">
-            <h3 className="ledger-title-bold">
-              {lang === 'am' ? `የተጋበዙ ጓደኞች (${friendsList.length})` : `Referred Friends (${friendsList.length})`}
+        {/* 5. Referred Friends Activity List */}
+        <div className="affiliate-friends-list-card" style={{ marginTop: '16px' }}>
+          <div className="friends-list-header">
+            <h3 className="friends-list-title">
+              <i className="fa-solid fa-list-check"></i>
+              <span>{lang === 'am' ? 'የተጋበዙ ጓደኞች ዝርዝር' : 'Invited Friends List'}</span>
             </h3>
-            <span className="ledger-reward-tag">10% Auto-Credit</span>
+            <span className="friends-count-pill">{friendsList.length}</span>
           </div>
 
-          <div className="ledger-friends-list">
-            {friendsList.map(friend => {
-              const isPaid = friend.status === 'paid';
-              return (
-                <div key={friend.id} className="ledger-friend-item">
-                  <div className="friend-avatar-circ">{friend.avatar}</div>
-                  <div className="friend-info-col">
-                    <strong className="friend-name">{friend.name}</strong>
-                    <span className="friend-joined">{friend.joinedAt}</span>
-                  </div>
-
-                  <div className="friend-reward-col">
-                    {isPaid ? (
-                      <>
-                        <span className="friend-bonus-earned">+{friend.bonusEarned}.00 ETB</span>
-                        <span className="friend-deposit-sub">
-                          {lang === 'am' ? `1ኛ ተቀማጭ፡ ${friend.firstDeposit} ብር` : `1st Dep: ${friend.firstDeposit} ETB`}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="friend-status-pending">
-                        <i className="fa-regular fa-clock"></i> {lang === 'am' ? 'እስካሁን አልተቀመጠም' : 'No Deposit Yet'}
-                      </span>
-                    )}
-                  </div>
+          <div className="friends-items-scroll">
+            {friendsList.map(f => (
+              <div key={f.id} className="friend-row-item">
+                <div className="friend-avatar-bubble">
+                  <span>{f.avatar}</span>
                 </div>
-              );
-            })}
+                <div className="friend-info-col">
+                  <strong className="friend-name-txt">
+                    @{f.name} {f.isPremium && <span style={{ color: '#eab308' }}>⭐️</span>}
+                  </strong>
+                  <span className="friend-joined-time">{f.joinedAt}</span>
+                </div>
+                <div className="friend-deposit-col">
+                  <span className="friend-bonus-badge">
+                    +{f.bonusEarned}.00 ETB
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
