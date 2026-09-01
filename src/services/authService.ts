@@ -2,9 +2,9 @@ import { User, RegisterPayload, LoginPayload, OtpChallengeResponse, OtpVerificat
 import { validateEthiopianPhone } from './ethiopianPhoneValidator';
 import { smsGateway } from './smsGatewayAdapter';
 
-const USERS_STORAGE_KEY = 'lomi_registered_users_v2';
-const SESSION_STORAGE_KEY = 'lomi_auth_session_v2';
-const OTP_STORAGE_KEY = 'lomi_active_otps_v2';
+const USERS_STORAGE_KEY = 'lomi_registered_users_v4';
+const SESSION_STORAGE_KEY = 'lomi_auth_session_v4';
+const OTP_STORAGE_KEY = 'lomi_active_otps_v4';
 
 interface StoredUser extends User {
   pin: string;
@@ -19,41 +19,12 @@ interface StoredOtp {
   attempts: number;
 }
 
-// Initial demo user for testing
-const INITIAL_DEMO_USERS: StoredUser[] = [
-  {
-    id: 'UID-8839201',
-    phone: '+251983624574',
-    nationalPhone: '0983624574',
-    formattedPhone: '+251 98 362 4574',
-    carrier: 'ethiotelecom',
-    fullName: 'Eyob Asefa',
-    telegramUsername: 'eyu_ase',
-    isPhoneVerified: true,
-    role: 'player',
-    pin: '1234',
-    createdAt: '2026-08-14T10:00:00.000Z',
-    lastLogin: new Date().toISOString()
-  },
-  {
-    id: 'UID-7749102',
-    phone: '+251712345678',
-    nationalPhone: '0712345678',
-    formattedPhone: '+251 71 234 5678',
-    carrier: 'safaricom',
-    fullName: 'Sara Tesfaye',
-    telegramUsername: 'sara_t',
-    isPhoneVerified: true,
-    role: 'player',
-    pin: '4321',
-    createdAt: '2026-08-20T14:30:00.000Z',
-    lastLogin: new Date().toISOString()
-  }
-];
+// Zero pre-existing demo users for clean production launch
+const INITIAL_DEMO_USERS: StoredUser[] = [];
 
 class AuthService {
   private static instance: AuthService;
-  private memoryUsers: StoredUser[] = [...INITIAL_DEMO_USERS];
+  private memoryUsers: StoredUser[] = [];
   private memoryOtps: Record<string, StoredOtp> = {};
   private memorySession: { user: User; token: string } | null = null;
 
@@ -71,9 +42,24 @@ class AuthService {
   private ensureInitialized() {
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
     try {
+      // Purge old test data
+      const legacyKeys = [
+        'lomi_registered_users',
+        'lomi_registered_users_v2',
+        'lomi_registered_users_v3',
+        'lomi_auth_session',
+        'lomi_auth_session_v2',
+        'lomi_auth_session_v3',
+        'lomi_active_otps',
+        'lomi_active_otps_v2',
+        'lomi_active_otps_v3',
+        'lomi_explicit_logout'
+      ];
+      legacyKeys.forEach(k => localStorage.removeItem(k));
+
       const existing = localStorage.getItem(USERS_STORAGE_KEY);
       if (!existing) {
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(INITIAL_DEMO_USERS));
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify([]));
       }
     } catch {}
   }
