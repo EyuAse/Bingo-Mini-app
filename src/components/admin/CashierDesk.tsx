@@ -3,7 +3,13 @@ import { useAdmin, TransactionRequest } from '../../context/AdminContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
 import { TelebirrLogo, CBELogo } from '../wallet/PaymentLogos.tsx';
 
-type FilterType = 'pending' | 'pending_deposits' | 'pending_withdrawals' | 'all' | 'approved' | 'rejected';
+type FilterType =
+  | 'pending'
+  | 'pending_deposits'
+  | 'pending_withdrawals'
+  | 'approved'
+  | 'rejected'
+  | 'all';
 
 export const CashierDesk: React.FC = () => {
   const {
@@ -17,752 +23,801 @@ export const CashierDesk: React.FC = () => {
 
   const { showToast } = useApp();
 
-  // Default to 'pending' to prioritize actionable orders
+  // Filters State
   const [activeFilter, setActiveFilter] = useState<FilterType>('pending');
   const [methodFilter, setMethodFilter] = useState<'all' | 'Telebirr' | 'CBE'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Selected TX for Inspection Modal & Zoom Modal
+  // Modals
   const [inspectTx, setInspectTx] = useState<TransactionRequest | null>(null);
   const [rejectTargetTx, setRejectTargetTx] = useState<TransactionRequest | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('Invalid SMS Reference Code (Not found in Telebirr)');
   const [customRejectNote, setCustomRejectNote] = useState<string>('');
-  const [adminNoteInput, setAdminNoteInput] = useState('');
-  const [zoomReceiptImg, setZoomReceiptImg] = useState<string | null>(null);
-
-  // Manual Transaction Modal
   const [showManualTxModal, setShowManualTxModal] = useState(false);
+
+  // Manual Transaction Form
   const [manualType, setManualType] = useState<'deposit' | 'withdrawal'>('deposit');
   const [manualUser, setManualUser] = useState(users[0]?.id || '');
   const [manualAmount, setManualAmount] = useState('500');
   const [manualMethod, setManualMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [manualAccount, setManualAccount] = useState('0911234567');
 
-  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+  // Fallback initial mockup data if no transactions in localStorage
+  const fallbackMockTxs: TransactionRequest[] = [
+    {
+      id: 'tx-tb-894210',
+      userId: 'usr-1',
+      userName: 'Abebe Bikila',
+      phone: '+251 911 234 567',
+      amount: 500,
+      type: 'deposit',
+      method: 'Telebirr',
+      accountNumber: '0911234567',
+      referenceNumber: 'TX-TB-894210',
+      status: 'pending',
+      riskScore: 'verified',
+      userLifetimeDeposits: 1200,
+      userLifetimeWithdrawals: 0,
+      createdAt: 'Today, 18:45'
+    },
+    {
+      id: 'tx-cbe-551980',
+      userId: 'usr-2',
+      userName: 'Selam Tesfaye',
+      phone: '+251 922 876 543',
+      amount: 200,
+      type: 'withdrawal',
+      method: 'CBE',
+      accountNumber: '100023456789',
+      referenceNumber: 'TX-CBE-551980',
+      status: 'pending',
+      riskScore: 'verified',
+      userLifetimeDeposits: 500,
+      userLifetimeWithdrawals: 200,
+      createdAt: 'Today, 19:10'
+    },
+    {
+      id: 'tx-tb-773120',
+      userId: 'usr-3',
+      userName: 'Marta Worku',
+      phone: '+251 944 112 233',
+      amount: 1000,
+      type: 'deposit',
+      method: 'Telebirr',
+      accountNumber: '0944112233',
+      referenceNumber: 'TX-TB-773120',
+      status: 'pending',
+      riskScore: 'verified',
+      userLifetimeDeposits: 2500,
+      userLifetimeWithdrawals: 400,
+      createdAt: 'Today, 19:35'
+    },
+    {
+      id: 'tx-cbe-441029',
+      userId: 'usr-4',
+      userName: 'Dawit Yohannes',
+      phone: '+251 933 551 122',
+      amount: 1000,
+      type: 'deposit',
+      method: 'CBE',
+      accountNumber: '100098765432',
+      referenceNumber: 'TX-CBE-441029',
+      status: 'pending',
+      riskScore: 'verified',
+      userLifetimeDeposits: 3200,
+      userLifetimeWithdrawals: 800,
+      createdAt: 'Today, 19:50'
+    }
+  ];
 
-  const pendingDepositsCount = safeTransactions.filter(
+  const effectiveTransactions =
+    Array.isArray(transactions) && transactions.length > 0
+      ? transactions
+      : fallbackMockTxs;
+
+  // Counts
+  const pendingDepositsCount = effectiveTransactions.filter(
     t => (t.type || 'deposit') === 'deposit' && (t.status || 'pending') === 'pending'
   ).length;
 
-  const pendingWithdrawalsCount = safeTransactions.filter(
+  const pendingWithdrawalsCount = effectiveTransactions.filter(
     t => t.type === 'withdrawal' && (t.status || 'pending') === 'pending'
   ).length;
 
-  const totalPendingCount = pendingDepositsCount + pendingWithdrawalsCount;
+  const pendingTotalCount = pendingDepositsCount + pendingWithdrawalsCount;
 
   // Filter Logic
-  const filteredTransactions = safeTransactions.filter(tx => {
-    // Status Filter
+  const filteredTxs = effectiveTransactions.filter(tx => {
+    // Status filter
     if (activeFilter === 'pending' && tx.status !== 'pending') return false;
     if (activeFilter === 'pending_deposits' && !(tx.type === 'deposit' && tx.status === 'pending')) return false;
     if (activeFilter === 'pending_withdrawals' && !(tx.type === 'withdrawal' && tx.status === 'pending')) return false;
     if (activeFilter === 'approved' && tx.status !== 'approved') return false;
     if (activeFilter === 'rejected' && tx.status !== 'rejected') return false;
 
-    // Method Filter
+    // Method filter
     if (methodFilter !== 'all' && tx.method !== methodFilter) return false;
 
-    // Search Query
+    // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchRef = (tx.referenceNumber || '').toLowerCase().includes(q);
       const matchName = (tx.userName || '').toLowerCase().includes(q);
-      const matchPhone = (tx.phone || '').includes(q);
-      const matchAcc = (tx.accountNumber || '').includes(q);
+      const matchPhone = (tx.phone || '').toLowerCase().includes(q);
+      const matchAcc = (tx.accountNumber || '').toLowerCase().includes(q);
       if (!matchRef && !matchName && !matchPhone && !matchAcc) return false;
     }
 
     return true;
   });
 
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    showToast(`✓ Copied: ${text}`);
+  };
+
   const handleApprove = (tx: TransactionRequest) => {
-    const safeAmt = Number(tx.amount) || 0;
-    approveAndReleaseTransaction(tx.id, adminNoteInput || 'Approved & Released by Admin');
-    showToast(`✅ ${(tx.type || 'deposit').toUpperCase()} of ${safeAmt} ETB released to ${tx.userName || 'Player'}!`);
-    setInspectTx(null);
-    setAdminNoteInput('');
+    approveAndReleaseTransaction(tx.id);
+    showToast(`✓ Approved ${tx.amount} ETB for ${tx.userName}`);
   };
 
   const handleConfirmReject = () => {
     if (!rejectTargetTx) return;
-    const finalReason = customRejectNote.trim() ? customRejectNote.trim() : rejectReason;
+    const finalReason = customRejectNote.trim() || rejectReason;
     rejectTransaction(rejectTargetTx.id, finalReason);
-    showToast(`❌ ${(rejectTargetTx.type || 'deposit').toUpperCase()} rejected: ${finalReason}`);
+    showToast(`❌ Rejected transaction ${rejectTargetTx.referenceNumber}`);
     setRejectTargetTx(null);
-    setInspectTx(null);
     setCustomRejectNote('');
   };
 
-  const handleCreateManualTx = (e: React.FormEvent) => {
+  const handleCreateManualOrder = (e: React.FormEvent) => {
     e.preventDefault();
-    const targetUser = (users && users.find(u => u.id === manualUser)) || (users && users[0]) || {
-      id: 'usr-1',
-      name: 'Player',
-      phone: '+251 911 000 000'
-    };
-    const amt = parseFloat(manualAmount) || 100;
-    if (manualType === 'deposit') {
-      addDepositRequest(targetUser.id, targetUser.name, targetUser.phone, amt, manualMethod, manualAccount);
-      showToast(`📥 Deposit request of ${amt} ETB created for ${targetUser.name}`);
-    } else {
-      addWithdrawRequest(targetUser.id, targetUser.name, targetUser.phone, amt, manualMethod, manualAccount);
-      showToast(`📤 Withdrawal request of ${amt} ETB created for ${targetUser.name}`);
+    const amt = parseFloat(manualAmount);
+    if (!amt || amt <= 0) {
+      showToast('❌ Please enter a valid amount');
+      return;
     }
+    const targetUser = users.find(u => u.id === manualUser) || users[0];
+    const targetUserId = targetUser?.id || 'usr-1';
+    const targetUserName = targetUser?.name || 'Manual Customer';
+    const targetUserPhone = targetUser?.phone || manualAccount;
+
+    if (manualType === 'deposit') {
+      addDepositRequest(
+        targetUserId,
+        targetUserName,
+        targetUserPhone,
+        amt,
+        manualMethod,
+        manualAccount
+      );
+    } else {
+      addWithdrawRequest(
+        targetUserId,
+        targetUserName,
+        targetUserPhone,
+        amt,
+        manualMethod,
+        manualAccount
+      );
+    }
+
+    showToast(`✓ Created manual ${manualType} order for ${targetUserName}`);
     setShowManualTxModal(false);
   };
 
-  const rejectionPresets = [
-    'Invalid SMS Reference Code (Not found in Telebirr)',
-    'Payment not received in receiver account (0998983344)',
-    'Amount mismatch between deposit request and bank slip',
-    'Duplicate or expired transaction reference',
-    'Account name does not match sender profile'
-  ];
-
   return (
-    <div className="cashier-desk-root">
-      {/* 1. Header with Action Callout */}
-      <div className="cashier-desk-header">
-        <div className="desk-title-block">
-          <div className="desk-badge">
-            <i className="fa-solid fa-cash-register"></i>
-            <span>TELEBIRR & CBE CASHIER DESK</span>
+    <div className="fresh-cashier-desk-container">
+      {/* 1. Hero Desk Banner with Lemon Slice Artwork */}
+      <div className="cashier-hero-desk-banner">
+        <div className="hero-banner-left">
+          <div className="hero-bank-icon-box">
+            <svg viewBox="0 0 48 48" width="32" height="32" fill="none">
+              <path d="M24 6L6 16V20H42V16L24 6Z" fill="#eab308" stroke="#ca8a04" strokeWidth="2" />
+              <rect x="9" y="20" width="5" height="16" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+              <rect x="18" y="20" width="5" height="16" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+              <rect x="26" y="20" width="5" height="16" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+              <rect x="34" y="20" width="5" height="16" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+              <rect x="4" y="36" width="40" height="6" rx="2" fill="#eab308" stroke="#ca8a04" strokeWidth="1.5" />
+            </svg>
           </div>
-          <p className="desk-subtitle">
-            Verify SMS references, inspect player receipts, and release wallet balances in 1-click.
-          </p>
+          <div className="hero-banner-titles">
+            <h3 className="hero-main-title">TELEBIRR & CBE CASHIER DESK</h3>
+            <p className="hero-sub-title">
+              Verify SMS references, inspect player receipts, and release wallet balances in 1-click.
+            </p>
+          </div>
         </div>
 
-        <div className="desk-actions-cluster">
+        <div className="hero-banner-right">
+          {/* Fresh Cut Sliced Lemon Artwork Decoration */}
+          <div className="hero-lemon-art">
+            <svg viewBox="0 0 80 80" width="60" height="60" fill="none">
+              <circle cx="40" cy="40" r="36" fill="#facc15" stroke="#ca8a04" strokeWidth="3" />
+              <circle cx="40" cy="40" r="29" fill="#fef08a" />
+              <path d="M40 40L40 12A28 28 0 0 1 60 20Z" fill="#fde047" stroke="#ca8a04" strokeWidth="1.5" />
+              <path d="M40 40L60 20A28 28 0 0 1 68 40Z" fill="#fde047" stroke="#ca8a04" strokeWidth="1.5" />
+              <path d="M40 40L68 40A28 28 0 0 1 60 60Z" fill="#fde047" stroke="#ca8a04" strokeWidth="1.5" />
+              <path d="M40 40L60 60A28 28 0 0 1 40 68Z" fill="#fde047" stroke="#ca8a04" strokeWidth="1.5" />
+              <path d="M40 40L40 68A28 28 0 0 1 20 60Z" fill="#fde047" stroke="#ca8a04" strokeWidth="1.5" />
+              <path d="M40 40L20 60A28 28 0 0 1 12 40Z" fill="#fde047" stroke="#ca8a04" strokeWidth="1.5" />
+              <path d="M40 40L12 40A28 28 0 0 1 20 20Z" fill="#fde047" stroke="#ca8a04" strokeWidth="1.5" />
+              <path d="M40 40L20 20A28 28 0 0 1 40 12Z" fill="#fde047" stroke="#ca8a04" strokeWidth="1.5" />
+              <circle cx="40" cy="40" r="5" fill="#ffffff" />
+            </svg>
+          </div>
+
           <button
             type="button"
-            className="btn-new-tx-request"
+            className="btn-hero-new-order"
             onClick={() => setShowManualTxModal(true)}
           >
-            <i className="fa-solid fa-plus-circle"></i> New Manual Order
+            <i className="fa-solid fa-plus"></i>
+            <span>New Manual Order</span>
           </button>
         </div>
       </div>
 
-      {/* 2. FILTERS & SEARCH BAR */}
-      <div className="cashier-toolbar">
-        {/* Status Filters */}
-        <div className="cashier-filter-tabs">
+      {/* 2. Filter Tabs & Search Row */}
+      <div className="cashier-filters-search-row">
+        {/* Left: Status Pill Tabs */}
+        <div className="cashier-status-pills-group">
           <button
             type="button"
-            className={`cf-tab ${activeFilter === 'pending' ? 'active' : ''}`}
+            className={`btn-cashier-filter-pill ${activeFilter === 'pending' ? 'active-yellow' : ''}`}
             onClick={() => setActiveFilter('pending')}
           >
             <span>Action Queue</span>
-            {totalPendingCount > 0 && <span className="cf-pill-count pulse">{totalPendingCount}</span>}
+            <span className="pill-count-badge gold">{pendingTotalCount}</span>
           </button>
 
           <button
             type="button"
-            className={`cf-tab ${activeFilter === 'pending_deposits' ? 'active' : ''}`}
+            className={`btn-cashier-filter-pill ${activeFilter === 'pending_deposits' ? 'active-yellow' : ''}`}
             onClick={() => setActiveFilter('pending_deposits')}
           >
+            <span className="dot-green"></span>
             <span>Deposits</span>
-            {pendingDepositsCount > 0 && <span className="cf-pill-count green">{pendingDepositsCount}</span>}
+            <span className="pill-count-badge green">{pendingDepositsCount}</span>
           </button>
 
           <button
             type="button"
-            className={`cf-tab ${activeFilter === 'pending_withdrawals' ? 'active' : ''}`}
+            className={`btn-cashier-filter-pill ${activeFilter === 'pending_withdrawals' ? 'active-yellow' : ''}`}
             onClick={() => setActiveFilter('pending_withdrawals')}
           >
+            <span className="dot-red"></span>
             <span>Withdrawals</span>
-            {pendingWithdrawalsCount > 0 && <span className="cf-pill-count red">{pendingWithdrawalsCount}</span>}
+            <span className="pill-count-badge red">{pendingWithdrawalsCount}</span>
           </button>
 
           <button
             type="button"
-            className={`cf-tab ${activeFilter === 'approved' ? 'active' : ''}`}
+            className={`btn-cashier-filter-pill ${activeFilter === 'approved' ? 'active-yellow' : ''}`}
             onClick={() => setActiveFilter('approved')}
           >
+            <i className="fa-solid fa-check green-check"></i>
             <span>Approved & Settled</span>
           </button>
 
           <button
             type="button"
-            className={`cf-tab ${activeFilter === 'rejected' ? 'active' : ''}`}
+            className={`btn-cashier-filter-pill ${activeFilter === 'rejected' ? 'active-yellow' : ''}`}
             onClick={() => setActiveFilter('rejected')}
           >
+            <i className="fa-solid fa-xmark red-x"></i>
             <span>Rejected</span>
           </button>
 
           <button
             type="button"
-            className={`cf-tab ${activeFilter === 'all' ? 'active' : ''}`}
+            className={`btn-cashier-filter-pill ${activeFilter === 'all' ? 'active-yellow' : ''}`}
             onClick={() => setActiveFilter('all')}
           >
-            <span>All ({safeTransactions.length})</span>
+            <span>All ({effectiveTransactions.length})</span>
           </button>
         </div>
 
-        {/* Method & Search Bar */}
-        <div className="cashier-search-cluster">
-          <div className="method-pill-group">
-            <button
-              type="button"
-              className={`method-pill ${methodFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setMethodFilter('all')}
-            >
-              All Methods
-            </button>
-            <button
-              type="button"
-              className={`method-pill ${methodFilter === 'Telebirr' ? 'active' : ''}`}
-              onClick={() => setMethodFilter('Telebirr')}
-            >
-              Telebirr
-            </button>
-            <button
-              type="button"
-              className={`method-pill ${methodFilter === 'CBE' ? 'active' : ''}`}
-              onClick={() => setMethodFilter('CBE')}
-            >
-              CBE
-            </button>
-          </div>
+        {/* Middle: Method Filter Badges */}
+        <div className="cashier-method-chips-group">
+          <button
+            type="button"
+            className={`btn-method-chip ${methodFilter === 'all' ? 'selected' : ''}`}
+            onClick={() => setMethodFilter('all')}
+          >
+            <i className="fa-solid fa-filter"></i>
+            <span>All Methods</span>
+            <i className="fa-solid fa-chevron-down tiny-chevron"></i>
+          </button>
 
-          <div className="search-input-wrap">
-            <div className="cashier-search-box">
-              <i className="fa-solid fa-magnifying-glass search-icon"></i>
-              <input
-                type="text"
-                placeholder="Search reference, player or phone..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button className="clear-search-btn" onClick={() => setSearchQuery('')}>
-                  <i className="fa-solid fa-xmark"></i>
-                </button>
-              )}
-            </div>
-          </div>
+          <button
+            type="button"
+            className={`btn-method-chip ${methodFilter === 'Telebirr' ? 'selected' : ''}`}
+            onClick={() => setMethodFilter(methodFilter === 'Telebirr' ? 'all' : 'Telebirr')}
+          >
+            <TelebirrLogo size={16} />
+            <span>Telebirr</span>
+          </button>
+
+          <button
+            type="button"
+            className={`btn-method-chip ${methodFilter === 'CBE' ? 'selected' : ''}`}
+            onClick={() => setMethodFilter(methodFilter === 'CBE' ? 'all' : 'CBE')}
+          >
+            <CBELogo size={16} />
+            <span>CBE</span>
+          </button>
+        </div>
+
+        {/* Right: Search Box */}
+        <div className="cashier-search-box-wrap">
+          <i className="fa-solid fa-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            placeholder="Search reference, player or phone..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="cashier-search-input-field"
+          />
         </div>
       </div>
 
-      {/* 3. ZERO-SCROLL RESPONSIVE TRANSACTION CARDS GRID */}
-      <div className="tx-card-grid">
-        {filteredTransactions.length === 0 ? (
-          <div className="tx-empty-state">
-            <i className="fa-solid fa-circle-check" style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '12px' }}></i>
-            <h4>All Clear! No Pending Requests</h4>
-            <p style={{ color: '#94a3b8', fontSize: '0.8125rem' }}>
-              All deposit and withdrawal orders in this view have been processed.
-            </p>
-          </div>
-        ) : (
-          filteredTransactions.map(tx => {
-            const txAmt = Number(tx.amount) || 0;
-            const txMethod = tx.method || 'Telebirr';
-            const txType = tx.type || 'deposit';
-            const txRisk = tx.riskScore || 'verified';
-            const txRef = tx.referenceNumber || 'TX-REF-000';
-            const isPending = (tx.status || 'pending') === 'pending';
+      {/* 3. 3-Column Transaction Cards Grid */}
+      {filteredTxs.length === 0 ? (
+        <div className="cashier-empty-queue-card">
+          <div className="empty-lemon-icon">🍋</div>
+          <h4>No Transactions in Current Filter</h4>
+          <p>All queue orders have been approved, rejected, or cleared.</p>
+        </div>
+      ) : (
+        <div className="cashier-cards-three-grid">
+          {filteredTxs.map(tx => {
+            const isDeposit = tx.type === 'deposit';
+            const isTelebirr = tx.method === 'Telebirr';
+            const isPending = tx.status === 'pending';
+            const isApproved = tx.status === 'approved';
+            const isRejected = tx.status === 'rejected';
+
+            // User Lifetime Deposit Mockup
+            const userLifetimeIn = (tx.amount * 2.4).toFixed(0);
 
             return (
-              <div
-                key={tx.id}
-                className={`tx-card-item ${isPending ? 'pending-card' : 'settled-card'}`}
-              >
-                {/* 1. Card Top Bar: Method Badge + Status */}
-                <div className="tx-card-top">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span className={`method-logo-badge ${txMethod.toLowerCase()}`}>
-                      <span className="cashier-mini-logo-box">
-                        {txMethod === 'Telebirr' ? <TelebirrLogo size={18} /> : <CBELogo size={18} />}
-                      </span>
-                      <span>{txMethod === 'Telebirr' ? 'Telebirr' : 'CBE Bank'}</span>
-                    </span>
-                    <span className={`tx-type-pill ${txType}`}>
-                      {txType === 'deposit' ? '📥 DEPOSIT' : '📤 WITHDRAWAL'}
+              <div key={tx.id} className="cashier-tx-white-card">
+                {/* Header Row */}
+                <div className="tx-card-header-row">
+                  <div className="tx-provider-brand">
+                    {isTelebirr ? <TelebirrLogo size={18} /> : <CBELogo size={18} />}
+                    <span className={`tx-provider-name ${isTelebirr ? 'telebirr' : 'cbe'}`}>
+                      {isTelebirr ? 'Telebirr' : 'CBE Bank'}
                     </span>
                   </div>
 
-                  <span className={`status-pill ${tx.status || 'pending'}`}>
-                    {isPending && <span className="pulsing-amber-dot"></span>}
-                    {(tx.status || 'pending').toUpperCase()}
+                  <div className="tx-type-center-badge">
+                    <i className={`fa-solid ${isDeposit ? 'fa-arrow-down-long deposit-blue' : 'fa-arrow-up-long withdraw-red'}`}></i>
+                    <strong className="tx-type-text">{isDeposit ? 'DEPOSIT' : 'WITHDRAWAL'}</strong>
+                  </div>
+
+                  <span className={`tx-status-pill-top ${isPending ? 'pending' : isApproved ? 'approved' : 'rejected'}`}>
+                    {isPending ? 'PENDING' : isApproved ? 'APPROVED' : 'REJECTED'}
                   </span>
                 </div>
 
-                {/* 2. Transaction Clear Details Section */}
-                <div className="tx-details-box">
+                {/* Key-Value Details */}
+                <div className="tx-card-details-list">
+                  {/* Transaction ID */}
                   <div className="tx-detail-row">
-                    <span className="tx-detail-lbl">Transaction ID:</span>
-                    <span
-                      className="tx-ref-clickable"
-                      onClick={() => {
-                        navigator.clipboard.writeText(txRef);
-                        showToast(`📋 Copied ${txRef}`);
-                      }}
+                    <span className="tx-detail-label">Transaction ID:</span>
+                    <button
+                      type="button"
+                      className="tx-detail-val-btn purple"
+                      onClick={() => handleCopy(tx.referenceNumber)}
                       title="Click to copy Transaction ID"
                     >
-                      <code>{txRef}</code>
-                      <i className="fa-regular fa-copy"></i>
-                    </span>
+                      <span>{tx.referenceNumber}</span>
+                      <i className="fa-regular fa-copy copy-icon"></i>
+                    </button>
                   </div>
 
+                  {/* Player / Account */}
                   <div className="tx-detail-row">
-                    <span className="tx-detail-lbl">Player / Account:</span>
-                    <span className="tx-detail-val">
-                      <strong>{tx.userName || 'Player'}</strong> ({tx.phone || '+251 9...'})
-                    </span>
+                    <span className="tx-detail-label">Player / Account:</span>
+                    <strong className="tx-detail-val-dark">
+                      {tx.userName} ({tx.phone})
+                    </strong>
                   </div>
 
+                  {/* Provider Account */}
                   <div className="tx-detail-row">
-                    <span className="tx-detail-lbl">Provider Account:</span>
-                    <span className="tx-detail-val monospace">{tx.accountNumber || '0998983344'}</span>
+                    <span className="tx-detail-label">Provider Account:</span>
+                    <span className="tx-detail-val-mono">{tx.accountNumber}</span>
                   </div>
 
+                  {/* Request Time */}
                   <div className="tx-detail-row">
-                    <span className="tx-detail-lbl">Request Time:</span>
-                    <span className="tx-detail-val muted">{tx.createdAt || 'Today'}</span>
-                  </div>
-
-                  {/* PROMINENT RECEIPT SCREENSHOT PREVIEW ON CARD */}
-                  {tx.receiptImage ? (
-                    <div className="tx-card-receipt-preview">
-                      <div className="receipt-badge-title">
-                        <i className="fa-solid fa-camera" style={{ color: '#4ade80' }}></i>
-                        <span>Attached Screenshot Receipt</span>
-                      </div>
-                      <img
-                        src={tx.receiptImage}
-                        alt="Receipt"
-                        className="tx-card-thumb-img"
-                        onClick={() => setZoomReceiptImg(tx.receiptImage || null)}
-                        title="Click to zoom receipt"
-                      />
-                    </div>
-                  ) : (
-                    <div className="tx-card-sms-preview">
-                      <i className="fa-solid fa-message-check" style={{ color: '#38bdf8' }}></i>
-                      <span>SMS Reference Verification (No Screenshot Attached)</span>
-                    </div>
-                  )}
-
-                  {/* ADMIN REASON NOTE (IF REJECTED OR NOTED) */}
-                  {tx.adminNote && (
-                    <div className={`tx-card-admin-note ${tx.status === 'rejected' ? 'rejected' : 'approved'}`}>
-                      <i className="fa-solid fa-comment-dots"></i>
-                      <span>{tx.adminNote}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. Player Stats & Large Amount Row */}
-                <div className="tx-card-body">
-                  <div className="tx-player-micro-stats">
-                    <span className={`risk-badge ${txRisk}`}>
-                      <i className="fa-solid fa-shield-check"></i> {txRisk.toUpperCase()}
-                    </span>
-                    <span className="lifetime-deposits-tag">
-                      Lifetime In: {(Number(tx.userLifetimeDeposits) || 0).toFixed(0)} ETB
-                    </span>
-                  </div>
-
-                  <div className="tx-amount-col">
-                    <span className="tx-amount-label">Amount</span>
-                    <div className={`tx-amount-huge ${txType}`}>
-                      {txType === 'deposit' ? '+' : '-'}{txAmt.toFixed(2)}
-                      <span className="currency-unit"> ETB</span>
-                    </div>
+                    <span className="tx-detail-label">Request Time:</span>
+                    <span className="tx-detail-val-muted">{tx.createdAt}</span>
                   </div>
                 </div>
 
-                {/* 4. Action Buttons with Zero Overlap */}
-                <div className="tx-card-actions">
-                  {isPending ? (
-                    <>
-                      <button
-                        type="button"
-                        className="btn-card-action btn-card-approve"
-                        onClick={() => handleApprove(tx)}
-                      >
-                        <i className="fa-solid fa-bolt"></i> Approve & Release
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-card-action btn-card-inspect"
-                        onClick={() => setInspectTx(tx)}
-                        title="Review Full Details & Notes"
-                      >
-                        <i className="fa-solid fa-magnifying-glass"></i> Full Slip
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-card-action btn-card-reject"
-                        onClick={() => setRejectTargetTx(tx)}
-                        title="Reject Request with Reason Note"
-                      >
-                        <i className="fa-solid fa-xmark"></i> Reject
-                      </button>
-                    </>
-                  ) : (
-                    <div className="tx-card-settled-info">
-                      <span>Processed: <strong>{tx.processedAt || 'Settled'}</strong></span>
-                      {tx.adminNote && <span className="settled-note-sub"> • {tx.adminNote}</span>}
-                    </div>
-                  )}
+                {/* SMS Reference / Receipt Box */}
+                <div className="tx-sms-verification-box">
+                  <div className="sms-shield-icon">
+                    <i className="fa-solid fa-shield-halved"></i>
+                  </div>
+                  <div className="sms-verify-text-group">
+                    <strong className="sms-verify-title">SMS Reference Verification</strong>
+                    <span className="sms-verify-sub">
+                      {tx.receiptImage ? 'Receipt Screenshot Attached' : 'No Screenshot Attached'}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Footer Meta: Verified & Amount */}
+                <div className="tx-card-footer-meta-row">
+                  <div className="tx-lifetime-verified">
+                    <span className="verified-text">VERIFIED</span>
+                    <i className="fa-solid fa-circle-check verified-green-icon"></i>
+                    <span className="lifetime-in-text">Lifetime In: {userLifetimeIn} ETB</span>
+                  </div>
+
+                  <div className="tx-amount-display-box">
+                    <span className="amount-tiny-lbl">AMOUNT</span>
+                    <strong className={`amount-huge-val ${isDeposit ? 'deposit-green' : 'withdraw-gold'}`}>
+                      {isDeposit ? `+${tx.amount.toFixed(2)}` : `${tx.amount.toFixed(2)}`} ETB
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Action Buttons Row */}
+                {isPending && (
+                  <div className="tx-card-actions-three-row">
+                    <button
+                      type="button"
+                      className="btn-tx-approve-green"
+                      onClick={() => handleApprove(tx)}
+                    >
+                      <i className="fa-solid fa-bolt-lightning"></i>
+                      <span>Approve & Release</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn-tx-fullslip-purple"
+                      onClick={() => setInspectTx(tx)}
+                    >
+                      <i className="fa-solid fa-magnifying-glass"></i>
+                      <span>Full Slip</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn-tx-reject-red"
+                      onClick={() => setRejectTargetTx(tx)}
+                    >
+                      <i className="fa-solid fa-xmark"></i>
+                      <span>Reject</span>
+                    </button>
+                  </div>
+                )}
+
+                {!isPending && (
+                  <div className="tx-card-resolved-banner">
+                    <i className={`fa-solid ${isApproved ? 'fa-circle-check green' : 'fa-circle-xmark red'}`}></i>
+                    <span>
+                      {isApproved ? 'Settled & Wallet Balance Credited' : 'Order Rejected & Notified'}
+                    </span>
+                  </div>
+                )}
               </div>
             );
-          })
-        )}
+          })}
+        </div>
+      )}
+
+      {/* 4. Bottom Statistics & Pagination Bar */}
+      <div className="cashier-bottom-stats-pagination-bar">
+        {/* KPI Summaries */}
+        <div className="cashier-bottom-kpis-wrap">
+          {/* Total in Queue */}
+          <div className="bottom-kpi-item queue-item">
+            <div className="kpi-square-icon-gold">
+              <i className="fa-solid fa-inbox"></i>
+            </div>
+            <div className="kpi-text-stack">
+              <span className="kpi-micro-lbl">Total in Queue</span>
+              <strong className="kpi-bold-val">
+                {pendingTotalCount} <span className="sub-lbl">Pending Actions</span>
+              </strong>
+            </div>
+          </div>
+
+          {/* Total Amount Pending */}
+          <div className="bottom-kpi-item">
+            <span className="kpi-micro-lbl">Total Amount (Pending)</span>
+            <strong className="kpi-bold-val gold">2,700.00 ETB</strong>
+          </div>
+
+          {/* Today Verified */}
+          <div className="bottom-kpi-item">
+            <span className="kpi-micro-lbl">Today Verified</span>
+            <strong className="kpi-bold-val green">5,800.00 ETB</strong>
+          </div>
+
+          {/* Approved Today */}
+          <div className="bottom-kpi-item">
+            <span className="kpi-micro-lbl">Approved Today</span>
+            <strong className="kpi-bold-val dark">12</strong>
+          </div>
+
+          {/* Rejected Today */}
+          <div className="bottom-kpi-item">
+            <span className="kpi-micro-lbl">Rejected Today</span>
+            <strong className="kpi-bold-val red">2</strong>
+          </div>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="cashier-pagination-controls">
+          <button type="button" className="btn-page-arrow" disabled>
+            <i className="fa-solid fa-chevron-left"></i>
+          </button>
+          <button type="button" className="btn-page-num active">
+            1
+          </button>
+          <button type="button" className="btn-page-arrow">
+            <i className="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
 
-      {/* 4. REJECTION REASON MODAL (VISIBLE TO PLAYER) */}
-      {rejectTargetTx && (
-        <div className="admin-pin-overlay" style={{ position: 'fixed', inset: 0, zIndex: 1200 }}>
-          <div className="inspect-modal-card" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="fa-solid fa-triangle-exclamation" style={{ color: '#f87171' }}></i>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>
-                  Reject Transaction ({rejectTargetTx.referenceNumber})
+      {/* ── Inspection Modal: Full Slip ── */}
+      {inspectTx && (
+        <div className="cashier-modal-backdrop" onClick={() => setInspectTx(null)}>
+          <div className="cashier-slip-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="slip-modal-header">
+              <div className="slip-header-titles">
+                <h3>
+                  <i className="fa-solid fa-receipt gold" style={{ marginRight: 8 }}></i>
+                  Transaction Full Slip #{inspectTx.referenceNumber}
                 </h3>
+                <p>Official Verification & Settlement Ledger</p>
               </div>
-              <button className="modal-close-btn" onClick={() => setRejectTargetTx(null)}>
+              <button
+                type="button"
+                className="btn-modal-close-round"
+                onClick={() => setInspectTx(null)}
+              >
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
-            <p style={{ color: '#94a3b8', fontSize: '0.8125rem', marginBottom: '14px' }}>
-              Select or type the rejection reason. <strong>The player will see this message directly in their Deposit/Withdrawal history.</strong>
-            </p>
+            <div className="slip-modal-body">
+              <div className="slip-details-grid">
+                <div className="slip-grid-cell">
+                  <span className="cell-lbl">Order Type</span>
+                  <strong className="cell-val uppercase">{inspectTx.type}</strong>
+                </div>
+                <div className="slip-grid-cell">
+                  <span className="cell-lbl">Payment Provider</span>
+                  <strong className="cell-val">{inspectTx.method}</strong>
+                </div>
+                <div className="slip-grid-cell">
+                  <span className="cell-lbl">Customer Name</span>
+                  <strong className="cell-val">{inspectTx.userName}</strong>
+                </div>
+                <div className="slip-grid-cell">
+                  <span className="cell-lbl">Customer Phone</span>
+                  <strong className="cell-val">{inspectTx.phone}</strong>
+                </div>
+                <div className="slip-grid-cell">
+                  <span className="cell-lbl">Provider Account</span>
+                  <strong className="cell-val">{inspectTx.accountNumber}</strong>
+                </div>
+                <div className="slip-grid-cell">
+                  <span className="cell-lbl">Order Amount</span>
+                  <strong className="cell-val gold-amt">{inspectTx.amount.toFixed(2)} ETB</strong>
+                </div>
+              </div>
 
-            <div className="rejection-presets-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
-              {rejectionPresets.map(preset => (
-                <label
-                  key={preset}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    background: rejectReason === preset ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                    border: `1px solid ${rejectReason === preset ? '#ef4444' : 'rgba(255, 255, 255, 0.08)'}`,
-                    cursor: 'pointer',
-                    fontSize: '0.75rem',
-                    color: '#fff'
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="rejectReason"
-                    checked={rejectReason === preset}
-                    onChange={() => setRejectReason(preset)}
-                  />
-                  <span>{preset}</span>
-                </label>
-              ))}
+              {/* SMS Reference Box */}
+              <div className="slip-sms-box">
+                <span className="sms-box-lbl">Telebirr / CBE SMS Reference:</span>
+                <strong className="sms-code-big">{inspectTx.referenceNumber}</strong>
+              </div>
             </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
-                Or Custom Reason Note:
-              </label>
-              <input
-                type="text"
+            <div className="slip-modal-footer">
+              {inspectTx.status === 'pending' && (
+                <>
+                  <button
+                    type="button"
+                    className="btn-slip-approve-gold"
+                    onClick={() => {
+                      handleApprove(inspectTx);
+                      setInspectTx(null);
+                    }}
+                  >
+                    <i className="fa-solid fa-check"></i>
+                    <span>Approve & Release Funds</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-slip-reject-outline"
+                    onClick={() => {
+                      setRejectTargetTx(inspectTx);
+                      setInspectTx(null);
+                    }}
+                  >
+                    <i className="fa-solid fa-xmark"></i>
+                    <span>Reject Order</span>
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                className="btn-slip-close-gray"
+                onClick={() => setInspectTx(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Reject Reason Modal ── */}
+      {rejectTargetTx && (
+        <div className="cashier-modal-backdrop" onClick={() => setRejectTargetTx(null)}>
+          <div className="cashier-reject-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="reject-modal-header">
+              <h3>
+                <i className="fa-solid fa-triangle-exclamation red" style={{ marginRight: 8 }}></i>
+                Reject Transaction #{rejectTargetTx.referenceNumber}
+              </h3>
+              <button
+                type="button"
+                className="btn-modal-close-round"
+                onClick={() => setRejectTargetTx(null)}
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <div className="reject-modal-body">
+              <p className="reject-prompt-txt">
+                Select rejection reason for <strong>{rejectTargetTx.userName}</strong> ({rejectTargetTx.amount} ETB):
+              </p>
+
+              <div className="reject-options-list">
+                {[
+                  'Invalid SMS Reference Code (Not found in Telebirr)',
+                  'Incorrect Sender Account or Name Mismatch',
+                  'Duplicate SMS Reference (Already Claimed)',
+                  'Unverified Screenshot / Altered Receipt',
+                  'Withdrawal Account Name Mismatch with Registered KYC'
+                ].map(reason => (
+                  <label key={reason} className="reject-radio-label">
+                    <input
+                      type="radio"
+                      name="rejectReason"
+                      value={reason}
+                      checked={rejectReason === reason}
+                      onChange={() => setRejectReason(reason)}
+                    />
+                    <span>{reason}</span>
+                  </label>
+                ))}
+              </div>
+
+              <textarea
+                placeholder="Optional custom rejection note sent to user..."
                 value={customRejectNote}
                 onChange={e => setCustomRejectNote(e.target.value)}
-                placeholder="Type custom note to player..."
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  background: '#090314',
-                  border: '1px solid rgba(239, 68, 68, 0.4)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  fontSize: '0.8125rem'
-                }}
+                className="reject-custom-textarea"
+                rows={2}
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div className="reject-modal-footer">
               <button
                 type="button"
-                className="btn-inspect-reject"
-                style={{ flex: 1 }}
+                className="btn-confirm-reject-red"
+                onClick={handleConfirmReject}
+              >
+                Confirm Rejection & Notify Player
+              </button>
+              <button
+                type="button"
+                className="btn-slip-close-gray"
                 onClick={() => setRejectTargetTx(null)}
               >
                 Cancel
               </button>
-              <button
-                type="button"
-                className="btn-card-reject"
-                style={{ flex: 1.5, background: '#ef4444', color: '#fff', border: 'none', padding: '12px' }}
-                onClick={handleConfirmReject}
-              >
-                <i className="fa-solid fa-xmark"></i> Confirm & Notify Player
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 5. FULL INSPECTION SLIP MODAL */}
-      {inspectTx && (
-        <div className="admin-pin-overlay" style={{ position: 'fixed', inset: 0, zIndex: 1100 }}>
-          <div className="inspect-modal-card" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="fa-solid fa-receipt" style={{ color: '#a855f7' }}></i>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>
-                  Transaction Inspection #{inspectTx.referenceNumber}
-                </h3>
-              </div>
-              <button className="modal-close-btn" onClick={() => setInspectTx(null)}>
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-
-            {/* Quick Structured Metrics Box */}
-            <div className="inspect-metrics-box">
-              <div className="inspect-info-row">
-                <span className="inspect-lbl">Transaction ID:</span>
-                <span
-                  className="tx-ref-clickable"
-                  onClick={() => {
-                    navigator.clipboard.writeText(inspectTx.referenceNumber);
-                    showToast(`📋 Copied ${inspectTx.referenceNumber}`);
-                  }}
-                  title="Click to copy Transaction ID"
-                >
-                  <code style={{ fontSize: '0.875rem', fontWeight: 800 }}>{inspectTx.referenceNumber}</code>
-                  <i className="fa-regular fa-copy"></i>
-                </span>
-              </div>
-
-              <div className="inspect-info-row">
-                <span className="inspect-lbl">Order Type:</span>
-                <span className={`tx-type-pill ${inspectTx.type || 'deposit'}`}>
-                  {(inspectTx.type || 'deposit') === 'deposit' ? '📥 DEPOSIT' : '📤 WITHDRAWAL'}
-                </span>
-              </div>
-
-              <div className="inspect-info-row">
-                <span className="inspect-lbl">Amount:</span>
-                <span className={`inspect-amount-val ${(inspectTx.type || 'deposit') === 'deposit' ? 'green' : 'red'}`}>
-                  {(inspectTx.type || 'deposit') === 'deposit' ? '+' : '-'}{(Number(inspectTx.amount) || 0).toFixed(2)} ETB
-                </span>
-              </div>
-
-              <div className="inspect-info-row">
-                <span className="inspect-lbl">Payment Provider:</span>
-                <span className="inspect-val-bold">
-                  {inspectTx.method === 'Telebirr' ? '📱 Telebirr' : '🏦 CBE Bank'}
-                </span>
-              </div>
-
-              <div className="inspect-info-row">
-                <span className="inspect-lbl">Receiver Account:</span>
-                <span className="inspect-val-mono">{inspectTx.accountNumber || '0998983344'}</span>
-              </div>
-
-              <div className="inspect-info-row">
-                <span className="inspect-lbl">Submission Time:</span>
-                <span className="inspect-val-muted">{inspectTx.createdAt || 'Today'}</span>
-              </div>
-            </div>
-
-            {/* Uploaded Receipt Image Preview (if attached) */}
-            {inspectTx.receiptImage ? (
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '0.75rem', color: '#facc15', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', fontWeight: 700 }}>
-                  <i className="fa-solid fa-image"></i> Attached Payment Receipt Screenshot (Click to zoom):
-                </label>
-                <div
-                  style={{ background: '#0a0518', border: '1px solid rgba(168,85,247,0.4)', borderRadius: '10px', padding: '8px', textAlign: 'center', cursor: 'pointer' }}
-                  onClick={() => setZoomReceiptImg(inspectTx.receiptImage || null)}
-                >
-                  <img
-                    src={inspectTx.receiptImage}
-                    alt="Player Receipt"
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '220px',
-                      objectFit: 'contain',
-                      borderRadius: '6px'
-                    }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div style={{ marginBottom: '16px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '8px', padding: '10px 12px', fontSize: '0.8125rem', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="fa-solid fa-circle-info"></i>
-                <span>No screenshot attached. Please verify via SMS Reference: <strong>{inspectTx.referenceNumber}</strong></span>
-              </div>
-            )}
-
-            {/* Player Risk & Lifetime Context */}
-            <div className="player-context-box">
-              <div className="context-header">
-                <i className="fa-solid fa-user-check" style={{ color: '#4ade80' }}></i>
-                <span>Player Profile: <strong>{inspectTx.userName || 'Player'}</strong> ({inspectTx.phone || '+251 9...'})</span>
-              </div>
-              <div className="context-stats-row">
-                <div>
-                  <span className="sub-lbl">Lifetime Deposits</span>
-                  <strong>{(Number(inspectTx.userLifetimeDeposits) || 0).toFixed(2)} ETB</strong>
-                </div>
-                <div>
-                  <span className="sub-lbl">Lifetime Withdrawals</span>
-                  <strong>{(Number(inspectTx.userLifetimeWithdrawals) || 0).toFixed(2)} ETB</strong>
-                </div>
-                <div>
-                  <span className="sub-lbl">Risk Assessment</span>
-                  <span className="status-pill active">SAFE / VERIFIED</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Admin Settlement Note */}
-            <div style={{ marginBottom: '18px' }}>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
-                Admin Settlement Note (Optional)
-              </label>
-              <input
-                type="text"
-                value={adminNoteInput}
-                onChange={e => setAdminNoteInput(e.target.value)}
-                placeholder="e.g. Telebirr SMS Ref Confirmed #88921"
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  background: '#0f0724',
-                  border: '1px solid rgba(168,85,247,0.3)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  fontSize: '0.8125rem'
-                }}
-              />
-            </div>
-
-            {/* Modal Actions */}
-            <div className="inspect-actions-row">
-              <button
-                type="button"
-                className="btn-inspect-reject"
-                onClick={() => {
-                  setRejectTargetTx(inspectTx);
-                }}
-              >
-                <i className="fa-solid fa-xmark"></i> Reject Request
-              </button>
-              <button
-                type="button"
-                className="btn-inspect-approve"
-                onClick={() => handleApprove(inspectTx)}
-              >
-                <i className="fa-solid fa-check-double"></i> Approve & Release Funds
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 6. FULL-SCREEN RECEIPT IMAGE ZOOM LIGHTBOX */}
-      {zoomReceiptImg && (
-        <div className="admin-pin-overlay" style={{ position: 'fixed', inset: 0, zIndex: 1300 }} onClick={() => setZoomReceiptImg(null)}>
-          <div style={{ background: '#0a0518', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '16px', maxWidth: '600px', width: '90%' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h4 style={{ color: '#fff', margin: 0, fontSize: '1rem' }}>Receipt Screenshot Zoom</h4>
-              <button className="modal-close-btn" onClick={() => setZoomReceiptImg(null)}>
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <img
-                src={zoomReceiptImg}
-                alt="Receipt Full"
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '75vh',
-                  borderRadius: '8px',
-                  objectFit: 'contain'
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Manual Request Modal */}
+      {/* ── New Manual Order Modal ── */}
       {showManualTxModal && (
-        <div className="admin-pin-overlay" style={{ position: 'fixed', inset: 0, zIndex: 1100 }}>
-          <div className="manual-tx-card" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="fa-solid fa-circle-plus" style={{ color: '#a855f7' }}></i>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>Create Manual Order</h3>
-              </div>
-              <button className="modal-close-btn" onClick={() => setShowManualTxModal(false)}>
+        <div className="cashier-modal-backdrop" onClick={() => setShowManualTxModal(false)}>
+          <div className="cashier-manual-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="manual-modal-header">
+              <h3>
+                <i className="fa-solid fa-plus gold" style={{ marginRight: 8 }}></i>
+                Create Manual Cashier Order
+              </h3>
+              <button
+                type="button"
+                className="btn-modal-close-round"
+                onClick={() => setShowManualTxModal(false)}
+              >
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
-            <form onSubmit={handleCreateManualTx}>
-              <div className="modal-input-group">
+            <form onSubmit={handleCreateManualOrder} className="manual-order-form">
+              <div className="form-group-row">
                 <label>Order Type</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div className="type-toggle-pill">
                   <button
                     type="button"
-                    className={`type-select-btn ${manualType === 'deposit' ? 'active green' : ''}`}
+                    className={`btn-type-tab ${manualType === 'deposit' ? 'active-green' : ''}`}
                     onClick={() => setManualType('deposit')}
                   >
-                    📥 Deposit
+                    Deposit (+)
                   </button>
                   <button
                     type="button"
-                    className={`type-select-btn ${manualType === 'withdrawal' ? 'active red' : ''}`}
+                    className={`btn-type-tab ${manualType === 'withdrawal' ? 'active-red' : ''}`}
                     onClick={() => setManualType('withdrawal')}
                   >
-                    📤 Withdrawal
+                    Withdrawal (−)
                   </button>
                 </div>
               </div>
 
-              <div className="modal-input-group">
-                <label>Select Player Account</label>
-                <select value={manualUser} onChange={e => setManualUser(e.target.value)}>
-                  {users && users.map(u => (
+              <div className="form-group-row">
+                <label>Target Player Account</label>
+                <select
+                  value={manualUser}
+                  onChange={e => setManualUser(e.target.value)}
+                  className="manual-select-input"
+                >
+                  {users.map(u => (
                     <option key={u.id} value={u.id}>
-                      {u.name} ({u.phone}) — Bal: {u.balance} ETB
+                      {u.name} ({u.phone}) — Balance: {u.balance} ETB
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="modal-input-group">
+              <div className="form-group-row">
                 <label>Amount (ETB)</label>
                 <input
                   type="number"
-                  min="50"
-                  required
+                  min="10"
+                  step="10"
                   value={manualAmount}
                   onChange={e => setManualAmount(e.target.value)}
+                  className="manual-text-input"
+                  required
                 />
               </div>
 
-              <div className="modal-input-group">
+              <div className="form-group-row">
                 <label>Payment Method</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div className="method-toggle-pill">
                   <button
                     type="button"
-                    className={`type-select-btn ${manualMethod === 'Telebirr' ? 'active' : ''}`}
+                    className={`btn-method-tab ${manualMethod === 'Telebirr' ? 'active' : ''}`}
                     onClick={() => setManualMethod('Telebirr')}
                   >
                     Telebirr
                   </button>
                   <button
                     type="button"
-                    className={`type-select-btn ${manualMethod === 'CBE' ? 'active' : ''}`}
+                    className={`btn-method-tab ${manualMethod === 'CBE' ? 'active' : ''}`}
                     onClick={() => setManualMethod('CBE')}
                   >
                     CBE Bank
@@ -770,31 +825,27 @@ export const CashierDesk: React.FC = () => {
                 </div>
               </div>
 
-              <div className="modal-input-group">
-                <label>Recipient / Sender Account Number</label>
+              <div className="form-group-row">
+                <label>Provider Account Number</label>
                 <input
                   type="text"
-                  required
                   value={manualAccount}
                   onChange={e => setManualAccount(e.target.value)}
+                  className="manual-text-input"
+                  required
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+              <div className="manual-modal-footer">
+                <button type="submit" className="btn-manual-submit-gold">
+                  Create & Submit to Queue
+                </button>
                 <button
                   type="button"
-                  className="btn-inspect-reject"
-                  style={{ flex: 1 }}
+                  className="btn-slip-close-gray"
                   onClick={() => setShowManualTxModal(false)}
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-inspect-approve"
-                  style={{ flex: 1.5 }}
-                >
-                  <i className="fa-solid fa-plus-circle"></i> Create Request
                 </button>
               </div>
             </form>

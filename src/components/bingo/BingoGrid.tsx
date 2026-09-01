@@ -1,136 +1,201 @@
 import React from 'react';
-import { useBingo } from '../../context/BingoContext.tsx';
+import { useBingo, BingoCell } from '../../context/BingoContext.tsx';
+
+const columns = [
+  { letter: 'B', colorClass: 'col-b' },
+  { letter: 'I', colorClass: 'col-i' },
+  { letter: 'N', colorClass: 'col-n' },
+  { letter: 'G', colorClass: 'col-g' },
+  { letter: 'O', colorClass: 'col-o' }
+];
+
+const WIN_PATTERNS = [
+  [0, 6, 12, 18, 24],
+  [4, 8, 12, 16, 20],
+  [0, 1, 2, 3, 4],
+  [5, 6, 7, 8, 9],
+  [10, 11, 12, 13, 14],
+  [15, 16, 17, 18, 19],
+  [20, 21, 22, 23, 24],
+  [0, 5, 10, 15, 20],
+  [1, 6, 11, 16, 21],
+  [2, 7, 12, 17, 22],
+  [3, 8, 13, 18, 23],
+  [4, 9, 14, 19, 24]
+];
+
+const getCardStatus = (cells: BingoCell[]) => {
+  if (!cells || !cells.length) return null;
+  let max = 0;
+  for (const p of WIN_PATTERNS) {
+    const count = p.filter((idx: number) => cells[idx]?.marked).length;
+    if (count > max) max = count;
+  }
+  if (max === 5) return { label: 'BINGO! 🎉', hot: true };
+  if (max === 4) return { label: '1 TO GO! 🔥', hot: true };
+  if (max === 3) return { label: '2 TO GO', hot: false };
+  return null;
+};
+
+// Render Single 5x5 Card Grid Matrix
+const Card5x5Matrix: React.FC<{
+  cells: BingoCell[];
+  cardIndex: number;
+  cartelaId: number;
+  isWinningCard: boolean;
+  winningLine: number[];
+  autoPlay: boolean;
+  onDaub: (cardIdx: number, cellIdx: number) => void;
+}> = ({ cells, cardIndex, isWinningCard, winningLine, autoPlay, onDaub }) => {
+  return (
+    <div className="cartela-5x5-matrix-wrap">
+      {/* B I N G O Header Row */}
+      <div className="cartela-header-cols-row">
+        {columns.map(c => (
+          <div key={c.letter} className={`cartela-col-hdr ${c.colorClass}`}>
+            {c.letter}
+          </div>
+        ))}
+      </div>
+
+      {/* 5x5 Grid Cells */}
+      <div className="cartela-5x5-grid">
+        {cells.map(cell => {
+          const isWinningCell = isWinningCard && winningLine.includes(cell.index);
+
+          return (
+            <div
+              key={`${cardIndex}-${cell.index}`}
+              className={`cartela-num-cell ${cell.marked ? 'daubed' : 'unmarked'} ${
+                cell.isFree ? 'free-star-cell' : ''
+              } ${isWinningCell ? 'winning-glow-cell' : ''}`}
+              onClick={() => !autoPlay && onDaub(cardIndex, cell.index)}
+            >
+              {cell.isFree ? (
+                <div className="free-cell-content">
+                  <span className="star-icon">★</span>
+                  <span className="free-lbl">FREE</span>
+                </div>
+              ) : (
+                <>
+                  <span className="cell-num-txt">{cell.val}</span>
+                  {cell.marked && (
+                    <div className="daub-stamp-circle">
+                      <i className="fa-solid fa-check"></i>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export const BingoGrid: React.FC = () => {
   const {
     cartela1Data,
     cartela2Data,
-    cardQuantity,
+    cartela3Data,
+    totalPlayableCards,
     activeCartelaIndex,
     setActiveCartelaIndex,
+    selectedCartelaIds,
     handleManualDaub,
-    winResult
+    winResult,
+    autoPlay,
+    openCartelaPicker,
+    roundPhase
   } = useBingo();
 
-  const columns = [
-    { letter: 'B', colorClass: 'col-b' },
-    { letter: 'I', colorClass: 'col-i' },
-    { letter: 'N', colorClass: 'col-n' },
-    { letter: 'G', colorClass: 'col-g' },
-    { letter: 'O', colorClass: 'col-o' }
-  ];
-
-  const currentCardData = activeCartelaIndex === 0 ? cartela1Data : cartela2Data;
-
-  // Calculate marked count for 1TG / 2TG badges
-  const getCardStatus = (cells: typeof cartela1Data) => {
-    const patterns = [
-      [0, 6, 12, 18, 24],
-      [4, 8, 12, 16, 20],
-      [0, 1, 2, 3, 4],
-      [5, 6, 7, 8, 9],
-      [10, 11, 12, 13, 14],
-      [15, 16, 17, 18, 19],
-      [20, 21, 22, 23, 24]
-    ];
-    let maxMarked = 0;
-    for (const p of patterns) {
-      const marked = p.filter(idx => cells[idx]?.marked).length;
-      if (marked > maxMarked) maxMarked = marked;
-    }
-    if (maxMarked === 5) return 'BINGO! 🎉';
-    if (maxMarked === 4) return '1 TO GO! 🔥';
-    if (maxMarked === 3) return '2 TO GO';
-    return null;
-  };
-
   const c1Status = getCardStatus(cartela1Data);
-  const c2Status = cardQuantity > 1 ? getCardStatus(cartela2Data) : null;
-  const currentStatus = activeCartelaIndex === 0 ? c1Status : c2Status;
+  const c2Status = totalPlayableCards >= 2 ? getCardStatus(cartela2Data) : null;
+  const c3Status = totalPlayableCards >= 3 ? getCardStatus(cartela3Data) : null;
+
+  const currentCards = [
+    { data: cartela1Data, id: selectedCartelaIds[0], status: c1Status, label: 'Card 1', isBonus: false },
+    { data: cartela2Data, id: selectedCartelaIds[1], status: c2Status, label: 'Card 2', isBonus: false },
+    { data: cartela3Data, id: selectedCartelaIds[2], status: c3Status, label: 'Card 3', isBonus: true }
+  ].slice(0, totalPlayableCards);
+
+  const activeCard = currentCards[activeCartelaIndex] || currentCards[0];
+  const isLobby = roundPhase === 'lobby';
 
   return (
     <div className="fresh-cartela-play-card">
-      {/* Top Cartela Header & Dual Tabs */}
+      {/* Top Header: Tabs for Multiple Cartelas (Card 1, Card 2, Card 3 Bonus) */}
       <div className="cartela-card-header-bar">
-        {cardQuantity > 1 ? (
+        {totalPlayableCards > 1 ? (
           <div className="cartela-switch-tabs">
-            <button
-              type="button"
-              className={`btn-cartela-tab ${activeCartelaIndex === 0 ? 'active' : ''}`}
-              onClick={() => setActiveCartelaIndex(0)}
-            >
-              <span>Card 1</span>
-            </button>
-            <button
-              type="button"
-              className={`btn-cartela-tab ${activeCartelaIndex === 1 ? 'active' : ''}`}
-              onClick={() => setActiveCartelaIndex(1)}
-            >
-              <span>Card 2</span>
-            </button>
+            {currentCards.map((c, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className={`btn-cartela-tab ${activeCartelaIndex === idx ? 'active' : ''} ${c.isBonus ? 'bonus-tab' : ''}`}
+                onClick={() => setActiveCartelaIndex(idx)}
+              >
+                <span>{c.label} #{c.id}</span>
+                {c.isBonus && <span className="tab-bonus-star">🎁</span>}
+                {c.status?.hot && <span className="tab-hot-flame">🔥</span>}
+              </button>
+            ))}
           </div>
         ) : (
           <div className="cartela-single-title">
             <i className="fa-solid fa-ticket gold"></i>
-            <span>YOUR CARTELA</span>
+            <span>CARTELA #{selectedCartelaIds[0]}</span>
           </div>
         )}
 
-        {/* Live To-Go Radar Status Badge */}
-        {currentStatus && (
-          <span className={`cartela-radar-badge ${currentStatus.includes('1') ? 'radar-hot' : ''}`}>
-            {currentStatus}
-          </span>
+        {/* Change Cartelas button in lobby */}
+        {isLobby ? (
+          <button
+            type="button"
+            className="btn-change-cartela-mini"
+            onClick={openCartelaPicker}
+            title="Choose specific Cartela numbers from 400 pool"
+          >
+            <i className="fa-solid fa-arrow-rotate-right"></i>
+            <span>Pick #</span>
+          </button>
+        ) : (
+          /* Live Radar Status Badge */
+          activeCard.status && (
+            <span className={`cartela-radar-badge ${activeCard.status.hot ? 'radar-hot' : ''}`}>
+              {activeCard.status.label}
+            </span>
+          )
         )}
       </div>
 
-      {/* 5x5 Matrix Matrix Container */}
-      <div className="cartela-5x5-matrix-wrap">
-        {/* Top 5 Colored Column Headers: B I N G O */}
-        <div className="cartela-header-cols-row">
-          {columns.map(c => (
-            <div key={c.letter} className={`cartela-col-hdr ${c.colorClass}`}>
-              {c.letter}
-            </div>
-          ))}
+      {/* Bonus Card Banner when 3 cards active */}
+      {totalPlayableCards >= 3 && activeCartelaIndex === 2 && (
+        <div className="cartela-bonus-active-banner">
+          <i className="fa-solid fa-gift gold"></i>
+          <span>FREE BONUS CARTELA (Buy 2 Get 1 Free Promo)</span>
         </div>
+      )}
 
-        {/* 5x5 Grid Cells */}
-        <div className="cartela-5x5-grid">
-          {currentCardData.map(cell => {
-            const isWinningCell =
-              winResult &&
-              winResult.winningCartelaNumber === activeCartelaIndex + 1 &&
-              winResult.winningLine.includes(cell.index);
+      {/* 5x5 Matrix */}
+      <Card5x5Matrix
+        cells={activeCard.data}
+        cardIndex={activeCartelaIndex}
+        cartelaId={activeCard.id}
+        isWinningCard={winResult !== null && winResult.winningCartelaNumber === activeCard.id}
+        winningLine={winResult?.winningLine || []}
+        autoPlay={autoPlay}
+        onDaub={handleManualDaub}
+      />
 
-            return (
-              <div
-                key={`${activeCartelaIndex}-${cell.index}`}
-                className={`cartela-num-cell ${cell.marked ? 'daubed' : 'unmarked'} ${
-                  cell.isFree ? 'free-star-cell' : ''
-                } ${isWinningCell ? 'winning-glow-cell' : ''}`}
-                onClick={() => handleManualDaub(activeCartelaIndex, cell.index)}
-              >
-                {cell.isFree ? (
-                  <div className="free-cell-content">
-                    <span className="star-icon">★</span>
-                    <span className="free-lbl">FREE</span>
-                  </div>
-                ) : (
-                  <>
-                    <span className="cell-num-txt">{cell.val}</span>
-                    {cell.marked && (
-                      <div className="daub-stamp-circle">
-                        <i className="fa-solid fa-check"></i>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            );
-          })}
+      {/* Auto-Play Indicator */}
+      {autoPlay && (
+        <div className="cartela-autoplay-active-tag">
+          <i className="fa-solid fa-bolt"></i>
+          <span>Auto-Play Active — All {totalPlayableCards} Cartelas daubed instantly</span>
         </div>
-      </div>
+      )}
     </div>
   );
 };

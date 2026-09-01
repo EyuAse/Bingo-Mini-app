@@ -7,6 +7,9 @@ import { WalletProvider } from './context/WalletContext.tsx';
 import { BingoProvider } from './context/BingoContext.tsx';
 import { AdminProvider } from './context/AdminContext.tsx';
 
+// FontAwesome Local Bundle
+import '@fortawesome/fontawesome-free/css/all.min.css';
+
 // Stylesheets
 import './styles/index.css';
 import './styles/header.css';

@@ -1,0 +1,811 @@
+import React, { useState } from 'react';
+import { useAdmin, UserAccount } from '../../context/AdminContext.tsx';
+import { useApp } from '../../context/AppContext.tsx';
+
+export const PlayerAccountsDesk: React.FC = () => {
+  const {
+    users,
+    addUser,
+    adjustUserBalance,
+    toggleUserStatus,
+    registerBonus
+  } = useAdmin();
+
+  const { showToast } = useApp();
+
+  // Search, Segment & Sort states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [segmentFilter, setSegmentFilter] = useState<'all' | 'active' | 'suspended' | 'vip' | 'bonus'>('all');
+  const [sortBy, setSortBy] = useState<'balance-desc' | 'deposit-desc' | 'referrals-desc' | 'newest'>('balance-desc');
+
+  // Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [adjustTargetUser, setAdjustTargetUser] = useState<UserAccount | null>(null);
+  const [dossierUser, setDossierUser] = useState<UserAccount | null>(null);
+
+  // New Player Form state
+  const [newName, setNewName] = useState('');
+  const [newPhone, setNewPhone] = useState('+251 9');
+  const [initialDeposit, setInitialDeposit] = useState('0');
+  const [applyWelcomeBonus, setApplyWelcomeBonus] = useState(true);
+  const [referrerPhone, setReferrerPhone] = useState('');
+
+  // Adjust Balance Form state
+  const [adjustType, setAdjustType] = useState<'add-cash' | 'add-bonus' | 'deduct-cash'>('add-cash');
+  const [adjustAmount, setAdjustAmount] = useState('100');
+  const [adjustReason, setAdjustReason] = useState('Manual Cashier Credit');
+
+  // Calculations for KPI Cards
+  const totalPlayers = users.length;
+  const activePlayers = users.filter(u => u.status === 'active').length;
+  const suspendedPlayers = users.filter(u => u.status === 'suspended').length;
+  const totalCashFloat = users.reduce((acc, u) => acc + (u.balance || 0), 0);
+  const totalBonusFloat = users.reduce((acc, u) => acc + (u.bonus || 0), 0);
+  const vipPlayers = users.filter(u => (u.totalDeposited || 0) >= 1000);
+
+  // Filter & Sort Logic
+  const filteredUsers = users.filter(user => {
+    // Segment filter
+    if (segmentFilter === 'active' && user.status !== 'active') return false;
+    if (segmentFilter === 'suspended' && user.status !== 'suspended') return false;
+    if (segmentFilter === 'vip' && (user.totalDeposited || 0) < 1000) return false;
+    if (segmentFilter === 'bonus' && (user.bonus || 0) <= 0) return false;
+
+    // Search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchName = (user.name || '').toLowerCase().includes(q);
+      const matchPhone = (user.phone || '').includes(q);
+      const matchId = (user.id || '').toLowerCase().includes(q);
+      if (!matchName && !matchPhone && !matchId) return false;
+    }
+    return true;
+  });
+
+  // Sorting
+  filteredUsers.sort((a, b) => {
+    if (sortBy === 'balance-desc') return (b.balance || 0) - (a.balance || 0);
+    if (sortBy === 'deposit-desc') return (b.totalDeposited || 0) - (a.totalDeposited || 0);
+    if (sortBy === 'referrals-desc') return (b.referralCount || 0) - (a.referralCount || 0);
+    return b.id.localeCompare(a.id);
+  });
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    showToast(`✓ Copied: ${text}`);
+  };
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim() || newPhone.length < 9) {
+      showToast('⚠️ Please provide a valid Name and Ethiopian Phone Number');
+      return;
+    }
+
+    const startCash = parseFloat(initialDeposit) || 0;
+    const startBonus = applyWelcomeBonus ? registerBonus : 0;
+
+    addUser({
+      name: newName.trim(),
+      phone: newPhone.trim(),
+      balance: startCash,
+      bonus: startBonus,
+      referredBy: referrerPhone.trim() || undefined,
+      referralCount: 0,
+      totalDeposited: startCash,
+      totalWithdrawn: 0,
+      status: 'active'
+    });
+
+    setShowAddModal(false);
+    setNewName('');
+    setNewPhone('+251 9');
+    setInitialDeposit('0');
+    setReferrerPhone('');
+    showToast(`🎉 Player Account "${newName.trim()}" registered successfully`);
+  };
+
+  const handleExecuteAdjustBalance = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjustTargetUser) return;
+    const amt = parseFloat(adjustAmount);
+    if (isNaN(amt) || amt <= 0) {
+      showToast('⚠️ Please specify a valid amount');
+      return;
+    }
+
+    if (adjustType === 'add-cash') {
+      adjustUserBalance(adjustTargetUser.id, amt, false);
+      showToast(`✓ Credited +${amt.toFixed(2)} ETB Real Cash to ${adjustTargetUser.name}`);
+    } else if (adjustType === 'add-bonus') {
+      adjustUserBalance(adjustTargetUser.id, amt, true);
+      showToast(`✓ Granted +${amt.toFixed(2)} ETB Promo Bonus to ${adjustTargetUser.name}`);
+    } else if (adjustType === 'deduct-cash') {
+      adjustUserBalance(adjustTargetUser.id, -amt, false);
+      showToast(`✓ Deducted -${amt.toFixed(2)} ETB from ${adjustTargetUser.name}`);
+    }
+
+    setAdjustTargetUser(null);
+    setAdjustAmount('100');
+  };
+
+  const handleExportCSV = () => {
+    const headers = 'ID,Name,Phone,CashBalance,BonusWallet,TotalDeposited,TotalWithdrawn,Referrals,Status,JoinedDate\n';
+    const rows = filteredUsers
+      .map(
+        u =>
+          `"${u.id}","${u.name}","${u.phone}",${u.balance},${u.bonus},${u.totalDeposited},${u.totalWithdrawn},${u.referralCount},"${u.status}","${u.createdAt}"`
+      )
+      .join('\n');
+    const blob = new Blob([headers + rows], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `LomiBingo_Player_Accounts_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    showToast('📥 Downloaded Player Accounts CSV');
+  };
+
+  return (
+    <div className="player-desk-container">
+      {/* 1. Hero Player Directory Banner */}
+      <div className="player-hero-banner">
+        <div className="player-hero-left">
+          <div className="player-hero-icon-box">
+            <i className="fa-solid fa-users"></i>
+          </div>
+          <div className="player-hero-titles">
+            <div className="player-hero-badge-row">
+              <span className="player-live-badge">
+                <span className="pulse-green-dot"></span>
+                <span>LIVE PLAYER DIRECTORY</span>
+              </span>
+              <span className="player-uptime-tag">Verified Accounts</span>
+            </div>
+            <h1 className="player-hero-main-title">LOMI BINGO PLAYER ACCOUNTS & WALLETS DIRECTORY</h1>
+            <p className="player-hero-sub-title">
+              የተመዘገቡ ተጫዋቾችን፣ የዋሌት ቀሪ ሂሳብን፣ ቦነስን እና እንቅስቃሴዎችን በአንድ ማዕከል ይቆጣጠሩ
+            </p>
+          </div>
+        </div>
+
+        <div className="player-hero-right">
+          {/* Lemon SVG Art */}
+          <div className="player-hero-lemon-art">
+            <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="32" cy="32" r="28" fill="#facc15" stroke="#eab308" strokeWidth="3" />
+              <circle cx="32" cy="32" r="23" fill="#fef08a" />
+              <path d="M32 9L32 55" stroke="#eab308" strokeWidth="2" strokeLinecap="round" />
+              <path d="M9 32L55 32" stroke="#eab308" strokeWidth="2" strokeLinecap="round" />
+              <path d="M16 16L48 48" stroke="#eab308" strokeWidth="2" strokeLinecap="round" />
+              <path d="M48 16L16 48" stroke="#eab308" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="32" cy="32" r="6" fill="#ffffff" stroke="#eab308" strokeWidth="1.5" />
+            </svg>
+          </div>
+
+          <div className="player-hero-action-buttons">
+            <button
+              type="button"
+              className="btn-player-hero-register"
+              onClick={() => setShowAddModal(true)}
+            >
+              <i className="fa-solid fa-user-plus"></i>
+              <span>Register Player</span>
+            </button>
+            <button
+              type="button"
+              className="btn-player-hero-export"
+              onClick={handleExportCSV}
+            >
+              <i className="fa-solid fa-file-arrow-down"></i>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. 4 Elevated Player KPI Cards */}
+      <div className="player-kpi-grid">
+        {/* Card 1: Total Registered */}
+        <div className="player-kpi-card blue">
+          <div className="pkpi-header">
+            <span className="pkpi-title">Registered Accounts</span>
+            <div className="pkpi-icon-box blue">
+              <i className="fa-solid fa-address-book"></i>
+            </div>
+          </div>
+          <div className="pkpi-value blue">{totalPlayers} <span className="pkpi-unit">Players</span></div>
+          <div className="pkpi-footer">
+            <span className="pkpi-badge green">
+              <i className="fa-solid fa-check"></i>
+              {activePlayers} Active
+            </span>
+            {suspendedPlayers > 0 && (
+              <span className="pkpi-badge red">{suspendedPlayers} Suspended</span>
+            )}
+          </div>
+        </div>
+
+        {/* Card 2: Total Real Money Float */}
+        <div className="player-kpi-card green">
+          <div className="pkpi-header">
+            <span className="pkpi-title">Player Real Cash Float</span>
+            <div className="pkpi-icon-box green">
+              <i className="fa-solid fa-wallet"></i>
+            </div>
+          </div>
+          <div className="pkpi-value green">
+            {totalCashFloat.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="pkpi-unit">ETB</span>
+          </div>
+          <div className="pkpi-footer">
+            <span className="pkpi-badge green">Withdrawable Funds</span>
+            <span className="pkpi-micro-text">Backing 100% liquid</span>
+          </div>
+        </div>
+
+        {/* Card 3: Promo Bonus Float */}
+        <div className="player-kpi-card purple">
+          <div className="pkpi-header">
+            <span className="pkpi-title">Promo Bonus Pool</span>
+            <div className="pkpi-icon-box purple">
+              <i className="fa-solid fa-gift"></i>
+            </div>
+          </div>
+          <div className="pkpi-value purple">
+            {totalBonusFloat.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="pkpi-unit">ETB</span>
+          </div>
+          <div className="pkpi-footer">
+            <span className="pkpi-badge purple">{registerBonus} ETB / Signup</span>
+            <span className="pkpi-micro-text">Play-only balance</span>
+          </div>
+        </div>
+
+        {/* Card 4: VIP High-Rollers */}
+        <div className="player-kpi-card gold">
+          <div className="pkpi-header">
+            <span className="pkpi-title">VIP & High-Rollers</span>
+            <div className="pkpi-icon-box gold">
+              <i className="fa-solid fa-crown"></i>
+            </div>
+          </div>
+          <div className="pkpi-value gold">{vipPlayers.length} <span className="pkpi-unit">VIPs</span></div>
+          <div className="pkpi-footer">
+            <span className="pkpi-badge gold">&gt;1,000 ETB Deposits</span>
+            <span className="pkpi-micro-text">100% Verified</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Advanced Player Directory & Table Card */}
+      <div className="player-white-section-card">
+        {/* Controls Bar */}
+        <div className="player-section-header">
+          <div className="player-section-title-wrap">
+            <div className="player-section-icon-gold">
+              <i className="fa-solid fa-user-gear"></i>
+            </div>
+            <div>
+              <h3 className="player-section-main-heading">Player Accounts Management</h3>
+              <p className="player-section-sub-heading">Real-time balances, bonus incentives, and security actions</p>
+            </div>
+          </div>
+
+          <div className="player-controls-row">
+            {/* Filter Pills */}
+            <div className="player-filter-pills-group">
+              <button
+                type="button"
+                className={`btn-player-pill ${segmentFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setSegmentFilter('all')}
+              >
+                All ({totalPlayers})
+              </button>
+              <button
+                type="button"
+                className={`btn-player-pill ${segmentFilter === 'active' ? 'active' : ''}`}
+                onClick={() => setSegmentFilter('active')}
+              >
+                Active ({activePlayers})
+              </button>
+              <button
+                type="button"
+                className={`btn-player-pill ${segmentFilter === 'vip' ? 'active' : ''}`}
+                onClick={() => setSegmentFilter('vip')}
+              >
+                VIP High-Rollers ({vipPlayers.length})
+              </button>
+              <button
+                type="button"
+                className={`btn-player-pill ${segmentFilter === 'bonus' ? 'active' : ''}`}
+                onClick={() => setSegmentFilter('bonus')}
+              >
+                With Bonus
+              </button>
+              {suspendedPlayers > 0 && (
+                <button
+                  type="button"
+                  className={`btn-player-pill ${segmentFilter === 'suspended' ? 'active' : ''}`}
+                  onClick={() => setSegmentFilter('suspended')}
+                >
+                  Suspended ({suspendedPlayers})
+                </button>
+              )}
+            </div>
+
+            {/* Sort Selector */}
+            <select
+              className="player-sort-select"
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as any)}
+            >
+              <option value="balance-desc">Highest Cash Balance</option>
+              <option value="deposit-desc">Highest Lifetime Deposits</option>
+              <option value="referrals-desc">Most Referrals</option>
+              <option value="newest">Newest Account</option>
+            </select>
+
+            {/* Search Input */}
+            <div className="player-search-box">
+              <i className="fa-solid fa-magnifying-glass search-icon"></i>
+              <input
+                type="text"
+                placeholder="Search player name, phone or ID..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Player Accounts Table */}
+        <div className="player-table-container">
+          <table className="player-light-table">
+            <thead>
+              <tr>
+                <th>Player Identity</th>
+                <th>Phone Number</th>
+                <th>Real Cash Balance</th>
+                <th>Promo Bonus</th>
+                <th>Lifetime Flow (In / Out)</th>
+                <th>Referrals</th>
+                <th>Status</th>
+                <th>Action Toolbar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="empty-player-cell">
+                    <div className="empty-player-wrap">
+                      <i className="fa-solid fa-user-slash"></i>
+                      <span>No player accounts matching the selected criteria.</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map(user => {
+                  const isVip = (user.totalDeposited || 0) >= 1000;
+                  const isActive = user.status === 'active';
+                  const totalIn = user.totalDeposited || 0;
+                  const totalOut = user.totalWithdrawn || 0;
+                  const flowRatio = totalIn > 0 ? Math.min(100, Math.round((totalIn / (totalIn + totalOut || 1)) * 100)) : 50;
+
+                  return (
+                    <tr key={user.id} className={!isActive ? 'row-suspended' : ''}>
+                      <td>
+                        <div className="player-identity-cell">
+                          <div className="player-avatar-box">
+                            <span className="avatar-initial">{user.name.charAt(0).toUpperCase()}</span>
+                            {isVip && <span className="vip-crown-icon" title="VIP High-Roller">👑</span>}
+                            <span className={`status-dot ${isActive ? 'online' : 'suspended'}`}></span>
+                          </div>
+                          <div className="player-name-wrap">
+                            <strong className="player-full-name">{user.name}</strong>
+                            <span className="player-joined-tag">Joined {user.createdAt}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn-phone-copy"
+                          onClick={() => handleCopy(user.phone)}
+                          title="Click to copy Phone"
+                        >
+                          <span>{user.phone}</span>
+                          <i className="fa-regular fa-copy copy-icon"></i>
+                        </button>
+                      </td>
+                      <td>
+                        <strong className="player-balance-cash">
+                          {user.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
+                        </strong>
+                      </td>
+                      <td>
+                        <span className="player-balance-bonus">
+                          {user.bonus.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
+                        </span>
+                      </td>
+                      <td>
+                        <div className="flow-ratio-container">
+                          <div className="flow-text-row">
+                            <span className="flow-in">+{totalIn} In</span>
+                            <span className="flow-out">-{totalOut} Out</span>
+                          </div>
+                          <div className="flow-progress-track">
+                            <div className="flow-progress-fill" style={{ width: `${flowRatio}%` }}></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="referral-count-pill">
+                          <i className="fa-solid fa-users"></i>
+                          <span>{user.referralCount || 0}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`player-status-badge ${isActive ? 'active' : 'suspended'}`}>
+                          {isActive ? 'ACTIVE ✓' : 'SUSPENDED ✕'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="player-action-toolbar">
+                          <button
+                            type="button"
+                            className="btn-action-adjust"
+                            onClick={() => setAdjustTargetUser(user)}
+                            title="Adjust Real or Bonus Wallet"
+                          >
+                            <i className="fa-solid fa-coins"></i>
+                            <span>Adjust</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`btn-action-suspend ${isActive ? 'suspend' : 'activate'}`}
+                            onClick={() => {
+                              toggleUserStatus(user.id);
+                              showToast(`✓ Account "${user.name}" is now ${isActive ? 'Suspended' : 'Activated'}`);
+                            }}
+                            title={isActive ? 'Suspend Account' : 'Activate Account'}
+                          >
+                            <i className={`fa-solid ${isActive ? 'fa-ban' : 'fa-check'}`}></i>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-action-dossier"
+                            onClick={() => setDossierUser(user)}
+                            title="Inspect Player 360 Dossier"
+                          >
+                            <i className="fa-solid fa-eye"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ============================================================
+          MODAL 1: REGISTER NEW PLAYER
+          ============================================================ */}
+      {showAddModal && (
+        <div className="modal-overlay-light" onClick={() => setShowAddModal(false)}>
+          <div className="modal-box-light" onClick={e => e.stopPropagation()}>
+            <div className="modal-header-light">
+              <div className="modal-title-row">
+                <div className="modal-icon-gold">
+                  <i className="fa-solid fa-user-plus"></i>
+                </div>
+                <div>
+                  <h3 className="modal-heading">Register New Player Account</h3>
+                  <p className="modal-sub">Create verified user credentials and optional initial funding</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setShowAddModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="modal-form-body">
+              <div className="modal-form-group">
+                <label className="modal-label">Player Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Dawit Yohannes"
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  className="modal-input"
+                />
+              </div>
+
+              <div className="modal-form-group">
+                <label className="modal-label">Ethiopian Phone Number *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="+251 911 234 567"
+                  value={newPhone}
+                  onChange={e => setNewPhone(e.target.value)}
+                  className="modal-input"
+                />
+              </div>
+
+              <div className="modal-form-row">
+                <div className="modal-form-group">
+                  <label className="modal-label">Initial Cash Deposit (ETB)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="10"
+                    value={initialDeposit}
+                    onChange={e => setInitialDeposit(e.target.value)}
+                    className="modal-input"
+                  />
+                </div>
+
+                <div className="modal-form-group">
+                  <label className="modal-label">Referrer Phone (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="+251 9..."
+                    value={referrerPhone}
+                    onChange={e => setReferrerPhone(e.target.value)}
+                    className="modal-input"
+                  />
+                </div>
+              </div>
+
+              <div className="modal-checkbox-row">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={applyWelcomeBonus}
+                    onChange={e => setApplyWelcomeBonus(e.target.checked)}
+                  />
+                  <span>Credit Welcome Registration Bonus ({registerBonus} ETB Play-Only)</span>
+                </label>
+              </div>
+
+              <div className="modal-actions-row">
+                <button
+                  type="button"
+                  className="btn-modal-cancel"
+                  onClick={() => setShowAddModal(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-modal-submit">
+                  <i className="fa-solid fa-user-check"></i>
+                  <span>Create Player Account</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
+          MODAL 2: ADJUST WALLET BALANCE
+          ============================================================ */}
+      {adjustTargetUser && (
+        <div className="modal-overlay-light" onClick={() => setAdjustTargetUser(null)}>
+          <div className="modal-box-light" onClick={e => e.stopPropagation()}>
+            <div className="modal-header-light">
+              <div className="modal-title-row">
+                <div className="modal-icon-gold">
+                  <i className="fa-solid fa-coins"></i>
+                </div>
+                <div>
+                  <h3 className="modal-heading">Adjust Player Wallet Balance</h3>
+                  <p className="modal-sub">Account: <strong>{adjustTargetUser.name}</strong> ({adjustTargetUser.phone})</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setAdjustTargetUser(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleExecuteAdjustBalance} className="modal-form-body">
+              {/* Current Balances Preview */}
+              <div className="current-balances-strip">
+                <div className="strip-cell">
+                  <span className="strip-label">Real Cash Balance:</span>
+                  <strong className="strip-val green">{adjustTargetUser.balance.toFixed(2)} ETB</strong>
+                </div>
+                <div className="strip-cell">
+                  <span className="strip-label">Promo Bonus Wallet:</span>
+                  <strong className="strip-val purple">{adjustTargetUser.bonus.toFixed(2)} ETB</strong>
+                </div>
+              </div>
+
+              {/* Adjustment Mode */}
+              <div className="modal-form-group">
+                <label className="modal-label">Adjustment Type</label>
+                <div className="adjust-mode-toggle-group">
+                  <button
+                    type="button"
+                    className={`btn-mode-toggle ${adjustType === 'add-cash' ? 'active-green' : ''}`}
+                    onClick={() => setAdjustType('add-cash')}
+                  >
+                    + Add Real Cash
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn-mode-toggle ${adjustType === 'add-bonus' ? 'active-purple' : ''}`}
+                    onClick={() => setAdjustType('add-bonus')}
+                  >
+                    + Grant Bonus
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn-mode-toggle ${adjustType === 'deduct-cash' ? 'active-red' : ''}`}
+                    onClick={() => setAdjustType('deduct-cash')}
+                  >
+                    - Deduct Cash
+                  </button>
+                </div>
+              </div>
+
+              {/* Amount */}
+              <div className="modal-form-group">
+                <label className="modal-label">Amount (ETB) *</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  step="10"
+                  value={adjustAmount}
+                  onChange={e => setAdjustAmount(e.target.value)}
+                  className="modal-input large-amount"
+                />
+              </div>
+
+              {/* Reason */}
+              <div className="modal-form-group">
+                <label className="modal-label">Audit Note / Reason</label>
+                <input
+                  type="text"
+                  value={adjustReason}
+                  onChange={e => setAdjustReason(e.target.value)}
+                  className="modal-input"
+                  placeholder="e.g. VIP Deposit Credit or Promo Reward"
+                />
+              </div>
+
+              <div className="modal-actions-row">
+                <button
+                  type="button"
+                  className="btn-modal-cancel"
+                  onClick={() => setAdjustTargetUser(null)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-modal-submit">
+                  <i className="fa-solid fa-check"></i>
+                  <span>Confirm Adjustment</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
+          MODAL 3: PLAYER 360 DOSSIER
+          ============================================================ */}
+      {dossierUser && (
+        <div className="modal-overlay-light" onClick={() => setDossierUser(null)}>
+          <div className="modal-box-light wide-dossier" onClick={e => e.stopPropagation()}>
+            <div className="modal-header-light">
+              <div className="modal-title-row">
+                <div className="modal-icon-gold">
+                  <i className="fa-solid fa-id-card"></i>
+                </div>
+                <div>
+                  <h3 className="modal-heading">Player 360 Profile Dossier</h3>
+                  <p className="modal-sub">Comprehensive player gaming history and financial audit</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setDossierUser(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="dossier-body">
+              {/* Top Profile Summary Bar */}
+              <div className="dossier-profile-card">
+                <div className="dossier-avatar-large">
+                  <span>{dossierUser.name.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="dossier-info-main">
+                  <div className="dossier-name-row">
+                    <h2 className="dossier-player-name">{dossierUser.name}</h2>
+                    <span className={`player-status-badge ${dossierUser.status}`}>
+                      {dossierUser.status.toUpperCase()}
+                    </span>
+                    {(dossierUser.totalDeposited || 0) >= 1000 && (
+                      <span className="pkpi-badge gold">👑 VIP High-Roller</span>
+                    )}
+                  </div>
+                  <div className="dossier-meta-chips">
+                    <span>📱 {dossierUser.phone}</span>
+                    <span>🆔 {dossierUser.id}</span>
+                    <span>📅 Joined {dossierUser.createdAt}</span>
+                    {dossierUser.referredBy && <span>🤝 Referred by {dossierUser.referredBy}</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 Metrics Cards */}
+              <div className="dossier-metrics-grid">
+                <div className="dossier-stat-tile green">
+                  <span className="stat-label">Real Cash Balance</span>
+                  <strong className="stat-value green">{dossierUser.balance.toFixed(2)} ETB</strong>
+                  <span className="stat-sub">Available withdrawable funds</span>
+                </div>
+                <div className="dossier-stat-tile purple">
+                  <span className="stat-label">Promo Bonus Wallet</span>
+                  <strong className="stat-value purple">{dossierUser.bonus.toFixed(2)} ETB</strong>
+                  <span className="stat-sub">Play-only balance</span>
+                </div>
+                <div className="dossier-stat-tile gold">
+                  <span className="stat-label">Lifetime Deposited</span>
+                  <strong className="stat-value gold">+{dossierUser.totalDeposited.toFixed(2)} ETB</strong>
+                  <span className="stat-sub">Withdrawn: -{dossierUser.totalWithdrawn.toFixed(2)} ETB</span>
+                </div>
+              </div>
+
+              {/* Actions Footer */}
+              <div className="dossier-footer-actions">
+                <button
+                  type="button"
+                  className="btn-dossier-adjust"
+                  onClick={() => {
+                    const target = dossierUser;
+                    setDossierUser(null);
+                    setAdjustTargetUser(target);
+                  }}
+                >
+                  <i className="fa-solid fa-coins"></i>
+                  <span>Adjust Balance</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn-dossier-status"
+                  onClick={() => {
+                    toggleUserStatus(dossierUser.id);
+                    setDossierUser({
+                      ...dossierUser,
+                      status: dossierUser.status === 'active' ? 'suspended' : 'active'
+                    });
+                    showToast(`✓ Account "${dossierUser.name}" status updated`);
+                  }}
+                >
+                  <i className="fa-solid fa-shield-halved"></i>
+                  <span>{dossierUser.status === 'active' ? 'Suspend Account' : 'Reactivate Account'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

@@ -8,39 +8,49 @@ import { BingoGrid } from '../components/bingo/BingoGrid.tsx';
 import { BingoActions } from '../components/bingo/BingoActions.tsx';
 import { BettingBar } from '../components/bingo/BettingBar.tsx';
 import { WinModal } from '../components/bingo/WinModal.tsx';
+import { CartelaPickerModal } from '../components/bingo/CartelaPickerModal.tsx';
 import { ConfettiCanvas } from '../components/common/ConfettiCanvas.tsx';
 
 export const BingoPage: React.FC = () => {
-  const { hasTicket, showWinModal } = useBingo();
+  const { hasTicket, showWinModal, showMasterBoard, toggleMasterBoard } = useBingo();
 
   return (
     <div className="page active fresh-bingo-page" id="page-bingo">
-      {/* Confetti Celebration Particles */}
+      {/* Confetti */}
       <ConfettiCanvas active={showWinModal} />
 
       <div className="bingo-page-content-wrapper">
-        {/* 1. Engine V3 Badge */}
+
+        {/* 1. Top Bar: Engine Badge + Master Board Toggle */}
         <div className="bingo-engine-pill-row">
           <span className="engine-v3-pill">
             <i className="fa-solid fa-bolt purple-bolt"></i>
             <span>ENGINE V3</span>
           </span>
+          <button
+            type="button"
+            className="engine-board-toggle-btn"
+            onClick={toggleMasterBoard}
+          >
+            <i className="fa-solid fa-table-cells"></i>
+            <span>75-Ball Board</span>
+          </button>
         </div>
 
-        {/* 2. Top Hourglass & Live Status Banner */}
+        {/* 2. Live Call Banner with recent balls trail */}
         <CurrentCallBanner />
 
-        {/* 3. 4-Column Live Metric Strip */}
+        {/* 3. Live Stats: Stake / Prize / Players / Called */}
         <StatsStrip />
 
-        {/* 4. Main 2-Column Game Split: Left Master Board + Right Spectator/Cartela */}
-        <div className="bingo-main-split-area">
-          {/* Left Column: Master Board 1-75 */}
+        {/* 4. Main Game Area — full-width cartela on mobile */}
+        <div className="bingo-main-game-area">
+          {/* Desktop only: Master Board column */}
           <div className="bingo-left-master-col">
             <MasterBoard75 />
           </div>
 
-          {/* Right Column: Spectator Card or Active Playing Cartela */}
+          {/* Cartela / Spectator */}
           <div className="bingo-right-cartela-col">
             {hasTicket ? (
               <div className="active-playing-cartela-box">
@@ -53,11 +63,31 @@ export const BingoPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 5. Bottom Stake Selection & Buy Ticket Bar */}
+        {/* 5. Stake Selector & Buy Button */}
         <BettingBar />
       </div>
 
-      {/* 6. Celebratory Victory Celebration Modal */}
+      {/* Master Board Drawer (mobile) */}
+      {showMasterBoard && (
+        <div className="master-board-drawer-overlay" onClick={toggleMasterBoard}>
+          <div
+            className="master-board-drawer-sheet"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="drawer-handle" />
+            <p className="drawer-title">
+              <i className="fa-solid fa-table-cells" style={{ color: '#eab308', marginRight: 6 }}></i>
+              75-Ball Master Board
+            </p>
+            <MasterBoard75 />
+          </div>
+        </div>
+      )}
+
+      {/* 400 Cartelas Picker Modal */}
+      <CartelaPickerModal />
+
+      {/* Win Modal */}
       <WinModal />
     </div>
   );

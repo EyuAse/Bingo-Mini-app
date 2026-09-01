@@ -6,53 +6,56 @@ export const StatsStrip: React.FC = () => {
   const { betAmount, prizePool, playersCount, calledNumbers } = useBingo();
   const { t } = useLanguage();
 
+  const stats = [
+    {
+      icon: 'fa-coins',
+      iconColor: 'yellow',
+      label: t('bingo.stake'),
+      value: `${betAmount}`,
+      unit: 'ETB',
+      valColor: 'gold'
+    },
+    {
+      icon: 'fa-trophy',
+      iconColor: 'green',
+      label: t('bingo.winningAmount'),
+      value: prizePool >= 1000 ? `${(prizePool / 1000).toFixed(1)}K` : `${prizePool}`,
+      unit: 'ETB',
+      valColor: 'green'
+    },
+    {
+      icon: 'fa-users',
+      iconColor: 'purple',
+      label: t('bingo.players'),
+      value: `${playersCount}`,
+      unit: '',
+      valColor: 'purple'
+    },
+    {
+      icon: 'fa-dice',
+      iconColor: 'slate',
+      label: t('bingo.calledBalls'),
+      value: calledNumbers.length > 0 ? `${calledNumbers.length}` : '--',
+      unit: calledNumbers.length > 0 ? '/75' : '',
+      valColor: 'slate'
+    }
+  ];
+
   return (
     <div className="fresh-bingo-stats-grid">
-      {/* 1. Stake Card */}
-      <div className="bingo-stat-card card-stake">
-        <div className="stat-icon-wrap yellow">
-          <i className="fa-solid fa-coins"></i>
+      {stats.map((s, i) => (
+        <div key={i} className="bingo-stat-card">
+          <div className={`stat-icon-wrap ${s.iconColor}`}>
+            <i className={`fa-solid ${s.icon}`}></i>
+          </div>
+          <div className="stat-text-group">
+            <span className="stat-label">{s.label}</span>
+            <strong className={`stat-val ${s.valColor}`}>
+              {s.value}{s.unit && <span style={{ fontSize: '0.5rem', fontWeight: 700 }}>{s.unit}</span>}
+            </strong>
+          </div>
         </div>
-        <div className="stat-text-group">
-          <span className="stat-label">{t('bingo.stake')}</span>
-          <strong className="stat-val gold">{betAmount} ETB</strong>
-        </div>
-      </div>
-
-      {/* 2. Prize Amount Card */}
-      <div className="bingo-stat-card card-prize">
-        <div className="stat-icon-wrap green">
-          <i className="fa-solid fa-trophy"></i>
-        </div>
-        <div className="stat-text-group">
-          <span className="stat-label">{t('bingo.winningAmount')}</span>
-          <strong className="stat-val green">{prizePool.toLocaleString()} ETB</strong>
-        </div>
-      </div>
-
-      {/* 3. Players Card */}
-      <div className="bingo-stat-card card-players">
-        <div className="stat-icon-wrap purple">
-          <i className="fa-solid fa-users"></i>
-        </div>
-        <div className="stat-text-group">
-          <span className="stat-label">{t('bingo.players')}</span>
-          <strong className="stat-val purple">{playersCount}</strong>
-        </div>
-      </div>
-
-      {/* 4. Called Balls Card */}
-      <div className="bingo-stat-card card-called">
-        <div className="stat-icon-wrap slate">
-          <i className="fa-solid fa-dice"></i>
-        </div>
-        <div className="stat-text-group">
-          <span className="stat-label">{t('bingo.calledBalls')}</span>
-          <strong className="stat-val slate">
-            {calledNumbers.length > 0 ? `${calledNumbers.length}/75` : '--'}
-          </strong>
-        </div>
-      </div>
+      ))}
     </div>
   );
 };

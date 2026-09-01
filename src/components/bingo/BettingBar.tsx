@@ -2,6 +2,7 @@ import React from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
 import { useWallet } from '../../context/WalletContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
+import { useAdmin } from '../../context/AdminContext.tsx';
 
 export const BettingBar: React.FC = () => {
   const {
@@ -9,6 +10,9 @@ export const BettingBar: React.FC = () => {
     setBetAmount,
     cardQuantity,
     setCardQuantity,
+    totalPlayableCards,
+    selectedCartelaIds,
+    openCartelaPicker,
     buyTicket,
     preBuyNextRound,
     roundPhase,
@@ -16,40 +20,30 @@ export const BettingBar: React.FC = () => {
     hasPreBoughtNext
   } = useBingo();
   const { balance, isBalanceVisible } = useWallet();
+  const { buy2Get1Bonus } = useAdmin();
   const { t } = useLanguage();
 
   const betChips = [10, 20, 50, 100];
   const totalCost = betAmount * cardQuantity;
-
-  const handleDecrement = () => {
-    if (cardQuantity > 1) setCardQuantity(cardQuantity - 1);
-  };
-
-  const handleIncrement = () => {
-    if (cardQuantity < 2) setCardQuantity(cardQuantity + 1);
-  };
-
-  const handleSetMax = () => {
-    setCardQuantity(2);
-  };
+  const canBuy = roundPhase === 'lobby';
+  const hasBonus = cardQuantity >= 2 && buy2Get1Bonus;
 
   return (
     <div className="fresh-bingo-bottom-betting-bar">
-      {/* Top Row: Header & Wallet Balance */}
+      {/* Top Header: Select Stake & Balance */}
       <div className="betting-top-meta-row">
         <div className="betting-section-title">
           <i className="fa-solid fa-coins gold-coin-icon"></i>
-          <span>{t('bingo.selectStake')}</span>
+          <span>{t('bingo.selectStake')} (Birr)</span>
         </div>
-
         <div className="betting-user-balance-pill">
           <i className="fa-solid fa-wallet"></i>
           <span>{t('common.balance')}</span>
-          <strong>{isBalanceVisible ? `${balance.toFixed(2)} ETB` : '••••'}</strong>
+          <strong>{isBalanceVisible ? `${balance.toFixed(0)} ETB` : '••••'}</strong>
         </div>
       </div>
 
-      {/* Preset Stake Chips: 10 ETB, 20 ETB, 50 ETB, 100 ETB */}
+      {/* Stake Chips: 10, 20, 50, 100 Birr */}
       <div className="betting-stake-chips-row">
         {betChips.map(chip => (
           <button
@@ -57,62 +51,99 @@ export const BettingBar: React.FC = () => {
             type="button"
             className={`btn-stake-chip ${betAmount === chip ? 'active' : ''}`}
             onClick={() => setBetAmount(chip)}
+            disabled={hasTicket}
           >
             {chip} ETB
           </button>
         ))}
       </div>
 
-      {/* Cartels Stepper & Main Buy CTA Button */}
+      {/* Cartelas Selection & 400 Pool Info */}
+      <div className="betting-cartela-pool-meta-row">
+        <div className="cartela-assigned-badges">
+          <span className="cartela-badge-label">Cartelas:</span>
+          <span className="cartela-id-pill">#{selectedCartelaIds[0]}</span>
+          {cardQuantity >= 2 && (
+            <span className="cartela-id-pill">#{selectedCartelaIds[1]}</span>
+          )}
+          {hasBonus && (
+            <span className="cartela-id-pill bonus-pill">#{selectedCartelaIds[2]} (FREE 🎁)</span>
+          )}
+        </div>
+
+        <button
+          type="button"
+          className="btn-open-400-picker"
+          onClick={openCartelaPicker}
+          disabled={hasTicket}
+          title="Pick favorite Cartela numbers from 1 to 400"
+        >
+          <i className="fa-solid fa-table-cells-large"></i>
+          <span>400 Pool</span>
+        </button>
+      </div>
+
+      {/* Buy 2 Get 1 FREE Bonus Highlight Banner */}
+      {hasBonus && !hasTicket && (
+        <div className="betting-bonus-promo-bar">
+          <i className="fa-solid fa-gift gold"></i>
+          <span><strong>BUY 2 GET 1 FREE!</strong> You get 3 Cartelas for the price of 2!</span>
+        </div>
+      )}
+
+      {/* Cartels Stepper & Main Buy Action Button */}
       <div className="betting-actions-stepper-row">
-        {/* Left: Cartels Stepper */}
+        {/* Stepper (1 or 2 cards) */}
         <div className="cartels-stepper-group">
           <span className="cartels-label">
-            <i className="fa-solid fa-clone gold"></i> {t('bingo.cartels')}
+            <i className="fa-solid fa-clone gold"></i>
+            {t('bingo.cartels')}
           </span>
-
           <div className="stepper-controls-pill">
             <button
               type="button"
               className="btn-stepper-mini"
-              onClick={handleDecrement}
-              disabled={cardQuantity <= 1}
+              onClick={() => setCardQuantity(cardQuantity - 1)}
+              disabled={cardQuantity <= 1 || hasTicket}
             >
-              -
+              −
             </button>
             <span className="stepper-val">{cardQuantity}</span>
             <button
               type="button"
               className="btn-stepper-mini"
-              onClick={handleIncrement}
-              disabled={cardQuantity >= 2}
+              onClick={() => setCardQuantity(cardQuantity + 1)}
+              disabled={cardQuantity >= 2 || hasTicket}
             >
               +
             </button>
           </div>
-
-          <button
-            type="button"
-            className="btn-max-cartels"
-            onClick={handleSetMax}
-          >
-            {t('bingo.maxCartels')}
-          </button>
+          {!hasTicket && cardQuantity < 2 && (
+            <button
+              type="button"
+              className="btn-max-cartels"
+              onClick={() => setCardQuantity(2)}
+            >
+              2 + 1 FREE
+            </button>
+          )}
         </div>
 
-        {/* Right: Big Buy Ticket CTA Button */}
+        {/* Buy / Playing CTA */}
         <button
           type="button"
           className="btn-buy-ticket-huge-gold"
-          onClick={roundPhase === 'lobby' ? buyTicket : preBuyNextRound}
+          onClick={canBuy ? buyTicket : preBuyNextRound}
         >
           <i className="fa-solid fa-ticket"></i>
           <span>
             {hasTicket
-              ? `PLAYING (${totalCost} ETB)`
+              ? `PLAYING ${totalPlayableCards} CARDS (${totalCost} ETB)`
               : hasPreBoughtNext
-              ? 'TICKET READY ✓'
-              : `${t('bingo.buyTicket')} • ${totalCost} ETB`}
+              ? `✓ TICKET READY (${totalPlayableCards} CARDS)`
+              : canBuy
+              ? `${t('bingo.buyTicket')} • ${totalCost} ETB (${totalPlayableCards} CARDS)`
+              : `PRE-BUY • ${totalCost} ETB (${totalPlayableCards} CARDS)`}
           </span>
         </button>
       </div>

@@ -111,6 +111,28 @@ body {
   line-height: 1.4;
 }
 
+/* Universal High-Contrast Icon Rules */
+i,
+[class*="fa-"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.app-container i,
+.app-container [class*="fa-"] {
+  color: inherit;
+}
+
+/* Specific Accent Icon Utilities */
+i.gold, [class*="fa-"].gold { color: #ca8a04 !important; }
+i.green, [class*="fa-"].green { color: #16a34a !important; }
+i.purple, [class*="fa-"].purple { color: #9333ea !important; }
+i.blue, [class*="fa-"].blue { color: #0284c7 !important; }
+i.red, [class*="fa-"].red { color: #dc2626 !important; }
+i.slate, [class*="fa-"].slate { color: #64748b !important; }
+
 /* ===== App Shell ===== */
 .app-container {
   max-width: 480px;
@@ -129,7 +151,11 @@ body {
 
 .page#page-landing,
 .page#page-login,
-.page#page-signup,
+.page#page-signup {
+  padding-bottom: 0 !important;
+  min-height: 100vh;
+}
+
 .page#page-bingo {
   padding-bottom: 24px;
 }

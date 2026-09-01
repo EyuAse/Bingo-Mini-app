@@ -4,7 +4,7 @@
    ============================================================ */
 
 #page-wallet {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: #fbf9ef;
   color: #0f172a;
   padding: 10px 14px 100px;
@@ -911,7 +911,7 @@
    AFFILIATE & REWARDS DEDICATED PAGE
    ============================================================ */
 .page-affiliate-fresh {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: #fbf9ef;
   color: #0f172a;
   padding: 10px 14px 100px;
@@ -2032,7 +2032,7 @@
    PROFILE & ACCOUNT SETTINGS PAGE
    ============================================================ */
 .page-profile-fresh {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: #fbf9ef;
   color: #0f172a;
   padding: 10px 14px 100px;
@@ -3127,7 +3127,7 @@
    DEDICATED FULL-SCREEN SUBPAGES (Account Info, Help, About)
    ============================================================ */
 .page-subpage-dedicated {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: #fbf9ef;
   color: #0f172a;
   padding: 8px 14px 100px;

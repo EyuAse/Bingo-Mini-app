@@ -387,7 +387,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   });
   const [commissionRate, setCommissionRate] = useState<number>(() => {
     const saved = localStorage.getItem('lb_commission_rate');
-    return saved ? parseFloat(saved) : 10;
+    return saved ? parseFloat(saved) : 20; // 20% Owner / Admin Commission Target
   });
 
   // Stakes & Promos
