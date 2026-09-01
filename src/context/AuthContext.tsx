@@ -46,18 +46,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsInsideTelegram(isTg);
         setTelegramUser(tgUser);
 
-        // 2. If inside Telegram with valid Telegram user, perform instant zero-form auto-login!
+        // 2. If inside Telegram: Auto-login EXISTING players immediately!
         if (isTg && tgUser) {
-          const result = await authService.loginWithTelegram(tgUser);
-          setUser(result.user);
-          setToken(result.token);
-          if (result.isNewUser) {
-            setIsFirstTimeTelegramUser(true);
+          const existingUser = authService.checkTelegramUserExists(tgUser.id, tgUser.username);
+          if (existingUser) {
+            const result = await authService.loginWithTelegram(tgUser);
+            setUser(result.user);
+            setToken(result.token);
+            return;
           }
-          return;
         }
 
-        // 3. Otherwise restore saved session
+        // 3. Otherwise restore saved session if present
         const session = authService.getSession();
         if (session && session.user && session.token) {
           setUser(session.user);
