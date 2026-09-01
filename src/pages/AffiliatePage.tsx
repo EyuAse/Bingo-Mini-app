@@ -10,6 +10,7 @@ interface ReferredFriend {
   avatar: string;
   isPremium?: boolean;
   joinedAt: string;
+  depositAmount: number;
   bonusEarned: number;
   status: 'paid' | 'pending_deposit';
 }
@@ -31,7 +32,8 @@ export const AffiliatePage: React.FC = () => {
       avatar: '👑',
       isPremium: true,
       joinedAt: '2 hours ago',
-      bonusEarned: 20,
+      depositAmount: 500,
+      bonusEarned: 75, // 15% of 500
       status: 'paid'
     },
     {
@@ -40,7 +42,8 @@ export const AffiliatePage: React.FC = () => {
       avatar: '💎',
       isPremium: false,
       joinedAt: 'Yesterday',
-      bonusEarned: 5,
+      depositAmount: 300,
+      bonusEarned: 30, // 10% of 300
       status: 'paid'
     },
     {
@@ -49,7 +52,8 @@ export const AffiliatePage: React.FC = () => {
       avatar: '⚡',
       isPremium: false,
       joinedAt: '2 days ago',
-      bonusEarned: 5,
+      depositAmount: 200,
+      bonusEarned: 20, // 10% of 200
       status: 'paid'
     },
     {
@@ -58,7 +62,8 @@ export const AffiliatePage: React.FC = () => {
       avatar: '🎯',
       isPremium: true,
       joinedAt: '3 days ago',
-      bonusEarned: 20,
+      depositAmount: 1000,
+      bonusEarned: 150, // 15% of 1000
       status: 'paid'
     }
   ];
@@ -180,16 +185,13 @@ export const AffiliatePage: React.FC = () => {
                 }}
               >
                 {lang === 'am' ? 'ጓደኞችን ይጋብዙና ' : 'Invite Friends & '}
-                <span style={{ color: '#16a34a' }}>{lang === 'am' ? 'ብር ያግኙ!' : 'Earn ETB!'}</span>
+                <span style={{ color: '#16a34a' }}>{lang === 'am' ? 'እስከ 15% ቦነስ ያግኙ!' : 'Earn Up to 15%!'}</span>
               </h1>
 
               <p style={{ fontSize: '12px', color: '#475569', margin: 0, lineHeight: '1.4', fontWeight: '500' }}>
                 {lang === 'am'
-                  ? 'ለእያንዳንዱ የሚጋብዙት ጓደኛ ነፃ ቦነስ ያግኙ፤ እንዲሁም '
-                  : 'Earn free ETB bonus for every friend who joins, plus '}
-                <span style={{ color: '#854d0e', fontWeight: '800' }}>
-                  {lang === 'am' ? '10% የዕድሜ ልክ ኮሚሽን!' : '10% lifetime commission on all wins!'}
-                </span>
+                  ? 'የሚጋብዙት ሰው ለመጀመሪያ ጊዜ ካስገባው ገንዘብ 10% ቦነስ ያግኙ (ለቴሌግራም ፕሪሚየም 15%)! ቦነሱ ለቢንጎ ጨዋታ የሚውል ነው።'
+                  : "Earn 10% bonus on your friend's first deposit (15% for Telegram Premium)! Bonus is added to play live 75-Ball Bingo."}
               </p>
             </div>
 
@@ -271,7 +273,7 @@ export const AffiliatePage: React.FC = () => {
               flexShrink: 0
             }}
           >
-            +5 ETB
+            10%-15%
           </span>
         </button>
 
@@ -352,9 +354,9 @@ export const AffiliatePage: React.FC = () => {
           </div>
         </div>
 
-        {/* 5. Exact Tiered Cards (Regular Friend vs Telegram Premium) */}
+        {/* 5. Exact Tiered Cards (10% Regular Friend vs 15% Telegram Premium) */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          {/* Card 1: Regular Friend (Clean White Card) */}
+          {/* Card 1: Regular Friend (10% First Deposit Bonus) */}
           <div
             style={{
               background: '#ffffff',
@@ -391,16 +393,20 @@ export const AffiliatePage: React.FC = () => {
               {lang === 'am' ? 'መደበኛ ተጠቃሚ' : 'Regular Friend'}
             </strong>
 
-            <div style={{ fontSize: '20px', fontWeight: '900', color: '#16a34a', letterSpacing: '-0.3px' }}>
-              +5.00 ETB
+            <div style={{ fontSize: '22px', fontWeight: '900', color: '#16a34a', letterSpacing: '-0.3px' }}>
+              10% BONUS
             </div>
 
             <span style={{ fontSize: '11px', color: '#64748b' }}>
-              {lang === 'am' ? 'ለእያንዳንዱ ምዝገባ' : 'Per registration'}
+              {lang === 'am' ? 'ከተጠቃሚው 1ኛ ገቢ' : "Of friend's 1st deposit"}
+            </span>
+
+            <span style={{ fontSize: '10px', color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '999px', fontWeight: '700' }}>
+              {lang === 'am' ? 'የጨዋታ ቦነስ' : 'Game Play Bonus'}
             </span>
           </div>
 
-          {/* Card 2: Telegram Premium (Creamy Gold Card With BEST VALUE Ribbon) */}
+          {/* Card 2: Telegram Premium (15% First Deposit Bonus With BEST VALUE Ribbon) */}
           <div
             style={{
               background: 'linear-gradient(180deg, #fefce8 0%, #fef9c3 100%)',
@@ -459,12 +465,16 @@ export const AffiliatePage: React.FC = () => {
               {lang === 'am' ? 'ቴሌግራም ፕሪሚየም' : 'Telegram Premium'}
             </strong>
 
-            <div style={{ fontSize: '20px', fontWeight: '900', color: '#ca8a04', letterSpacing: '-0.3px' }}>
-              +20.00 ETB
+            <div style={{ fontSize: '22px', fontWeight: '900', color: '#ca8a04', letterSpacing: '-0.3px' }}>
+              15% BONUS
             </div>
 
             <span style={{ fontSize: '11px', color: '#854d0e', fontWeight: '600' }}>
-              {lang === 'am' ? 'ፕሪሚየም ላለው ተጠቃሚ' : 'For Premium users'}
+              {lang === 'am' ? 'ከተጠቃሚው 1ኛ ገቢ' : "Of friend's 1st deposit"}
+            </span>
+
+            <span style={{ fontSize: '10px', color: '#854d0e', background: 'rgba(250, 204, 21, 0.3)', padding: '2px 8px', borderRadius: '999px', fontWeight: '700' }}>
+              {lang === 'am' ? 'ፕሪሚየም ቦነስ' : 'Premium Play Bonus'}
             </span>
           </div>
         </div>
@@ -544,13 +554,13 @@ export const AffiliatePage: React.FC = () => {
                 {totalEarned}.00 ETB
               </div>
               <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>
-                {lang === 'am' ? 'የተገኘ ቦነስ' : 'Bonus Earned'}
+                {lang === 'am' ? 'የተገኘ የጨዋታ ቦነስ' : 'Game Bonus Earned'}
               </div>
             </div>
           </div>
         </div>
 
-        {/* 7. Exact Bottom Trust Strip (Clean Pill) */}
+        {/* 7. Client Specified Rule Strip */}
         <div
           style={{
             background: '#ffffff',
@@ -561,18 +571,19 @@ export const AffiliatePage: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            fontSize: '11.5px',
+            fontSize: '11px',
             color: '#64748b',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)'
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
+            textAlign: 'center'
           }}
         >
           <span style={{ color: '#16a34a' }}>
-            <i className="fa-solid fa-shield-halved"></i>
+            <i className="fa-solid fa-circle-info"></i>
           </span>
           <span>
             {lang === 'am'
-              ? 'ቦነስ ወዲያውኑ ገቢ ይሆናል • 100% አስተማማኝ • ምንም ክፍያ የለም'
-              : 'Bonus is credited instantly • 100% Secure • No hidden fees'}
+              ? 'ቦነሱ ለጨዋታ የሚውል ሲሆን ያሸነፉትን ሙሉ በሙሉ ወጪ ማድረግ ይችላሉ!'
+              : 'Bonus is credited for gameplay • Winnings are 100% withdrawable!'}
           </span>
         </div>
       </div>
