@@ -89,11 +89,14 @@ app.use('/api/admin', adminRouter);
 const distPath = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
-  app.get('*', (req, res, next) => {
+  app.use((req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
       return next();
     }
-    res.sendFile(path.join(distPath, 'index.html'));
+    if (req.method === 'GET') {
+      return res.sendFile(path.join(distPath, 'index.html'));
+    }
+    next();
   });
 }
 
