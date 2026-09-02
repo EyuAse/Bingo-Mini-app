@@ -2,7 +2,9 @@
  * Lomi Bingo Centralized API Client (Connected to Neon PostgreSQL Backend)
  */
 
-const API_BASE = '/api';
+const API_BASE = (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app'))
+  ? 'https://bingo-mini-app.onrender.com/api'
+  : '/api';
 
 function getAuthHeader(): Record<string, string> {
   const token = typeof window !== 'undefined'
@@ -12,6 +14,13 @@ function getAuthHeader(): Record<string, string> {
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    if (!res.ok) {
+      throw new Error(`Server returned HTTP ${res.status}. Please ensure backend is running.`);
+    }
+    throw new Error('Connecting to server. Please retry in a moment.');
+  }
   const data = await res.json();
   if (!res.ok || data.success === false) {
     throw new Error(data.error || `HTTP ${res.status}: Request failed`);

@@ -73,8 +73,8 @@ router.post('/telegram', async (req, res) => {
       return res.status(400).json({ success: false, error: 'telegramId is required' });
     }
 
-    const tgIdNum = Number(telegramId);
-    const cleanUsername = username ? username.replace(/^@/, '') : `tg_${telegramId}`;
+    const tgIdNum = (telegramId && !isNaN(Number(telegramId))) ? Number(telegramId) : null;
+    const cleanUsername = username ? username.replace(/^@/, '') : `user_${tgIdNum || Date.now().toString().slice(-6)}`;
     const fullName = [firstName, lastName].filter(Boolean).join(' ').trim() || cleanUsername;
 
     // Check if user exists by telegram_id or phone
@@ -82,7 +82,8 @@ router.post('/telegram', async (req, res) => {
       `SELECT u.*, w.balance, w.bonus, w.locked_balance 
        FROM users u 
        LEFT JOIN wallets w ON u.id = w.user_id 
-       WHERE u.telegram_id = $1 OR (u.phone IS NOT NULL AND u.phone = $2)
+       WHERE (u.telegram_id IS NOT NULL AND u.telegram_id = $1) 
+          OR (u.phone IS NOT NULL AND u.phone = $2)
        LIMIT 1`,
       [tgIdNum, phone || null]
     );
