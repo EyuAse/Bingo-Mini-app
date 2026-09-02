@@ -102,13 +102,14 @@ export const DepositPage: React.FC = () => {
     });
 
     addDepositRequest(
-      'usr-me',
-      'Player (Me)',
+      user?.id || 'usr-me',
+      user?.fullName || 'Player',
       playerPhone,
       amount,
       selectedMethod,
-      assignedRef,
-      receiptImage || undefined
+      playerPhone,
+      receiptImage || undefined,
+      assignedRef
     );
 
     setSubmittedRef(assignedRef);

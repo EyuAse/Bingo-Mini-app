@@ -64,8 +64,8 @@ export const WithdrawPage: React.FC = () => {
 
     // Submit to Admin Cashier Settlement Desk
     addWithdrawRequest(
-      'usr-me',
-      accountHolder || 'Eyu Ase',
+      user?.id || 'usr-me',
+      accountHolder || user?.fullName || 'Player',
       accountNumber,
       amount,
       selectedMethod,

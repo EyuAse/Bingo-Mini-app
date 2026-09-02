@@ -42,78 +42,7 @@ export const CashierDesk: React.FC = () => {
   const [manualMethod, setManualMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [manualAccount, setManualAccount] = useState('0911234567');
 
-  // Fallback initial mockup data if no transactions in localStorage
-  const fallbackMockTxs: TransactionRequest[] = [
-    {
-      id: 'tx-tb-894210',
-      userId: 'usr-1',
-      userName: 'Abebe Bikila',
-      phone: '+251 911 234 567',
-      amount: 500,
-      type: 'deposit',
-      method: 'Telebirr',
-      accountNumber: '0911234567',
-      referenceNumber: 'TX-TB-894210',
-      status: 'pending',
-      riskScore: 'verified',
-      userLifetimeDeposits: 1200,
-      userLifetimeWithdrawals: 0,
-      createdAt: 'Today, 18:45'
-    },
-    {
-      id: 'tx-cbe-551980',
-      userId: 'usr-2',
-      userName: 'Selam Tesfaye',
-      phone: '+251 922 876 543',
-      amount: 200,
-      type: 'withdrawal',
-      method: 'CBE',
-      accountNumber: '100023456789',
-      referenceNumber: 'TX-CBE-551980',
-      status: 'pending',
-      riskScore: 'verified',
-      userLifetimeDeposits: 500,
-      userLifetimeWithdrawals: 200,
-      createdAt: 'Today, 19:10'
-    },
-    {
-      id: 'tx-tb-773120',
-      userId: 'usr-3',
-      userName: 'Marta Worku',
-      phone: '+251 944 112 233',
-      amount: 1000,
-      type: 'deposit',
-      method: 'Telebirr',
-      accountNumber: '0944112233',
-      referenceNumber: 'TX-TB-773120',
-      status: 'pending',
-      riskScore: 'verified',
-      userLifetimeDeposits: 2500,
-      userLifetimeWithdrawals: 400,
-      createdAt: 'Today, 19:35'
-    },
-    {
-      id: 'tx-cbe-441029',
-      userId: 'usr-4',
-      userName: 'Dawit Yohannes',
-      phone: '+251 933 551 122',
-      amount: 1000,
-      type: 'deposit',
-      method: 'CBE',
-      accountNumber: '100098765432',
-      referenceNumber: 'TX-CBE-441029',
-      status: 'pending',
-      riskScore: 'verified',
-      userLifetimeDeposits: 3200,
-      userLifetimeWithdrawals: 800,
-      createdAt: 'Today, 19:50'
-    }
-  ];
-
-  const effectiveTransactions =
-    Array.isArray(transactions) && transactions.length > 0
-      ? transactions
-      : fallbackMockTxs;
+  const effectiveTransactions = transactions || [];
 
   // Counts
   const pendingDepositsCount = effectiveTransactions.filter(
