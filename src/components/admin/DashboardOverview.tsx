@@ -28,7 +28,22 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
   const { switchPage, showToast } = useApp();
 
   const pendingTransactions = transactions.filter(t => t.status === 'pending');
-  const activeUsersCount = users.filter(u => u.status === 'active').length;
+  const playersOnly = users.filter(u => u.role !== 'admin');
+  const activeUsersCount = playersOnly.filter(u => u.status === 'active').length;
+
+  // Real Dynamic Financial Cash Flow Barometer Calculations
+  const todayDeposits = transactions
+    .filter(t => t.type === 'deposit' && t.status === 'approved')
+    .reduce((acc, t) => acc + (t.amount || 0), 0);
+
+  const todayWithdrawals = transactions
+    .filter(t => t.type === 'withdrawal' && t.status === 'approved')
+    .reduce((acc, t) => acc + (t.amount || 0), 0);
+
+  const netCashFlow = todayDeposits - todayWithdrawals;
+  const retentionPercent = todayDeposits > 0
+    ? ((netCashFlow / todayDeposits) * 100).toFixed(1)
+    : '0.0';
 
   const handleApproveTx = (tx: TransactionRequest) => {
     approveAndReleaseTransaction(tx.id);
@@ -344,18 +359,18 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           <div className="cashflow-barometer-grid">
             <div className="barometer-cell green">
               <span className="baro-label">Today's Inflow (Deposits)</span>
-              <strong className="baro-amount green">+28,500.00 ETB</strong>
+              <strong className="baro-amount green">+{todayDeposits.toFixed(2)} ETB</strong>
               <span className="baro-sub">Telebirr & CBE verified</span>
             </div>
             <div className="barometer-cell red">
               <span className="baro-label">Today's Outflow (Payouts)</span>
-              <strong className="baro-amount red">-14,200.00 ETB</strong>
+              <strong className="baro-amount red">-{todayWithdrawals.toFixed(2)} ETB</strong>
               <span className="baro-sub">Processed player withdrawals</span>
             </div>
             <div className="barometer-cell gold">
               <span className="baro-label">Net Inflow (Platform Balance)</span>
-              <strong className="baro-amount gold">+14,300.00 ETB</strong>
-              <span className="baro-sub">+50.1% Net Retention</span>
+              <strong className="baro-amount gold">{netCashFlow >= 0 ? '+' : ''}{netCashFlow.toFixed(2)} ETB</strong>
+              <span className="baro-sub">+{retentionPercent}% Net Retention</span>
             </div>
           </div>
         </div>
@@ -409,20 +424,13 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                     </span>
                   </div>
 
-                  <div className="mini-card-customer-row">
-                    <strong className="mini-customer-name">{tx.userName}</strong>
-                    <span className="mini-customer-phone">{tx.phone}</span>
-                  </div>
-
-                  <div className="mini-card-ref-box">
-                    <span className="ref-lbl">Ref:</span>
-                    <span className="ref-code">{tx.referenceNumber}</span>
-                  </div>
-
-                  <div className="mini-card-amount-row">
-                    <span className="amt-lbl">Amount:</span>
-                    <strong className={`amt-val ${isDeposit ? 'deposit-green' : 'withdraw-gold'}`}>
-                      {tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
+                  <div className="mini-card-center-row">
+                    <div className="mini-card-info-stack">
+                      <strong className="mini-tx-user">{tx.userName}</strong>
+                      <span className="mini-tx-ref">{tx.referenceNumber}</span>
+                    </div>
+                    <strong className={`mini-tx-amount ${isDeposit ? 'green' : 'gold'}`}>
+                      {isDeposit ? `+${tx.amount.toFixed(2)}` : `${tx.amount.toFixed(2)}`} ETB
                     </strong>
                   </div>
 
@@ -453,3 +461,5 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     </div>
   );
 };
+
+export default DashboardOverview;

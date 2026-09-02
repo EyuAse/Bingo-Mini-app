@@ -26,6 +26,7 @@ router.get('/users', requireAdmin, async (_req, res) => {
         COALESCE((SELECT SUM(amount) FROM withdrawal_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalWithdrawn"
       FROM users u
       LEFT JOIN wallets w ON u.id = w.user_id
+      WHERE u.role != 'admin'
       ORDER BY u.created_at DESC
       LIMIT 200
     `);

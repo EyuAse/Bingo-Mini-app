@@ -474,3 +474,5 @@ export const CashFlowAnalytics: React.FC = () => {
     </div>
   );
 };
+
+export default CashFlowAnalytics;
