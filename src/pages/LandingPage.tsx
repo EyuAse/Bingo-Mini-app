@@ -110,77 +110,64 @@ export const LandingPage: React.FC = () => {
       <div className="bg-floating-lemon-slice lemon-bottom-left"></div>
       <div className="bg-floating-leaf leaf-bottom-right"></div>
 
-      {/* 2. Main Content Area */}
+      {/* 2. Main Content Area: Iconic 3D Casino Layout matching Screenshot */}
       <main className="landing-fresh-hero-container">
-        {!isExistingAccount ? (
-          /* A. NEW USERS: Exact Reference 3-Slide Interactive Onboarding */
-          <div style={{ padding: '0 4px' }}>
-            <BlumOnboardingCarousel
-              onClaimBonus={handleOpenRegisterModal}
-              isLoading={isLoading}
-              onSkip={handleOpenRegisterModal}
-            />
-          </div>
-        ) : (
-          /* B. EXISTING USERS: The Beautiful Iconic 3D Casino Landing Layout */
-          <>
-            {/* Pretitle */}
-            <p className="hero-fresh-pretitle">{t('landing.pretitle')}</p>
+        {/* Pretitle */}
+        <p className="hero-fresh-pretitle">{t('landing.pretitle')}</p>
 
-            {/* Main Title: Play Bingo with floating lemon */}
-            <h1 className="hero-fresh-title">
-              {t('landing.title')}
-              <span className="hero-lemon-icon">🍋</span>
-            </h1>
+        {/* Main Title: Play Bingo with floating lemon */}
+        <h1 className="hero-fresh-title">
+          {t('landing.title')}
+          <span className="hero-lemon-icon">🍋</span>
+        </h1>
 
-            {/* Tagline */}
-            <p className="hero-fresh-tagline">{t('landing.tagline')}</p>
+        {/* Tagline */}
+        <p className="hero-fresh-tagline">{t('landing.tagline')}</p>
 
-            {/* Promo 10 ETB Welcome Bonus Block */}
-            <div className="hero-promo-block">
-              <span className="promo-lbl">{lang === 'am' ? 'የነፃ መመዝገቢያ ስጦታ' : 'FREE SIGN UP BONUS'}</span>
-              <div className="promo-bonus-huge">+10.00 ETB</div>
-              <div className="promo-bonus-sub">{lang === 'am' ? 'ምንም ቅድመ ክፍያ አያስፈልግም • ፈጣን የቴሌብር ክፍያ' : 'Free Welcome Bonus • 0 Deposit Needed'}</div>
-            </div>
+        {/* Promo 10 ETB Welcome Bonus Block */}
+        <div className="hero-promo-block">
+          <span className="promo-lbl">{lang === 'am' ? 'የነፃ መመዝገቢያ ስጦታ' : 'FREE SIGN UP BONUS'}</span>
+          <div className="promo-bonus-huge">+10.00 ETB BONUS</div>
+          <div className="promo-bonus-sub">{lang === 'am' ? 'ምንም ቅድመ ክፍያ አያስፈልግም • ፈጣን የቴሌብር ክፍያ' : '+ 1 Free Cartela • 0 Deposit Needed'}</div>
+        </div>
 
-            {/* Glowing 1-Click Action Button */}
-            <button
-              type="button"
-              className="btn-hero-fresh-cta"
-              id="landing-continue-btn"
-              onClick={handleExistingUserLogin}
-              disabled={isLoading}
-              style={{
-                background: 'linear-gradient(135deg, #2AABEE 0%, #229ED9 50%, #0284c7 100%)',
-                boxShadow: '0 8px 25px rgba(34, 158, 217, 0.45)',
-                color: '#ffffff'
-              }}
-            >
-              <span className="cta-gift-icon">⚡</span>
-              <span>
-                {isLoading
-                  ? lang === 'am'
-                    ? 'በመግባት ላይ...'
-                    : 'Connecting...'
-                  : lang === 'am'
-                  ? `⚡ እንደ ${displayName} ግባ`
-                  : `⚡ Continue as ${displayName}`}
-              </span>
-            </button>
+        {/* Glowing 1-Click Action Button */}
+        <button
+          type="button"
+          className="btn-hero-fresh-cta"
+          id="landing-continue-btn"
+          onClick={handleExistingUserLogin}
+          disabled={isLoading}
+          style={{
+            background: 'linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%)',
+            boxShadow: '0 8px 25px rgba(234, 179, 8, 0.45)',
+            color: '#0f172a',
+            fontWeight: 900
+          }}
+        >
+          <span className="cta-gift-icon">⚡</span>
+          <span>
+            {isLoading
+              ? lang === 'am'
+                ? 'በመግባት ላይ...'
+                : 'Connecting...'
+              : lang === 'am'
+              ? `⚡ እንደ ${displayName} ግባ`
+              : `⚡ Sign in as ${displayName}`}
+          </span>
+        </button>
 
-            {/* 3. Hero 3D Artwork Card (75-Ball & Cartelas) */}
-            <div className="hero-fresh-artwork-card">
-              <img
-                src="/assets/images/lomi-hero-75.jpg"
-                alt="75-Ball Lomi Bingo 3D Cards and Balls"
-                className="hero-artwork-img"
-              />
-            </div>
+        {/* 3. Hero 3D Artwork Card (75-Ball & Cartelas) */}
+        <div className="hero-fresh-artwork-card">
+          <img
+            src="/assets/images/lomi-hero-75.jpg"
+            alt="75-Ball Lomi Bingo 3D Cards and Balls"
+            className="hero-artwork-img"
+          />
+        </div>
 
-            {/* 4. Exact 3-Pillar Trust Footer */}
-            <TrustFooter />
-          </>
-        )}
+        {/* 4. Exact 3-Pillar Trust Footer */}
+        <TrustFooter />
       </main>
 
       {/* 1. Pure Telegram Registration Confirmation Modal */}
