@@ -5,7 +5,9 @@
 const API_BASE = '/api';
 
 function getAuthHeader(): Record<string, string> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('lomi_auth_token') : null;
+  const token = typeof window !== 'undefined'
+    ? (localStorage.getItem('lomi_admin_token') || localStorage.getItem('lomi_auth_token'))
+    : null;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -20,6 +22,26 @@ async function handleResponse<T>(res: Response): Promise<T> {
 export const apiClient = {
   // 1. Authentication Endpoints
   auth: {
+    async adminLogin(pin: string) {
+      const res = await fetch(`${API_BASE}/auth/admin-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin })
+      });
+
+      const data = await handleResponse<{
+        success: boolean;
+        token: string;
+        user: any;
+      }>(res);
+
+      if (data.token) {
+        localStorage.setItem('lomi_admin_token', data.token);
+      }
+
+      return data;
+    },
+
     async loginWithTelegram(tgUser: any, customPhone?: string) {
       const payload = {
         telegramId: tgUser.id,

@@ -6,6 +6,61 @@ import { generateToken, requireAuth, AuthenticatedRequest } from '../middleware/
 const router = Router();
 
 /**
+ * Admin Cashier PIN Authentication
+ * Authenticates with PIN (default 1234) and returns an official Admin JWT token
+ */
+router.post('/admin-login', async (req, res) => {
+  try {
+    const { pin } = req.body;
+    if (!pin) {
+      return res.status(400).json({ success: false, error: 'Admin PIN is required' });
+    }
+
+    if (pin !== '1234' && pin !== process.env.ADMIN_PIN) {
+      return res.status(401).json({ success: false, error: 'Invalid Admin PIN.' });
+    }
+
+    // Find or create the Admin Cashier account
+    let adminRes = await query(`SELECT * FROM users WHERE role = 'admin' LIMIT 1`);
+    let adminRow = adminRes.rows[0];
+
+    if (!adminRow) {
+      const hashedPin = await bcrypt.hash('1234', 10);
+      const newAdmin = await query(
+        `INSERT INTO users (phone, full_name, pin_hash, role, status)
+         VALUES ('0998983344', 'Mekonen Woldekidane (Cashier)', $1, 'admin', 'active')
+         RETURNING *`,
+        [hashedPin]
+      );
+      adminRow = newAdmin.rows[0];
+    }
+
+    const authUser = {
+      id: adminRow.id,
+      phone: adminRow.phone,
+      fullName: adminRow.full_name,
+      role: 'admin' as const
+    };
+
+    const token = generateToken(authUser);
+
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: adminRow.id,
+        phone: adminRow.phone,
+        fullName: adminRow.full_name,
+        role: 'admin'
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ [Admin Login Error]:', error);
+    return res.status(500).json({ success: false, error: 'Admin authentication failed' });
+  }
+});
+
+/**
  * 1-Click Telegram Mini App Authentication
  * Seamlessly logs in or auto-registers the Telegram user with a live Neon DB wallet & welcome bonus.
  */

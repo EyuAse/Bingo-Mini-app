@@ -339,7 +339,14 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   useEffect(() => {
-    refreshAdminData();
+    // Auto-login with backend if admin session exists
+    if (sessionStorage.getItem('lomibingo_admin_auth') === 'true') {
+      apiClient.auth.adminLogin('1234')
+        .then(() => refreshAdminData())
+        .catch(() => {});
+    } else {
+      refreshAdminData();
+    }
 
     // Listen to real-time events on Socket.IO
     const socket = socketService.connect();
@@ -366,6 +373,9 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (pin === adminPin || pin === '1234') {
       setIsAuthenticated(true);
       sessionStorage.setItem('lomibingo_admin_auth', 'true');
+      apiClient.auth.adminLogin(pin)
+        .then(() => refreshAdminData())
+        .catch(err => console.warn('Admin backend login notice:', err));
       return true;
     }
     return false;
@@ -374,6 +384,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const logoutAdmin = () => {
     setIsAuthenticated(false);
     sessionStorage.removeItem('lomibingo_admin_auth');
+    localStorage.removeItem('lomi_admin_token');
   };
 
   const adjustUserBalance = (userId: string, amount: number, isBonus = false) => {

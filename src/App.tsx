@@ -42,7 +42,7 @@ export const App: React.FC = () => {
     }
   }, [isAuthenticated, currentPage, switchPage]);
 
-  // Handle first-time Telegram registration bonus credit
+  // Handle first-time Telegram registration notification
   useEffect(() => {
     if (isFirstTimeTelegramUser && user) {
       addUser({
@@ -55,9 +55,8 @@ export const App: React.FC = () => {
         totalWithdrawn: 0,
         status: 'active'
       });
-      addBonus(registerBonus);
     }
-  }, [isFirstTimeTelegramUser, user, addUser, addBonus, registerBonus]);
+  }, [isFirstTimeTelegramUser, user, addUser, registerBonus]);
 
   // If on Admin portal route, render full-screen bypassing 480px app-container
   if (currentPage === 'admin') {

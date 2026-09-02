@@ -8,6 +8,8 @@ export const BalanceBar: React.FC = () => {
   const { switchPage } = useApp();
   const { t } = useLanguage();
 
+  const totalPlayable = balance + bonus;
+
   return (
     <div className="lobby-balance-bar-wrapper">
       <div className="lobby-fresh-balance-bar">
@@ -16,30 +18,30 @@ export const BalanceBar: React.FC = () => {
           <i className="fa-solid fa-wallet"></i>
         </div>
 
-        {/* Center: Amount, Welcome Bonus & Eye Toggle */}
+        {/* Center: Total Playable Amount, Welcome Bonus & Eye Toggle */}
         <div className="balance-amount-center">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span className="balance-val-text">
-              {isBalanceVisible ? `${balance.toFixed(2)} ETB` : '•••••• ETB'}
+              {isBalanceVisible ? `${totalPlayable.toFixed(2)} ETB` : '•••••• ETB'}
             </span>
             {isBalanceVisible && bonus > 0 && (
               <span
                 style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
+                  fontSize: '10px',
+                  fontWeight: 800,
                   background: 'rgba(34, 197, 94, 0.15)',
                   color: '#22c55e',
                   border: '1px solid rgba(34, 197, 94, 0.3)',
-                  padding: '1px 6px',
+                  padding: '1px 5px',
                   borderRadius: '999px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '3px'
                 }}
-                title="Welcome Registration Bonus"
+                title={`Playable: ${totalPlayable.toFixed(2)} ETB (Cash: ${balance.toFixed(2)} ETB + Bonus: ${bonus.toFixed(2)} ETB)`}
               >
-                <i className="fa-solid fa-gift" style={{ fontSize: '9px' }}></i>
-                +{bonus.toFixed(0)} Bonus
+                <i className="fa-solid fa-gift" style={{ fontSize: '8px' }}></i>
+                {bonus.toFixed(0)} BONUS
               </span>
             )}
           </div>
