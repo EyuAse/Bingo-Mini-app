@@ -6,6 +6,8 @@ export const SpectatorCard: React.FC = () => {
   const { buyTicket, lobbyCountdown, roundPhase, hasPreBoughtNext, preBuyNextRound } = useBingo();
   const { t } = useLanguage();
 
+  const isLobby = roundPhase === 'lobby';
+  const isPlaying = roundPhase === 'playing' || roundPhase === 'locked';
   const formattedCountdown = `00:${lobbyCountdown < 10 ? `0${lobbyCountdown}` : lobbyCountdown}`;
 
   return (
@@ -37,20 +39,31 @@ export const SpectatorCard: React.FC = () => {
       {/* Title & Subtitle */}
       <h3 className="spectator-card-title">{t('bingo.spectatorTitle')}</h3>
       <p className="spectator-card-sub">
-        {t('bingo.spectatorSub')}
+        {isPlaying ? 'A live round is currently in progress. Join now or pre-buy for next round!' : t('bingo.spectatorSub')}
       </p>
 
-      {/* Next Round Countdown Card */}
+      {/* Next Round Countdown Card / Live Status */}
       <div className="spectator-countdown-pill-card">
-        <span className="countdown-tiny-lbl">{t('bingo.nextRoundIn')}</span>
-        <strong className="countdown-digits-huge">{formattedCountdown}</strong>
+        {isLobby ? (
+          <>
+            <span className="countdown-tiny-lbl">{t('bingo.nextRoundIn')}</span>
+            <strong className="countdown-digits-huge">{formattedCountdown}</strong>
+          </>
+        ) : (
+          <>
+            <span className="countdown-tiny-lbl">LIVE STATUS</span>
+            <strong className="countdown-digits-huge" style={{ fontSize: '1.2rem', color: '#16a34a' }}>
+              🎱 LIVE IN PROGRESS
+            </strong>
+          </>
+        )}
       </div>
 
       {/* Golden Action Button */}
       <button
         type="button"
         className="btn-spectator-buy-gold"
-        onClick={roundPhase === 'lobby' ? buyTicket : preBuyNextRound}
+        onClick={buyTicket}
       >
         <i className="fa-solid fa-ticket"></i>
         <span>{hasPreBoughtNext ? 'TICKET PRE-BOUGHT ✓' : t('bingo.buyTicket')}</span>

@@ -19,13 +19,13 @@ export const BettingBar: React.FC = () => {
     hasTicket,
     hasPreBoughtNext
   } = useBingo();
-  const { balance, isBalanceVisible } = useWallet();
+  const { balance, bonus, isBalanceVisible } = useWallet();
   const { buy2Get1Bonus } = useAdmin();
   const { t } = useLanguage();
 
   const betChips = [10, 20, 50, 100];
   const totalCost = betAmount * cardQuantity;
-  const canBuy = roundPhase === 'lobby';
+  const canBuy = roundPhase === 'lobby' || roundPhase === 'playing';
   const hasBonus = cardQuantity >= 2 && buy2Get1Bonus;
 
   return (
@@ -39,7 +39,7 @@ export const BettingBar: React.FC = () => {
         <div className="betting-user-balance-pill">
           <i className="fa-solid fa-wallet"></i>
           <span>{t('common.balance')}</span>
-          <strong>{isBalanceVisible ? `${balance.toFixed(0)} ETB` : '••••'}</strong>
+          <strong>{isBalanceVisible ? `${(balance + bonus).toFixed(0)} ETB` : '••••'}</strong>
         </div>
       </div>
 
@@ -133,17 +133,14 @@ export const BettingBar: React.FC = () => {
         <button
           type="button"
           className="btn-buy-ticket-huge-gold"
-          onClick={canBuy ? buyTicket : preBuyNextRound}
+          onClick={hasTicket ? undefined : buyTicket}
+          disabled={hasTicket}
         >
           <i className="fa-solid fa-ticket"></i>
           <span>
             {hasTicket
-              ? `PLAYING ${totalPlayableCards} CARDS (${totalCost} ETB)`
-              : hasPreBoughtNext
-              ? `✓ TICKET READY (${totalPlayableCards} CARDS)`
-              : canBuy
-              ? `${t('bingo.buyTicket')} • ${totalCost} ETB (${totalPlayableCards} CARDS)`
-              : `PRE-BUY • ${totalCost} ETB (${totalPlayableCards} CARDS)`}
+              ? `PLAYING ${totalPlayableCards} CARDS`
+              : `${t('bingo.buyTicket')} • ${totalCost} ETB`}
           </span>
         </button>
       </div>

@@ -195,7 +195,7 @@ const checkWinningPatterns = (cells: BingoCell[]): number[] | null => {
 };
 
 export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { deductBalance, addBalance } = useWallet();
+  const { deductBalance, addBalance, refreshBalance, balance, bonus } = useWallet();
   const { user } = useAuth();
   const { showToast } = useApp();
   const {
@@ -274,12 +274,12 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Keep Cartelas synchronized when IDs change
   useEffect(() => {
-    if (roundPhase === 'lobby') {
+    if (roundPhase === 'lobby' || !hasTicket) {
       setCartela1Data(generateCardFromId(selectedCartelaIds[0]));
       setCartela2Data(generateCardFromId(selectedCartelaIds[1]));
       setCartela3Data(generateCardFromId(selectedCartelaIds[2]));
     }
-  }, [selectedCartelaIds, roundPhase]);
+  }, [selectedCartelaIds, roundPhase, hasTicket]);
 
   // canWin detection
   useEffect(() => {
@@ -367,6 +367,15 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setShowWinModal(false);
       if (data.winnerPayout) setPrizePool(data.winnerPayout);
 
+      // If player had pre-bought ticket, transition to active playing
+      setHasPreBoughtNext(prev => {
+        if (prev) {
+          setHasTicket(true);
+          return false;
+        }
+        return false;
+      });
+
       // Generate fresh cards
       setCartela1Data(generateCardFromId(selectedCartelaIds[0]));
       setCartela2Data(generateCardFromId(selectedCartelaIds[1]));
@@ -393,6 +402,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       } else {
         soundEngine.playPop();
       }
+      refreshBalance();
     });
 
     return () => {
@@ -401,7 +411,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       unsubRoundStarted();
       unsubRoundWinner();
     };
-  }, [getActiveRoomId, user, applyDrawnNumber, selectedCartelaIds, prizePool, addBalance]);
+  }, [getActiveRoomId, user, applyDrawnNumber, selectedCartelaIds, prizePool, addBalance, refreshBalance]);
 
   const toggleVerticalBoard = () => setIsVerticalBoard(prev => !prev);
   const toggleMasterBoard = () => setShowMasterBoard(prev => !prev);
@@ -435,14 +445,16 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Buy Ticket via Live Socket Engine & Neon DB
   const buyTicket = async () => {
-    if (roundPhase !== 'lobby') {
-      showToast('⚠️ Ticket sales closed! Pre-buy for the next round.');
-      return;
-    }
-
     const roomId = getActiveRoomId();
     const activeIds = selectedCartelaIds.slice(0, totalPlayableCards);
     const totalCost = betAmount * cardQuantity;
+
+    // Check available funds (balance + bonus)
+    const totalFunds = balance + bonus;
+    if (totalFunds < totalCost) {
+      showToast(`❌ Insufficient balance (${totalFunds.toFixed(0)} ETB). Need ${totalCost} ETB.`);
+      return;
+    }
 
     // Send to live server
     if (user?.id) {
@@ -461,6 +473,16 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     setHasTicket(true);
+    setGameActive(true);
+    refreshBalance();
+
+    // If joining during playing phase, auto-daub any numbers already drawn
+    if (calledNumbers.length > 0) {
+      setCartela1Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
+      setCartela2Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
+      setCartela3Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
+    }
+
     soundEngine.playLuckyPick();
     const bonusText = (cardQuantity >= 2 && buy2Get1Bonus) ? ' + 1 FREE BONUS CARD 🎁' : '';
     showToast(`🎟️ Playing ${totalPlayableCards} Cartelas (${totalCost} ETB)${bonusText}!`);
@@ -468,6 +490,11 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const preBuyNextRound = () => {
     const totalCost = betAmount * cardQuantity;
+    const totalFunds = balance + bonus;
+    if (totalFunds < totalCost) {
+      showToast(`❌ Insufficient balance (${totalFunds.toFixed(0)} ETB). Need ${totalCost} ETB.`);
+      return;
+    }
     const success = deductBalance(totalCost);
     if (!success) {
       showToast('❌ Insufficient balance! Please deposit to continue.');
@@ -475,6 +502,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
     setHasPreBoughtNext(true);
     soundEngine.playLuckyPick();
+    refreshBalance();
     showToast(`🎟️ Pre-Bought ${totalPlayableCards} Cartelas for next round!`);
   };
 

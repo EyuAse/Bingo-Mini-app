@@ -168,8 +168,12 @@ class BingoGameEngine {
       return { success: false, error: 'Room not found' };
     }
 
-    if (room.phase !== 'lobby') {
-      return { success: false, error: 'Tickets can only be purchased during the Lobby countdown.' };
+    if (room.phase === 'winner') {
+      return { success: false, error: 'Round is concluding. Next round starts in 5 seconds.' };
+    }
+
+    if (room.phase === 'playing' && room.drawnNumbers.length > 55) {
+      return { success: false, error: 'Round is almost over. Please wait for the next lobby.' };
     }
 
     const totalCost = cartelaIds.length * room.stakeAmount;
@@ -243,6 +247,17 @@ class BingoGameEngine {
       }));
 
       room.tickets.set(userId, playerTickets);
+
+      // If purchased during active round, save to game_tickets table
+      if (room.currentRoundId) {
+        for (const t of playerTickets) {
+          await query(
+            `INSERT INTO game_tickets (round_id, user_id, cartela_id, card_matrix, bet_amount, status)
+             VALUES ($1, $2, $3, $4, $5, 'active')`,
+            [room.currentRoundId, userId, t.cartelaId, JSON.stringify(t.cardMatrix), t.betAmount]
+          ).catch(err => console.error('Error inserting live ticket:', err));
+        }
+      }
 
       // Recalculate Pot
       this.recalculatePot(room);

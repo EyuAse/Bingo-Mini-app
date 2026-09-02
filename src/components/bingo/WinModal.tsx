@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
@@ -11,6 +11,15 @@ export const WinModal: React.FC = () => {
   } = useBingo();
   const { showToast } = useApp();
   const { t } = useLanguage();
+
+  // Auto-dismiss after 8 seconds to match celebration countdown
+  useEffect(() => {
+    if (!showWinModal) return;
+    const timer = setTimeout(() => {
+      closeWinModalAndRestart();
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [showWinModal, closeWinModalAndRestart]);
 
   if (!winResult || !showWinModal) return null;
 
