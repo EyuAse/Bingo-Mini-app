@@ -5,6 +5,7 @@ import { useAdmin } from '../../context/AdminContext.tsx';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { TelebirrLogo, CBELogo } from './PaymentLogos.tsx';
+import { apiClient } from '../../services/apiClient.ts';
 
 interface WithdrawModalProps {
   isOpen: boolean;
@@ -12,9 +13,9 @@ interface WithdrawModalProps {
 }
 
 export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose }) => {
-  const { balance, deductBalance } = useWallet();
+  const { balance, refreshBalance } = useWallet();
   const { showToast, switchPage } = useApp();
-  const { addWithdrawRequest } = useAdmin();
+  const { refreshAdminData } = useAdmin();
   const { user } = useAuth();
   const { t, lang } = useLanguage();
 
@@ -23,13 +24,14 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
   const [accountHolder, setAccountHolder] = useState<string>(() => user?.fullName || '');
   const [accountNumber, setAccountNumber] = useState<string>(() => user?.phone || user?.formattedPhone || '');
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submittedRef, setSubmittedRef] = useState<string>('');
 
   if (!isOpen) return null;
 
   const quickAmounts = [100, 200, 500, 1000, 5000];
 
-  const handleWithdrawSubmit = (e: React.FormEvent) => {
+  const handleWithdrawSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (amount < 50) {
@@ -47,33 +49,34 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
       return;
     }
 
-    if (!accountNumber || accountNumber.trim().length < 9) {
+    if (!accountNumber || accountNumber.trim().length < 8) {
       showToast(lang === 'am' ? '⚠️ እባክዎ ትክክለኛ ስልክ ቁጥር ወይም የባንክ አካውንት ያስገቡ።' : '⚠️ Please enter a valid account or phone number.');
       return;
     }
 
-    // Deduct player balance
-    const success = deductBalance(amount);
-    if (!success) {
-      showToast('❌ Failed to process withdrawal from balance.');
-      return;
+    setIsSubmitting(true);
+    try {
+      const res = await apiClient.wallet.withdraw({
+        amount,
+        paymentMethod: selectedMethod,
+        accountPhone: accountNumber.trim(),
+        accountName: accountHolder.trim() || user?.fullName || 'Player'
+      });
+
+      const assignedRef = res.withdrawal?.id
+        ? `WD-${selectedMethod.toUpperCase()}-${res.withdrawal.id.slice(0, 8)}`
+        : `WD-${selectedMethod.toUpperCase()}-${Date.now().toString().slice(-6)}`;
+
+      setSubmittedRef(assignedRef);
+      setIsSubmitted(true);
+      await refreshBalance();
+      await refreshAdminData();
+      showToast(lang === 'am' ? `💸 የ${amount} ብር የወጪ ጥያቄ ተልኳል!` : `💸 Withdrawal request of ${amount} ETB submitted!`);
+    } catch (err: any) {
+      showToast(`❌ ${err.message || 'Withdrawal failed'}`);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const assignedRef = `WD-${selectedMethod === 'Telebirr' ? 'TB' : 'CBE'}-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    // Submit to Admin Cashier Settlement Desk
-    addWithdrawRequest(
-      'usr-me',
-      accountHolder || 'Eyu Ase',
-      accountNumber,
-      amount,
-      selectedMethod,
-      accountNumber
-    );
-
-    setSubmittedRef(assignedRef);
-    setIsSubmitted(true);
-    showToast(lang === 'am' ? `💸 የ${amount} ብር የወጪ ጥያቄ ተልኳል!` : `💸 Withdrawal request of ${amount} ETB submitted!`);
   };
 
   const handleResetAndClose = () => {

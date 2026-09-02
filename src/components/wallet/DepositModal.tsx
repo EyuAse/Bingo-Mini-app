@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { useAdmin } from '../../context/AdminContext.tsx';
 import { useAuth } from '../../context/AuthContext.tsx';
+import { useWallet } from '../../context/WalletContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { TelebirrLogo, CBELogo } from './PaymentLogos.tsx';
+import { apiClient } from '../../services/apiClient.ts';
 
 interface DepositModalProps {
   isOpen: boolean;
@@ -12,7 +14,8 @@ interface DepositModalProps {
 
 export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
   const { showToast, switchPage } = useApp();
-  const { addDepositRequest } = useAdmin();
+  const { refreshAdminData } = useAdmin();
+  const { refreshBalance } = useWallet();
   const { user } = useAuth();
   const { t, lang } = useLanguage();
 
@@ -22,6 +25,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
   const [transactionRef, setTransactionRef] = useState<string>('');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submittedRef, setSubmittedRef] = useState<string>('');
 
   if (!isOpen) return null;
@@ -79,35 +83,43 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
     }
   };
 
-  const handleDepositSubmit = (e: React.FormEvent) => {
+  const handleDepositSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (amount < 50) {
-      showToast(lang === 'am' ? '⚠️ ዝቅተኛ ተቀማጭ 50 ብር ነው።' : '⚠️ Minimum deposit is 50 ETB.');
+    if (amount < 10) {
+      showToast(lang === 'am' ? '⚠️ ዝቅተኛ ተቀማጭ 10 ብር ነው።' : '⚠️ Minimum deposit is 10 ETB.');
       return;
     }
 
-    if (!playerPhone || playerPhone.trim().length < 9) {
+    if (!playerPhone || playerPhone.trim().length < 8) {
       showToast(lang === 'am' ? '⚠️ እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ።' : '⚠️ Please enter your valid mobile number.');
       return;
     }
 
-    const assignedRef = transactionRef.trim()
-      ? transactionRef.trim().toUpperCase()
-      : `${selectedMethod === 'Telebirr' ? 'TX-TB-' : 'TX-CBE-'}${Math.floor(100000 + Math.random() * 900000)}`;
+    setIsSubmitting(true);
+    try {
+      const assignedRef = transactionRef.trim()
+        ? transactionRef.trim().toUpperCase()
+        : `${selectedMethod === 'Telebirr' ? 'TX-TB-' : 'TX-CBE-'}${Math.floor(100000 + Math.random() * 900000)}`;
 
-    addDepositRequest(
-      'usr-me',
-      'Player (Me)',
-      playerPhone,
-      amount,
-      selectedMethod,
-      assignedRef,
-      receiptImage || undefined
-    );
+      const res = await apiClient.wallet.deposit({
+        amount,
+        paymentMethod: selectedMethod,
+        playerPhone: playerPhone.trim(),
+        transactionRef: assignedRef,
+        receiptImage: receiptImage || undefined
+      });
 
-    setSubmittedRef(assignedRef);
-    setIsSubmitted(true);
-    showToast(lang === 'am' ? `✅ የ${amount} ብር ተቀማጭ ጥያቄ ተልኳል!` : `✅ Deposit request of ${amount} ETB submitted!`);
+      const finalRef = res.deposit?.transactionRef || assignedRef;
+      setSubmittedRef(finalRef);
+      setIsSubmitted(true);
+      await refreshBalance();
+      await refreshAdminData();
+      showToast(lang === 'am' ? `✅ የ${amount} ብር ተቀማጭ ጥያቄ ተልኳል!` : `✅ Deposit request of ${amount} ETB submitted!`);
+    } catch (err: any) {
+      showToast(`❌ ${err.message || 'Deposit submission failed'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleResetAndClose = () => {

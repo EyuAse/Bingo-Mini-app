@@ -10,7 +10,7 @@ const API_BASE = (typeof window !== 'undefined' && window.location.hostname.incl
 
 function getAuthHeader(): Record<string, string> {
   const token = typeof window !== 'undefined'
-    ? (localStorage.getItem('lomi_admin_token') || localStorage.getItem('lomi_auth_token'))
+    ? localStorage.getItem('lomi_auth_token')
     : null;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
