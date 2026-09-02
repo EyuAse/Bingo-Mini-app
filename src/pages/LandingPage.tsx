@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { useAdmin } from '../context/AdminContext.tsx';
 import { useWallet } from '../context/WalletContext.tsx';
 import { authService } from '../services/authService.ts';
+import { apiClient } from '../services/apiClient.ts';
 import { TelegramRegisterModal } from '../components/auth/TelegramRegisterModal.tsx';
 import { NewPlayerWelcomeModal } from '../components/auth/NewPlayerWelcomeModal.tsx';
 import { User } from '../types/auth.ts';
@@ -26,12 +27,24 @@ export const LandingPage: React.FC = () => {
   const [isExistingAccount, setIsExistingAccount] = useState(false);
 
   useEffect(() => {
-    if (telegramUser?.id) {
-      const existing = authService.checkTelegramUserExists(telegramUser.id, telegramUser.username);
-      setIsExistingAccount(!!existing);
-    } else {
-      setIsExistingAccount(false);
-    }
+    let isMounted = true;
+    const checkUser = async () => {
+      if (telegramUser?.id) {
+        // Check live Neon DB for real account existence
+        const exists = await apiClient.auth.checkTelegramExists(telegramUser.id);
+        if (isMounted) {
+          setIsExistingAccount(exists);
+        }
+      } else {
+        if (isMounted) {
+          setIsExistingAccount(false);
+        }
+      }
+    };
+    checkUser();
+    return () => {
+      isMounted = false;
+    };
   }, [telegramUser]);
 
   // When new user taps "Claim 10 ETB Bonus" on Slide 3 -> Open clean registration modal
@@ -110,64 +123,78 @@ export const LandingPage: React.FC = () => {
       <div className="bg-floating-lemon-slice lemon-bottom-left"></div>
       <div className="bg-floating-leaf leaf-bottom-right"></div>
 
-      {/* 2. Main Content Area: Iconic 3D Casino Layout matching Screenshot */}
+      {/* 2. Main Content Area: Onboarding Carousel for New Users VS Iconic Hero for Existing Users */}
       <main className="landing-fresh-hero-container">
-        {/* Pretitle */}
-        <p className="hero-fresh-pretitle">{t('landing.pretitle')}</p>
+        {!isExistingAccount ? (
+          /* A. NEW USERS: Interactive 3-Slide Onboarding (Strictly Step-by-Step, No premature account creation) */
+          <div style={{ padding: '0 4px' }}>
+            <BlumOnboardingCarousel
+              onClaimBonus={handleOpenRegisterModal}
+              isLoading={isLoading}
+              onSkip={handleOpenRegisterModal}
+            />
+          </div>
+        ) : (
+          /* B. EXISTING USERS: Iconic 3D Casino Layout matching Screenshot */
+          <>
+            {/* Pretitle */}
+            <p className="hero-fresh-pretitle">{t('landing.pretitle')}</p>
 
-        {/* Main Title: Play Bingo with floating lemon */}
-        <h1 className="hero-fresh-title">
-          {t('landing.title')}
-          <span className="hero-lemon-icon">🍋</span>
-        </h1>
+            {/* Main Title: Play Bingo with floating lemon */}
+            <h1 className="hero-fresh-title">
+              {t('landing.title')}
+              <span className="hero-lemon-icon">🍋</span>
+            </h1>
 
-        {/* Tagline */}
-        <p className="hero-fresh-tagline">{t('landing.tagline')}</p>
+            {/* Tagline */}
+            <p className="hero-fresh-tagline">{t('landing.tagline')}</p>
 
-        {/* Promo 10 ETB Welcome Bonus Block */}
-        <div className="hero-promo-block">
-          <span className="promo-lbl">{lang === 'am' ? 'የነፃ መመዝገቢያ ስጦታ' : 'FREE SIGN UP BONUS'}</span>
-          <div className="promo-bonus-huge">+10.00 ETB BONUS</div>
-          <div className="promo-bonus-sub">{lang === 'am' ? 'ምንም ቅድመ ክፍያ አያስፈልግም • ፈጣን የቴሌብር ክፍያ' : '+ 1 Free Cartela • 0 Deposit Needed'}</div>
-        </div>
+            {/* Promo 10 ETB Welcome Bonus Block */}
+            <div className="hero-promo-block">
+              <span className="promo-lbl">{lang === 'am' ? 'የነፃ መመዝገቢያ ስጦታ' : 'FREE SIGN UP BONUS'}</span>
+              <div className="promo-bonus-huge">+10.00 ETB BONUS</div>
+              <div className="promo-bonus-sub">{lang === 'am' ? 'ምንም ቅድመ ክፍያ አያስፈልግም • ፈጣን የቴሌብር ክፍያ' : '+ 1 Free Cartela • 0 Deposit Needed'}</div>
+            </div>
 
-        {/* Glowing 1-Click Action Button */}
-        <button
-          type="button"
-          className="btn-hero-fresh-cta"
-          id="landing-continue-btn"
-          onClick={handleExistingUserLogin}
-          disabled={isLoading}
-          style={{
-            background: 'linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%)',
-            boxShadow: '0 8px 25px rgba(234, 179, 8, 0.45)',
-            color: '#0f172a',
-            fontWeight: 900
-          }}
-        >
-          <span className="cta-gift-icon">⚡</span>
-          <span>
-            {isLoading
-              ? lang === 'am'
-                ? 'በመግባት ላይ...'
-                : 'Connecting...'
-              : lang === 'am'
-              ? `⚡ እንደ ${displayName} ግባ`
-              : `⚡ Sign in as ${displayName}`}
-          </span>
-        </button>
+            {/* Glowing 1-Click Action Button */}
+            <button
+              type="button"
+              className="btn-hero-fresh-cta"
+              id="landing-continue-btn"
+              onClick={handleExistingUserLogin}
+              disabled={isLoading}
+              style={{
+                background: 'linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%)',
+                boxShadow: '0 8px 25px rgba(234, 179, 8, 0.45)',
+                color: '#0f172a',
+                fontWeight: 900
+              }}
+            >
+              <span className="cta-gift-icon">⚡</span>
+              <span>
+                {isLoading
+                  ? lang === 'am'
+                    ? 'በመግባት ላይ...'
+                    : 'Connecting...'
+                  : lang === 'am'
+                  ? `⚡ እንደ ${displayName} ግባ`
+                  : `⚡ Sign in as ${displayName}`}
+              </span>
+            </button>
 
-        {/* 3. Hero 3D Artwork Card (75-Ball & Cartelas) */}
-        <div className="hero-fresh-artwork-card">
-          <img
-            src="/assets/images/lomi-hero-75.jpg"
-            alt="75-Ball Lomi Bingo 3D Cards and Balls"
-            className="hero-artwork-img"
-          />
-        </div>
+            {/* 3. Hero 3D Artwork Card (75-Ball & Cartelas) */}
+            <div className="hero-fresh-artwork-card">
+              <img
+                src="/assets/images/lomi-hero-75.jpg"
+                alt="75-Ball Lomi Bingo 3D Cards and Balls"
+                className="hero-artwork-img"
+              />
+            </div>
 
-        {/* 4. Exact 3-Pillar Trust Footer */}
-        <TrustFooter />
+            {/* 4. Exact 3-Pillar Trust Footer */}
+            <TrustFooter />
+          </>
+        )}
       </main>
 
       {/* 1. Pure Telegram Registration Confirmation Modal */}

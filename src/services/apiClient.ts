@@ -97,6 +97,16 @@ export const apiClient = {
       return data;
     },
 
+    async checkTelegramExists(telegramId: number | string): Promise<boolean> {
+      try {
+        const res = await fetch(`${API_BASE}/auth/check-telegram/${telegramId}`);
+        const data = await handleResponse<{ success: boolean; exists: boolean }>(res);
+        return !!data.exists;
+      } catch {
+        return false;
+      }
+    },
+
     async loginWithPin(phone: string, pin: string) {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',

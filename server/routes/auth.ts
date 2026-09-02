@@ -62,6 +62,22 @@ router.post('/admin-login', async (req, res) => {
 });
 
 /**
+ * Check if Telegram User already exists in Neon DB
+ */
+router.get('/check-telegram/:telegramId', async (req, res) => {
+  try {
+    const tgId = Number(req.params.telegramId);
+    if (!tgId || isNaN(tgId)) {
+      return res.json({ success: true, exists: false });
+    }
+    const checkRes = await query('SELECT id FROM users WHERE telegram_id = $1 LIMIT 1', [tgId]);
+    return res.json({ success: true, exists: checkRes.rows.length > 0 });
+  } catch (err: any) {
+    return res.json({ success: true, exists: false });
+  }
+});
+
+/**
  * 1-Click Telegram Mini App Authentication
  * Seamlessly logs in or auto-registers the Telegram user with a live Neon DB wallet & welcome bonus.
  */

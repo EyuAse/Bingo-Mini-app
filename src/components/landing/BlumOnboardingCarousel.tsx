@@ -120,11 +120,7 @@ export const BlumOnboardingCarousel: React.FC<BlumOnboardingCarouselProps> = ({
 
   const handleSkipClick = () => {
     telegramService.triggerHaptic('light');
-    if (onSkip) {
-      onSkip();
-    } else {
-      onClaimBonus();
-    }
+    setCurrentSlide(slides.length - 1);
   };
 
   const slide = slides[currentSlide];
