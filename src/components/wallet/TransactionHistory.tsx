@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
+import { useAuth } from '../../context/AuthContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { TelebirrLogo, CBELogo } from './PaymentLogos.tsx';
 
@@ -14,14 +15,15 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   onBack
 }) => {
   const { transactions } = useAdmin();
+  const { user } = useAuth();
   const { showToast } = useApp();
   const { t, lang } = useLanguage();
   const [activeTab, setActiveTab] = useState<'deposits' | 'withdrawals'>(initialTab);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
 
-  // Filter player's own transactions (matching 'usr-me' or default user)
+  // Filter player's own real transactions
   const myTransactions = (transactions || []).filter(
-    tx => tx.userId === 'usr-me' || tx.userName.includes('Me') || tx.userName === 'Player'
+    tx => tx.userId === user?.id || (user?.phone && tx.phone === user?.phone)
   );
 
   const deposits = myTransactions.filter(tx => tx.type === 'deposit');

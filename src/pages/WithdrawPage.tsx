@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useWallet } from '../context/WalletContext.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { useAdmin } from '../context/AdminContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { TelebirrLogo, CBELogo } from '../components/wallet/PaymentLogos.tsx';
 import { LanguageDropdown } from '../components/common/LanguageDropdown.tsx';
@@ -11,12 +12,13 @@ export const WithdrawPage: React.FC = () => {
   const { balance, deductBalance } = useWallet();
   const { showToast, switchPage } = useApp();
   const { addWithdrawRequest } = useAdmin();
+  const { user } = useAuth();
   const { t, lang } = useLanguage();
 
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [amount, setAmount] = useState<number>(200);
-  const [accountHolder, setAccountHolder] = useState<string>('Eyu Ase');
-  const [accountNumber, setAccountNumber] = useState<string>('0911234567');
+  const [accountHolder, setAccountHolder] = useState<string>(() => user?.fullName || '');
+  const [accountNumber, setAccountNumber] = useState<string>(() => user?.phone || user?.formattedPhone || '');
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [submittedRef, setSubmittedRef] = useState<string>('');
 

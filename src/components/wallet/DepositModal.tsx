@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { useAdmin } from '../../context/AdminContext.tsx';
+import { useAuth } from '../../context/AuthContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { TelebirrLogo, CBELogo } from './PaymentLogos.tsx';
 
@@ -12,11 +13,12 @@ interface DepositModalProps {
 export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
   const { showToast, switchPage } = useApp();
   const { addDepositRequest } = useAdmin();
+  const { user } = useAuth();
   const { t, lang } = useLanguage();
 
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [amount, setAmount] = useState<number>(100);
-  const [playerPhone, setPlayerPhone] = useState<string>('0911234567');
+  const [playerPhone, setPlayerPhone] = useState<string>(() => user?.phone || user?.formattedPhone || '');
   const [transactionRef, setTransactionRef] = useState<string>('');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);

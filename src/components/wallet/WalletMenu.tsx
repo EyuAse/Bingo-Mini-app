@@ -2,22 +2,24 @@ import React from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useAdmin } from '../../context/AdminContext.tsx';
+import { useAuth } from '../../context/AuthContext.tsx';
 
 interface WalletMenuProps {
   onOpenHistory?: (type: 'deposits' | 'withdrawals') => void;
 }
 
 export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
-  const { switchPage, showToast } = useApp();
+  const { switchPage } = useApp();
   const { t, lang } = useLanguage();
   const { transactions } = useAdmin();
+  const { user } = useAuth();
 
   const myTransactions = (transactions || []).filter(
-    tx => tx.userId === 'usr-me' || tx.userName.includes('Me') || tx.userName === 'Player'
+    tx => tx.userId === user?.id || (user?.phone && tx.phone === user?.phone)
   );
 
-  const depositsCount = myTransactions.filter(tx => tx.type === 'deposit').length || 4;
-  const withdrawalsCount = myTransactions.filter(tx => tx.type === 'withdrawal').length || 1;
+  const depositsCount = myTransactions.filter(tx => tx.type === 'deposit').length;
+  const withdrawalsCount = myTransactions.filter(tx => tx.type === 'withdrawal').length;
 
   return (
     <div className="fresh-wallet-menu-container">
@@ -36,7 +38,9 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
           </span>
         </div>
         <div className="menu-row-action-right">
-          <span className="menu-counter-badge green">{depositsCount}</span>
+          {depositsCount > 0 && (
+            <span className="menu-counter-badge green">{depositsCount}</span>
+          )}
           <i className="fa-solid fa-chevron-right menu-chevron"></i>
         </div>
       </div>
@@ -56,7 +60,9 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({ onOpenHistory }) => {
           </span>
         </div>
         <div className="menu-row-action-right">
-          <span className="menu-counter-badge red">{withdrawalsCount}</span>
+          {withdrawalsCount > 0 && (
+            <span className="menu-counter-badge red">{withdrawalsCount}</span>
+          )}
           <i className="fa-solid fa-chevron-right menu-chevron"></i>
         </div>
       </div>

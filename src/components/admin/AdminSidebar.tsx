@@ -126,7 +126,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             {!isSidebarCollapsed && (
               <>
                 <span className="light-nav-text">Cashier Queue</span>
-                <span className="light-nav-badge yellow-badge">{pendingCount || 3}</span>
+                {pendingCount > 0 && (
+                  <span className="light-nav-badge yellow-badge">{pendingCount}</span>
+                )}
               </>
             )}
           </button>
@@ -157,7 +159,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             {!isSidebarCollapsed && (
               <>
                 <span className="light-nav-text">Player Accounts</span>
-                <span className="light-nav-badge">{users.length || 4}</span>
+                <span className="light-nav-badge">{users.length}</span>
               </>
             )}
           </button>
@@ -175,7 +177,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             {!isSidebarCollapsed && (
               <>
                 <span className="light-nav-text">200+ Smart Bots</span>
-                <span className="light-nav-badge">{simulatedPlayerCount || 185}</span>
+                <span className="light-nav-badge">{simulatedPlayerCount}</span>
               </>
             )}
           </button>

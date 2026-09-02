@@ -69,16 +69,15 @@ export const TopHeader: React.FC = () => {
           <i className={`fa-solid ${isMuted ? 'fa-volume-xmark' : 'fa-volume-high'}`}></i>
         </button>
 
-        {/* Notification Button with Badge 3 */}
+        {/* Notification Button */}
         <button
           type="button"
           className="btn-lobby-notif"
           id="header-notif-btn"
-          onClick={() => showToast('🔔 You have 3 new messages and rewards!')}
+          onClick={() => showToast('🔔 No new unread notifications.')}
           title="Notifications"
         >
           <i className="fa-regular fa-bell"></i>
-          <span className="notif-pill-badge">3</span>
         </button>
       </div>
     </header>

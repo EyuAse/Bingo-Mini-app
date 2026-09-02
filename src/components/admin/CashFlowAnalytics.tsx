@@ -111,8 +111,8 @@ export const CashFlowAnalytics: React.FC = () => {
     }
   ];
 
-  const safeDepositedToday = Number(totalDepositedToday) || 28500.0;
-  const safeWithdrawnToday = Number(totalWithdrawnToday) || 14200.0;
+  const safeDepositedToday = Number(totalDepositedToday) || 0;
+  const safeWithdrawnToday = Number(totalWithdrawnToday) || 0;
   const netCashflow = safeDepositedToday - safeWithdrawnToday;
 
   // Telebirr vs CBE calculations (65% / 35%)

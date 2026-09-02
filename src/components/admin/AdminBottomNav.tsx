@@ -37,7 +37,7 @@ export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({
       label: 'Cashier',
       amharicLabel: 'ካሺየር',
       iconClass: 'fa-solid fa-inbox',
-      badge: pendingCashierCount || 3
+      badge: pendingCashierCount > 0 ? pendingCashierCount : undefined
     },
     {
       id: 'cashflow',
