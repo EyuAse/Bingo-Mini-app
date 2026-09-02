@@ -256,13 +256,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       telegramService.triggerHaptic('success');
       return { user: mappedUser, isNewUser: apiResult.isNewUser };
-    } catch {
-      const result = await authService.loginWithTelegram(tgUser, customPhone);
-      localStorage.removeItem('lomi_explicit_logout');
-      setUser(result.user);
-      setToken(result.token);
-      telegramService.triggerHaptic('success');
-      return { user: result.user, isNewUser: result.isNewUser };
+    } catch (err: any) {
+      console.error('❌ [Database Login Error]:', err);
+      throw new Error(err?.message || 'Failed to connect to database. Please retry.');
     } finally {
       setIsLoading(false);
     }

@@ -19,11 +19,24 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return data as T;
 }
 
+async function fetchWithRetry(url: string, options?: RequestInit, retries = 3, delayMs = 1200): Promise<Response> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url, options);
+      return res;
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  return fetch(url, options);
+}
+
 export const apiClient = {
   // 1. Authentication Endpoints
   auth: {
     async adminLogin(pin: string) {
-      const res = await fetch(`${API_BASE}/auth/admin-login`, {
+      const res = await fetchWithRetry(`${API_BASE}/auth/admin-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin })
@@ -52,7 +65,7 @@ export const apiClient = {
         phone: customPhone
       };
 
-      const res = await fetch(`${API_BASE}/auth/telegram`, {
+      const res = await fetchWithRetry(`${API_BASE}/auth/telegram`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
