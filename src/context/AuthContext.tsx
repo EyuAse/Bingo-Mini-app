@@ -63,14 +63,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsInsideTelegram(isTg);
         setTelegramUser(tgUser);
 
-        const isExplicitlyLoggedOut =
-          typeof window !== 'undefined' && localStorage.getItem('lomi_explicit_logout') === 'true';
-
-        // 2. Telegram Mini App 1-Click Login (Only inside real Telegram WebApp)
+        // 2. Multi-Account Isolation: If inside Telegram, clear previous user's cached data if account switched
         if (isTg && tgUser && tgUser.id) {
-          if (!isExplicitlyLoggedOut) {
+          const storedUserJson = localStorage.getItem('lomi_user');
+          if (storedUserJson) {
             try {
-              // Connect live to Neon DB
+              const parsed = JSON.parse(storedUserJson);
+              if (parsed.telegramId && String(parsed.telegramId) !== String(tgUser.id)) {
+                // Switched to a different Telegram account on the same phone!
+                localStorage.removeItem('lomi_auth_token');
+                localStorage.removeItem('lomi_user');
+                localStorage.removeItem('lomi_live_balance');
+                localStorage.removeItem('lomi_live_bonus');
+              }
+            } catch {}
+          }
+
+          const isExplicitlyLoggedOut =
+            typeof window !== 'undefined' && localStorage.getItem(`lomi_explicit_logout_${tgUser.id}`) === 'true';
+
+          // Check live Neon DB for this specific Telegram account
+          try {
+            const exists = await apiClient.auth.checkTelegramExists(tgUser.id);
+            if (exists && !isExplicitlyLoggedOut) {
+              // Existing account: auto restore session
               const apiResult = await apiClient.auth.loginWithTelegram(tgUser);
               const mappedUser: User = {
                 id: apiResult.user.id,
@@ -90,24 +106,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
               setUser(mappedUser);
               setToken(apiResult.token);
+              localStorage.setItem('lomi_user', JSON.stringify(mappedUser));
               if (apiResult.wallet) {
                 localStorage.setItem('lomi_live_balance', apiResult.wallet.balance.toFixed(2));
                 localStorage.setItem('lomi_live_bonus', apiResult.wallet.bonus.toFixed(2));
                 window.dispatchEvent(new CustomEvent('lb_wallet_updated', { detail: apiResult.wallet }));
               }
-              if (apiResult.isNewUser) {
-                localStorage.setItem(`lomi_streak_claim_${mappedUser.id}`, new Date().toDateString());
-                localStorage.setItem(`lomi_streak_day_${mappedUser.id}`, '2');
-              }
               return;
-            } catch (err) {
-              console.warn('⚠️ Server auth fallback to local session:', err);
             }
+          } catch (err) {
+            console.warn('⚠️ Server auth check error:', err);
           }
         }
 
-        // 3. Fallback to existing verified session
-        if (!isExplicitlyLoggedOut) {
+        // 3. Fallback to existing verified session (Web browser)
+        const isWebExplicitLogout =
+          typeof window !== 'undefined' && localStorage.getItem('lomi_explicit_logout') === 'true';
+
+        if (!isWebExplicitLogout && !isTg) {
           const storedToken = localStorage.getItem('lomi_auth_token');
           if (storedToken) {
             try {
@@ -265,11 +281,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     authService.clearSession();
     localStorage.removeItem('lomi_auth_token');
+    localStorage.removeItem('lomi_user');
     localStorage.removeItem('lomi_live_balance');
     localStorage.removeItem('lomi_live_bonus');
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lomi_explicit_logout', 'true');
+    if (telegramUser?.id) {
+      localStorage.setItem(`lomi_explicit_logout_${telegramUser.id}`, 'true');
     }
+    localStorage.setItem('lomi_explicit_logout', 'true');
     setUser(null);
     setToken(null);
   };

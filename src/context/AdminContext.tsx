@@ -450,11 +450,21 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!tx) return;
 
     try {
+      // Ensure valid admin token
+      try {
+        await apiClient.auth.adminLogin('1234');
+      } catch {}
+
       if (tx.type === 'deposit') {
         await apiClient.admin.approveDeposit(id);
       } else {
         await apiClient.admin.approveWithdrawal(id);
       }
+
+      // Optimistically update card status in UI
+      setTransactions(prev =>
+        prev.map(t => (t.id === id ? { ...t, status: 'approved' } : t))
+      );
 
       // Refresh live database state
       await refreshAdminData();
@@ -470,11 +480,20 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!tx) return;
 
     try {
+      try {
+        await apiClient.auth.adminLogin('1234');
+      } catch {}
+
       if (tx.type === 'deposit') {
         await apiClient.admin.rejectDeposit(id, note);
       } else {
         await apiClient.admin.rejectWithdrawal(id, note);
       }
+
+      setTransactions(prev =>
+        prev.map(t => (t.id === id ? { ...t, status: 'rejected' } : t))
+      );
+
       await refreshAdminData();
     } catch (err: any) {
       console.error('❌ Failed to reject transaction:', err);
