@@ -38,10 +38,10 @@ async function resetAndCleanDatabase() {
 
     const adminId = adminUserRes.rows[0].id;
 
-    // Seed Admin Float Wallet
+    // Admin Cashier has no game wallet balance (manages deposits/withdrawals only)
     await client.query(`
       INSERT INTO wallets (user_id, balance, bonus, currency)
-      VALUES ($1, 100000.00, 0.00, 'ETB');
+      VALUES ($1, 0.00, 0.00, 'ETB');
     `, [adminId]);
 
     console.log('🎮 [Seeding 4 Official Game Rooms]...');

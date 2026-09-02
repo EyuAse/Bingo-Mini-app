@@ -49,10 +49,10 @@ async function runMigration() {
       const adminId = userRes.rows[0].id;
       await client.query(
         `INSERT INTO wallets (user_id, balance, bonus)
-         VALUES ($1, 100000.00, 0.00)`,
+         VALUES ($1, 0.00, 0.00)`,
         [adminId]
       );
-      console.log('✅ [Neon Migration] Admin Cashier account created with initial Float balance (100,000 ETB).');
+      console.log('✅ [Neon Migration] Admin Cashier account created.');
     }
 
     await client.query('COMMIT');

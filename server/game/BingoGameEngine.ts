@@ -17,6 +17,12 @@ export interface PlayerTicket {
   socketId: string;
 }
 
+export interface OpponentCard {
+  cartelaId: number;
+  cardMatrix: BingoCell[];
+  opponentName: string;
+}
+
 export interface GameRoomState {
   id: string;
   name: string;
@@ -36,12 +42,25 @@ export interface GameRoomState {
   tickets: Map<string, PlayerTicket[]>; // userId -> tickets[]
   activeSockets: Set<string>;
   winResult: any | null;
+  opponentCards: OpponentCard[];
 }
+
+// Realistic Ethiopian names for simulated opponents
+const ETHIOPIAN_NAMES = [
+  'Abebe K.', 'Kebede M.', 'Tigist A.', 'Hanna B.', 'Dawit T.',
+  'Meseret W.', 'Solomon G.', 'Bethlehem H.', 'Yonas D.', 'Sara M.',
+  'Kidane F.', 'Mulu A.', 'Tadesse B.', 'Almaz G.', 'Girma S.',
+  'Aster T.', 'Yared K.', 'Tsion D.', 'Henok M.', 'Selamawit B.',
+  'Dereje A.', 'Firehiwot G.', 'Mulugeta T.', 'Rahel K.', 'Tesfaye W.',
+  'Birtukan S.', 'Amanuel D.', 'Hiwot M.', 'Bekele A.', 'Meron T.',
+  'Eyasu G.', 'Genet K.', 'Nahom B.', 'Tigist D.', 'Yohannes A.'
+];
 
 class BingoGameEngine {
   private static instance: BingoGameEngine;
   private rooms: Map<string, GameRoomState> = new Map();
   private intervals: Map<string, NodeJS.Timeout> = new Map();
+
 
   private constructor() {
     this.initializeRooms();
@@ -81,7 +100,8 @@ class BingoGameEngine {
         houseFee: 0,
         tickets: new Map(),
         activeSockets: new Set(),
-        winResult: null
+        winResult: null,
+        opponentCards: []
       };
 
       this.rooms.set(r.id, roomState);
@@ -297,6 +317,18 @@ class BingoGameEngine {
     this.recalculatePot(room);
     this.broadcastRoomState(room);
 
+    // Generate simulated opponent cartelas (Ethiopian Bingo halls have 20-50 players)
+    const numOpponents = 20 + Math.floor(Math.random() * 16); // 20-35 opponents
+    room.opponentCards = [];
+    for (let i = 0; i < numOpponents; i++) {
+      const opponentCartelaId = Math.floor(1 + Math.random() * 400);
+      room.opponentCards.push({
+        cartelaId: opponentCartelaId,
+        cardMatrix: generateCardFromId(opponentCartelaId),
+        opponentName: ETHIOPIAN_NAMES[Math.floor(Math.random() * ETHIOPIAN_NAMES.length)]
+      });
+    }
+
     // Create Round in Neon PostgreSQL
     try {
       const roundRes = await query(
@@ -339,7 +371,7 @@ class BingoGameEngine {
   }
 
   /**
-   * 3.5s Ball Drawing Loop
+   * 3.5s Ball Drawing Loop — checks opponent and human wins each ball
    */
   private startBallCallingLoop(roomId: string) {
     const room = this.rooms.get(roomId);
@@ -356,7 +388,6 @@ class BingoGameEngine {
       }
 
       if (room.ballSequence.length === 0) {
-        // All balls drawn without winner
         clearInterval(interval);
         this.finishRoundWithoutWinner(roomId);
         return;
@@ -378,6 +409,47 @@ class BingoGameEngine {
         drawnNumbers: room.drawnNumbers,
         totalCalled: room.drawnNumbers.length
       });
+
+      // After minimum 20 balls drawn, check opponent cards for wins
+      if (room.drawnNumbers.length >= 20 && room.opponentCards) {
+        for (const opp of room.opponentCards) {
+          const winCheck = checkWinningPattern(opp.cardMatrix, room.drawnNumbers);
+          if (winCheck.isWin) {
+            // Opponent wins! End round after a small delay to feel natural
+            clearInterval(interval);
+            
+            setTimeout(() => {
+              if (room.phase !== 'playing') return;
+              room.phase = 'winner';
+
+              const winResult = {
+                winnerId: `opponent_${opp.cartelaId}`,
+                winnerName: opp.opponentName,
+                winningCartelaNumber: opp.cartelaId,
+                winningPattern: winCheck.winningPattern,
+                winningIndices: winCheck.winningIndices,
+                totalPot: room.totalPot,
+                userShare: 0 // opponent won, no payout to real user
+              };
+
+              room.winResult = winResult;
+              io.to(roomId).emit('round_winner', winResult);
+
+              // Update game_rounds in DB
+              if (room.currentRoundId) {
+                query(
+                  `UPDATE game_rounds SET phase = 'ended', winner_names = $1, ended_at = NOW() WHERE id = $2`,
+                  [JSON.stringify([opp.opponentName]), room.currentRoundId]
+                ).catch(() => {});
+              }
+
+              this.startWinnerCelebrationTimer(roomId);
+            }, 1500); // 1.5s delay feels like opponent just called BINGO
+
+            return;
+          }
+        }
+      }
     }, 3500);
 
     this.intervals.set(roomId, interval);
