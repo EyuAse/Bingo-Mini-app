@@ -55,6 +55,17 @@ export const CashierDesk: React.FC = () => {
 
   const pendingTotalCount = pendingDepositsCount + pendingWithdrawalsCount;
 
+  const pendingTotalAmount = effectiveTransactions
+    .filter(t => (t.status || 'pending') === 'pending')
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+  const todayVerifiedAmount = effectiveTransactions
+    .filter(t => t.status === 'approved')
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+  const approvedTodayCount = effectiveTransactions.filter(t => t.status === 'approved').length;
+  const rejectedTodayCount = effectiveTransactions.filter(t => t.status === 'rejected').length;
+
   // Filter Logic
   const filteredTxs = effectiveTransactions.filter(tx => {
     // Status filter
@@ -373,12 +384,35 @@ export const CashierDesk: React.FC = () => {
                   <div className="sms-shield-icon">
                     <i className="fa-solid fa-shield-halved"></i>
                   </div>
-                  <div className="sms-verify-text-group">
-                    <strong className="sms-verify-title">SMS Reference Verification</strong>
+                  <div className="sms-verify-text-group" style={{ flex: 1 }}>
+                    <strong className="sms-verify-title">SMS & Receipt Verification</strong>
                     <span className="sms-verify-sub">
-                      {tx.receiptImage ? 'Receipt Screenshot Attached' : 'No Screenshot Attached'}
+                      {tx.receiptImage ? '📸 Payment Screenshot Attached' : 'No Screenshot Attached'}
                     </span>
                   </div>
+                  {tx.receiptImage && (
+                    <button
+                      type="button"
+                      onClick={() => setInspectTx(tx)}
+                      style={{
+                        background: 'rgba(234, 179, 8, 0.15)',
+                        border: '1px solid rgba(234, 179, 8, 0.4)',
+                        borderRadius: '6px',
+                        padding: '3px 8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        color: '#facc15',
+                        fontSize: '11px',
+                        fontWeight: 700
+                      }}
+                      title="Inspect attached receipt image"
+                    >
+                      <i className="fa-solid fa-image"></i>
+                      <span>View Slip</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Footer Meta: Verified & Amount */}
@@ -420,10 +454,9 @@ export const CashierDesk: React.FC = () => {
 
                     <button
                       type="button"
-                      className="btn-tx-reject-red"
+                      className="btn-tx-reject-gray"
                       onClick={() => setRejectTargetTx(tx)}
                     >
-                      <i className="fa-solid fa-xmark"></i>
                       <span>Reject</span>
                     </button>
                   </div>
@@ -463,25 +496,25 @@ export const CashierDesk: React.FC = () => {
           {/* Total Amount Pending */}
           <div className="bottom-kpi-item">
             <span className="kpi-micro-lbl">Total Amount (Pending)</span>
-            <strong className="kpi-bold-val gold">2,700.00 ETB</strong>
+            <strong className="kpi-bold-val gold">{pendingTotalAmount.toFixed(2)} ETB</strong>
           </div>
 
           {/* Today Verified */}
           <div className="bottom-kpi-item">
             <span className="kpi-micro-lbl">Today Verified</span>
-            <strong className="kpi-bold-val green">5,800.00 ETB</strong>
+            <strong className="kpi-bold-val green">{todayVerifiedAmount.toFixed(2)} ETB</strong>
           </div>
 
           {/* Approved Today */}
           <div className="bottom-kpi-item">
             <span className="kpi-micro-lbl">Approved Today</span>
-            <strong className="kpi-bold-val dark">12</strong>
+            <strong className="kpi-bold-val dark">{approvedTodayCount}</strong>
           </div>
 
           {/* Rejected Today */}
           <div className="bottom-kpi-item">
             <span className="kpi-micro-lbl">Rejected Today</span>
-            <strong className="kpi-bold-val red">2</strong>
+            <strong className="kpi-bold-val red">{rejectedTodayCount}</strong>
           </div>
         </div>
 
@@ -553,6 +586,32 @@ export const CashierDesk: React.FC = () => {
                 <span className="sms-box-lbl">Telebirr / CBE SMS Reference:</span>
                 <strong className="sms-code-big">{inspectTx.referenceNumber}</strong>
               </div>
+
+              {/* Attached Receipt Image Section */}
+              {inspectTx.receiptImage && (
+                <div style={{ marginTop: '16px', background: '#0b1120', padding: '14px', borderRadius: '12px', border: '1px solid rgba(234, 179, 8, 0.35)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#facc15', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <i className="fa-solid fa-camera"></i> Attached Payment Receipt Screenshot
+                    </span>
+                    <a
+                      href={inspectTx.receiptImage}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ fontSize: '12px', color: '#60a5fa', fontWeight: 600, textDecoration: 'underline' }}
+                    >
+                      Open Full Res ↗
+                    </a>
+                  </div>
+                  <div style={{ maxHeight: '380px', overflowY: 'auto', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', background: '#000000', padding: '8px' }}>
+                    <img
+                      src={inspectTx.receiptImage}
+                      alt="Payment Receipt Slip"
+                      style={{ maxWidth: '100%', height: 'auto', display: 'inline-block', borderRadius: '6px' }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="slip-modal-footer">
