@@ -348,18 +348,27 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       refreshAdminData();
     }
 
-    // Listen to real-time events on Socket.IO
+    // 1. Listen to real-time events on Socket.IO
     const socket = socketService.connect();
     const handleAdminEvent = () => {
       refreshAdminData();
     };
 
+    socket.on('admin_new_user', handleAdminEvent);
     socket.on('admin_new_deposit', handleAdminEvent);
     socket.on('admin_new_withdrawal', handleAdminEvent);
     socket.on('deposit_status_updated', handleAdminEvent);
     socket.on('withdrawal_status_updated', handleAdminEvent);
 
+    // 2. Active 3-Second Background Polling Engine
+    // Guarantees immediate zero-refresh detection across multi-device / multi-server sessions
+    const pollInterval = setInterval(() => {
+      refreshAdminData();
+    }, 3000);
+
     return () => {
+      clearInterval(pollInterval);
+      socket.off('admin_new_user', handleAdminEvent);
       socket.off('admin_new_deposit', handleAdminEvent);
       socket.off('admin_new_withdrawal', handleAdminEvent);
       socket.off('deposit_status_updated', handleAdminEvent);

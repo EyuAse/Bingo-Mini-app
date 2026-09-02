@@ -95,6 +95,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 localStorage.setItem('lomi_live_bonus', apiResult.wallet.bonus.toFixed(2));
                 window.dispatchEvent(new CustomEvent('lb_wallet_updated', { detail: apiResult.wallet }));
               }
+              if (apiResult.isNewUser) {
+                localStorage.setItem(`lomi_streak_claim_${mappedUser.id}`, new Date().toDateString());
+                localStorage.setItem(`lomi_streak_day_${mappedUser.id}`, '2');
+              }
               return;
             } catch (err) {
               console.warn('⚠️ Server auth fallback to local session:', err);
@@ -244,6 +248,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('lomi_live_balance', apiResult.wallet.balance.toFixed(2));
         localStorage.setItem('lomi_live_bonus', apiResult.wallet.bonus.toFixed(2));
         window.dispatchEvent(new CustomEvent('lb_wallet_updated', { detail: apiResult.wallet }));
+      }
+      if (apiResult.isNewUser) {
+        localStorage.setItem(`lomi_streak_claim_${mappedUser.id}`, new Date().toDateString());
+        localStorage.setItem(`lomi_streak_day_${mappedUser.id}`, '2');
       }
 
       telegramService.triggerHaptic('success');

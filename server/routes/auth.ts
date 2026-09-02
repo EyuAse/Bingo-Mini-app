@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { query, withTransaction } from '../db.ts';
 import { generateToken, requireAuth, AuthenticatedRequest } from '../middleware/auth.ts';
+import { io } from '../server.ts';
 
 const router = Router();
 
@@ -147,6 +148,18 @@ router.post('/telegram', async (req, res) => {
         bonus: parseFloat(result.wallet.bonus || '10.00'),
         lockedBalance: parseFloat(result.wallet.locked_balance || '0')
       };
+
+      // Broadcast new player registration to Admin Dashboard
+      io.emit('admin_new_user', {
+        id: userRow.id,
+        name: userRow.full_name,
+        phone: userRow.phone,
+        telegramUsername: userRow.telegram_username,
+        role: userRow.role,
+        balance: 0,
+        bonus: 10,
+        createdAt: userRow.created_at
+      });
     }
 
     const authUser = {
