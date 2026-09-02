@@ -59,15 +59,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // 1. Initialize Telegram WebApp SDK
         telegramService.initWebApp();
         const tgUser = telegramService.getTelegramUser();
-        const isTg = telegramService.isTelegram() || !!tgUser;
+        const isTg = telegramService.isTelegram() && !!tgUser;
         setIsInsideTelegram(isTg);
         setTelegramUser(tgUser);
 
         const isExplicitlyLoggedOut =
           typeof window !== 'undefined' && localStorage.getItem('lomi_explicit_logout') === 'true';
 
-        // 2. Telegram Mini App 1-Click Login
-        if (isTg && tgUser) {
+        // 2. Telegram Mini App 1-Click Login (Only inside real Telegram WebApp)
+        if (isTg && tgUser && tgUser.id) {
           if (!isExplicitlyLoggedOut) {
             try {
               // Connect live to Neon DB
@@ -214,12 +214,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     customTgUser?: TelegramUser,
     customPhone?: string
   ): Promise<{ user: User; isNewUser: boolean }> => {
-    const tgUser = customTgUser || telegramUser || {
-      id: 8839201,
-      first_name: 'Eyob',
-      last_name: 'Asefa',
-      username: 'eyu_ase'
-    };
+    const tgUser = customTgUser || telegramUser;
+    if (!tgUser) {
+      throw new Error('Telegram session not found. Please register or login with your phone number.');
+    }
 
     setIsLoading(true);
     try {

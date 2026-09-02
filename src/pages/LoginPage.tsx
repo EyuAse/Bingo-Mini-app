@@ -14,8 +14,8 @@ export const LoginPage: React.FC = () => {
   const { t, lang } = useLanguage();
   const { login } = useAuth();
 
-  const [phone, setPhone] = useState<string>('0983624574');
-  const [pin, setPin] = useState<string>('1234');
+  const [phone, setPhone] = useState<string>('');
+  const [pin, setPin] = useState<string>('');
   const [showPin, setShowPin] = useState<boolean>(false);
   const [rememberMe, setRememberMe] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);

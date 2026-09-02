@@ -16,7 +16,7 @@ export const ProfilePage: React.FC = () => {
   const handleLogout = () => {
     logout();
     showToast(lang === 'am' ? '👋 በተሳካ ሁኔታ ወጥተዋል።' : '👋 You have been logged out.');
-    switchPage('landing');
+    switchPage('login');
   };
 
   return (
