@@ -2,12 +2,16 @@ export type EthiopianCarrier = 'ethiotelecom' | 'safaricom';
 
 export interface User {
   id: string;
+  telegramId?: number;
   phone: string;              // Canonical e.g. "+251911234567"
   nationalPhone: string;      // National e.g. "0911234567"
   formattedPhone: string;     // Display e.g. "+251 91 123 4567"
   carrier: EthiopianCarrier;
   fullName: string;
   telegramUsername?: string;
+  photoUrl?: string;
+  avatar?: string;
+  pin?: string;
   isPhoneVerified: boolean;
   role: 'player' | 'admin';
   createdAt: string;

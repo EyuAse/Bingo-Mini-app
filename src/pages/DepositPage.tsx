@@ -4,6 +4,7 @@ import { useAdmin } from '../context/AdminContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { TelebirrLogo, CBELogo } from '../components/wallet/PaymentLogos.tsx';
 import { LanguageDropdown } from '../components/common/LanguageDropdown.tsx';
+import { apiClient } from '../services/apiClient.ts';
 
 export const DepositPage: React.FC = () => {
   const { switchPage, showToast } = useApp();
@@ -86,6 +87,17 @@ export const DepositPage: React.FC = () => {
     const assignedRef = transactionRef.trim()
       ? transactionRef.trim().toUpperCase()
       : `${selectedMethod === 'Telebirr' ? 'TX-TB-' : 'TX-CBE-'}${Math.floor(100000 + Math.random() * 900000)}`;
+
+    // Call live Neon DB API
+    apiClient.wallet.deposit({
+      amount,
+      paymentMethod: selectedMethod,
+      playerPhone,
+      transactionRef: assignedRef,
+      receiptImage: receiptImage || undefined
+    }).catch(err => {
+      console.warn('Backend deposit notice:', err);
+    });
 
     addDepositRequest(
       'usr-me',

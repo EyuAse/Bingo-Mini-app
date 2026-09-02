@@ -1,0 +1,163 @@
+-- Lomi Bingo Production Database Schema (Neon PostgreSQL)
+-- Multi-user Scalable Real-Time Gaming Engine for Telegram Mini App
+
+-- Enable UUID extension if available
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 1. Users Table (Optimized for Telegram Mini App Auth)
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    telegram_id BIGINT UNIQUE,
+    telegram_username VARCHAR(100),
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    full_name VARCHAR(150) NOT NULL,
+    phone VARCHAR(30),
+    pin_hash VARCHAR(255),
+    avatar VARCHAR(255) DEFAULT '👤',
+    photo_url TEXT,
+    role VARCHAR(20) DEFAULT 'player' CHECK (role IN ('player', 'cashier', 'admin')),
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'banned')),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Ensure Telegram columns exist if users table was created earlier
+ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_id BIGINT UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_username VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_url TEXT;
+ALTER TABLE users ALTER COLUMN phone DROP NOT NULL;
+ALTER TABLE users ALTER COLUMN pin_hash DROP NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_users_tg_id ON users(telegram_id);
+CREATE INDEX IF NOT EXISTS idx_users_tg_username ON users(telegram_username);
+CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+
+-- 2. Wallets Table (Strict Decimal Precision & ACID Safe)
+CREATE TABLE IF NOT EXISTS wallets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (balance >= 0),
+    bonus NUMERIC(12, 2) NOT NULL DEFAULT 10.00 CHECK (bonus >= 0),
+    locked_balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (locked_balance >= 0),
+    currency VARCHAR(10) DEFAULT 'ETB',
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_wallets_user_id ON wallets(user_id);
+
+-- 3. Wallet Transactions (Immutable Ledger)
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(30) NOT NULL CHECK (type IN ('deposit', 'withdrawal', 'bet', 'win', 'bonus', 'refund', 'admin_adjustment')),
+    amount NUMERIC(12, 2) NOT NULL,
+    balance_after NUMERIC(12, 2) NOT NULL,
+    reference_code VARCHAR(100) UNIQUE NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'rejected', 'failed')),
+    payment_method VARCHAR(50),
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_wallet_tx_user_id ON wallet_transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_tx_ref ON wallet_transactions(reference_code);
+CREATE INDEX IF NOT EXISTS idx_wallet_tx_created ON wallet_transactions(created_at DESC);
+
+-- 4. Deposit Requests (Telebirr & CBE Cashier Workflows)
+CREATE TABLE IF NOT EXISTS deposit_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    amount NUMERIC(12, 2) NOT NULL CHECK (amount >= 10),
+    payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('Telebirr', 'CBE')),
+    player_phone VARCHAR(30) NOT NULL,
+    transaction_ref VARCHAR(100) UNIQUE NOT NULL,
+    receipt_image TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    reviewed_by UUID REFERENCES users(id),
+    reviewed_at TIMESTAMPTZ,
+    admin_notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_deposit_status ON deposit_requests(status);
+CREATE INDEX IF NOT EXISTS idx_deposit_user ON deposit_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_deposit_tx_ref ON deposit_requests(transaction_ref);
+
+-- 5. Withdrawal Requests
+CREATE TABLE IF NOT EXISTS withdrawal_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    amount NUMERIC(12, 2) NOT NULL CHECK (amount >= 50),
+    payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('Telebirr', 'CBE')),
+    account_phone VARCHAR(30) NOT NULL,
+    account_name VARCHAR(100),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'completed')),
+    reviewed_by UUID REFERENCES users(id),
+    reviewed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_withdrawal_status ON withdrawal_requests(status);
+CREATE INDEX IF NOT EXISTS idx_withdrawal_user ON withdrawal_requests(user_id);
+
+-- 6. Game Rooms Table
+CREATE TABLE IF NOT EXISTS game_rooms (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    stake_amount NUMERIC(10, 2) NOT NULL CHECK (stake_amount > 0),
+    min_players INT NOT NULL DEFAULT 1,
+    max_players INT NOT NULL DEFAULT 500,
+    house_commission_percent NUMERIC(5, 2) NOT NULL DEFAULT 15.00,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7. Game Rounds Table
+CREATE TABLE IF NOT EXISTS game_rounds (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    room_id VARCHAR(50) NOT NULL REFERENCES game_rooms(id),
+    round_number INT NOT NULL,
+    phase VARCHAR(20) NOT NULL DEFAULT 'lobby' CHECK (phase IN ('lobby', 'locked', 'playing', 'winner', 'ended')),
+    drawn_numbers JSONB NOT NULL DEFAULT '[]'::jsonb,
+    total_pot NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    platform_fee NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    winner_payout NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    winner_user_ids JSONB DEFAULT '[]'::jsonb,
+    winner_cartelas JSONB DEFAULT '[]'::jsonb,
+    winner_names JSONB DEFAULT '[]'::jsonb,
+    started_at TIMESTAMPTZ,
+    ended_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_game_rounds_room ON game_rounds(room_id, created_at DESC);
+
+-- 8. Game Tickets Table
+CREATE TABLE IF NOT EXISTS game_tickets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    round_id UUID NOT NULL REFERENCES game_rounds(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    cartela_id INT NOT NULL CHECK (cartela_id BETWEEN 1 AND 400),
+    card_matrix JSONB NOT NULL,
+    bet_amount NUMERIC(10, 2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'won', 'lost', 'cancelled')),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_tickets_round ON game_tickets(round_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_user ON game_tickets(user_id);
+
+-- 9. Seed Default Game Rooms (Idempotent)
+INSERT INTO game_rooms (id, name, stake_amount, min_players, max_players, house_commission_percent, is_active)
+VALUES
+    ('room-10', '10 Birr Room', 10.00, 1, 500, 15.00, TRUE),
+    ('room-25', '25 Birr Room', 25.00, 1, 500, 15.00, TRUE),
+    ('room-50', '50 Birr Room', 50.00, 1, 500, 15.00, TRUE),
+    ('room-100', '100 Birr VIP Room', 100.00, 1, 500, 15.00, TRUE)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    stake_amount = EXCLUDED.stake_amount;

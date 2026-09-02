@@ -1,9 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { apiClient } from '../services/apiClient';
+import { socketService } from '../services/socketService';
 
 export interface UserAccount {
   id: string;
   name: string;
   phone: string;
+  telegramUsername?: string;
+  telegramId?: number;
   balance: number;
   bonus: number;
   referredBy?: string;
@@ -11,12 +15,13 @@ export interface UserAccount {
   totalDeposited: number;
   totalWithdrawn: number;
   status: 'active' | 'suspended';
+  role?: string;
   createdAt: string;
 }
 
 export interface TransactionRequest {
   id: string;
-  referenceNumber: string; // e.g. TX-TB-894210
+  referenceNumber: string;
   userId: string;
   userName: string;
   phone: string;
@@ -48,7 +53,7 @@ export interface BotPlayer {
 export interface CartelaCard {
   id: number;
   serialNumber: string;
-  grid: number[]; // 25 numbers
+  grid: number[];
 }
 
 interface AdminContextType {
@@ -68,7 +73,7 @@ interface AdminContextType {
   // Commission & House Cut
   houseCommissionEnabled: boolean;
   setHouseCommissionEnabled: (enabled: boolean) => void;
-  commissionRate: number; // e.g. 10 for 10%
+  commissionRate: number;
   setCommissionRate: (rate: number) => void;
 
   // Game Rules & Staking
@@ -80,17 +85,17 @@ interface AdminContextType {
   setVerticalBoardMode: (enabled: boolean) => void;
 
   // Bonuses
-  registerBonus: number; // 10 ETB
+  registerBonus: number;
   setRegisterBonus: (amount: number) => void;
-  referralBonusRate: number; // 10%
+  referralBonusRate: number;
   setReferralBonusRate: (rate: number) => void;
 
   // Bot & Live Player Simulator
   simulatedPlayerCount: number;
   setSimulatedPlayerCount: (count: number) => void;
-  botWinRate: number; // 30%
+  botWinRate: number;
   setBotWinRate: (rate: number) => void;
-  ownerWinTarget: number; // 20%
+  ownerWinTarget: number;
   setOwnerWinTarget: (rate: number) => void;
   botPool: BotPlayer[];
 
@@ -99,14 +104,14 @@ interface AdminContextType {
 
   // Users Management
   users: UserAccount[];
-  addUser: (user: Omit<UserAccount, 'id' | 'createdAt'>) => void;
+  addUser: (user: Partial<UserAccount>) => void;
   adjustUserBalance: (userId: string, amount: number, isBonus?: boolean) => void;
   toggleUserStatus: (userId: string) => void;
 
-  // Deposit & Withdraw Cashier Desk
+  // Transactions Management
   transactions: TransactionRequest[];
-  approveAndReleaseTransaction: (id: string, note?: string) => void;
-  rejectTransaction: (id: string, note?: string) => void;
+  approveAndReleaseTransaction: (id: string, note?: string) => Promise<void>;
+  rejectTransaction: (id: string, note?: string) => Promise<void>;
   addDepositRequest: (
     userId: string,
     userName: string,
@@ -117,131 +122,92 @@ interface AdminContextType {
     receiptImage?: string,
     customRef?: string
   ) => void;
-  addWithdrawRequest: (userId: string, userName: string, phone: string, amount: number, method: 'Telebirr' | 'CBE', accountNumber: string) => void;
+  addWithdrawRequest: (
+    userId: string,
+    userName: string,
+    phone: string,
+    amount: number,
+    method: 'Telebirr' | 'CBE',
+    accountNumber: string
+  ) => void;
 
-  // Financial Summary Stats
-  totalHouseProfit: number;
+  // Real-time Stats
   totalDepositedToday: number;
   totalWithdrawnToday: number;
-  recordHouseCommission: (amount: number) => void;
+  totalHouseProfit: number;
+  pendingTransactionsCount: number;
+  refreshAdminData: () => Promise<void>;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
-// Generate 260+ realistic, dynamic & 100% UNIQUE Ethiopian player identities / usernames
+// Generate Ethiopian Opponent Bots
 const generateEthiopianBots = (): BotPlayer[] => {
-  // Diverse realistic usernames, gaming handles & Ethiopian player names (no repetitive father names)
-  const dynamicIdentities = [
-    // Modern Telegram / Mobile Gaming Usernames
-    'Alex_King', 'Sami_Lucky', 'Nati_Boss', 'Dani_Addis', 'Bini_Winner', 'Teddy_Pro', 'Robel_21', 'Ermi_Ace',
-    'Henok_VIP', 'Yoni_Bole', 'Miku_Hero', 'Jhonny_Star', 'Surafel_Gold', 'Abel_Winner', 'Sol_King', 'Kidus_Habesha',
-    'Dagi_Champion', 'Biruk_777', 'Yared_Lomi', 'Temu_Winner', 'Redi_Star', 'Fasika_Lucky', 'Bila_Pro', 'Mika_Star',
-    'Mesi_Cute', 'Eden_Rose', 'Hanna_Queen', 'Marta_Beauty', 'Meron_Sweet', 'Bethel_7', 'Tsion_Lucky', 'Aster_Smile',
-    'Kalkidan_Love', 'Liya_Star', 'Feven_Gold', 'Sara_Bole', 'Helen_Sweet', 'Winta_Joy', 'Zufan_Lucky', 'Rahel_Queen',
-    'ShegerBoy', 'LuckyHabesha', 'HabeshaQueen', 'BoleWinner', 'AddisHero', 'LomiChamp', 'KingDawit', 'GoldBingo_ET',
-    'LuckyLomi77', 'AddisViper', 'ShegerQueen', 'BingoKing_ET', 'HabeshaLegend', 'LomiMaster', 'AddisSniper', 'Abyssinia_Lion',
-    'Tommy_Star', 'Kidus_G', 'Brook_Champ', 'Nebiyu_Winner', 'Bisrat_Pro', 'Yidne_7', 'Fikadu_Boss', 'Mikias_VIP',
-    'Amanuel_Ace', 'Eyob_King', 'Chernet_Lucky', 'Biniyam_Hero', 'Ibrahim_Star', 'Habtamu_Pro', 'Jaleta_Winner', 'Kenenisa_Run',
-
-    // Natural Player Names (Clean First Names with Distinct Last Names)
-    'Abebe Bikila', 'Dawit Mengistu', 'Almaz Kebede', 'Chala Tolessa', 'Bilen Haile', 'Senait Girma',
-    'Ermias Tadesse', 'Robel Assefa', 'Fitsum Demissie', 'Kalid Bogale', 'Natnael Wolde', 'Tigist Dibaba',
-    'Yohannes Berhanu', 'Sintayehu Kassa', 'Meseret Legesse', 'Solomon Negash', 'Binyam Mekonnen', 'Eden Alemayehu',
-    'Ephrem Zewde', 'Fikirte Tefera', 'Getachew Shiferaw', 'Helen Gashaw', 'Kassahun Belay', 'Lensa Aysele',
-    'Marta Kassaye', 'Samuel Ayele', 'Selam Derese', 'Tariku Tilahun', 'Tewodros Feyissa', 'Zinash Gebre',
-    'Desta Abate', 'Fasil Woldemariam', 'Genet Getahun', 'Kiros Bedada', 'Mulugeta Mamo', 'Netsanet Endale',
-    'Wondwosen Bayisa', 'Yordanos Fikre', 'Zelalem Gemechu', 'Abinet Hailu', 'Daniel Jemal', 'Eskinder Kumsa',
-    'Frehiwot Lema', 'Girum Mulu', 'Hiwot Nega', 'Mahlet Robba', 'Nahom Tura', 'Surafel Wakgari',
-
-    // First Name + Single Initial
-    'Dawit K.', 'Sara B.', 'Abebe M.', 'Almaz T.', 'Senait G.', 'Ermias W.', 'Fitsum D.', 'Kiros H.',
-    'Selamawit N.', 'Yohannes S.', 'Tigist L.', 'Natnael B.', 'Robel M.', 'Bilen T.', 'Henok F.', 'Kalkidan Z.',
-    'Abel G.', 'Bethel A.', 'Surafel P.', 'Biruk T.', 'Meron K.', 'Eden S.', 'Tsion R.', 'Marta D.',
-    'Chala B.', 'Tariku H.', 'Binyam E.', 'Mahlet G.', 'Nahom V.', 'Fasika M.', 'Zelalem K.', 'Genet W.',
-
-    // Regional & Modern Ethiopian Handles
-    'AddisGamer', 'BoleBoy_251', 'PiassaKing', 'GondarStar', 'HawassaVibes', 'AdamaChamp', 'MekelleWinner', 'DireDawaAce',
-    'BahrDarPro', 'ArbaMinchStar', 'JimmaWinner', 'DebreZeitKing', 'WolloHero', 'HararStar', 'ShegerGamer', 'AbyssiniaStar',
-    'LomiPlayer_01', 'LomiPlayer_02', 'LomiPlayer_03', 'LomiPlayer_07', 'LomiPlayer_10', 'LomiPlayer_77', 'LomiPlayer_99',
-    'LuckyStrike_ET', 'BingoHero_2026', 'GoldenDaub', 'BingoSniper', 'DaubMaster', 'CartelaKing', 'CartelaQueen', 'FastDauber',
-    'LuckyTicket_ET', 'DailyWinner_ET', 'BirrMaker', 'PocketWinner', 'TelebirrMaster', 'CBE_Champ', 'SuperLomi', 'JackpotHunter',
-
-    // Realistic Individual Nicknames
-    'Abe_Addis', 'Almi_Cute', 'Beki_Star', 'Chali_Pro', 'Dawi_King', 'Ephri_Hero', 'Fiki_Sweet', 'Getu_Gold',
-    'Haily_Champ', 'Heli_Smile', 'Kassu_Winner', 'Lensi_Star', 'Marti_Beauty', 'Nati_Vip', 'Rahi_Queen', 'Sammy_Boss',
-    'Selu_Lucky', 'Tari_Ace', 'Teddy_Winner', 'Yari_Lomi', 'Zini_Star', 'Bili_Cute', 'Desi_Hero', 'Ermi_King',
-    'Fasi_Champ', 'Geni_Smile', 'Hani_Sweet', 'Kiri_Pro', 'Mule_Boss', 'Neti_Queen', 'Robi_Star', 'Seni_Gold',
-    'Tadi_Winner', 'Wondi_Ace', 'Yordi_Beauty', 'Zeli_King', 'Abi_Hero', 'Beti_Star', 'Dani_Vip', 'Eski_Champ',
-    'Fre_Smile', 'Giru_Gold', 'Hiwi_Sweet', 'Kalki_Queen', 'Mahi_Star', 'Naho_Winner', 'Sura_Ace', 'Biri_King',
-    'Meri_Cute', 'Heni_Hero', 'Tigi_Gold', 'Yoni_Winner', 'Fitsu_Star', 'Kali_Pro', 'Sinti_Champ', 'Mesi_Smile',
-    'Soli_King', 'Tsioni_Sweet', 'Bini_Hero', 'Edu_Beauty', 'Keni_Runner', 'Abeli_Star', 'Asti_Smile', 'Biniy_Winner',
-    'Cheri_Pro', 'Debri_King', 'Eyobi_Hero', 'Fevi_Gold', 'Gashi_Champ', 'Habti_Star', 'Ibro_Winner', 'Jali_Ace',
-    'Kidi_Sweet', 'Liyi_Queen', 'Miki_Pro', 'Nardi_Beauty', 'Omi_King', 'Redu_Star', 'Sabi_Smile', 'Temi_Winner',
-    'Urgi_Hero', 'Winti_Gold', 'Yoni_Star', 'Zufi_Queen', 'Amani_Ace', 'Nebi_Winner', 'Bisri_Champ', 'Brooki_King'
+  const firstNames = [
+    'Abebe', 'Almaz', 'Bekele', 'Chaltu', 'Dawit', 'Eleni', 'Fikru', 'Genet',
+    'Haile', 'Hiwot', 'Kassahun', 'Lemlem', 'Mekonnen', 'Meseret', 'Natnael', 'Rahel',
+    'Samuel', 'Selam', 'Tariku', 'Tigist', 'Yonas', 'Zenebech', 'Biruk', 'Desta',
+    'Ermias', 'Fasika', 'Girma', 'Hanna', 'Kidus', 'Liya', 'Meron', 'Nebiyu',
+    'Robel', 'Saron', 'Tewodros', 'Tsedey', 'Yared', 'Zelalem', 'Bilen', 'Danait',
+    'Ephrem', 'Frehiwot', 'Getachew', 'Helen', 'Kalkidan', 'Mahlet', 'Muluken', 'Netsanet',
+    'Ruth', 'Solomon', 'Tadesse', 'Tsion', 'Yohannes', 'Zerihun', 'Bethel', 'Daniel'
   ];
-
-  const phonePrefixes = ['911', '912', '913', '914', '915', '920', '921', '922', '923', '924', '930', '933', '940', '944', '955', '966', '977', '701', '711'];
-  const avatars = ['🦁', '👑', '⚡', '🌟', '💎', '🔥', '🎯', '🦅', '🍀', '🏆', '🍋', '⚽', '🥇', '🚀', '✨', '🐺', '🦊', '🐯', '🎩', '🎲', '🧿', '💰', '🎮', '🦄'];
-
+  const lastNames = [
+    'Bikila', 'Tesfaye', 'Mengistu', 'Worku', 'Tadesse', 'Gebre', 'Alemu', 'Kassa',
+    'Assefa', 'Desta', 'Girma', 'Haile', 'Kebede', 'Melaku', 'Negash', 'Tilahun',
+    'Wolde', 'Yilma', 'Zewde', 'Ayele', 'Berhanu', 'Demissie', 'Fekadu', 'Getahun'
+  ];
+  const avatars = ['av-purple', 'av-green', 'av-orange', 'av-blue', 'av-pink'];
   const bots: BotPlayer[] = [];
-  const usedNames = new Set<string>();
-  const usedPhones = new Set<string>();
 
-  for (let i = 0; i < dynamicIdentities.length; i++) {
-    const rawName = dynamicIdentities[i];
-    if (usedNames.has(rawName)) continue;
-    usedNames.add(rawName);
-
-    const prefix = phonePrefixes[bots.length % phonePrefixes.length];
-    let numPart = 100000 + ((bots.length * 3719 + 17) % 899999);
-    let phoneStr = `+251 ${prefix} ${numPart.toString().slice(0, 3)} ${numPart.toString().slice(3)}`;
-    while (usedPhones.has(phoneStr)) {
-      numPart = (numPart + 7919) % 899999;
-      phoneStr = `+251 ${prefix} ${numPart.toString().slice(0, 3)} ${numPart.toString().slice(3)}`;
-    }
-    usedPhones.add(phoneStr);
-
+  for (let i = 0; i < 50; i++) {
+    const fName = firstNames[i % firstNames.length];
+    const lName = lastNames[i % lastNames.length];
     bots.push({
-      id: `bot-${bots.length + 1}`,
-      name: rawName,
-      phone: phoneStr,
-      avatar: avatars[bots.length % avatars.length],
-      cartelasPlayed: 15 + ((bots.length * 7 + 13) % 95),
-      winsCount: 1 + ((bots.length * 3 + 5) % 22),
+      id: `bot-${i + 1}`,
+      name: `${fName} ${lName}`,
+      phone: `09${Math.floor(10000000 + Math.random() * 89999999)}`,
+      avatar: avatars[i % avatars.length],
+      cartelasPlayed: Math.floor(10 + Math.random() * 90),
+      winsCount: Math.floor(1 + Math.random() * 15),
       isBot: true
     });
-
-    if (bots.length >= 260) break;
   }
-
   return bots;
 };
 
-// Generate 400 unique Cartelas pool
+// Generate 400 Unique Cartela Definitions
 const generate400Cartelas = (): CartelaCard[] => {
   const cards: CartelaCard[] = [];
   for (let c = 1; c <= 400; c++) {
-    const grid: number[] = [];
-    const colRanges = [
-      [1, 15],
-      [16, 30],
-      [31, 45],
-      [46, 60],
-      [61, 75]
-    ];
-    const cardCols: number[][] = [];
-    for (const [min, max] of colRanges) {
-      const colNums: number[] = [];
-      while (colNums.length < 5) {
-        const n = Math.floor(Math.random() * (max - min + 1)) + min;
-        if (!colNums.includes(n)) colNums.push(n);
+    let seed = c * 7919 + 1013;
+    const pseudoRandom = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+    const getCols = (min: number, max: number, count: number) => {
+      const pool: number[] = [];
+      for (let i = min; i <= max; i++) pool.push(i);
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(pseudoRandom() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
       }
-      cardCols.push(colNums);
-    }
+      return pool.slice(0, count);
+    };
+
+    const cardCols = [
+      getCols(1, 15, 5),
+      getCols(16, 30, 5),
+      getCols(31, 45, 5),
+      getCols(46, 60, 5),
+      getCols(61, 75, 5)
+    ];
+
+    const grid: number[] = [];
     for (let row = 0; row < 5; row++) {
       for (let col = 0; col < 5; col++) {
         if (row === 2 && col === 2) {
-          grid.push(0); // FREE space
+          grid.push(0);
         } else {
           grid.push(cardCols[col][row]);
         }
@@ -253,125 +219,6 @@ const generate400Cartelas = (): CartelaCard[] => {
   return cards;
 };
 
-const initialUsers: UserAccount[] = [
-  {
-    id: 'usr-1',
-    name: 'Abebe Bikila',
-    phone: '+251 911 234 567',
-    balance: 750.0,
-    bonus: 25.0,
-    referralCount: 4,
-    totalDeposited: 1200.0,
-    totalWithdrawn: 450.0,
-    status: 'active',
-    createdAt: '2026-08-15'
-  },
-  {
-    id: 'usr-2',
-    name: 'Selam Tesfaye',
-    phone: '+251 922 876 543',
-    balance: 320.0,
-    bonus: 10.0,
-    referralCount: 1,
-    totalDeposited: 500.0,
-    totalWithdrawn: 180.0,
-    status: 'active',
-    createdAt: '2026-08-20'
-  },
-  {
-    id: 'usr-3',
-    name: 'Dawit Mengistu',
-    phone: '+251 933 555 123',
-    balance: 85.0,
-    bonus: 10.0,
-    referralCount: 0,
-    totalDeposited: 100.0,
-    totalWithdrawn: 0.0,
-    status: 'active',
-    createdAt: '2026-08-28'
-  },
-  {
-    id: 'usr-4',
-    name: 'Marta Worku',
-    phone: '+251 944 112 233',
-    balance: 1450.0,
-    bonus: 50.0,
-    referralCount: 6,
-    totalDeposited: 2500.0,
-    totalWithdrawn: 1100.0,
-    status: 'active',
-    createdAt: '2026-08-10'
-  }
-];
-
-const initialTransactions: TransactionRequest[] = [
-  {
-    id: 'tx-101',
-    referenceNumber: 'TX-TB-894210',
-    userId: 'usr-1',
-    userName: 'Abebe Bikila',
-    phone: '+251 911 234 567',
-    method: 'Telebirr',
-    type: 'deposit',
-    amount: 500.0,
-    accountNumber: '0911234567',
-    status: 'pending',
-    riskScore: 'verified',
-    userLifetimeDeposits: 1200.0,
-    userLifetimeWithdrawals: 450.0,
-    createdAt: 'Today, 18:45'
-  },
-  {
-    id: 'tx-102',
-    referenceNumber: 'TX-CBE-551980',
-    userId: 'usr-2',
-    userName: 'Selam Tesfaye',
-    phone: '+251 922 876 543',
-    method: 'CBE',
-    type: 'withdrawal',
-    amount: 200.0,
-    accountNumber: '100023456789',
-    status: 'pending',
-    riskScore: 'verified',
-    userLifetimeDeposits: 500.0,
-    userLifetimeWithdrawals: 180.0,
-    createdAt: 'Today, 19:10'
-  },
-  {
-    id: 'tx-103',
-    referenceNumber: 'TX-TB-773120',
-    userId: 'usr-4',
-    userName: 'Marta Worku',
-    phone: '+251 944 112 233',
-    method: 'Telebirr',
-    type: 'deposit',
-    amount: 1000.0,
-    accountNumber: '0944112233',
-    status: 'pending',
-    riskScore: 'verified',
-    userLifetimeDeposits: 2500.0,
-    userLifetimeWithdrawals: 1100.0,
-    createdAt: 'Today, 19:35'
-  },
-  {
-    id: 'tx-104',
-    referenceNumber: 'TX-TB-662910',
-    userId: 'usr-3',
-    userName: 'Dawit Mengistu',
-    phone: '+251 933 555 123',
-    method: 'Telebirr',
-    type: 'deposit',
-    amount: 100.0,
-    accountNumber: '0933555123',
-    status: 'approved',
-    riskScore: 'low',
-    userLifetimeDeposits: 100.0,
-    userLifetimeWithdrawals: 0.0,
-    createdAt: 'Today, 17:15',
-    processedAt: 'Today, 17:18'
-  }
-];
-
 export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [brandName, setBrandName] = useState<string>('Lomi Bingo');
   const [adminPin, setAdminPin] = useState<string>('1234');
@@ -380,134 +227,143 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return sessionStorage.getItem('lomibingo_admin_auth') === 'true';
   });
 
-  // Commission & House Cut (Default: ON, 10%)
-  const [houseCommissionEnabled, setHouseCommissionEnabled] = useState<boolean>(() => {
-    const saved = localStorage.getItem('lb_house_commission_enabled');
-    return saved !== null ? saved === 'true' : true;
-  });
-  const [commissionRate, setCommissionRate] = useState<number>(() => {
-    const saved = localStorage.getItem('lb_commission_rate');
-    return saved ? parseFloat(saved) : 20; // 20% Owner / Admin Commission Target
-  });
+  const [houseCommissionEnabled, setHouseCommissionEnabled] = useState<boolean>(true);
+  const [commissionRate, setCommissionRate] = useState<number>(15);
 
-  // Stakes & Promos
-  const [stakes, setStakes] = useState<number[]>([10, 20, 50, 100]);
+  const [stakes, setStakes] = useState<number[]>([10, 25, 50, 100]);
   const [buy2Get1Bonus, setBuy2Get1Bonus] = useState<boolean>(true);
   const [verticalBoardMode, setVerticalBoardMode] = useState<boolean>(false);
 
-  // Bonuses
   const [registerBonus, setRegisterBonus] = useState<number>(10);
   const [referralBonusRate, setReferralBonusRate] = useState<number>(10);
 
-  // Bot & Live Player Simulator
-  const [simulatedPlayerCount, setSimulatedPlayerCount] = useState<number>(() => {
-    const saved = localStorage.getItem('lb_simulated_players');
-    return saved ? parseInt(saved, 10) : 185;
-  });
-  const [botWinRate, setBotWinRate] = useState<number>(30); // 30%
-  const [ownerWinTarget, setOwnerWinTarget] = useState<number>(20); // 20%
+  const [simulatedPlayerCount, setSimulatedPlayerCount] = useState<number>(45);
+  const [botWinRate, setBotWinRate] = useState<number>(30);
+  const [ownerWinTarget, setOwnerWinTarget] = useState<number>(20);
   const [botPool] = useState<BotPlayer[]>(generateEthiopianBots);
   const [cartelaPool] = useState<CartelaCard[]>(generate400Cartelas);
 
-  // Users & Transactions (with defensive sanitization)
-  const [users, setUsers] = useState<UserAccount[]>(() => {
+  // Real Database-Backed Users & Transactions (Zero Mock Data)
+  const [users, setUsers] = useState<UserAccount[]>([]);
+  const [transactions, setTransactions] = useState<TransactionRequest[]>([]);
+  const [totalDepositedToday, setTotalDepositedToday] = useState<number>(0);
+  const [totalWithdrawnToday, setTotalWithdrawnToday] = useState<number>(0);
+
+  // Fetch Live Real Data from Neon PostgreSQL
+  const refreshAdminData = useCallback(async () => {
     try {
-      const saved = localStorage.getItem('lb_admin_users');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((u: any, idx: number) => ({
-            id: u.id || `usr-${idx + 1}`,
-            name: u.name || 'Lomi Player',
-            phone: u.phone || '+251 900 000 000',
-            balance: Number(u.balance) || 0,
-            bonus: Number(u.bonus) || 0,
-            referralCount: Number(u.referralCount) || 0,
-            totalDeposited: Number(u.totalDeposited) || 0,
-            totalWithdrawn: Number(u.totalWithdrawn) || 0,
-            status: u.status === 'suspended' ? 'suspended' : 'active',
-            createdAt: u.createdAt || '2026-08-01'
-          }));
-        }
+      // 1. Fetch Real Users
+      const usersRes = await apiClient.admin.getUsers().catch(() => ({ users: [] }));
+      if (usersRes.users) {
+        setUsers(usersRes.users.map((u: any) => ({
+          id: u.id,
+          name: u.name || 'Player',
+          phone: u.phone,
+          telegramUsername: u.telegramUsername,
+          telegramId: u.telegramId,
+          balance: parseFloat(u.balance || 0),
+          bonus: parseFloat(u.bonus || 0),
+          referralCount: 0,
+          totalDeposited: parseFloat(u.totalDeposited || 0),
+          totalWithdrawn: parseFloat(u.totalWithdrawn || 0),
+          status: u.status || 'active',
+          role: u.role,
+          createdAt: u.createdAt
+        })));
       }
-    } catch (e) {
-      console.warn('Error reading admin users:', e);
-    }
-    return initialUsers;
-  });
 
-  const [transactions, setTransactions] = useState<TransactionRequest[]>(() => {
-    try {
-      const saved = localStorage.getItem('lb_admin_transactions');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((t: any, idx: number) => ({
-            id: t.id || `tx-${idx + 100}`,
-            referenceNumber: t.referenceNumber || (t.method === 'CBE' ? `TX-CBE-${100000 + idx}` : `TX-TB-${800000 + idx}`),
-            userId: t.userId || 'usr-1',
-            userName: t.userName || 'Player',
-            phone: t.phone || '+251 911 000 000',
-            method: t.method === 'CBE' ? 'CBE' : 'Telebirr',
-            type: t.type === 'withdrawal' ? 'withdrawal' : 'deposit',
-            amount: Number(t.amount) || 100,
-            accountNumber: t.accountNumber || '0911000000',
-            status: t.status === 'approved' ? 'approved' : t.status === 'rejected' ? 'rejected' : 'pending',
-            riskScore: t.riskScore || 'verified',
-            userLifetimeDeposits: Number(t.userLifetimeDeposits) || 500,
-            userLifetimeWithdrawals: Number(t.userLifetimeWithdrawals) || 0,
-            createdAt: t.createdAt || 'Today, 18:00',
-            processedAt: t.processedAt,
-            adminNote: t.adminNote,
-            receiptImage: t.receiptImage
-          }));
-        }
+      // 2. Fetch Real Deposits & Withdrawals
+      const [depRes, wdRes, statsRes] = await Promise.all([
+        apiClient.admin.getDeposits().catch(() => ({ deposits: [] })),
+        apiClient.admin.getWithdrawals().catch(() => ({ withdrawals: [] })),
+        apiClient.admin.getStats().catch(() => ({ stats: null }))
+      ]);
+
+      const txList: TransactionRequest[] = [];
+
+      if (depRes.deposits) {
+        depRes.deposits.forEach((d: any) => {
+          txList.push({
+            id: d.id,
+            referenceNumber: d.transactionRef,
+            userId: d.userId,
+            userName: d.userName || 'Player',
+            phone: d.playerPhone || d.userPhone,
+            method: d.paymentMethod,
+            type: 'deposit',
+            amount: parseFloat(d.amount),
+            accountNumber: d.playerPhone,
+            status: d.status,
+            riskScore: 'verified',
+            userLifetimeDeposits: parseFloat(d.amount),
+            userLifetimeWithdrawals: 0,
+            receiptImage: d.receiptImage,
+            createdAt: new Date(d.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }),
+            processedAt: d.reviewedAt ? new Date(d.reviewedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : undefined,
+            adminNote: d.adminNotes
+          });
+        });
       }
-    } catch (e) {
-      console.warn('Error reading admin transactions:', e);
+
+      if (wdRes.withdrawals) {
+        wdRes.withdrawals.forEach((w: any) => {
+          txList.push({
+            id: w.id,
+            referenceNumber: `WD-${w.paymentMethod.toUpperCase()}-${w.id.slice(-6)}`,
+            userId: w.userId,
+            userName: w.accountName || w.userName || 'Player',
+            phone: w.accountPhone,
+            method: w.paymentMethod,
+            type: 'withdrawal',
+            amount: parseFloat(w.amount),
+            accountNumber: w.accountPhone,
+            status: w.status,
+            riskScore: 'verified',
+            userLifetimeDeposits: 0,
+            userLifetimeWithdrawals: parseFloat(w.amount),
+            createdAt: new Date(w.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }),
+            processedAt: w.reviewedAt ? new Date(w.reviewedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : undefined
+          });
+        });
+      }
+
+      setTransactions(txList);
+
+      if (statsRes.stats) {
+        setTotalDepositedToday(statsRes.stats.totalDeposits || 0);
+        setTotalWithdrawnToday(statsRes.stats.totalWithdrawals || 0);
+      }
+    } catch (err) {
+      console.warn('⚠️ Admin data refresh notice:', err);
     }
-    return initialTransactions;
-  });
-
-  const [totalHouseProfit, setTotalHouseProfit] = useState<number>(() => {
-    const saved = localStorage.getItem('lb_total_house_profit');
-    return saved ? parseFloat(saved) : 18450.0;
-  });
-
-  const [totalDepositedToday, setTotalDepositedToday] = useState<number>(28500.0);
-  const [totalWithdrawnToday, setTotalWithdrawnToday] = useState<number>(14200.0);
-
-  // Save changes
-  useEffect(() => {
-    localStorage.setItem('lb_house_commission_enabled', String(houseCommissionEnabled));
-  }, [houseCommissionEnabled]);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('lb_commission_rate', String(commissionRate));
-  }, [commissionRate]);
+    refreshAdminData();
 
-  useEffect(() => {
-    localStorage.setItem('lb_simulated_players', String(simulatedPlayerCount));
-  }, [simulatedPlayerCount]);
+    // Listen to real-time events on Socket.IO
+    const socket = socketService.connect();
+    const handleAdminEvent = () => {
+      refreshAdminData();
+    };
 
-  useEffect(() => {
-    localStorage.setItem('lb_admin_users', JSON.stringify(users));
-  }, [users]);
+    socket.on('admin_new_deposit', handleAdminEvent);
+    socket.on('admin_new_withdrawal', handleAdminEvent);
+    socket.on('deposit_status_updated', handleAdminEvent);
+    socket.on('withdrawal_status_updated', handleAdminEvent);
 
-  useEffect(() => {
-    localStorage.setItem('lb_admin_transactions', JSON.stringify(transactions));
-  }, [transactions]);
+    return () => {
+      socket.off('admin_new_deposit', handleAdminEvent);
+      socket.off('admin_new_withdrawal', handleAdminEvent);
+      socket.off('deposit_status_updated', handleAdminEvent);
+      socket.off('withdrawal_status_updated', handleAdminEvent);
+    };
+  }, [refreshAdminData]);
 
-  useEffect(() => {
-    localStorage.setItem('lb_total_house_profit', totalHouseProfit.toFixed(2));
-  }, [totalHouseProfit]);
-
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(prev => !prev);
-  };
+  const toggleSidebar = () => setIsSidebarCollapsed(prev => !prev);
 
   const loginAdmin = (pin: string): boolean => {
-    if (pin === adminPin || pin === '1234' || pin === 'admin') {
+    if (pin === adminPin || pin === '1234') {
       setIsAuthenticated(true);
       sessionStorage.setItem('lomibingo_admin_auth', 'true');
       return true;
@@ -520,20 +376,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     sessionStorage.removeItem('lomibingo_admin_auth');
   };
 
-  const recordHouseCommission = (amount: number) => {
-    setTotalHouseProfit(prev => prev + amount);
-  };
-
-  const addUser = (userData: Omit<UserAccount, 'id' | 'createdAt'>) => {
-    const newUser: UserAccount = {
-      ...userData,
-      id: `usr-${Date.now().toString().slice(-4)}`,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setUsers(prev => [newUser, ...prev]);
-  };
-
-  const adjustUserBalance = (userId: string, amount: number, isBonus: boolean = false) => {
+  const adjustUserBalance = (userId: string, amount: number, isBonus = false) => {
     setUsers(prev =>
       prev.map(u => {
         if (u.id === userId) {
@@ -547,6 +390,29 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     );
   };
 
+  const addUser = (newUserData: Partial<UserAccount>) => {
+    setUsers(prev => {
+      if (prev.some(u => u.id === newUserData.id || (newUserData.phone && u.phone === newUserData.phone))) {
+        return prev;
+      }
+      const created: UserAccount = {
+        id: newUserData.id || `usr-${Date.now()}`,
+        name: newUserData.name || 'Player',
+        phone: newUserData.phone || '',
+        telegramUsername: newUserData.telegramUsername,
+        telegramId: newUserData.telegramId,
+        balance: newUserData.balance || 0,
+        bonus: newUserData.bonus || 10,
+        referralCount: 0,
+        totalDeposited: 0,
+        totalWithdrawn: 0,
+        status: 'active',
+        createdAt: new Date().toISOString()
+      };
+      return [created, ...prev];
+    });
+  };
+
   const toggleUserStatus = (userId: string) => {
     setUsers(prev =>
       prev.map(u => {
@@ -558,67 +424,41 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     );
   };
 
-  const approveAndReleaseTransaction = (id: string, note?: string) => {
-    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setTransactions(prev =>
-      prev.map(tx => {
-        if (tx.id === id) {
-          // If deposit, release cash into user live wallet
-          if (tx.type === 'deposit') {
-            adjustUserBalance(tx.userId, tx.amount);
-            setTotalDepositedToday(d => d + tx.amount);
+  // Real Database Payout / Release Approval
+  const approveAndReleaseTransaction = async (id: string, note?: string) => {
+    const tx = transactions.find(t => t.id === id);
+    if (!tx) return;
 
-            // Sync with player active wallet
-            try {
-              const currentSaved = parseFloat(localStorage.getItem('betika_user_balance') || '750');
-              const newBal = currentSaved + tx.amount;
-              localStorage.setItem('betika_user_balance', newBal.toFixed(2));
-              window.dispatchEvent(new CustomEvent('lb_deposit_approved', { detail: { amount: tx.amount, txId: tx.id } }));
-            } catch (e) {
-              console.warn('Error updating player storage:', e);
-            }
-          } else {
-            setTotalWithdrawnToday(w => w + tx.amount);
-          }
-          return {
-            ...tx,
-            status: 'approved',
-            processedAt: `Today, ${nowTime}`,
-            adminNote: note || 'Approved & Released by Admin'
-          };
-        }
-        return tx;
-      })
-    );
+    try {
+      if (tx.type === 'deposit') {
+        await apiClient.admin.approveDeposit(id);
+      } else {
+        await apiClient.admin.approveWithdrawal(id);
+      }
+
+      // Refresh live database state
+      await refreshAdminData();
+      window.dispatchEvent(new CustomEvent('lb_deposit_approved', { detail: { amount: tx.amount, txId: tx.id } }));
+    } catch (err: any) {
+      console.error('❌ Failed to approve transaction:', err);
+    }
   };
 
-  const rejectTransaction = (id: string, note?: string) => {
-    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setTransactions(prev =>
-      prev.map(tx => {
-        if (tx.id === id) {
-          // If rejected withdrawal, refund user wallet
-          if (tx.type === 'withdrawal') {
-            adjustUserBalance(tx.userId, tx.amount);
-            try {
-              const currentSaved = parseFloat(localStorage.getItem('betika_user_balance') || '750');
-              const newBal = currentSaved + tx.amount;
-              localStorage.setItem('betika_user_balance', newBal.toFixed(2));
-              window.dispatchEvent(new CustomEvent('lb_deposit_approved', { detail: { amount: tx.amount } }));
-            } catch (e) {
-              console.warn('Error refunding player storage:', e);
-            }
-          }
-          return {
-            ...tx,
-            status: 'rejected',
-            processedAt: `Today, ${nowTime}`,
-            adminNote: note || 'Rejected by Admin'
-          };
-        }
-        return tx;
-      })
-    );
+  // Real Database Rejection
+  const rejectTransaction = async (id: string, note?: string) => {
+    const tx = transactions.find(t => t.id === id);
+    if (!tx) return;
+
+    try {
+      if (tx.type === 'deposit') {
+        await apiClient.admin.rejectDeposit(id, note);
+      } else {
+        await apiClient.admin.rejectWithdrawal(id, note);
+      }
+      await refreshAdminData();
+    } catch (err: any) {
+      console.error('❌ Failed to reject transaction:', err);
+    }
   };
 
   const addDepositRequest = (
@@ -648,10 +488,11 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       receiptImage,
       status: 'pending',
       riskScore: 'verified',
-      userLifetimeDeposits: 500,
+      userLifetimeDeposits: amount,
       userLifetimeWithdrawals: 0,
-      createdAt: `Today, ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+      createdAt: 'Just now'
     };
+
     setTransactions(prev => [newTx, ...prev]);
   };
 
@@ -663,25 +504,29 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     method: 'Telebirr' | 'CBE',
     accountNumber: string
   ) => {
-    const randomRef = `${method === 'Telebirr' ? 'TX-TB-' : 'TX-CBE-'}${Math.floor(100000 + Math.random() * 900000)}`;
+    const finalRef = `WD-${method === 'Telebirr' ? 'TB' : 'CBE'}-${Math.floor(100000 + Math.random() * 900000)}`;
+
     const newTx: TransactionRequest = {
-      id: `tx-${Date.now().toString().slice(-4)}`,
-      referenceNumber: randomRef,
+      id: `tx-${Date.now().toString().slice(-5)}`,
+      referenceNumber: finalRef,
       userId,
-      userName,
-      phone,
+      userName: userName || 'Player',
+      phone: phone || accountNumber,
       method,
       type: 'withdrawal',
       amount,
       accountNumber,
       status: 'pending',
       riskScore: 'verified',
-      userLifetimeDeposits: 1000,
-      userLifetimeWithdrawals: 200,
-      createdAt: `Today, ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+      userLifetimeDeposits: 0,
+      userLifetimeWithdrawals: amount,
+      createdAt: 'Just now'
     };
+
     setTransactions(prev => [newTx, ...prev]);
   };
+
+  const pendingTransactionsCount = transactions.filter(t => t.status === 'pending').length;
 
   return (
     <AdminContext.Provider
@@ -726,10 +571,11 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         rejectTransaction,
         addDepositRequest,
         addWithdrawRequest,
-        totalHouseProfit,
         totalDepositedToday,
         totalWithdrawnToday,
-        recordHouseCommission
+        totalHouseProfit: Math.round(totalDepositedToday * 0.15),
+        pendingTransactionsCount,
+        refreshAdminData
       }}
     >
       {children}

@@ -13,11 +13,15 @@ export default defineConfig({
     port: 3000,
     open: false,
     proxy: {
-      '/api/afromessage': {
-        target: 'https://api.afromessage.com',
+      '/api': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api\/afromessage/, '/api')
+        secure: false
+      },
+      '/socket.io': {
+        target: 'http://localhost:5000',
+        ws: true,
+        changeOrigin: true
       }
     }
   }

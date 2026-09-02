@@ -5,6 +5,7 @@ import { useAdmin } from '../context/AdminContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { TelebirrLogo, CBELogo } from '../components/wallet/PaymentLogos.tsx';
 import { LanguageDropdown } from '../components/common/LanguageDropdown.tsx';
+import { apiClient } from '../services/apiClient.ts';
 
 export const WithdrawPage: React.FC = () => {
   const { balance, deductBalance } = useWallet();
@@ -44,12 +45,18 @@ export const WithdrawPage: React.FC = () => {
       return;
     }
 
-    // Deduct player balance
-    const success = deductBalance(amount);
-    if (!success) {
-      showToast('❌ Failed to process withdrawal from balance.');
-      return;
-    }
+    // Call live Neon DB API
+    apiClient.wallet.withdraw({
+      amount,
+      paymentMethod: selectedMethod,
+      accountPhone: accountNumber,
+      accountName: accountHolder
+    }).catch(err => {
+      console.warn('Backend withdraw notice:', err);
+    });
+
+    // Deduct player balance locally
+    deductBalance(amount);
 
     const assignedRef = `WD-${selectedMethod === 'Telebirr' ? 'TB' : 'CBE'}-${Math.floor(100000 + Math.random() * 900000)}`;
 

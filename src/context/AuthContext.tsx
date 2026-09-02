@@ -3,6 +3,7 @@ import { User, RegisterPayload, LoginPayload, OtpChallengeResponse, OtpVerificat
 import { TelegramUser } from '../types/telegram';
 import { authService } from '../services/authService';
 import { telegramService } from '../services/telegramService';
+import { apiClient } from '../services/apiClient';
 import { useLanguage } from './LanguageContext';
 
 interface AuthContextType {
@@ -35,10 +36,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
   const [isFirstTimeTelegramUser, setIsFirstTimeTelegramUser] = useState<boolean>(false);
 
-  // Initialize Telegram WebApp, Auto-Authenticate & Account Sync
+  // Initialize Telegram WebApp, Purge Legacy Test Data & Auto-Authenticate with Neon DB
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // Purge legacy storage keys
+        if (typeof window !== 'undefined') {
+          const legacyKeys = [
+            'betika_user_balance',
+            'betika_user_bonus',
+            'lb_admin_users',
+            'lb_admin_transactions',
+            'lomi_registered_users',
+            'lomi_registered_users_v2',
+            'lomi_registered_users_v3',
+            'lomi_registered_users_v4',
+            'lomi_registered_users_v5'
+          ];
+          legacyKeys.forEach(k => localStorage.removeItem(k));
+        }
+
         // 1. Initialize Telegram WebApp SDK
         telegramService.initWebApp();
         const tgUser = telegramService.getTelegramUser();
@@ -46,45 +63,76 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsInsideTelegram(isTg);
         setTelegramUser(tgUser);
 
-        const isExplicitlyLoggedOut = typeof window !== 'undefined' && localStorage.getItem('lomi_explicit_logout') === 'true';
+        const isExplicitlyLoggedOut =
+          typeof window !== 'undefined' && localStorage.getItem('lomi_explicit_logout') === 'true';
 
-        // 2. Multi-Account Handling on Same Device
+        // 2. Telegram Mini App 1-Click Login
         if (isTg && tgUser) {
-          const session = authService.getSession();
-          const activeTgId = `UID-TG-${tgUser.id}`;
-          const activeTgUsername = tgUser.username ? tgUser.username.replace(/^@/, '') : '';
+          if (!isExplicitlyLoggedOut) {
+            try {
+              // Connect live to Neon DB
+              const apiResult = await apiClient.auth.loginWithTelegram(tgUser);
+              const mappedUser: User = {
+                id: apiResult.user.id,
+                telegramId: apiResult.user.telegramId,
+                telegramUsername: apiResult.user.telegramUsername,
+                fullName: apiResult.user.fullName || tgUser.first_name,
+                phone: apiResult.user.phone || `09${String(tgUser.id).slice(-8)}`,
+                nationalPhone: apiResult.user.phone ? `0${apiResult.user.phone.slice(-9)}` : `09${String(tgUser.id).slice(-8)}`,
+                formattedPhone: apiResult.user.phone || `09${String(tgUser.id).slice(-8)}`,
+                carrier: 'ethiotelecom',
+                isPhoneVerified: true,
+                role: apiResult.user.role || 'player',
+                pin: '1234',
+                createdAt: apiResult.user.createdAt || new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+              };
 
-          // If session belongs to a different Telegram account on the same phone, clear it!
-          if (session && session.user && session.user.id !== activeTgId && session.user.telegramUsername !== activeTgUsername) {
-            authService.clearSession();
-            localStorage.removeItem('lomi_explicit_logout');
-          }
-
-          const existingAccount = authService.checkTelegramUserExists(tgUser.id, tgUser.username);
-
-          // If account exists and user didn't explicitly click "Log Out", auto-login into active account!
-          if (existingAccount && !isExplicitlyLoggedOut) {
-            const result = await authService.loginWithTelegram(tgUser);
-            setUser(result.user);
-            setToken(result.token);
-            return;
-          }
-
-          // If account is brand new on this Telegram account, ensure clean state for Landing page
-          if (!existingAccount) {
-            authService.clearSession();
-            setUser(null);
-            setToken(null);
-            return;
+              setUser(mappedUser);
+              setToken(apiResult.token);
+              if (apiResult.wallet) {
+                localStorage.setItem('lomi_live_balance', apiResult.wallet.balance.toFixed(2));
+                localStorage.setItem('lomi_live_bonus', apiResult.wallet.bonus.toFixed(2));
+              }
+              return;
+            } catch (err) {
+              console.warn('⚠️ Server auth fallback to local session:', err);
+            }
           }
         }
 
-        // 3. Browser fallback session restore
+        // 3. Fallback to existing verified session
         if (!isExplicitlyLoggedOut) {
-          const session = authService.getSession();
-          if (session && session.user && session.token) {
-            setUser(session.user);
-            setToken(session.token);
+          const storedToken = localStorage.getItem('lomi_auth_token');
+          if (storedToken) {
+            try {
+              const meRes = await apiClient.auth.getMe();
+              const u = meRes.user;
+              const mappedUser: User = {
+                id: u.id,
+                telegramId: u.telegramId,
+                telegramUsername: u.telegramUsername,
+                fullName: u.fullName,
+                phone: u.phone || '0911234567',
+                nationalPhone: u.phone ? `0${u.phone.slice(-9)}` : '0911234567',
+                formattedPhone: u.phone || '0911234567',
+                carrier: 'ethiotelecom',
+                isPhoneVerified: true,
+                role: u.role || 'player',
+                pin: '1234',
+                createdAt: u.createdAt || new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+              };
+              setUser(mappedUser);
+              setToken(storedToken);
+              if (meRes.wallet) {
+                localStorage.setItem('lomi_live_balance', meRes.wallet.balance.toFixed(2));
+                localStorage.setItem('lomi_live_bonus', meRes.wallet.bonus.toFixed(2));
+              }
+              return;
+            } catch {
+              // Token expired
+            }
           }
         }
       } catch (err) {
@@ -125,6 +173,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (payload: LoginPayload): Promise<User> => {
     setIsLoading(true);
     try {
+      const apiResult = await apiClient.auth.loginWithPin(payload.phone, payload.pin);
+      localStorage.removeItem('lomi_explicit_logout');
+      const u = apiResult.user;
+      const mappedUser: User = {
+        id: u.id,
+        telegramId: u.telegramId,
+        telegramUsername: u.telegramUsername,
+        fullName: u.fullName,
+        phone: u.phone || payload.phone,
+        nationalPhone: payload.phone,
+        formattedPhone: payload.phone,
+        carrier: 'ethiotelecom',
+        isPhoneVerified: true,
+        role: u.role || 'player',
+        pin: payload.pin,
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString()
+      };
+      setUser(mappedUser);
+      setToken(apiResult.token);
+      return mappedUser;
+    } catch {
       const result = await authService.login(payload);
       localStorage.removeItem('lomi_explicit_logout');
       setUser(result.user);
@@ -135,7 +205,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const loginWithTelegram = async (customTgUser?: TelegramUser, customPhone?: string): Promise<{ user: User; isNewUser: boolean }> => {
+  const loginWithTelegram = async (
+    customTgUser?: TelegramUser,
+    customPhone?: string
+  ): Promise<{ user: User; isNewUser: boolean }> => {
     const tgUser = customTgUser || telegramUser || {
       id: 8839201,
       first_name: 'Eyob',
@@ -145,6 +218,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setIsLoading(true);
     try {
+      const apiResult = await apiClient.auth.loginWithTelegram(tgUser, customPhone);
+      localStorage.removeItem('lomi_explicit_logout');
+
+      const mappedUser: User = {
+        id: apiResult.user.id,
+        telegramId: apiResult.user.telegramId,
+        telegramUsername: apiResult.user.telegramUsername,
+        fullName: apiResult.user.fullName || `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim(),
+        phone: apiResult.user.phone || customPhone || `09${String(tgUser.id).slice(-8)}`,
+        nationalPhone: customPhone || `09${String(tgUser.id).slice(-8)}`,
+        formattedPhone: customPhone || `09${String(tgUser.id).slice(-8)}`,
+        carrier: 'ethiotelecom',
+        isPhoneVerified: true,
+        role: apiResult.user.role || 'player',
+        pin: '1234',
+        createdAt: apiResult.user.createdAt || new Date().toISOString(),
+        lastLogin: new Date().toISOString()
+      };
+
+      setUser(mappedUser);
+      setToken(apiResult.token);
+      if (apiResult.wallet) {
+        localStorage.setItem('lomi_live_balance', apiResult.wallet.balance.toFixed(2));
+        localStorage.setItem('lomi_live_bonus', apiResult.wallet.bonus.toFixed(2));
+      }
+
+      telegramService.triggerHaptic('success');
+      return { user: mappedUser, isNewUser: apiResult.isNewUser };
+    } catch {
       const result = await authService.loginWithTelegram(tgUser, customPhone);
       localStorage.removeItem('lomi_explicit_logout');
       setUser(result.user);
@@ -158,6 +260,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     authService.clearSession();
+    localStorage.removeItem('lomi_auth_token');
+    localStorage.removeItem('lomi_live_balance');
+    localStorage.removeItem('lomi_live_bonus');
     if (typeof window !== 'undefined') {
       localStorage.setItem('lomi_explicit_logout', 'true');
     }
