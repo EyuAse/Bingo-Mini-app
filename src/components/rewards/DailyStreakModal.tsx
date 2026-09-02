@@ -14,8 +14,8 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
   const { addBonus } = useWallet();
   const { showToast } = useApp();
 
-  // Day 1 is always claimed upon signup (+10 ETB Welcome Pack)
-  const [currentStreakDay, setCurrentStreakDay] = useState(2);
+  // Day 1 Welcome streak initialization
+  const [currentStreakDay, setCurrentStreakDay] = useState(1);
   const [hasClaimedToday, setHasClaimedToday] = useState(false);
 
   const streakDays = [
@@ -30,12 +30,11 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
 
   useEffect(() => {
     try {
-      const savedDay = parseInt(localStorage.getItem('lomi_streak_current_day') || '2', 10);
+      const savedDay = parseInt(localStorage.getItem('lomi_streak_current_day') || '1', 10);
       const lastClaimDate = localStorage.getItem('lomi_streak_last_claim');
       const todayStr = new Date().toDateString();
 
-      // Ensure Day 1 is never re-prompts since it's the welcome pack
-      const activeDay = Math.max(2, savedDay);
+      const activeDay = Math.min(7, Math.max(1, savedDay));
       setCurrentStreakDay(activeDay);
       setHasClaimedToday(lastClaimDate === todayStr);
     } catch {}

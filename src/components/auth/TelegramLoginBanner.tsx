@@ -52,7 +52,6 @@ export const TelegramLoginBanner: React.FC<TelegramLoginBannerProps> = ({ onSucc
           totalWithdrawn: 0,
           status: 'active'
         });
-        addBonus(registerBonus);
         setNewlyCreatedUser(user);
         setIsWelcomeModalOpen(true);
         setIsExistingAccount(true);

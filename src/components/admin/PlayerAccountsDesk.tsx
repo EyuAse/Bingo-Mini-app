@@ -35,16 +35,17 @@ export const PlayerAccountsDesk: React.FC = () => {
   const [adjustAmount, setAdjustAmount] = useState('100');
   const [adjustReason, setAdjustReason] = useState('Manual Cashier Credit');
 
-  // Calculations for KPI Cards
-  const totalPlayers = users.length;
-  const activePlayers = users.filter(u => u.status === 'active').length;
-  const suspendedPlayers = users.filter(u => u.status === 'suspended').length;
-  const totalCashFloat = users.reduce((acc, u) => acc + (u.balance || 0), 0);
-  const totalBonusFloat = users.reduce((acc, u) => acc + (u.bonus || 0), 0);
-  const vipPlayers = users.filter(u => (u.totalDeposited || 0) >= 1000);
+  // Calculations for KPI Cards (Filtered to genuine players)
+  const playerUsers = users.filter(u => u.role !== 'admin');
+  const totalPlayers = playerUsers.length;
+  const activePlayers = playerUsers.filter(u => u.status === 'active').length;
+  const suspendedPlayers = playerUsers.filter(u => u.status === 'suspended').length;
+  const totalCashFloat = playerUsers.reduce((acc, u) => acc + (u.balance || 0), 0);
+  const totalBonusFloat = playerUsers.reduce((acc, u) => acc + (u.bonus || 0), 0);
+  const vipPlayers = playerUsers.filter(u => (u.totalDeposited || 0) >= 1000);
 
   // Filter & Sort Logic
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = playerUsers.filter(user => {
     // Segment filter
     if (segmentFilter === 'active' && user.status !== 'active') return false;
     if (segmentFilter === 'suspended' && user.status !== 'suspended') return false;

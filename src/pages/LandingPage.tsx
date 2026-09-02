@@ -58,7 +58,6 @@ export const LandingPage: React.FC = () => {
           totalWithdrawn: 0,
           status: 'active'
         });
-        addBonus(registerBonus);
         setCreatedUser(user);
         setShowWelcomeModal(true);
         setIsExistingAccount(true);

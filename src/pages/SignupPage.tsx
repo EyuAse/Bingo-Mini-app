@@ -134,9 +134,6 @@ export const SignupPage: React.FC = () => {
         status: 'active'
       });
 
-      // Credit 10 ETB free registration bonus
-      addBonus(registerBonus);
-
       showToast(
         `🎉 ${lang === 'am'
           ? `እንኳን ደህና መጡ ${newUser.fullName}! የ${registerBonus} ብር ነፃ ቦነስ ተጨምሯል!`
