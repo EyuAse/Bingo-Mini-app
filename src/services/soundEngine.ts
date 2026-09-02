@@ -19,7 +19,7 @@ class AudioEngineService {
   private compressor: DynamicsCompressorNode | null = null;
   private vocalWarmFilter: BiquadFilterNode | null = null;
   private masterGain: GainNode | null = null;
-  private isMuted: boolean = false;
+  private isMuted: boolean = true;
   private voiceLang: 'en' | 'am' = 'am';
   private cachedVoices: SpeechSynthesisVoice[] = [];
   private speechTimeoutRef: number | null = null;
@@ -31,13 +31,9 @@ class AudioEngineService {
 
   private initVoices() {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      const updateVoices = () => {
-        this.cachedVoices = window.speechSynthesis.getVoices();
-      };
-      updateVoices();
-      if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = updateVoices;
-      }
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
     }
   }
 

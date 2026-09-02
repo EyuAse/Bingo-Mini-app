@@ -155,10 +155,10 @@ class BingoGameEngine {
     const totalCost = cartelaIds.length * room.stakeAmount;
 
     try {
-      // Deduct balance atomically from Neon DB
+      // Deduct balance and/or bonus atomically from Neon DB
       const result = await withTransaction(async (client) => {
         const walletRes = await client.query(
-          'SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE',
+          'SELECT balance, bonus FROM wallets WHERE user_id = $1 FOR UPDATE',
           [userId]
         );
 
@@ -166,15 +166,24 @@ class BingoGameEngine {
           throw new Error('Wallet not found');
         }
 
-        const balance = parseFloat(walletRes.rows[0].balance);
-        if (balance < totalCost) {
-          throw new Error(`Insufficient balance (${balance.toFixed(2)} ETB). Need ${totalCost.toFixed(2)} ETB.`);
+        const realBal = parseFloat(walletRes.rows[0].balance || '0');
+        const bonusBal = parseFloat(walletRes.rows[0].bonus || '0');
+        const totalFunds = realBal + bonusBal;
+
+        if (totalFunds < totalCost) {
+          throw new Error(`Insufficient funds (${totalFunds.toFixed(2)} ETB). Need ${totalCost.toFixed(2)} ETB.`);
         }
 
-        const newBalance = balance - totalCost;
+        // Deduct from bonus first, then real balance
+        const deductFromBonus = Math.min(bonusBal, totalCost);
+        const deductFromReal = totalCost - deductFromBonus;
+
+        const newReal = realBal - deductFromReal;
+        const newBonus = bonusBal - deductFromBonus;
+
         await client.query(
-          'UPDATE wallets SET balance = $1, updated_at = NOW() WHERE user_id = $2',
-          [newBalance, userId]
+          'UPDATE wallets SET balance = $1, bonus = $2, updated_at = NOW() WHERE user_id = $3',
+          [newReal, newBonus, userId]
         );
 
         // Record bet transaction
@@ -182,10 +191,25 @@ class BingoGameEngine {
         await client.query(
           `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, description)
            VALUES ($1, 'bet', $2, $3, $4, 'completed', $5)`,
-          [userId, totalCost, newBalance, refCode, `Purchased ${cartelaIds.length} cards in ${room.name}`]
+          [userId, totalCost, newReal + newBonus, refCode, `Purchased ${cartelaIds.length} cards in ${room.name}`]
         );
 
-        return newBalance;
+        return { newReal, newBonus };
+      });
+
+      // Notify user's balance bar immediately
+      io.emit(`user_${userId}_balance`, {
+        type: 'ticket_purchased',
+        balance: result.newReal,
+        bonus: result.newBonus,
+        newBalance: result.newReal
+      });
+
+      io.emit('user_balance_updated', {
+        userId,
+        newBalance: result.newReal,
+        balance: result.newReal,
+        bonus: result.newBonus
       });
 
       // Register tickets in memory
@@ -207,7 +231,7 @@ class BingoGameEngine {
       return {
         success: true,
         tickets: playerTickets,
-        remainingBalance: result
+        remainingBalance: result.newReal + result.newBonus
       };
     } catch (error: any) {
       return { success: false, error: error.message || 'Ticket purchase failed' };
@@ -466,6 +490,11 @@ class BingoGameEngine {
     // Notify winner wallet balance update
     io.emit(`user_${userId}_balance`, {
       type: 'bingo_win',
+      amount: winPayout
+    });
+
+    io.emit('user_balance_updated', {
+      userId,
       amount: winPayout
     });
 
