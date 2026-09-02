@@ -198,34 +198,99 @@ router.post('/withdraw', requireAuth, async (req: AuthenticatedRequest, res) => 
 });
 
 /**
- * Get User Transaction History
+ * Get User Transaction History (Unified Deposits, Withdrawals & Ledger)
  */
 router.get('/transactions', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const userId = req.user!.id;
+
+    // 1. Fetch deposit requests
+    const depRes = await query(
+      `SELECT id, amount, payment_method, player_phone, transaction_ref, receipt_image, status, created_at, reviewed_at
+       FROM deposit_requests
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [userId]
+    );
+
+    // 2. Fetch withdrawal requests
+    const withRes = await query(
+      `SELECT id, amount, payment_method, account_phone, account_name, status, created_at, reviewed_at
+       FROM withdrawal_requests
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [userId]
+    );
+
+    // 3. Fetch completed wallet ledger entries
     const txRes = await query(
-      `SELECT * FROM wallet_transactions 
+      `SELECT id, type, amount, balance_after, reference_code, status, payment_method, description, created_at
+       FROM wallet_transactions 
        WHERE user_id = $1 
        ORDER BY created_at DESC 
        LIMIT 50`,
       [userId]
     );
 
-    const formatted = txRes.rows.map(tx => ({
-      id: tx.id,
-      type: tx.type,
-      amount: parseFloat(tx.amount),
-      balanceAfter: parseFloat(tx.balance_after),
-      referenceCode: tx.reference_code,
-      status: tx.status,
-      paymentMethod: tx.payment_method,
-      description: tx.description,
-      createdAt: tx.created_at
+    const deposits = depRes.rows.map(d => ({
+      id: d.id,
+      userId,
+      userName: req.user!.fullName,
+      phone: d.player_phone,
+      accountNumber: d.player_phone,
+      type: 'deposit' as const,
+      amount: parseFloat(d.amount),
+      method: d.payment_method,
+      referenceNumber: d.transaction_ref,
+      receiptImage: d.receipt_image,
+      status: d.status as 'pending' | 'approved' | 'rejected',
+      createdAt: d.created_at,
+      timestamp: d.created_at
     }));
+
+    const withdrawals = withRes.rows.map(w => ({
+      id: w.id,
+      userId,
+      userName: w.account_name || req.user!.fullName,
+      phone: w.account_phone,
+      accountNumber: w.account_phone,
+      type: 'withdrawal' as const,
+      amount: parseFloat(w.amount),
+      method: w.payment_method,
+      referenceNumber: `WD-${w.payment_method.toUpperCase()}-${w.id.slice(0, 8)}`,
+      receiptImage: undefined,
+      status: w.status as 'pending' | 'approved' | 'rejected',
+      createdAt: w.created_at,
+      timestamp: w.created_at
+    }));
+
+    const ledger = txRes.rows.map(t => ({
+      id: t.id,
+      userId,
+      userName: req.user!.fullName,
+      phone: req.user!.phone || '',
+      accountNumber: req.user!.phone || '',
+      type: t.type,
+      amount: parseFloat(t.amount),
+      method: t.payment_method || 'System',
+      referenceNumber: t.reference_code,
+      status: t.status,
+      description: t.description,
+      createdAt: t.created_at,
+      timestamp: t.created_at
+    }));
+
+    // Combine and sort by createdAt DESC
+    const all = [...deposits, ...withdrawals].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
     return res.json({
       success: true,
-      transactions: formatted
+      transactions: all,
+      ledger
     });
   } catch (error: any) {
     console.error('❌ [Wallet Transactions Error]:', error);

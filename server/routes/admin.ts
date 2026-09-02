@@ -173,6 +173,12 @@ router.post('/deposits/:id/approve', requireAdmin, async (req: AuthenticatedRequ
       reference: result.ref
     });
 
+    io.emit('user_balance_updated', {
+      userId: result.userId,
+      amount: result.amount,
+      newBalance: result.newBalance
+    });
+
     // Broadcast generic update for admin dashboard
     io.emit('deposit_status_updated', { id: depositId, status: 'approved' });
 

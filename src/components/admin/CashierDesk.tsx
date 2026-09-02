@@ -603,11 +603,11 @@ export const CashierDesk: React.FC = () => {
                       Open Full Res ↗
                     </a>
                   </div>
-                  <div style={{ maxHeight: '380px', overflowY: 'auto', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', background: '#000000', padding: '8px' }}>
+                  <div style={{ maxHeight: '260px', overflowY: 'auto', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', background: '#000000', padding: '8px' }}>
                     <img
                       src={inspectTx.receiptImage}
                       alt="Payment Receipt Slip"
-                      style={{ maxWidth: '100%', height: 'auto', display: 'inline-block', borderRadius: '6px' }}
+                      style={{ maxWidth: '100%', maxHeight: '240px', objectFit: 'contain', display: 'inline-block', borderRadius: '6px' }}
                     />
                   </div>
                 </div>

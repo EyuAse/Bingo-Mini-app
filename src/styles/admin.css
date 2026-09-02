@@ -3311,7 +3311,10 @@ input:checked + .slider-round:before {
   border: 1.5px solid #facc15;
   border-radius: 20px;
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   padding: 20px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
   display: flex;

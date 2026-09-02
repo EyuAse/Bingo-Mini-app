@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useAdmin } from '../../context/AdminContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { TelebirrLogo, CBELogo } from './PaymentLogos.tsx';
+
+import { apiClient } from '../../services/apiClient.ts';
 
 interface TransactionHistoryProps {
   initialTab?: 'deposits' | 'withdrawals';
@@ -14,21 +15,33 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   initialTab = 'deposits',
   onBack
 }) => {
-  const { transactions } = useAdmin();
   const { user } = useAuth();
   const { showToast } = useApp();
   const { t, lang } = useLanguage();
   const [activeTab, setActiveTab] = useState<'deposits' | 'withdrawals'>(initialTab);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [liveTransactions, setLiveTransactions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Filter player's own real transactions
-  const myTransactions = (transactions || []).filter(
-    tx => tx.userId === user?.id || (user?.phone && tx.phone === user?.phone)
-  );
+  const fetchTransactions = React.useCallback(async () => {
+    try {
+      const data = await apiClient.wallet.getTransactions();
+      if (data && Array.isArray(data.transactions)) {
+        setLiveTransactions(data.transactions);
+      }
+    } catch (err) {
+      console.warn('Could not fetch player transactions:', err);
+    }
+  }, []);
 
-  const deposits = myTransactions.filter(tx => tx.type === 'deposit');
-  const withdrawals = myTransactions.filter(tx => tx.type === 'withdrawal');
+  React.useEffect(() => {
+    fetchTransactions();
+    const interval = setInterval(fetchTransactions, 3000);
+    return () => clearInterval(interval);
+  }, [fetchTransactions]);
 
+  const deposits = liveTransactions.filter(tx => tx.type === 'deposit');
+  const withdrawals = liveTransactions.filter(tx => tx.type === 'withdrawal');
   const activeList = activeTab === 'deposits' ? deposits : withdrawals;
 
   const handleCopy = (text: string, label: string) => {

@@ -99,15 +99,26 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       } else if (typeof data.amount === 'number') {
         setBalance(prev => prev + data.amount);
       }
+      fetchLiveBalance();
     };
 
     socket.on('user_balance_updated', handleBalanceEvent);
+    socket.on('deposit_status_updated', () => fetchLiveBalance());
+    socket.on('withdrawal_status_updated', () => fetchLiveBalance());
+
+    // 3-second background polling to guarantee real-time balance updates
+    const pollInterval = setInterval(() => {
+      fetchLiveBalance();
+    }, 3000);
 
     return () => {
+      clearInterval(pollInterval);
       window.removeEventListener('lb_deposit_approved' as any, handleDepositApproved);
       window.removeEventListener('lb_wallet_updated' as any, handleWalletUpdated);
       window.removeEventListener('storage', handleStorage);
       socket.off('user_balance_updated', handleBalanceEvent);
+      socket.off('deposit_status_updated');
+      socket.off('withdrawal_status_updated');
     };
   }, []);
 
