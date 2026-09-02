@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import { useWallet } from '../../context/WalletContext';
 import { useApp } from '../../context/AppContext';
 import { telegramService } from '../../services/telegramService';
@@ -11,8 +12,12 @@ interface DailyStreakModalProps {
 
 export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onClose }) => {
   const { lang } = useLanguage();
+  const { user } = useAuth();
   const { addBonus } = useWallet();
   const { showToast } = useApp();
+
+  const streakKey = user?.id ? `lomi_streak_day_${user.id}` : 'lomi_streak_current_day';
+  const claimKey = user?.id ? `lomi_streak_claim_${user.id}` : 'lomi_streak_last_claim';
 
   // Day 1 Welcome streak initialization
   const [currentStreakDay, setCurrentStreakDay] = useState(1);
@@ -30,27 +35,27 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ isOpen, onCl
 
   useEffect(() => {
     try {
-      const savedDay = parseInt(localStorage.getItem('lomi_streak_current_day') || '1', 10);
-      const lastClaimDate = localStorage.getItem('lomi_streak_last_claim');
+      const savedDay = parseInt(localStorage.getItem(streakKey) || '1', 10);
+      const lastClaimDate = localStorage.getItem(claimKey);
       const todayStr = new Date().toDateString();
 
       const activeDay = Math.min(7, Math.max(1, savedDay));
       setCurrentStreakDay(activeDay);
       setHasClaimedToday(lastClaimDate === todayStr);
     } catch {}
-  }, [isOpen]);
+  }, [isOpen, streakKey, claimKey]);
 
   if (!isOpen) return null;
 
   const handleClaimToday = () => {
     telegramService.triggerHaptic('success');
-    const todayReward = streakDays.find(d => d.day === currentStreakDay) || streakDays[1];
+    const todayReward = streakDays.find(d => d.day === currentStreakDay) || streakDays[0];
 
     addBonus(todayReward.rewardNum);
-    localStorage.setItem('lomi_streak_last_claim', new Date().toDateString());
+    localStorage.setItem(claimKey, new Date().toDateString());
 
-    const nextDay = currentStreakDay >= 7 ? 2 : currentStreakDay + 1;
-    localStorage.setItem('lomi_streak_current_day', nextDay.toString());
+    const nextDay = currentStreakDay >= 7 ? 1 : currentStreakDay + 1;
+    localStorage.setItem(streakKey, nextDay.toString());
     setCurrentStreakDay(nextDay);
     setHasClaimedToday(true);
 

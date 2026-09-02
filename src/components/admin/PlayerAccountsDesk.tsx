@@ -810,3 +810,5 @@ export const PlayerAccountsDesk: React.FC = () => {
     </div>
   );
 };
+
+export default PlayerAccountsDesk;

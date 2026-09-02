@@ -93,6 +93,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               if (apiResult.wallet) {
                 localStorage.setItem('lomi_live_balance', apiResult.wallet.balance.toFixed(2));
                 localStorage.setItem('lomi_live_bonus', apiResult.wallet.bonus.toFixed(2));
+                window.dispatchEvent(new CustomEvent('lb_wallet_updated', { detail: apiResult.wallet }));
               }
               return;
             } catch (err) {
@@ -242,6 +243,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (apiResult.wallet) {
         localStorage.setItem('lomi_live_balance', apiResult.wallet.balance.toFixed(2));
         localStorage.setItem('lomi_live_bonus', apiResult.wallet.bonus.toFixed(2));
+        window.dispatchEvent(new CustomEvent('lb_wallet_updated', { detail: apiResult.wallet }));
       }
 
       telegramService.triggerHaptic('success');

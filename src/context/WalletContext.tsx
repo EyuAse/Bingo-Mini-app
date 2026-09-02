@@ -73,14 +73,22 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
     };
 
-    const handleStorage = () => {
-      const saved = localStorage.getItem('lomi_live_balance');
-      if (saved) {
-        setBalance(parseFloat(saved));
+    const handleWalletUpdated = (e: any) => {
+      if (e.detail) {
+        if (typeof e.detail.balance === 'number') setBalance(e.detail.balance);
+        if (typeof e.detail.bonus === 'number') setBonus(e.detail.bonus);
       }
     };
 
+    const handleStorage = () => {
+      const saved = localStorage.getItem('lomi_live_balance');
+      const savedBonus = localStorage.getItem('lomi_live_bonus');
+      if (saved) setBalance(parseFloat(saved));
+      if (savedBonus) setBonus(parseFloat(savedBonus));
+    };
+
     window.addEventListener('lb_deposit_approved' as any, handleDepositApproved);
+    window.addEventListener('lb_wallet_updated' as any, handleWalletUpdated);
     window.addEventListener('storage', handleStorage);
 
     const socket = socketService.connect();
@@ -97,6 +105,7 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     return () => {
       window.removeEventListener('lb_deposit_approved' as any, handleDepositApproved);
+      window.removeEventListener('lb_wallet_updated' as any, handleWalletUpdated);
       window.removeEventListener('storage', handleStorage);
       socket.off('user_balance_updated', handleBalanceEvent);
     };
