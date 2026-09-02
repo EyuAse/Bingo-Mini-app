@@ -20,7 +20,16 @@ class SocketService {
     }
 
     // Connect to server (proxied by Vite or direct origin)
-    this.socket = io({
+    const socketOrigin = (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app'))
+      ? 'https://bingo-mini-app-30pe.onrender.com'
+      : undefined;
+
+    this.socket = socketOrigin ? io(socketOrigin, {
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      timeout: 10000
+    }) : io({
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,

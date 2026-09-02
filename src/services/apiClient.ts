@@ -2,9 +2,11 @@
  * Lomi Bingo Centralized API Client (Connected to Neon PostgreSQL Backend)
  */
 
+const LIVE_BACKEND_ORIGIN = 'https://bingo-mini-app-30pe.onrender.com';
+
 const API_BASE = (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app'))
-  ? 'https://bingo-mini-app.onrender.com/api'
-  : '/api';
+  ? `${LIVE_BACKEND_ORIGIN}/api`
+  : ((import.meta as any).env?.VITE_API_URL || '/api');
 
 function getAuthHeader(): Record<string, string> {
   const token = typeof window !== 'undefined'
