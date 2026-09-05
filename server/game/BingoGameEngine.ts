@@ -135,10 +135,13 @@ class BingoGameEngine {
   // Cached 200 Persistent Bot Profiles from Neon PostgreSQL
   private botAccounts: BotProfile[] = [];
 
-  // Configurable Win Allocation Rates (Default: 20% Owner, 30% Fake Bot, 50% Real Player)
+  // Configurable Win Allocation Rates (Client Rule: 20% Owner, 30% Fake Bot, 50% Real Player)
   private ownerWinRate: number = 20;
   private botWinRate: number = 30;
   private realPlayerWinRate: number = 50;
+
+  // Dynamic Room Capacity (Default 50, adjustable by Admin)
+  private roomCapacity: number = 50;
 
   // Disconnect Protection: Rolling ledger of auto-credited wins
   private offlineWins: OfflineWinRecord[] = [];
@@ -156,6 +159,23 @@ class BingoGameEngine {
       BingoGameEngine.instance = new BingoGameEngine();
     }
     return BingoGameEngine.instance;
+  }
+
+  public getFairnessConfig() {
+    return {
+      ownerWinRate: this.ownerWinRate,
+      botWinRate: this.botWinRate,
+      realPlayerWinRate: Math.max(0, 100 - this.ownerWinRate - this.botWinRate),
+      roomCapacity: this.roomCapacity,
+      commissionPercent: 10
+    };
+  }
+
+  public setFairnessConfig(cfg: { ownerWinRate?: number; botWinRate?: number; roomCapacity?: number }) {
+    if (typeof cfg.ownerWinRate === 'number') this.ownerWinRate = Math.max(0, Math.min(100, cfg.ownerWinRate));
+    if (typeof cfg.botWinRate === 'number') this.botWinRate = Math.max(0, Math.min(100, cfg.botWinRate));
+    if (typeof cfg.roomCapacity === 'number') this.roomCapacity = Math.max(10, Math.min(200, cfg.roomCapacity));
+    this.realPlayerWinRate = Math.max(0, 100 - this.ownerWinRate - this.botWinRate);
   }
 
   /**
@@ -563,10 +583,11 @@ class BingoGameEngine {
       list.forEach(t => assignedIds.add(t.cartelaId));
     });
 
-    // 2. Dynamic 50-Player Room Cap: B = max(0, 50 - R)
-    // If 30 real players join, 20 bots backfill.
+    // 2. Dynamic Room Cap: B = max(0, roomCapacity - R)
+    // If 30 real players join, 20 bots backfill in a 50-player room.
     // If 50 real players join, exactly 0 bots join (100% human multiplayer)!
-    const botsNeeded = Math.max(0, 50 - realTicketsCount);
+    const roomCap = this.roomCapacity || 50;
+    const botsNeeded = Math.max(0, roomCap - realTicketsCount);
     room.opponentCards = [];
 
     if (botsNeeded > 0) {
@@ -656,7 +677,7 @@ class BingoGameEngine {
         roundNumber: room.roundNumber,
         totalPot: room.totalPot,
         winnerPayout: room.winnerPayout,
-        playersCount: 50
+        playersCount: Math.min(roomCap, realTicketsCount + room.opponentCards.length)
       });
     }
 
@@ -665,8 +686,8 @@ class BingoGameEngine {
   }
 
   /**
-   * Prepares 75-Ball sequence ensuring targeted category completes naturally around ball 32-38
-   * Bot target is chosen randomly across all active bots so winner rotates completely naturally!
+   * Prepares 75-Ball sequence with Fast Cadence completing at ball 15
+   * Guarantees target category (Real Player 50%, Bot 30%, Owner 20%) wins reliably
    */
   private prepareBallSequence(room: GameRoomState): number[] {
     const baseBalls = generateRandomShuffledBalls();
@@ -680,9 +701,17 @@ class BingoGameEngine {
         targetCardMatrix = chosenRealTicket.cardMatrix;
       }
     } else if (room.opponentCards.length > 0) {
-      // Pick a random bot from active bots so the winner is never hardcoded or always the same!
-      const randomOpponent = room.opponentCards[Math.floor(Math.random() * room.opponentCards.length)];
-      targetCardMatrix = randomOpponent.cardMatrix;
+      if (room.targetWinnerType === 'owner') {
+        // Owner victory: Target designated House Bot (isHouseBot: true)
+        const houseBot = room.opponentCards.find(o => o.isHouseBot) || room.opponentCards[0];
+        targetCardMatrix = houseBot.cardMatrix;
+      } else {
+        // Fake Bot victory: Pick a random non-house bot to build community trust
+        const nonHouseBots = room.opponentCards.filter(o => !o.isHouseBot);
+        const pool = nonHouseBots.length > 0 ? nonHouseBots : room.opponentCards;
+        const randomOpponent = pool[Math.floor(Math.random() * pool.length)];
+        targetCardMatrix = randomOpponent.cardMatrix;
+      }
     }
 
     if (!targetCardMatrix) return baseBalls;
@@ -699,12 +728,13 @@ class BingoGameEngine {
       .map(idx => targetCardMatrix![idx]?.val)
       .filter((v): v is number => typeof v === 'number');
 
-    // Place target numbers across balls 12 through 34 so BINGO occurs around ball 32-35
+    // Place target numbers across balls at fast natural cadence [2, 5, 8, 11, 14]
+    // Completes at ball 15 so real players and target winners hit before bots intercept
     const otherBalls = baseBalls.filter(b => !targetNumbers.includes(b));
     const finalSequence: number[] = [];
 
-    // Distribute target numbers smoothly
-    const insertPositions = [12, 18, 24, 30, 34];
+    // Distribute target numbers smoothly at cadence [2, 5, 8, 11, 14]
+    const insertPositions = [2, 5, 8, 11, 14];
     for (let i = 0; i < 75; i++) {
       if (insertPositions.includes(i) && targetNumbers.length > 0) {
         finalSequence.push(targetNumbers.shift()!);
@@ -758,8 +788,8 @@ class BingoGameEngine {
         });
       }
 
-      // Evaluate Winning Patterns on each ball drawn (after min 20 balls)
-      if (room.drawnNumbers.length >= 20) {
+      // Evaluate Winning Patterns on each ball drawn (after min 15 balls)
+      if (room.drawnNumbers.length >= 15) {
         const winningCards: Array<{
           userId?: string;
           userName: string;

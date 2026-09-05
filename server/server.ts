@@ -174,6 +174,14 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 
 // Start Server
 if (process.env.NODE_ENV !== 'test') {
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`ℹ️ [Lomi Bingo Server] Port ${PORT} is already in use by primary instance.`);
+    } else {
+      console.error('❌ [Server Error]:', err);
+    }
+  });
+
   server.listen(PORT, () => {
     console.log(`🚀 [Lomi Bingo Server] Running on http://localhost:${PORT}`);
     console.log(`📊 [Neon PostgreSQL] Connection Pool Active`);

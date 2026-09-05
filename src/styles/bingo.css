@@ -293,19 +293,20 @@
 .stat-val.purple { color: #9333ea; }
 .stat-val.slate  { color: #0f172a; }
 
-/* ── Main Game Area: Side by Side on Mobile & Desktop ───── */
+/* ── Main Game Area: Vertical Layout on Mobile, Side by Side on Desktop ── */
 .bingo-main-game-area {
-  display: grid;
-  grid-template-columns: 0.85fr 1.15fr;
-  gap: 8px;
-  align-items: stretch;
+  display: flex;
+  flex-direction: column-reverse; /* Active Cartela on top, Master Board below */
+  gap: 12px;
   width: 100%;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .bingo-main-game-area {
+    display: grid;
     grid-template-columns: 210px 1fr;
-    gap: 12px;
+    gap: 14px;
+    align-items: stretch;
   }
 }
 

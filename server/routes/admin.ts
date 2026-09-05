@@ -458,4 +458,35 @@ router.post('/bot-users/replenish', requireAdmin, async (_req, res) => {
   }
 });
 
+/**
+ * Get Live Fairness & Win Rate Engine Configuration
+ */
+router.get('/fairness-config', requireAdmin, async (_req, res) => {
+  try {
+    const config = gameEngine.getFairnessConfig();
+    return res.json({ success: true, config });
+  } catch (error: any) {
+    console.error('❌ [Admin Fairness Config GET Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to retrieve fairness config' });
+  }
+});
+
+/**
+ * Update Fairness & Win Rate Engine Configuration
+ */
+router.post('/fairness-config', requireAdmin, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { ownerWinRate, botWinRate, roomCapacity } = req.body;
+    gameEngine.setFairnessConfig({
+      ownerWinRate: typeof ownerWinRate === 'number' ? ownerWinRate : undefined,
+      botWinRate: typeof botWinRate === 'number' ? botWinRate : undefined,
+      roomCapacity: typeof roomCapacity === 'number' ? roomCapacity : undefined
+    });
+    return res.json({ success: true, config: gameEngine.getFairnessConfig() });
+  } catch (error: any) {
+    console.error('❌ [Admin Fairness Config POST Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to update fairness config' });
+  }
+});
+
 export default router;
