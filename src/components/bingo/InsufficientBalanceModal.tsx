@@ -110,21 +110,27 @@ export const InsufficientBalanceModal: React.FC = () => {
             borderRadius: '12px',
             padding: '8px 12px',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '12px',
+            gap: '6px',
             fontSize: '0.78rem',
             color: '#475569',
             fontWeight: '700'
           }}
         >
-          <span>⚡ Instant Top-Up with:</span>
-          <span style={{ background: '#0284c7', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontWeight: '900' }}>
-            Telebirr
-          </span>
-          <span style={{ background: '#7c3aed', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontWeight: '900' }}>
-            CBE Birr
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>⚡ Instant Top-Up with:</span>
+            <span style={{ background: '#0284c7', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontWeight: '900' }}>
+              Telebirr
+            </span>
+            <span style={{ background: '#7c3aed', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontWeight: '900' }}>
+              CBE Birr
+            </span>
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#b45309', background: '#fef3c7', padding: '2px 8px', borderRadius: '6px', fontWeight: '800' }}>
+            💡 ዝቅተኛ ተቀማጭ 50 ብር ነው (Min deposit: 50 ETB)
+          </div>
         </div>
 
         {/* Call to Actions */}

@@ -118,13 +118,22 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       unsubUserBalance = socketService.onUserBalanceUpdate(user.id, handleBalanceEvent);
     }
 
-    // 3-second background polling to guarantee real-time balance updates
+    // Reactive-First Architecture: Rely on WebSocket push events.
+    // 25-second fallback poll only runs when socket is disconnected/reconnecting.
     const pollInterval = setInterval(() => {
+      if (!socket.connected) {
+        fetchLiveBalance();
+      }
+    }, 25000);
+
+    // Instant refresh when user returns to foreground/app
+    const unsubResume = socketService.onForegroundResume(() => {
       fetchLiveBalance();
-    }, 3000);
+    });
 
     return () => {
       clearInterval(pollInterval);
+      unsubResume();
       window.removeEventListener('lb_deposit_approved' as any, handleDepositApproved);
       window.removeEventListener('lb_wallet_updated' as any, handleWalletUpdated);
       window.removeEventListener('storage', handleStorage);

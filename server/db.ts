@@ -7,13 +7,17 @@ dotenv.config();
 // Configure WebSocket for Node.js environment
 neonConfig.webSocketConstructor = ws;
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  'postgresql://neondb_owner:npg_aubNpLCw9U3j@ep-royal-boat-ax8df6ez-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require';
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('FATAL: DATABASE_URL environment variable is required to connect to Neon PostgreSQL.');
+}
 
-// Neon Serverless Connection Pool
+// Neon Serverless Connection Pool with Mobile-Resilient Limits
 export const pool = new Pool({
-  connectionString
+  connectionString,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000
 });
 
 pool.on('error', (err) => {

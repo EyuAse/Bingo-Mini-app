@@ -26,15 +26,62 @@ class SocketService {
   private status: ConnectionStatus = 'disconnected';
   private latencyMs: number = 24;
   private statusListeners: Array<(status: ConnectionStatus, latencyMs: number) => void> = [];
+  private foregroundListeners: Array<() => void> = [];
   private pingInterval: any = null;
 
-  private constructor() {}
+  private constructor() {
+    this.initLifecycleListeners();
+  }
 
   public static getInstance(): SocketService {
     if (!SocketService.instance) {
       SocketService.instance = new SocketService();
     }
     return SocketService.instance;
+  }
+
+  private initLifecycleListeners() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    const handleForeground = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('📱 [SocketService] Page became visible / focused. Re-verifying socket connection & room sync.');
+        if (!this.socket || !this.socket.connected) {
+          this.connect();
+        } else {
+          if (this.currentRoomId) {
+            this.socket.emit('join_room', {
+              roomId: this.currentRoomId,
+              userId: this.currentUserId,
+              userName: this.currentUserName
+            });
+          }
+          this.measurePing();
+        }
+        // Notify foreground listeners to sync game state immediately
+        this.foregroundListeners.forEach(cb => {
+          try {
+            cb();
+          } catch (err) {
+            console.warn('Foreground listener error:', err);
+          }
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleForeground);
+    window.addEventListener('focus', handleForeground);
+    window.addEventListener('online', () => {
+      console.log('🌐 [SocketService] Network connection restored (online).');
+      handleForeground();
+    });
+  }
+
+  public onForegroundResume(callback: () => void): () => void {
+    this.foregroundListeners.push(callback);
+    return () => {
+      this.foregroundListeners = this.foregroundListeners.filter(cb => cb !== callback);
+    };
   }
 
   public connect(): Socket {
@@ -47,7 +94,7 @@ class SocketService {
       ? 'https://bingo-mini-app-30pe.onrender.com'
       : undefined;
 
-    // Resilient Mobile Network Socket.IO Configuration (Infinite reconnects with jitter backoff)
+    // Resilient Mobile Network Socket.IO Configuration (15s timeout with jitter backoff)
     const socketOptions = {
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -55,7 +102,7 @@ class SocketService {
       reconnectionDelay: 500,
       reconnectionDelayMax: 3000,
       randomizationFactor: 0.2,
-      timeout: 8000
+      timeout: 15000
     };
 
     this.socket = socketOrigin ? io(socketOrigin, socketOptions) : io(socketOptions);

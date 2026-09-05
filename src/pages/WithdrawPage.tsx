@@ -21,10 +21,11 @@ export const WithdrawPage: React.FC = () => {
   const [accountNumber, setAccountNumber] = useState<string>(() => user?.phone || user?.formattedPhone || '');
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [submittedRef, setSubmittedRef] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const quickAmounts = [100, 200, 500, 1000, 5000];
 
-  const handleWithdrawSubmit = (e: React.FormEvent) => {
+  const handleWithdrawSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (amount < 50) {
@@ -42,39 +43,50 @@ export const WithdrawPage: React.FC = () => {
       return;
     }
 
-    if (!accountNumber || accountNumber.trim().length < 9) {
+    if (!accountNumber || accountNumber.trim().length < 8) {
       showToast(lang === 'am' ? '⚠️ እባክዎ ትክክለኛ ስልክ ቁጥር ወይም የባንክ አካውንት ያስገቡ።' : '⚠️ Please enter a valid account or phone number.');
       return;
     }
 
-    // Call live Neon DB API
-    apiClient.wallet.withdraw({
-      amount,
-      paymentMethod: selectedMethod,
-      accountPhone: accountNumber,
-      accountName: accountHolder
-    }).catch(err => {
-      console.warn('Backend withdraw notice:', err);
-    });
+    setIsSubmitting(true);
+    try {
+      // Call live Neon DB API with await and atomic check
+      const res = await apiClient.wallet.withdraw({
+        amount,
+        paymentMethod: selectedMethod,
+        accountPhone: accountNumber,
+        accountName: accountHolder
+      });
 
-    // Deduct player balance locally
-    deductBalance(amount);
+      if (!res.success) {
+        showToast(`❌ ${res.error || (lang === 'am' ? 'የወጪ ጥያቄ አልተሳካም' : 'Withdrawal request failed')}`);
+        return;
+      }
 
-    const assignedRef = `WD-${selectedMethod === 'Telebirr' ? 'TB' : 'CBE'}-${Math.floor(100000 + Math.random() * 900000)}`;
+      // Deduct balance locally only after verified server approval
+      deductBalance(amount);
 
-    // Submit to Admin Cashier Settlement Desk
-    addWithdrawRequest(
-      user?.id || 'usr-me',
-      accountHolder || user?.fullName || 'Player',
-      accountNumber,
-      amount,
-      selectedMethod,
-      accountNumber
-    );
+      const assignedRef = `WD-${selectedMethod === 'Telebirr' ? 'TB' : 'CBE'}-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    setSubmittedRef(assignedRef);
-    setIsSubmitted(true);
-    showToast(lang === 'am' ? `💸 የ${amount} ብር የወጪ ጥያቄ ተልኳል!` : `💸 Withdrawal request of ${amount} ETB submitted!`);
+      // Submit to Admin Cashier Settlement Desk
+      addWithdrawRequest(
+        user?.id || 'usr-me',
+        accountHolder || user?.fullName || 'Player',
+        accountNumber,
+        amount,
+        selectedMethod,
+        accountNumber
+      );
+
+      setSubmittedRef(assignedRef);
+      setIsSubmitted(true);
+      showToast(lang === 'am' ? `💸 የ${amount} ብር የወጪ ጥያቄ ተልኳል!` : `💸 Withdrawal request of ${amount} ETB submitted!`);
+    } catch (err: any) {
+      console.warn('Backend withdraw error:', err);
+      showToast(`❌ ${err.message || (lang === 'am' ? 'የወጪ ጥያቄ አልተሳካም' : 'Withdrawal request failed')}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -290,10 +302,14 @@ export const WithdrawPage: React.FC = () => {
               <button
                 type="submit"
                 className="btn-submit-payment-gold"
-                disabled={amount > balance || amount < 50}
+                disabled={amount > balance || amount < 50 || isSubmitting}
               >
-                <i className="fa-solid fa-arrow-up-from-bracket"></i>
-                <span>{lang === 'am' ? `አሁን ${amount > 0 ? `${amount} ብር` : ''} አውጣ` : `Withdraw ${amount > 0 ? `${amount} ETB` : ''} Now`}</span>
+                <i className={`fa-solid ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-arrow-up-from-bracket'}`}></i>
+                <span>
+                  {isSubmitting
+                    ? (lang === 'am' ? 'እየተላከ ነው...' : 'Processing...')
+                    : (lang === 'am' ? `አሁን ${amount > 0 ? `${amount} ብር` : ''} አውጣ` : `Withdraw ${amount > 0 ? `${amount} ETB` : ''} Now`)}
+                </span>
               </button>
             </form>
           )}

@@ -71,8 +71,16 @@ class AudioEngineService {
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
+  }
+
+  public resumeAudioContext() {
+    try {
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+    } catch {}
   }
 
   setMuted(muted: boolean) {

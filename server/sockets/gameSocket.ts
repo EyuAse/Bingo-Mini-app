@@ -38,6 +38,7 @@ export function setupGameSockets(io: Server) {
         socket.emit('room_sync', {
           roomId: roomId,
           phase: room.phase,
+          roundNumber: room.roundNumber,
           lobbyCountdown: room.lobbyCountdown,
           winnerCountdown: room.winnerCountdown,
           stakeAmount: room.stakeAmount,

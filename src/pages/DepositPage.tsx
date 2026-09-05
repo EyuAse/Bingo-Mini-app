@@ -20,6 +20,7 @@ export const DepositPage: React.FC = () => {
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [submittedRef, setSubmittedRef] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Official Receiver Details
   const telebirrReceiverPhone = '0998983344';
@@ -74,7 +75,7 @@ export const DepositPage: React.FC = () => {
     }
   };
 
-  const handleDepositSubmit = (e: React.FormEvent) => {
+  const handleDepositSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (amount < 50) {
       showToast(lang === 'am' ? '⚠️ ዝቅተኛ ተቀማጭ 50 ብር ነው።' : '⚠️ Minimum deposit is 50 ETB.');
@@ -90,31 +91,42 @@ export const DepositPage: React.FC = () => {
       ? transactionRef.trim().toUpperCase()
       : `${selectedMethod === 'Telebirr' ? 'TX-TB-' : 'TX-CBE-'}${Math.floor(100000 + Math.random() * 900000)}`;
 
-    // Call live Neon DB API
-    apiClient.wallet.deposit({
-      amount,
-      paymentMethod: selectedMethod,
-      playerPhone,
-      transactionRef: assignedRef,
-      receiptImage: receiptImage || undefined
-    }).catch(err => {
-      console.warn('Backend deposit notice:', err);
-    });
+    setIsSubmitting(true);
+    try {
+      // Call live Neon DB API with await and error handling
+      const res = await apiClient.wallet.deposit({
+        amount,
+        paymentMethod: selectedMethod,
+        playerPhone,
+        transactionRef: assignedRef,
+        receiptImage: receiptImage || undefined
+      });
 
-    addDepositRequest(
-      user?.id || 'usr-me',
-      user?.fullName || 'Player',
-      playerPhone,
-      amount,
-      selectedMethod,
-      playerPhone,
-      receiptImage || undefined,
-      assignedRef
-    );
+      if (!res.success) {
+        showToast(`❌ ${res.error || (lang === 'am' ? 'የተቀማጭ ጥያቄ አልተሳካም' : 'Deposit request failed')}`);
+        return;
+      }
 
-    setSubmittedRef(assignedRef);
-    setIsSubmitted(true);
-    showToast(lang === 'am' ? `✅ የ${amount} ብር ተቀማጭ ጥያቄ ተልኳል!` : `✅ Deposit request of ${amount} ETB submitted!`);
+      addDepositRequest(
+        user?.id || 'usr-me',
+        user?.fullName || 'Player',
+        playerPhone,
+        amount,
+        selectedMethod,
+        playerPhone,
+        receiptImage || undefined,
+        assignedRef
+      );
+
+      setSubmittedRef(assignedRef);
+      setIsSubmitted(true);
+      showToast(lang === 'am' ? `✅ የ${amount} ብር ተቀማጭ ጥያቄ ተልኳል!` : `✅ Deposit request of ${amount} ETB submitted!`);
+    } catch (err: any) {
+      console.warn('Backend deposit error:', err);
+      showToast(`❌ ${err.message || (lang === 'am' ? 'የተቀማጭ ጥያቄ አልተሳካም' : 'Deposit request failed')}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -380,9 +392,13 @@ export const DepositPage: React.FC = () => {
               </div>
 
               {/* Submit Button */}
-              <button type="submit" className="btn-submit-payment-gold">
-                <i className="fa-solid fa-bolt"></i>
-                <span>{lang === 'am' ? `አሁን ${amount > 0 ? `${amount} ብር` : ''} አስገባ` : `Deposit ${amount > 0 ? `${amount} ETB` : ''} Now`}</span>
+              <button type="submit" className="btn-submit-payment-gold" disabled={isSubmitting}>
+                <i className={`fa-solid ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-bolt'}`}></i>
+                <span>
+                  {isSubmitting
+                    ? (lang === 'am' ? 'እየተላከ ነው...' : 'Submitting...')
+                    : (lang === 'am' ? `አሁን ${amount > 0 ? `${amount} ብር` : ''} አስገባ` : `Deposit ${amount > 0 ? `${amount} ETB` : ''} Now`)}
+                </span>
               </button>
             </form>
           )}

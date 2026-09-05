@@ -143,6 +143,9 @@ class BingoGameEngine {
   // Disconnect Protection: Rolling ledger of auto-credited wins
   private offlineWins: OfflineWinRecord[] = [];
 
+  // Victory Processing Concurrency Guard (prevents double-spend on simultaneous BINGO claims)
+  private isProcessingVictory: boolean = false;
+
   private constructor() {
     this.initializeUnifiedArena();
     this.loadBotAccounts();
@@ -496,6 +499,7 @@ class BingoGameEngine {
   private startLobbyTimer(_roomId?: string) {
     const room = this.rooms.get(ARENA_ROOM_ID)!;
 
+    this.isProcessingVictory = false; // Reset victory lock for new round
     room.phase = 'lobby';
     room.lobbyCountdown = 45; // Authoritative 45-second gap
     room.drawnNumbers = [];
@@ -822,6 +826,12 @@ class BingoGameEngine {
       winningIndices: number[];
     }>
   ) {
+    if (this.isProcessingVictory) {
+      console.warn('⚠️ [GameEngine] Victory processing already in progress. Ignoring concurrent claim.');
+      return;
+    }
+    this.isProcessingVictory = true;
+
     room.phase = 'winner';
 
     const winnerCount = winningCards.length;
@@ -1017,8 +1027,8 @@ class BingoGameEngine {
     cartelaId: number
   ): Promise<{ success: boolean; message: string; winResult?: any }> {
     const room = this.rooms.get(ARENA_ROOM_ID)!;
-    if (!room || room.phase !== 'playing') {
-      return { success: false, message: 'Game is not currently in playing phase.' };
+    if (!room || room.phase !== 'playing' || this.isProcessingVictory) {
+      return { success: false, message: 'Game is not currently in playing phase or victory is already being processed.' };
     }
 
     const userTickets = room.tickets.get(userId) || [];
@@ -1085,12 +1095,14 @@ class BingoGameEngine {
     const payload = {
       roomId: room.id,
       phase: room.phase,
+      roundNumber: room.roundNumber,
       lobbyCountdown: room.lobbyCountdown,
       winnerCountdown: room.winnerCountdown,
       playersCount: this.getRoomPlayersCount(room),
       totalPot: room.totalPot,
       winnerPayout: room.winnerPayout,
       stakeAmount: room.stakeAmount,
+      drawnNumbers: room.drawnNumbers,
       drawnNumbersCount: room.drawnNumbers.length,
       currentCall: room.currentCall,
       winResult: room.winResult

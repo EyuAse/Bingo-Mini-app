@@ -43,8 +43,8 @@ router.post('/deposit', requireAuth, async (req: AuthenticatedRequest, res) => {
     const { amount, paymentMethod, playerPhone, transactionRef, receiptImage } = req.body;
 
     const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount < 10) {
-      return res.status(400).json({ success: false, error: 'Minimum deposit is 10 ETB.' });
+    if (isNaN(numAmount) || numAmount < 50) {
+      return res.status(400).json({ success: false, error: 'Minimum deposit is 50 ETB.' });
     }
 
     if (!paymentMethod || !['Telebirr', 'CBE'].includes(paymentMethod)) {

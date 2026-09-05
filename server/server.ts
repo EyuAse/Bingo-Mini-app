@@ -15,6 +15,8 @@ import adminRouter from './routes/admin.ts';
 import { setupGameSockets } from './sockets/gameSocket.ts';
 import { gameEngine } from './game/BingoGameEngine.ts';
 
+import rateLimit from 'express-rate-limit';
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,15 +28,15 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
-// Socket.IO Server Configuration with Low-Latency Keep-Alive for mobile networks
+// Socket.IO Server Configuration with Mobile-Resilient Keep-Alive (15s timeout prevents cellular drops)
 export const io = new SocketIOServer(server, {
   cors: {
     origin: CORS_ORIGIN,
     methods: ['GET', 'POST'],
     credentials: true
   },
-  pingInterval: 5000,
-  pingTimeout: 4000,
+  pingInterval: 10000,
+  pingTimeout: 15000,
   transports: ['websocket', 'polling']
 });
 
@@ -95,10 +97,12 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     return res.status(404).json({ success: false, error: 'Room not found' });
   }
 
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.json({
     success: true,
     roomId: room.id,
     phase: room.phase,
+    roundNumber: room.roundNumber,
     lobbyCountdown: room.lobbyCountdown,
     winnerCountdown: room.winnerCountdown,
     stakeAmount: room.stakeAmount,
@@ -106,26 +110,53 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     winnerPayout: room.winnerPayout,
     playersCount: gameEngine.getRoomPlayersCount(room),
     drawnNumbers: room.drawnNumbers,
+    totalDrawn: room.drawnNumbers.length,
     currentCall: room.currentCall,
     winResult: room.winResult,
     serverTime: Date.now()
   });
 });
 
-// Mount Routes
-app.use('/api/auth', authRouter);
-app.use('/api/wallet', walletRouter);
+// Rate Limiters for DoS and Brute-Force Hardening
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 30, // Limit each IP to 30 requests per windowMs
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many authentication attempts. Please try again in 15 minutes.' }
+});
+
+const walletLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 60, // Limit each IP to 60 requests per minute
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests. Please slow down.' }
+});
+
+// Mount Routes with Rate Limiting
+app.use('/api/auth', authLimiter, authRouter);
+app.use('/api/wallet', walletLimiter, walletRouter);
 app.use('/api/admin', adminRouter);
 
-// Serve Static Frontend Bundle in Production (Single-port hosting)
+// Serve Static Frontend Bundle in Production (Single-port hosting) with Optimized Caching
 const distPath = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
+  app.use(express.static(distPath, {
+    setHeaders: (res, filePath) => {
+      if (filePath.includes(path.join('assets', ''))) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      } else if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      }
+    }
+  }));
   app.use((req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
       return next();
     }
     if (req.method === 'GET') {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
       return res.sendFile(path.join(distPath, 'index.html'));
     }
     next();
