@@ -47,6 +47,8 @@ export interface WinResult {
   coWinners: string[];
   totalPot: number;
   userShare: number;
+  winnerPayout?: number;
+  stakeAmount?: number;
 }
 
 export type RoundPhase = 'lobby' | 'locked' | 'playing' | 'winner';
@@ -113,6 +115,11 @@ interface BingoContextType {
   networkLatency: number;
   offlineWinsNotice: any[];
   dismissOfflineWin: (winId: string) => void;
+
+  // Insufficient Balance Modal
+  showInsufficientBalanceModal: boolean;
+  setShowInsufficientBalanceModal: (show: boolean) => void;
+  insufficientBalanceDetails: { required: number; balance: number; shortfall: number } | null;
 }
 
 const BingoContext = createContext<BingoContextType | undefined>(undefined);
@@ -274,12 +281,16 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setOfflineWinsNotice(prev => prev.filter(w => w.id !== winId));
   }, []);
 
-  const getActiveRoomId = useCallback(() => {
-    if (betAmount >= 100) return 'room-100';
-    if (betAmount >= 50) return 'room-50';
-    if (betAmount >= 20) return 'room-20';
-    return 'room-10';
-  }, [betAmount]);
+  // Insufficient Balance Modal State
+  const [showInsufficientBalanceModal, setShowInsufficientBalanceModal] = useState<boolean>(false);
+  const [insufficientBalanceDetails, setInsufficientBalanceDetails] = useState<{
+    required: number;
+    balance: number;
+    shortfall: number;
+  } | null>(null);
+
+  // Model A Unified Arena: All stakes play in the exact same room
+  const getActiveRoomId = useCallback(() => 'lomi-arena', []);
 
   const toggleMute = () => {
     const next = !isMuted;
@@ -361,10 +372,28 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const hasPreBoughtNextRef = useRef<boolean>(false);
   hasPreBoughtNextRef.current = hasPreBoughtNext;
 
-  // Socket.IO Multiplayer Room Listener
+  const userRef = useRef(user);
+  userRef.current = user;
+
+  const selectedCartelaIdsRef = useRef(selectedCartelaIds);
+  selectedCartelaIdsRef.current = selectedCartelaIds;
+
+  const addBalanceRef = useRef(addBalance);
+  addBalanceRef.current = addBalance;
+
+  const refreshBalanceRef = useRef(refreshBalance);
+  refreshBalanceRef.current = refreshBalance;
+
+  const applyDrawnNumberRef = useRef(applyDrawnNumber);
+  applyDrawnNumberRef.current = applyDrawnNumber;
+
+  const fastForwardCatchUpRef = useRef(fastForwardCatchUp);
+  fastForwardCatchUpRef.current = fastForwardCatchUp;
+
+  // Socket.IO Multiplayer Room Listener (Stable: Never reconnects on stake change)
   useEffect(() => {
     const roomId = getActiveRoomId();
-    socketService.joinRoom(roomId, user?.id, user?.fullName);
+    socketService.joinRoom(roomId, userRef.current?.id, userRef.current?.fullName);
 
     // 1. Room State / Sync
     const unsubRoomState = socketService.onRoomState((state: any) => {
@@ -391,20 +420,24 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
 
       if (state.drawnNumbers && Array.isArray(state.drawnNumbers)) {
-        fastForwardCatchUp(state.drawnNumbers);
+        fastForwardCatchUpRef.current(state.drawnNumbers);
       }
 
       if (state.winResult) {
+        const currentUser = userRef.current;
         const isRealUserWin = 
-          Boolean(user?.id && Array.isArray(state.winResult.winnerUserIds) && state.winResult.winnerUserIds.includes(user.id)) ||
-          Boolean(user?.id && state.winResult.winnerId && state.winResult.winnerId.includes(user.id)) || 
-          Boolean(user?.fullName && state.winResult.winnerNames && state.winResult.winnerNames.includes(user.fullName));
+          Boolean(currentUser?.id && Array.isArray(state.winResult.winnerUserIds) && state.winResult.winnerUserIds.includes(currentUser.id)) ||
+          Boolean(currentUser?.id && state.winResult.winnerId && state.winResult.winnerId.includes(currentUser.id)) || 
+          Boolean(currentUser?.fullName && state.winResult.winnerNames && state.winResult.winnerNames.includes(currentUser.fullName));
 
         const winType = state.winResult.isSplit
           ? (isRealUserWin ? 'user_split' : 'opponent_win')
           : (isRealUserWin ? 'user_solo' : 'opponent_win');
 
         const payout = isRealUserWin ? (state.winResult.sharePerWinner || state.winResult.userShare || 0) : 0;
+        const displayPayout = typeof state.winResult.winnerPayout === 'number'
+          ? state.winResult.winnerPayout
+          : (state.winResult.sharePerWinner || 450);
 
         setWinResult({
           winType,
@@ -413,7 +446,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           winnerName: state.winResult.winnerName || (state.winResult.winnerNames?.[0]) || 'Winner',
           coWinners: Array.isArray(state.winResult.coWinners) ? state.winResult.coWinners : (Array.isArray(state.winResult.winnerNames) ? state.winResult.winnerNames : []),
           totalPot: state.winResult.totalPot || 450,
-          userShare: payout
+          userShare: payout,
+          winnerPayout: displayPayout,
+          stakeAmount: state.winResult.stakeAmount || 10
         });
         setShowWinModal(true);
       }
@@ -422,7 +457,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // 2. Ball Called
     const unsubBallCalled = socketService.onBallCalled((data: any) => {
       if (data.currentCall) {
-        applyDrawnNumber(data.currentCall.num, data.currentCall.col);
+        applyDrawnNumberRef.current(data.currentCall.num, data.currentCall.col);
       }
       if (data.drawnNumbers) {
         setCalledNumbers(data.drawnNumbers);
@@ -449,25 +484,30 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       });
 
       // Generate fresh cards
-      setCartela1Data(generateCardFromId(selectedCartelaIds[0]));
-      setCartela2Data(generateCardFromId(selectedCartelaIds[1]));
-      setCartela3Data(generateCardFromId(selectedCartelaIds[2]));
+      const currentIds = selectedCartelaIdsRef.current;
+      setCartela1Data(generateCardFromId(currentIds[0]));
+      setCartela2Data(generateCardFromId(currentIds[1]));
+      setCartela3Data(generateCardFromId(currentIds[2]));
     });
 
     // 4. Round Winner & Split Pot Handler
     const unsubRoundWinner = socketService.onRoundWinner((winData: any) => {
       setRoundPhase('winner');
+      const currentUser = userRef.current;
       const isRealUserWin = 
-        Boolean(user?.id && Array.isArray(winData.winnerUserIds) && winData.winnerUserIds.includes(user.id)) ||
-        Boolean(user?.id && winData.winnerId && winData.winnerId.includes(user.id)) || 
-        Boolean(user?.fullName && winData.winnerNames && winData.winnerNames.includes(user.fullName)) ||
-        Boolean(user?.id && winData.winnerId === user.id);
+        Boolean(currentUser?.id && Array.isArray(winData.winnerUserIds) && winData.winnerUserIds.includes(currentUser.id)) ||
+        Boolean(currentUser?.id && winData.winnerId && winData.winnerId.includes(currentUser.id)) || 
+        Boolean(currentUser?.fullName && winData.winnerNames && winData.winnerNames.includes(currentUser.fullName)) ||
+        Boolean(currentUser?.id && winData.winnerId === currentUser.id);
 
       const winType = winData.isSplit
         ? (isRealUserWin ? 'user_split' : 'opponent_win')
         : (isRealUserWin ? 'user_solo' : 'opponent_win');
 
       const payout = isRealUserWin ? (winData.sharePerWinner || winData.userShare || 0) : 0;
+      const displayPayout = typeof winData.winnerPayout === 'number'
+        ? winData.winnerPayout
+        : (winData.sharePerWinner || 450);
 
       setWinResult({
         winType,
@@ -475,25 +515,27 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         winningLine: winData.winningIndices || [],
         winnerName: winData.winnerName || (winData.winnerNames?.[0]) || 'Winner',
         coWinners: Array.isArray(winData.coWinners) ? winData.coWinners : (Array.isArray(winData.winnerNames) ? winData.winnerNames : []),
-        totalPot: winData.totalPot || prizePool,
-        userShare: payout
+        totalPot: winData.totalPot || 450,
+        userShare: payout,
+        winnerPayout: displayPayout,
+        stakeAmount: winData.stakeAmount || 10
       });
       setShowWinModal(true);
 
       if (isRealUserWin) {
         soundEngine.playWinFanfare();
-        addBalance(payout);
+        addBalanceRef.current(payout);
       } else {
         soundEngine.playPop();
       }
-      refreshBalance();
+      refreshBalanceRef.current();
     });
 
     // 5. Real-Time Server Balance Push
     let unsubBalance: (() => void) | null = null;
     if (user?.id) {
       unsubBalance = socketService.onUserBalanceUpdate(user.id, () => {
-        refreshBalance();
+        refreshBalanceRef.current();
       });
     }
 
@@ -511,7 +553,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (Array.isArray(wins) && wins.length > 0) {
         setOfflineWinsNotice(wins);
         soundEngine.playWinFanfare();
-        refreshBalance();
+        refreshBalanceRef.current();
       }
     });
 
@@ -524,7 +566,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       unsubConn();
       unsubOfflineWins();
     };
-  }, [getActiveRoomId, user, applyDrawnNumber, selectedCartelaIds, prizePool, addBalance, refreshBalance, fastForwardCatchUp]);
+  }, [getActiveRoomId, user?.id]);
 
   // Dual-Engine HTTP Polling Fallback (Runs if Socket drops or is reconnecting)
   useEffect(() => {
@@ -632,7 +674,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-  // Buy Ticket via Live Socket Engine & Neon DB
+  // Buy Ticket via Live Socket Engine & Neon DB with Anytime Pre-Betting
   const buyTicket = async () => {
     const roomId = getActiveRoomId();
     const activeIds = selectedCartelaIds.slice(0, totalPlayableCards);
@@ -641,7 +683,12 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // Check available funds (balance + bonus)
     const totalFunds = balance + bonus;
     if (totalFunds < totalCost) {
-      showToast(`❌ Insufficient balance (${totalFunds.toFixed(0)} ETB). Need ${totalCost} ETB.`);
+      setInsufficientBalanceDetails({
+        required: totalCost,
+        balance: totalFunds,
+        shortfall: totalCost - totalFunds
+      });
+      setShowInsufficientBalanceModal(true);
       return;
     }
 
@@ -664,11 +711,29 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (res.tickets[1]) setCartela2Data(res.tickets[1].cardMatrix);
         if (res.tickets[2]) setCartela3Data(res.tickets[2].cardMatrix);
       }
+
+      if (res.preBoughtForNextRound) {
+        setHasPreBoughtNext(true);
+        soundEngine.playLuckyPick();
+        refreshBalance();
+        showToast(`🎟️ Ticket Pre-Bought for Upcoming Round ✓`);
+        return;
+      }
     } else {
       // Local fallback
       const success = deductBalance(totalCost);
       if (!success) {
-        showToast('❌ Insufficient balance! Please deposit to continue.');
+        setInsufficientBalanceDetails({
+          required: totalCost,
+          balance: totalFunds,
+          shortfall: totalCost - totalFunds
+        });
+        setShowInsufficientBalanceModal(true);
+        return;
+      }
+      if (roundPhase !== 'lobby') {
+        setHasPreBoughtNext(true);
+        showToast('🎟️ Pre-Bought for next round!');
         return;
       }
     }
@@ -689,22 +754,56 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     showToast(`🎟️ Playing ${totalPlayableCards} Cartelas (${totalCost} ETB)${bonusText}!`);
   };
 
-  const preBuyNextRound = () => {
+  const preBuyNextRound = async () => {
     const totalCost = betAmount * cardQuantity;
     const totalFunds = balance + bonus;
     if (totalFunds < totalCost) {
-      showToast(`❌ Insufficient balance (${totalFunds.toFixed(0)} ETB). Need ${totalCost} ETB.`);
+      setInsufficientBalanceDetails({
+        required: totalCost,
+        balance: totalFunds,
+        shortfall: totalCost - totalFunds
+      });
+      setShowInsufficientBalanceModal(true);
       return;
     }
-    const success = deductBalance(totalCost);
-    if (!success) {
-      showToast('❌ Insufficient balance! Please deposit to continue.');
-      return;
+
+    if (user?.id) {
+      const roomId = getActiveRoomId();
+      const activeIds = selectedCartelaIds.slice(0, totalPlayableCards);
+      const res = await socketService.buyTicket(roomId, user.id, user.fullName, activeIds, betAmount);
+      if (!res.success) {
+        showToast(`❌ ${res.error || 'Pre-buy failed'}`);
+        return;
+      }
+      if (res.tickets && res.tickets.length > 0) {
+        const newIds = res.tickets.map((t: any) => t.cartelaId);
+        const updatedIds: [number, number, number] = [
+          newIds[0] || selectedCartelaIds[0],
+          newIds[1] || selectedCartelaIds[1],
+          newIds[2] || selectedCartelaIds[2]
+        ];
+        setSelectedCartelaIds(updatedIds);
+        if (res.tickets[0]) setCartela1Data(res.tickets[0].cardMatrix);
+        if (res.tickets[1]) setCartela2Data(res.tickets[1].cardMatrix);
+        if (res.tickets[2]) setCartela3Data(res.tickets[2].cardMatrix);
+      }
+    } else {
+      const success = deductBalance(totalCost);
+      if (!success) {
+        setInsufficientBalanceDetails({
+          required: totalCost,
+          balance: totalFunds,
+          shortfall: totalCost - totalFunds
+        });
+        setShowInsufficientBalanceModal(true);
+        return;
+      }
     }
+
     setHasPreBoughtNext(true);
     soundEngine.playLuckyPick();
     refreshBalance();
-    showToast(`🎟️ Pre-Bought ${totalPlayableCards} Cartelas for next round!`);
+    showToast(`🎟️ Pre-Bought ${totalPlayableCards} Cartelas for next round! ✓`);
   };
 
   // Manual Daubing
@@ -833,7 +932,10 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         networkStatus,
         networkLatency,
         offlineWinsNotice,
-        dismissOfflineWin
+        dismissOfflineWin,
+        showInsufficientBalanceModal,
+        setShowInsufficientBalanceModal,
+        insufficientBalanceDetails
       }}
     >
       {children}

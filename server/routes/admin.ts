@@ -27,7 +27,7 @@ router.get('/users', requireAdmin, async (_req, res) => {
         COALESCE((SELECT SUM(amount) FROM withdrawal_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalWithdrawn"
       FROM users u
       LEFT JOIN wallets w ON u.id = w.user_id
-      WHERE u.role != 'admin'
+      WHERE u.role != 'admin' AND (u.is_bot IS NULL OR u.is_bot = false)
       ORDER BY u.created_at DESC
       LIMIT 200
     `);
@@ -401,15 +401,60 @@ router.get('/stats', requireAdmin, async (_req, res) => {
 });
 
 /**
- * Live Network Health & Disconnect Protection Metrics
+ * 200 Bot Player Accounts Desk (Dedicated Admin Management)
  */
-router.get('/network-health', requireAdmin, async (_req, res) => {
+router.get('/bot-users', requireAdmin, async (_req, res) => {
   try {
-    const metrics = gameEngine.getNetworkMetrics();
-    return res.json({ success: true, metrics });
+    const botsRes = await query(`
+      SELECT 
+        u.id,
+        u.full_name as name,
+        COALESCE(u.phone, '0912345678') as phone,
+        COALESCE(w.balance, 0.00) as balance,
+        COALESCE(w.bonus, 0.00) as bonus,
+        u.status,
+        u.created_at as "createdAt",
+        (SELECT COUNT(*) FROM wallet_transactions WHERE user_id = u.id AND type = 'win') as "totalWins",
+        COALESCE((SELECT SUM(amount) FROM wallet_transactions WHERE user_id = u.id AND type = 'win'), 0) as "totalWonAmount"
+      FROM users u
+      LEFT JOIN wallets w ON u.id = w.user_id
+      WHERE u.is_bot = true
+      ORDER BY u.created_at ASC
+    `);
+
+    const formatted = botsRes.rows.map(b => ({
+      id: b.id,
+      name: b.name,
+      phone: b.phone,
+      balance: parseFloat(b.balance),
+      bonus: parseFloat(b.bonus),
+      status: b.status,
+      totalWins: parseInt(b.totalWins || '0', 10),
+      totalWonAmount: parseFloat(b.totalWonAmount || '0'),
+      createdAt: b.createdAt
+    }));
+
+    return res.json({ success: true, bots: formatted, count: formatted.length });
   } catch (error: any) {
-    console.error('❌ [Admin Network Health Error]:', error);
-    return res.status(500).json({ success: false, error: 'Failed to retrieve network metrics' });
+    console.error('❌ [Admin Bot Users Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to retrieve bot users' });
+  }
+});
+
+/**
+ * Auto-Replenish House Bot Accounts to 500 ETB
+ */
+router.post('/bot-users/replenish', requireAdmin, async (_req, res) => {
+  try {
+    await query(`
+      UPDATE wallets 
+      SET balance = 500.00, updated_at = NOW() 
+      WHERE user_id IN (SELECT id FROM users WHERE is_bot = true) AND balance < 50.00
+    `);
+    return res.json({ success: true, message: 'All low bot balances replenished to 500.00 ETB' });
+  } catch (error: any) {
+    console.error('❌ [Admin Replenish Bots Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to replenish bots' });
   }
 });
 

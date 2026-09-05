@@ -30,7 +30,10 @@ export const WinModal: React.FC = () => {
   const userShare = typeof winResult.userShare === 'number' 
     ? winResult.userShare 
     : (typeof (winResult as any).sharePerWinner === 'number' ? (winResult as any).sharePerWinner : 0);
-  const totalPot = typeof winResult.totalPot === 'number' ? winResult.totalPot : 450;
+  const winnerPayout = typeof winResult.winnerPayout === 'number'
+    ? winResult.winnerPayout
+    : (typeof (winResult as any).sharePerWinner === 'number' ? (winResult as any).sharePerWinner : 450);
+  const stakeAmt = winResult.stakeAmount || 10;
   const cartelaNum = winResult.winningCartelaNumber || (winResult as any).winningCartela || 1;
   const winnerName = winResult.winnerName || (winResult as any).winnerNames?.[0] || 'Player';
   const coWinnersList = Array.isArray(winResult.coWinners) && winResult.coWinners.length > 0
@@ -130,16 +133,16 @@ export const WinModal: React.FC = () => {
         {/* Prize Box */}
         <div className="victory-prize-display-card">
           <span className="victory-prize-label">
-            {isOpponentWin ? 'ROUND PRIZE POOL' : isSplit ? 'YOUR SPLIT POT SHARE' : 'YOUR TOTAL WINNINGS'}
+            {isOpponentWin ? 'PRIZE WON BY WINNER' : isSplit ? 'YOUR SPLIT POT SHARE' : 'YOUR TOTAL WINNINGS'}
           </span>
           <strong className={`victory-prize-amount ${isOpponentWin ? 'gold' : 'green'}`}>
             {isOpponentWin
-              ? `${totalPot.toLocaleString()}.00 ETB`
+              ? `${winnerPayout.toLocaleString()}.00 ETB`
               : `+${userShare.toLocaleString()}.00 ETB`}
           </strong>
           <span className="victory-credited-tag">
             {isOpponentWin
-              ? 'Better luck next round! Keep playing!'
+              ? `Winner played with ${stakeAmt} ETB stake (45x Base Multiplier)`
               : '✓ Instantly credited to your wallet'}
           </span>
         </div>

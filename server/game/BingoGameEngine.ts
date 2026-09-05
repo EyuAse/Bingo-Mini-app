@@ -19,9 +19,11 @@ export interface PlayerTicket {
 }
 
 export interface OpponentCard {
+  botUserId?: string;
   cartelaId: number;
   cardMatrix: BingoCell[];
   opponentName: string;
+  stakeAmount: number;
   isHouseBot?: boolean;
 }
 
@@ -57,11 +59,18 @@ export interface GameRoomState {
   totalPot: number;
   winnerPayout: number;
   houseFee: number;
-  tickets: Map<string, PlayerTicket[]>; // userId -> tickets[]
+  tickets: Map<string, PlayerTicket[]>; // userId -> active tickets in current round
+  nextRoundTickets: Map<string, PlayerTicket[]>; // userId -> queued tickets for Round N+1 (Anytime Pre-Betting)
   activeSockets: Set<string>;
   winResult: any | null;
   opponentCards: OpponentCard[];
   targetWinnerType: 'owner' | 'bot' | 'real';
+}
+
+interface BotProfile {
+  id: string;
+  name: string;
+  phone: string;
 }
 
 // 200+ Authentic Ethiopian Bot Names Roster
@@ -76,15 +85,16 @@ const ETHIOPIAN_FIRST_NAMES = [
   'Eyob', 'Fitsum', 'Kaleb', 'Nardos', 'Sintayehu', 'Wondwossen', 'Birtukan', 'Abel'
 ];
 
-const ETHIOPIAN_LAST_INITIALS = [
-  'B.', 'T.', 'M.', 'W.', 'G.', 'A.', 'K.', 'D.', 'H.', 'N.',
-  'Y.', 'Z.', 'F.', 'S.', 'L.', 'R.', 'P.', 'C.', 'E.', 'J.'
+const ETHIOPIAN_LAST_NAMES = [
+  'Bikila', 'Tesfaye', 'Mengistu', 'Worku', 'Tadesse', 'Gebre', 'Alemu', 'Kassa',
+  'Assefa', 'Desta', 'Girma', 'Haile', 'Kebede', 'Melaku', 'Negash', 'Tilahun',
+  'Wolde', 'Yilma', 'Zewde', 'Ayele', 'Berhanu', 'Demissie', 'Fekadu', 'Getahun'
 ];
 
 function generate200BotNames(): string[] {
   const names: string[] = [];
   for (const fn of ETHIOPIAN_FIRST_NAMES) {
-    for (const ln of ETHIOPIAN_LAST_INITIALS) {
+    for (const ln of ETHIOPIAN_LAST_NAMES) {
       names.push(`${fn} ${ln}`);
       if (names.length >= 260) break;
     }
@@ -95,10 +105,35 @@ function generate200BotNames(): string[] {
 
 const GLOBAL_BOT_POOL = generate200BotNames();
 
+// Fisher-Yates True Random Shuffle
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Realistic Bot Multi-Stake Distribution
+function getRandomBotStake(): number {
+  const rand = Math.random() * 100;
+  if (rand < 50) return 10;   // 50% bet 10 ETB
+  if (rand < 75) return 20;   // 25% bet 20 ETB
+  if (rand < 90) return 50;   // 15% bet 50 ETB
+  return 100;                 // 10% bet 100 ETB
+}
+
+export const ARENA_ROOM_ID = 'lomi-arena';
+export const ROOM_ALIASES = ['lomi-arena', 'room-10', 'room-20', 'room-50', 'room-100', 'default'];
+
 class BingoGameEngine {
   private static instance: BingoGameEngine;
   private rooms: Map<string, GameRoomState> = new Map();
   private intervals: Map<string, NodeJS.Timeout> = new Map();
+
+  // Cached 200 Persistent Bot Profiles from Neon PostgreSQL
+  private botAccounts: BotProfile[] = [];
 
   // Configurable Win Allocation Rates (Default: 20% Owner, 30% Fake Bot, 50% Real Player)
   private ownerWinRate: number = 20;
@@ -109,7 +144,8 @@ class BingoGameEngine {
   private offlineWins: OfflineWinRecord[] = [];
 
   private constructor() {
-    this.initializeRooms();
+    this.initializeUnifiedArena();
+    this.loadBotAccounts();
   }
 
   public static getInstance(): BingoGameEngine {
@@ -119,83 +155,153 @@ class BingoGameEngine {
     return BingoGameEngine.instance;
   }
 
-  private initializeRooms() {
-    // Exact client stakes: 10, 20, 50, 100 ETB
-    const defaultRooms = [
-      { id: 'room-10', name: '10 Birr Room', stake: 10.0, commission: 10.0 },
-      { id: 'room-20', name: '20 Birr Room', stake: 20.0, commission: 10.0 },
-      { id: 'room-50', name: '50 Birr Room', stake: 50.0, commission: 10.0 },
-      { id: 'room-100', name: '100 Birr VIP Room', stake: 100.0, commission: 10.0 }
-    ];
-
-    for (const r of defaultRooms) {
-      const roomState: GameRoomState = {
-        id: r.id,
-        name: r.name,
-        stakeAmount: r.stake,
-        commissionPercent: r.commission, // 10% default
-        commissionEnabled: true,        // Admin toggleable
-        phase: 'lobby',
-        lobbyCountdown: 45,             // 45-second gap between each play
-        winnerCountdown: 8,
-        currentRoundId: null,
-        roundNumber: 1,
-        drawnNumbers: [],
-        ballSequence: [],
-        currentCall: null,
-        totalPot: 50 * r.stake,          // 50-player capacity pot
-        winnerPayout: 50 * r.stake * 0.9,
-        houseFee: 50 * r.stake * 0.1,
-        tickets: new Map(),
-        activeSockets: new Set(),
-        winResult: null,
-        opponentCards: [],
-        targetWinnerType: 'real'
-      };
-
-      this.rooms.set(r.id, roomState);
-      this.startLobbyTimer(r.id);
+  /**
+   * Loads the 200 persistent bot accounts from Neon DB
+   */
+  public async loadBotAccounts() {
+    try {
+      const res = await query(
+        'SELECT id, full_name as name, phone FROM users WHERE is_bot = true ORDER BY created_at ASC'
+      );
+      if (res.rows.length > 0) {
+        this.botAccounts = res.rows.map(r => ({
+          id: r.id,
+          name: r.name,
+          phone: r.phone
+        }));
+        console.log(`🤖 [BingoGameEngine] Loaded ${this.botAccounts.length} real bot accounts from Neon DB`);
+      }
+    } catch (err) {
+      console.error('⚠️ [BingoGameEngine] Error loading bot accounts from DB:', err);
     }
   }
 
-  public getRoom(roomId: string): GameRoomState | undefined {
-    return this.rooms.get(roomId);
+  /**
+   * Initializes the Single Authoritative Arena Room (Model A).
+   * All stake requests (10, 20, 50, 100 ETB) play in the exact same room
+   * so all devices are 100% in sync with identical balls and timers.
+   */
+  private initializeUnifiedArena() {
+    const arenaState: GameRoomState = {
+      id: ARENA_ROOM_ID,
+      name: 'Lomi Unified Arena',
+      stakeAmount: 10.0,
+      commissionPercent: 10.0,
+      commissionEnabled: true,
+      phase: 'lobby',
+      lobbyCountdown: 45,
+      winnerCountdown: 8,
+      currentRoundId: null,
+      roundNumber: 1,
+      drawnNumbers: [],
+      ballSequence: [],
+      currentCall: null,
+      totalPot: 500,
+      winnerPayout: 450,
+      houseFee: 50,
+      tickets: new Map(),
+      nextRoundTickets: new Map(),
+      activeSockets: new Set(),
+      winResult: null,
+      opponentCards: [],
+      targetWinnerType: 'real'
+    };
+
+    // Store under primary arena ID
+    this.rooms.set(ARENA_ROOM_ID, arenaState);
+
+    // Alias all legacy room IDs to the exact same room instance
+    for (const alias of ROOM_ALIASES) {
+      this.rooms.set(alias, arenaState);
+    }
+
+    this.startLobbyTimer(ARENA_ROOM_ID);
+  }
+
+  public getRoom(_roomId?: string): GameRoomState {
+    // Every query returns the authoritative unified arena
+    return this.rooms.get(ARENA_ROOM_ID)!;
   }
 
   public getAllRooms() {
-    return Array.from(this.rooms.values()).map(r => ({
-      id: r.id,
-      name: r.name,
-      stakeAmount: r.stakeAmount,
-      phase: r.phase,
-      lobbyCountdown: r.lobbyCountdown,
-      playersCount: this.getRoomPlayersCount(r),
-      totalPot: r.totalPot,
-      winnerPayout: r.winnerPayout
-    }));
+    const arena = this.rooms.get(ARENA_ROOM_ID)!;
+    const playersCount = this.getRoomPlayersCount(arena);
+
+    // Provide unified status across all aliases so any legacy client stays in sync
+    return [
+      {
+        id: 'lomi-arena',
+        name: 'Lomi Unified Arena',
+        stakeAmount: 10.0,
+        phase: arena.phase,
+        lobbyCountdown: arena.lobbyCountdown,
+        playersCount,
+        totalPot: arena.totalPot,
+        winnerPayout: arena.winnerPayout
+      },
+      {
+        id: 'room-10',
+        name: '10 Birr Room',
+        stakeAmount: 10.0,
+        phase: arena.phase,
+        lobbyCountdown: arena.lobbyCountdown,
+        playersCount,
+        totalPot: 500,
+        winnerPayout: 450
+      },
+      {
+        id: 'room-20',
+        name: '20 Birr Room',
+        stakeAmount: 20.0,
+        phase: arena.phase,
+        lobbyCountdown: arena.lobbyCountdown,
+        playersCount,
+        totalPot: 1000,
+        winnerPayout: 900
+      },
+      {
+        id: 'room-50',
+        name: '50 Birr Room',
+        stakeAmount: 50.0,
+        phase: arena.phase,
+        lobbyCountdown: arena.lobbyCountdown,
+        playersCount,
+        totalPot: 2500,
+        winnerPayout: 2250
+      },
+      {
+        id: 'room-100',
+        name: '100 Birr VIP Room',
+        stakeAmount: 100.0,
+        phase: arena.phase,
+        lobbyCountdown: arena.lobbyCountdown,
+        playersCount,
+        totalPot: 5000,
+        winnerPayout: 4500
+      }
+    ];
   }
 
   public getRoomPlayersCount(room: GameRoomState): number {
     if (room.phase === 'playing' || room.phase === 'locked') {
-      return 50; // Always 50 players active during a live round
+      return 50; // Dynamic 50-Player Room Cap: strictly 50 players in action
     }
-    // During 45s lobby, room density builds towards 50
+    // During 45s lobby, density builds up towards 50
     const progress = Math.max(0, Math.min(1, (45 - room.lobbyCountdown) / 45));
-    const dynamicBots = Math.floor(38 + progress * 11); // 38 -> 49
+    const dynamicBots = Math.floor(38 + progress * 11);
     const realTickets = room.tickets.size;
     return Math.min(50, Math.max(realTickets, dynamicBots));
   }
 
   // Admin Controls: System Lock (House Commission)
   public setHouseCommission(enabled: boolean, rate?: number) {
-    this.rooms.forEach(room => {
-      room.commissionEnabled = enabled;
-      if (typeof rate === 'number') {
-        room.commissionPercent = rate;
-      }
-      this.recalculatePot(room);
-      this.broadcastRoomState(room);
-    });
+    const arena = this.rooms.get(ARENA_ROOM_ID)!;
+    arena.commissionEnabled = enabled;
+    if (typeof rate === 'number') {
+      arena.commissionPercent = rate;
+    }
+    this.recalculatePot(arena);
+    this.broadcastRoomState(arena);
   }
 
   // Admin Controls: Win Distribution Rates
@@ -205,46 +311,39 @@ class BingoGameEngine {
     this.realPlayerWinRate = realRate;
   }
 
-  public handleJoinRoom(socketId: string, roomId: string, userId?: string) {
-    const room = this.rooms.get(roomId);
-    if (!room) return;
-
-    room.activeSockets.add(socketId);
-    this.broadcastRoomState(room);
+  public handleJoinRoom(socketId: string, _roomId: string, _userId?: string) {
+    const arena = this.rooms.get(ARENA_ROOM_ID)!;
+    arena.activeSockets.add(socketId);
+    this.broadcastRoomState(arena);
   }
 
-  public handleLeaveRoom(socketId: string, roomId: string) {
-    const room = this.rooms.get(roomId);
-    if (!room) return;
-
-    room.activeSockets.delete(socketId);
-    this.broadcastRoomState(room);
+  public handleLeaveRoom(socketId: string, _roomId: string) {
+    const arena = this.rooms.get(ARENA_ROOM_ID)!;
+    arena.activeSockets.delete(socketId);
+    this.broadcastRoomState(arena);
   }
 
   /**
-   * 100% System-Assigned Ticket Purchase
-   * Players can choose 1 or 2 cartelas.
-   * If buying 2 cartelas, the system automatically awards the 3rd Cartela for FREE!
+   * 100% System-Assigned Ticket Purchase with Anytime Pre-Betting
+   * Players can choose 1 or 2 cartelas. If 2 cartelas, 3rd is FREE!
+   * If purchased while a round is actively playing, ticket is queued in `nextRoundTickets`
+   * and automatically activated for Round #N+1 when the lobby begins.
    */
   public async handleBuyTicket(
     userId: string,
     userName: string,
-    roomId: string,
+    _roomId: string,
     requestedCartelaIds: number[] | number,
     socketId: string,
     customStake?: number
-  ): Promise<{ success: boolean; error?: string; tickets?: PlayerTicket[]; remainingBalance?: number }> {
-    const room = this.rooms.get(roomId);
-    if (!room) {
-      return { success: false, error: 'Room not found' };
-    }
-
-    if (room.phase !== 'lobby') {
-      return {
-        success: false,
-        error: 'Round is already in progress! Please wait for the 45s lobby countdown to join the next round.'
-      };
-    }
+  ): Promise<{
+    success: boolean;
+    error?: string;
+    tickets?: PlayerTicket[];
+    remainingBalance?: number;
+    preBoughtForNextRound?: boolean;
+  }> {
+    const room = this.rooms.get(ARENA_ROOM_ID)!;
 
     // Model A: Support individual ticket stake levels (10, 20, 50, 100 ETB)
     const validStakes = [10, 20, 50, 100];
@@ -265,6 +364,9 @@ class BingoGameEngine {
     // Collect already assigned Cartela IDs in this room to ensure unique cards
     const assignedIds = new Set<number>();
     room.tickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
+    if (room.nextRoundTickets) {
+      room.nextRoundTickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
+    }
 
     // System draws random unique Cartela numbers from 1 to 400
     const drawnIds: number[] = [];
@@ -320,11 +422,11 @@ class BingoGameEngine {
           [newReal, newBonus, userId]
         );
 
-        const refCode = `BET-${roomId.toUpperCase()}-${Date.now().toString().slice(-6)}`;
+        const refCode = `BET-ARENA-${Date.now().toString().slice(-6)}`;
         await client.query(
           `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, description)
            VALUES ($1, 'bet', $2, $3, $4, 'completed', $5)`,
-          [userId, totalCost, newReal + newBonus, refCode, `Purchased ${drawnIds.length} cartelas in ${room.name}`]
+          [userId, totalCost, newReal + newBonus, refCode, `Purchased ${drawnIds.length} cartelas in Lomi Bingo Arena`]
         );
 
         return { newReal, newBonus };
@@ -356,24 +458,23 @@ class BingoGameEngine {
         isBonus: idx === 2
       }));
 
-      room.tickets.set(userId, playerTickets);
+      const isPreBuy = room.phase !== 'lobby';
 
-      // If purchased during active round, save directly to game_tickets
-      if (room.currentRoundId) {
-        for (const t of playerTickets) {
-          await query(
-            `INSERT INTO game_tickets (round_id, user_id, cartela_id, card_matrix, bet_amount, status)
-             VALUES ($1, $2, $3, $4, $5, 'active')`,
-            [room.currentRoundId, userId, t.cartelaId, JSON.stringify(t.cardMatrix), t.betAmount]
-          ).catch(err => console.error('Error inserting live ticket:', err));
-        }
+      if (isPreBuy) {
+        // Queue for next round (Anytime Pre-Betting)
+        const existingQueued = room.nextRoundTickets.get(userId) || [];
+        room.nextRoundTickets.set(userId, [...existingQueued, ...playerTickets]);
+        console.log(`🎟️ [Pre-Betting] User ${userName} (${userId}) queued ${playerTickets.length} cartelas for Round #${room.roundNumber + 1}`);
+      } else {
+        // Immediately active in current lobby
+        room.tickets.set(userId, playerTickets);
+        this.recalculatePot(room);
+        this.broadcastRoomState(room);
       }
-
-      this.recalculatePot(room);
-      this.broadcastRoomState(room);
 
       return {
         success: true,
+        preBoughtForNextRound: isPreBuy,
         tickets: playerTickets,
         remainingBalance: result.newReal + result.newBonus
       };
@@ -382,7 +483,7 @@ class BingoGameEngine {
     }
   }
 
-  // 50-Player Pot Calculation
+  // Recalculates pot based on 50-player capacity
   private recalculatePot(room: GameRoomState) {
     room.totalPot = 50 * room.stakeAmount;
     room.houseFee = room.commissionEnabled ? room.totalPot * (room.commissionPercent / 100) : 0;
@@ -392,19 +493,34 @@ class BingoGameEngine {
   /**
    * 45-Second Gap Between Games (Lobby Timer)
    */
-  private startLobbyTimer(roomId: string) {
-    const room = this.rooms.get(roomId);
-    if (!room) return;
+  private startLobbyTimer(_roomId?: string) {
+    const room = this.rooms.get(ARENA_ROOM_ID)!;
 
     room.phase = 'lobby';
-    room.lobbyCountdown = 45; // 45 seconds gap
+    room.lobbyCountdown = 45; // Authoritative 45-second gap
     room.drawnNumbers = [];
     room.currentCall = null;
     room.winResult = null;
+
+    // Seamless Activation of Anytime Pre-Bought Tickets
+    if (room.nextRoundTickets && room.nextRoundTickets.size > 0) {
+      room.tickets = new Map(room.nextRoundTickets);
+      room.nextRoundTickets.clear();
+      console.log(`🎟️ [Lobby] Activated pre-bought tickets for ${room.tickets.size} users for Round #${room.roundNumber}`);
+      for (const rid of ROOM_ALIASES) {
+        io.to(rid).emit('prebought_tickets_activated', {
+          roundNumber: room.roundNumber,
+          activeTicketsCount: room.tickets.size
+        });
+      }
+    } else {
+      room.tickets.clear();
+    }
+
     this.recalculatePot(room);
 
-    if (this.intervals.has(roomId)) {
-      clearInterval(this.intervals.get(roomId)!);
+    if (this.intervals.has(ARENA_ROOM_ID)) {
+      clearInterval(this.intervals.get(ARENA_ROOM_ID)!);
     }
 
     const interval = setInterval(async () => {
@@ -418,19 +534,18 @@ class BingoGameEngine {
 
       if (room.lobbyCountdown <= 0) {
         clearInterval(interval);
-        await this.startRound(roomId);
+        await this.startRound(ARENA_ROOM_ID);
       }
     }, 1000);
 
-    this.intervals.set(roomId, interval);
+    this.intervals.set(ARENA_ROOM_ID, interval);
   }
 
   /**
-   * Start 50-Player Live Round with Bot Backfilling and Outcome Routing
+   * Start Dynamic 50-Player Live Round with Bot Backfilling (B = max(0, 50 - R))
    */
-  private async startRound(roomId: string) {
-    const room = this.rooms.get(roomId);
-    if (!room) return;
+  private async startRound(_roomId?: string) {
+    const room = this.rooms.get(ARENA_ROOM_ID)!;
 
     room.phase = 'locked';
     this.recalculatePot(room);
@@ -444,27 +559,45 @@ class BingoGameEngine {
       list.forEach(t => assignedIds.add(t.cartelaId));
     });
 
-    // 2. 50-Player Dynamic Bot Backfilling ($50 - R$ bots)
+    // 2. Dynamic 50-Player Room Cap: B = max(0, 50 - R)
+    // If 30 real players join, 20 bots backfill.
+    // If 50 real players join, exactly 0 bots join (100% human multiplayer)!
     const botsNeeded = Math.max(0, 50 - realTicketsCount);
     room.opponentCards = [];
 
-    // Shuffle and sample bots from the 200+ roster
-    const shuffledBotNames = [...GLOBAL_BOT_POOL].sort(() => 0.5 - Math.random());
-
-    for (let i = 0; i < botsNeeded; i++) {
-      let botCartelaId = Math.floor(1 + Math.random() * 400);
-      while (assignedIds.has(botCartelaId)) {
-        botCartelaId = Math.floor(1 + Math.random() * 400);
+    if (botsNeeded > 0) {
+      if (this.botAccounts.length === 0) {
+        await this.loadBotAccounts();
       }
-      assignedIds.add(botCartelaId);
 
-      const botName = shuffledBotNames[i % shuffledBotNames.length] || `Player ${i + 1}`;
-      room.opponentCards.push({
-        cartelaId: botCartelaId,
-        cardMatrix: generateCardFromId(botCartelaId),
-        opponentName: botName,
-        isHouseBot: i === 0 // 1st bot can act as designated house bot
-      });
+      // Sample unique bots using Fisher-Yates shuffle
+      const botPool = this.botAccounts.length > 0
+        ? shuffleArray(this.botAccounts)
+        : shuffleArray(GLOBAL_BOT_POOL.map((name, i) => ({
+            id: `bot_legacy_${i}`,
+            name,
+            phone: `09${10000000 + i}`
+          })));
+
+      for (let i = 0; i < botsNeeded; i++) {
+        let botCartelaId = Math.floor(1 + Math.random() * 400);
+        while (assignedIds.has(botCartelaId)) {
+          botCartelaId = Math.floor(1 + Math.random() * 400);
+        }
+        assignedIds.add(botCartelaId);
+
+        const botProfile = botPool[i % botPool.length];
+        const stake = getRandomBotStake(); // Dynamic stake: 10, 20, 50, or 100 ETB
+
+        room.opponentCards.push({
+          botUserId: botProfile.id,
+          cartelaId: botCartelaId,
+          cardMatrix: generateCardFromId(botCartelaId),
+          opponentName: botProfile.name,
+          stakeAmount: stake,
+          isHouseBot: i === 0
+        });
+      }
     }
 
     // 3. Tri-Tier Win Rate Routing (20% Owner / 30% Bot / 50% Real Player)
@@ -512,33 +645,40 @@ class BingoGameEngine {
     room.drawnNumbers = [];
     room.phase = 'playing';
 
-    // Broadcast Round Started
-    io.to(roomId).emit('round_started', {
-      roundId: room.currentRoundId,
-      roundNumber: room.roundNumber,
-      totalPot: room.totalPot,
-      winnerPayout: room.winnerPayout,
-      playersCount: 50
-    });
+    // Broadcast Round Started to all alias rooms
+    for (const rid of ROOM_ALIASES) {
+      io.to(rid).emit('round_started', {
+        roundId: room.currentRoundId,
+        roundNumber: room.roundNumber,
+        totalPot: room.totalPot,
+        winnerPayout: room.winnerPayout,
+        playersCount: 50
+      });
+    }
 
     // Start 3.5s Ball Drawing Loop
-    this.startBallCallingLoop(roomId);
+    this.startBallCallingLoop(ARENA_ROOM_ID);
   }
 
   /**
    * Prepares 75-Ball sequence ensuring targeted category completes naturally around ball 32-38
+   * Bot target is chosen randomly across all active bots so winner rotates completely naturally!
    */
   private prepareBallSequence(room: GameRoomState): number[] {
     const baseBalls = generateRandomShuffledBalls();
 
     let targetCardMatrix: BingoCell[] | null = null;
     if (room.targetWinnerType === 'real' && room.tickets.size > 0) {
-      const firstRealUserTickets = Array.from(room.tickets.values())[0];
-      if (firstRealUserTickets && firstRealUserTickets.length > 0) {
-        targetCardMatrix = firstRealUserTickets[0].cardMatrix;
+      const allRealTickets: PlayerTicket[] = [];
+      room.tickets.forEach(list => allRealTickets.push(...list));
+      if (allRealTickets.length > 0) {
+        const chosenRealTicket = allRealTickets[Math.floor(Math.random() * allRealTickets.length)];
+        targetCardMatrix = chosenRealTicket.cardMatrix;
       }
     } else if (room.opponentCards.length > 0) {
-      targetCardMatrix = room.opponentCards[0].cardMatrix;
+      // Pick a random bot from active bots so the winner is never hardcoded or always the same!
+      const randomOpponent = room.opponentCards[Math.floor(Math.random() * room.opponentCards.length)];
+      targetCardMatrix = randomOpponent.cardMatrix;
     }
 
     if (!targetCardMatrix) return baseBalls;
@@ -576,12 +716,11 @@ class BingoGameEngine {
   /**
    * 3.5s Ball Drawing Loop with Authoritative Split Pot Tie Evaluation
    */
-  private startBallCallingLoop(roomId: string) {
-    const room = this.rooms.get(roomId);
-    if (!room) return;
+  private startBallCallingLoop(_roomId?: string) {
+    const room = this.rooms.get(ARENA_ROOM_ID)!;
 
-    if (this.intervals.has(roomId)) {
-      clearInterval(this.intervals.get(roomId)!);
+    if (this.intervals.has(ARENA_ROOM_ID)) {
+      clearInterval(this.intervals.get(ARENA_ROOM_ID)!);
     }
 
     const interval = setInterval(async () => {
@@ -592,7 +731,7 @@ class BingoGameEngine {
 
       if (room.ballSequence.length === 0) {
         clearInterval(interval);
-        this.finishRoundWithoutWinner(roomId);
+        this.finishRoundWithoutWinner(ARENA_ROOM_ID);
         return;
       }
 
@@ -606,12 +745,14 @@ class BingoGameEngine {
         index: room.drawnNumbers.length
       };
 
-      // Broadcast Ball Called event
-      io.to(roomId).emit('ball_called', {
-        currentCall: room.currentCall,
-        drawnNumbers: room.drawnNumbers,
-        totalCalled: room.drawnNumbers.length
-      });
+      // Broadcast Ball Called to all alias rooms simultaneously
+      for (const rid of ROOM_ALIASES) {
+        io.to(rid).emit('ball_called', {
+          currentCall: room.currentCall,
+          drawnNumbers: room.drawnNumbers,
+          totalCalled: room.drawnNumbers.length
+        });
+      }
 
       // Evaluate Winning Patterns on each ball drawn (after min 20 balls)
       if (room.drawnNumbers.length >= 20) {
@@ -664,11 +805,11 @@ class BingoGameEngine {
       }
     }, 3500);
 
-    this.intervals.set(roomId, interval);
+    this.intervals.set(ARENA_ROOM_ID, interval);
   }
 
   /**
-   * Process Round Victory & Split Pot Distribution
+   * Process Round Victory & Real Database Ledger Credits for Players & Bots
    */
   private async processRoundVictory(
     room: GameRoomState,
@@ -685,12 +826,13 @@ class BingoGameEngine {
 
     const winnerCount = winningCards.length;
     const realWinners = winningCards.filter(w => w.isReal);
+    const botWinners = winningCards.filter(w => !w.isReal);
     const isSplit = winnerCount > 1;
 
-    const defaultShare = Math.floor((room.stakeAmount * 45) / winnerCount);
-    let winningSharePerWinner = defaultShare;
+    let winningSharePerWinner = 450;
+    let displayWinnerPayout = 450;
 
-    // Credit all winning real players atomically via Neon PostgreSQL
+    // 1. Credit all winning real players atomically via Neon PostgreSQL
     if (realWinners.length > 0) {
       try {
         await withTransaction(async (client) => {
@@ -706,6 +848,7 @@ class BingoGameEngine {
             // Model A Multi-Stake: Base 45x multiplier, divided equally among ties
             const sharePerWinner = Math.floor((ticketStake * 45) / winnerCount);
             winningSharePerWinner = sharePerWinner;
+            displayWinnerPayout = sharePerWinner;
 
             const walletRes = await client.query(
               'SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE',
@@ -721,10 +864,8 @@ class BingoGameEngine {
                 [newBal, rw.userId]
               );
 
-              // Check if player is currently connected to the room socket
               const isSocketConnected = userTickets.some(t => room.activeSockets.has(t.socketId));
-
-              const winRef = `WIN-${room.id.toUpperCase()}-${Date.now().toString().slice(-6)}`;
+              const winRef = `WIN-ARENA-${Date.now().toString().slice(-6)}`;
               const description = isSplit
                 ? `Split Pot Winner (1 of ${winnerCount}, ${ticketStake} ETB Stake) in ${room.name} (Cartela #${rw.cartelaId})${!isSocketConnected ? ' [Protected Offline Auto-Claim]' : ''}`
                 : `Bingo Solo Winner (${ticketStake} ETB Stake) in ${room.name} (Cartela #${rw.cartelaId})${!isSocketConnected ? ' [Protected Offline Auto-Claim]' : ''}`;
@@ -753,18 +894,12 @@ class BingoGameEngine {
               this.offlineWins.unshift(winRecord);
               if (this.offlineWins.length > 200) this.offlineWins.pop();
 
-              if (!isSocketConnected) {
-                console.log(`🛡️ [Disconnect Protection] User ${rw.userName} (${rw.userId}) won while disconnected. Auto-claimed and deposited ${sharePerWinner} ETB to Neon DB!`);
-              }
-
               io.emit('offline_win_recorded', winRecord);
-
               io.emit(`user_${rw.userId}_balance`, {
                 type: 'bingo_win',
                 amount: sharePerWinner,
                 newBalance: newBal
               });
-
               io.emit('user_balance_updated', {
                 userId: rw.userId,
                 type: 'bingo_win',
@@ -775,7 +910,6 @@ class BingoGameEngine {
             }
           }
 
-          // Update game_rounds in Neon DB
           if (room.currentRoundId) {
             await client.query(
               `UPDATE game_rounds 
@@ -799,12 +933,52 @@ class BingoGameEngine {
       }
     }
 
+    // 2. Process Bot Victory: Real Ledger Credit in Neon DB
+    if (botWinners.length > 0 && realWinners.length === 0) {
+      try {
+        for (const bw of botWinners) {
+          const matchingOpp = room.opponentCards.find(o => o.cartelaId === bw.cartelaId);
+          const botStake = matchingOpp?.stakeAmount || 10;
+          const botPayout = Math.floor((botStake * 45) / winnerCount);
+          displayWinnerPayout = botPayout;
+          winningSharePerWinner = botPayout;
+
+          if (matchingOpp?.botUserId && !matchingOpp.botUserId.startsWith('bot_legacy_')) {
+            // Deposit real 45x winnings into the bot's Neon DB wallet!
+            await query(
+              'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
+              [botPayout, matchingOpp.botUserId]
+            );
+
+            const botWinRef = `BOT-WIN-${Date.now().toString().slice(-6)}`;
+            await query(
+              `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, payment_method, description)
+               VALUES ($1, 'win', $2, (SELECT balance FROM wallets WHERE user_id = $1), $3, 'completed', 'in_game', $4)`,
+              [
+                matchingOpp.botUserId,
+                botPayout,
+                botWinRef,
+                `Bingo Solo Winner (${botStake} ETB Stake) in ${room.name} (Cartela #${bw.cartelaId})`
+              ]
+            );
+          }
+        }
+      } catch (err) {
+        console.error('❌ [GameEngine Error crediting bot win]:', err);
+      }
+    }
+
     const firstWinner = winningCards[0];
+    const matchingOpp = room.opponentCards.find(o => o.cartelaId === firstWinner.cartelaId);
+    const winnerStake = firstWinner.isReal
+      ? (room.tickets.get(firstWinner.userId || '')?.[0]?.betAmount || 10)
+      : (matchingOpp?.stakeAmount || 10);
+
     const winResult = {
       winType: isSplit
         ? (realWinners.length > 0 ? 'user_split' : 'opponent_win')
         : (firstWinner.isReal ? 'user_solo' : 'opponent_win'),
-      winnerId: firstWinner.userId || `bot_${firstWinner.cartelaId}`,
+      winnerId: firstWinner.userId || matchingOpp?.botUserId || `bot_${firstWinner.cartelaId}`,
       winnerName: firstWinner.userName,
       winnerNames: winningCards.map(w => w.userName),
       winnerUserIds: realWinners.map(rw => rw.userId),
@@ -813,7 +987,8 @@ class BingoGameEngine {
       winningPattern: firstWinner.winningPattern,
       winningIndices: firstWinner.winningIndices,
       totalPot: room.totalPot,
-      winnerPayout: room.winnerPayout,
+      winnerPayout: displayWinnerPayout, // Exact 45x payout won (e.g. 450, 900, 2,250, 4,500 ETB)!
+      stakeAmount: winnerStake,
       sharePerWinner: winningSharePerWinner,
       userShare: realWinners.length > 0 ? winningSharePerWinner : 0,
       coWinners: winningCards.map(w => w.userName),
@@ -823,8 +998,10 @@ class BingoGameEngine {
 
     room.winResult = winResult;
 
-    // Broadcast round winner to all clients in the room
-    io.to(room.id).emit('round_winner', winResult);
+    // Broadcast round winner to all alias rooms simultaneously
+    for (const rid of ROOM_ALIASES) {
+      io.to(rid).emit('round_winner', winResult);
+    }
 
     // 8-Second celebration before transitioning to next 45s lobby
     this.startWinnerCelebrationTimer(room.id);
@@ -836,10 +1013,10 @@ class BingoGameEngine {
   public async handleClaimBingo(
     userId: string,
     userName: string,
-    roomId: string,
+    _roomId: string,
     cartelaId: number
   ): Promise<{ success: boolean; message: string; winResult?: any }> {
-    const room = this.rooms.get(roomId);
+    const room = this.rooms.get(ARENA_ROOM_ID)!;
     if (!room || room.phase !== 'playing') {
       return { success: false, message: 'Game is not currently in playing phase.' };
     }
@@ -856,12 +1033,10 @@ class BingoGameEngine {
       };
     }
 
-    // Stop ball calling interval immediately
-    if (this.intervals.has(roomId)) {
-      clearInterval(this.intervals.get(roomId)!);
+    if (this.intervals.has(ARENA_ROOM_ID)) {
+      clearInterval(this.intervals.get(ARENA_ROOM_ID)!);
     }
 
-    // Trigger full victory processing
     await this.processRoundVictory(room, [
       {
         userId,
@@ -880,18 +1055,17 @@ class BingoGameEngine {
     };
   }
 
-  private finishRoundWithoutWinner(roomId: string) {
-    const room = this.rooms.get(roomId);
-    if (!room) return;
-
+  private finishRoundWithoutWinner(_roomId?: string) {
+    const room = this.rooms.get(ARENA_ROOM_ID)!;
     room.phase = 'winner';
-    io.to(roomId).emit('round_ended_no_winner', { totalPot: room.totalPot });
-    this.startWinnerCelebrationTimer(roomId);
+    for (const rid of ROOM_ALIASES) {
+      io.to(rid).emit('round_ended_no_winner', { totalPot: room.totalPot });
+    }
+    this.startWinnerCelebrationTimer(ARENA_ROOM_ID);
   }
 
-  private startWinnerCelebrationTimer(roomId: string) {
-    const room = this.rooms.get(roomId);
-    if (!room) return;
+  private startWinnerCelebrationTimer(_roomId?: string) {
+    const room = this.rooms.get(ARENA_ROOM_ID)!;
 
     room.winnerCountdown = 8;
     const interval = setInterval(() => {
@@ -902,13 +1076,13 @@ class BingoGameEngine {
         clearInterval(interval);
         room.roundNumber += 1;
         room.tickets.clear();
-        this.startLobbyTimer(roomId); // Transition to 45s lobby
+        this.startLobbyTimer(ARENA_ROOM_ID); // Transition to 45s lobby
       }
     }, 1000);
   }
 
   public broadcastRoomState(room: GameRoomState) {
-    io.to(room.id).emit('room_state', {
+    const payload = {
       roomId: room.id,
       phase: room.phase,
       lobbyCountdown: room.lobbyCountdown,
@@ -920,7 +1094,11 @@ class BingoGameEngine {
       drawnNumbersCount: room.drawnNumbers.length,
       currentCall: room.currentCall,
       winResult: room.winResult
-    });
+    };
+
+    for (const rid of ROOM_ALIASES) {
+      io.to(rid).emit('room_state', { ...payload, roomId: rid });
+    }
   }
 
   // Authoritative Disconnect Protection Helpers
@@ -939,26 +1117,20 @@ class BingoGameEngine {
 
   // Live Network Health & Diagnostics for Admin Desk
   public getNetworkMetrics() {
-    const roomMetrics = Array.from(this.rooms.values()).map(r => ({
-      id: r.id,
-      name: r.name,
-      stakeAmount: r.stakeAmount,
-      phase: r.phase,
-      roundNumber: r.roundNumber,
-      activeSocketsCount: r.activeSockets.size,
-      ticketsCount: r.tickets.size,
-      playersCount: this.getRoomPlayersCount(r),
-      drawnBallsCount: r.drawnNumbers.length
-    }));
-
-    const totalActiveSockets = roomMetrics.reduce((sum, r) => sum + r.activeSocketsCount, 0);
+    const room = this.rooms.get(ARENA_ROOM_ID)!;
+    const activeSocketsCount = room.activeSockets.size;
 
     return {
-      totalActiveSockets,
+      totalActiveSockets: activeSocketsCount,
       engineStatus: 'healthy',
       disconnectProtectionActive: true,
       transportsSupported: ['WebSocket', 'HTTP Polling Fallback'],
-      rooms: roomMetrics,
+      rooms: this.getAllRooms().map(r => ({
+        ...r,
+        activeSocketsCount,
+        ticketsCount: room.tickets.size,
+        drawnBallsCount: room.drawnNumbers.length
+      })),
       totalOfflineWinsRecorded: this.offlineWins.length,
       recentOfflineWins: this.offlineWins.slice(0, 30),
       serverTimestamp: new Date().toISOString()

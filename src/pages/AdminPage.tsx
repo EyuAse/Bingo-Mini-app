@@ -9,6 +9,7 @@ import { CashierDesk } from '../components/admin/CashierDesk.tsx';
 import { CashFlowAnalytics } from '../components/admin/CashFlowAnalytics.tsx';
 import { PlayerAccountsDesk } from '../components/admin/PlayerAccountsDesk.tsx';
 import { BotsSimulatorDesk } from '../components/admin/BotsSimulatorDesk.tsx';
+import { BotAccountsDesk } from '../components/admin/BotAccountsDesk.tsx';
 import { CartelasDesk } from '../components/admin/CartelasDesk.tsx';
 import { AdminSettings } from '../components/admin/AdminSettings.tsx';
 import { NetworkHealthDesk } from '../components/admin/NetworkHealthDesk.tsx';
@@ -54,7 +55,7 @@ export const AdminPage: React.FC = () => {
                 {activeTab === 'cashier' && 'Cashier Approvals & Settlement Queue'}
                 {activeTab === 'cashflow' && 'Cash Flow & Revenue Analytics'}
                 {activeTab === 'users' && 'Player Accounts & Wallets Directory'}
-                {activeTab === 'bots' && '200+ Smart Bots & Crowd Simulator'}
+                {activeTab === 'bots' && '200 Bot Player Accounts & Wallets'}
                 {activeTab === 'cartelas' && '400 Serial Cartela Cards Library'}
                 {activeTab === 'network' && 'Live Network Health & Disconnect Protection Desk'}
                 {activeTab === 'settings' && 'System & Commission Settings'}
@@ -64,7 +65,7 @@ export const AdminPage: React.FC = () => {
                 {activeTab === 'overview' && 'የቀጥታ ጨዋታዎችን፣ የኮሚሽን ትርፍን እና የክፍያዎችን ፍሰት ይቆጣጠሩ'}
                 {activeTab === 'cashflow' && 'የቀን ተቀማጭ፣ የክፍያ ወጪ እና የተጣራ የሎሚ ቢንጎ ገቢ ዝርዝር'}
                 {activeTab === 'users' && 'የተመዘገቡ ተጫዋቾች፣ የዋሌት ቀሪ ሂሳብ እና የቦነስ ማበረታቻዎች'}
-                {activeTab === 'bots' && 'የተቀላጠፈ የቦቶች ቁጥር እና የጨዋታ አሸናፊነት ተመን'}
+                {activeTab === 'bots' && 'እውነተኛ የውሂብ ጎታ ያላቸው 200 የቦቶች ዋሌቶች፣ ራስ-ሰር ተወራራጅነት እና የቀጥታ አሸናፊነት መዝገብ'}
                 {activeTab === 'cartelas' && '400 የቢንጎ ካርቴላ ካርዶች ቤተ-መጽሐፍት'}
                 {activeTab === 'network' && 'የቀጥታ ሶኬት ፍጥነት፣ የኔትዎርክ ጤንነት እና የራስ-ሰር አሸናፊነት መዝገብ'}
                 {activeTab === 'settings' && 'የኮሚሽን ተመን፣ የጨዋታ ህጎች እና የአስተዳዳሪ ደህንነት'}
@@ -118,8 +119,8 @@ export const AdminPage: React.FC = () => {
           {/* TAB 4: PLAYER ACCOUNTS & WALLETS DIRECTORY */}
           {activeTab === 'users' && <PlayerAccountsDesk />}
 
-          {/* TAB 5: 200+ SMART BOTS & CROWD SIMULATION */}
-          {activeTab === 'bots' && <BotsSimulatorDesk />}
+          {/* TAB 5: 200 BOT PLAYER ACCOUNTS & WALLETS */}
+          {activeTab === 'bots' && <BotAccountsDesk />}
 
           {/* TAB 6: 400 SERIAL CARTELA CARDS LIBRARY */}
           {activeTab === 'cartelas' && <CartelasDesk />}

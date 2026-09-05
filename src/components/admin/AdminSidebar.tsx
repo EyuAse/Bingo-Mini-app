@@ -165,20 +165,20 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             )}
           </button>
 
-          {/* 5. 200+ Smart Bots */}
+          {/* 5. Bot Player Accounts */}
           <button
             type="button"
             className={`light-nav-item ${activeTab === 'bots' ? 'active' : ''}`}
             onClick={() => handleSelectTab('bots')}
-            title="200+ Smart Bots"
+            title="Bot Player Accounts"
           >
             <div className="light-nav-icon">
               <i className="fa-solid fa-robot"></i>
             </div>
             {!isSidebarCollapsed && (
               <>
-                <span className="light-nav-text">200+ Smart Bots</span>
-                <span className="light-nav-badge">{simulatedPlayerCount}</span>
+                <span className="light-nav-text">Bot Player Accounts</span>
+                <span className="light-nav-badge">200</span>
               </>
             )}
           </button>

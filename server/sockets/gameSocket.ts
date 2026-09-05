@@ -29,13 +29,14 @@ export function setupGameSockets(io: Server) {
       if (userName) authUserName = userName;
 
       socket.join(roomId);
+      socket.join('lomi-arena');
       gameEngine.handleJoinRoom(socket.id, roomId, userId);
 
       const room = gameEngine.getRoom(roomId);
       if (room) {
         // Send immediate room snapshot to joining player
         socket.emit('room_sync', {
-          roomId: room.id,
+          roomId: roomId,
           phase: room.phase,
           lobbyCountdown: room.lobbyCountdown,
           winnerCountdown: room.winnerCountdown,

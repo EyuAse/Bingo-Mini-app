@@ -8,6 +8,7 @@ import { BingoGrid } from '../components/bingo/BingoGrid.tsx';
 import { BingoActions } from '../components/bingo/BingoActions.tsx';
 import { BettingBar } from '../components/bingo/BettingBar.tsx';
 import { WinModal } from '../components/bingo/WinModal.tsx';
+import { InsufficientBalanceModal } from '../components/bingo/InsufficientBalanceModal.tsx';
 import { ConfettiCanvas } from '../components/common/ConfettiCanvas.tsx';
 
 import { NetworkStatusBanner, NetworkLatencyPill } from '../components/bingo/NetworkStatusBanner.tsx';
@@ -99,6 +100,9 @@ export const BingoPage: React.FC = () => {
 
       {/* Victory Celebration Modal */}
       <WinModal />
+
+      {/* Insufficient Balance Pop-Up Alert Modal */}
+      <InsufficientBalanceModal />
     </div>
   );
 };

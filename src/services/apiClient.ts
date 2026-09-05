@@ -328,6 +328,23 @@ export const apiClient = {
         headers: { ...adminHeaders }
       });
       return handleResponse<{ success: boolean; stats: any }>(res);
+    },
+
+    async getBotUsers() {
+      const adminHeaders = await getAdminAuthHeader();
+      const res = await fetch(`${API_BASE}/admin/bot-users`, {
+        headers: { ...adminHeaders }
+      });
+      return handleResponse<{ success: boolean; bots: any[]; count: number }>(res);
+    },
+
+    async replenishBotUsers() {
+      const adminHeaders = await getAdminAuthHeader();
+      const res = await fetch(`${API_BASE}/admin/bot-users/replenish`, {
+        method: 'POST',
+        headers: { ...adminHeaders }
+      });
+      return handleResponse<{ success: boolean; message: string }>(res);
     }
   }
 };
