@@ -35,11 +35,21 @@ export function setupGameSockets(io: Server) {
           stakeAmount: room.stakeAmount,
           totalPot: room.totalPot,
           winnerPayout: room.winnerPayout,
+          playersCount: gameEngine.getRoomPlayersCount(room),
           drawnNumbers: room.drawnNumbers,
           currentCall: room.currentCall,
           winResult: room.winResult
         });
       }
+    });
+
+    // Admin Socket Config Controls
+    socket.on('admin_set_commission', (data: { enabled: boolean; rate?: number }) => {
+      gameEngine.setHouseCommission(data.enabled, data.rate);
+    });
+
+    socket.on('admin_set_win_rates', (data: { ownerRate: number; botRate: number; realRate: number }) => {
+      gameEngine.setWinRates(data.ownerRate, data.botRate, data.realRate);
     });
 
     // 2. Buy Ticket Event

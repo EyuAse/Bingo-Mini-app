@@ -17,9 +17,9 @@ export const BigBingoCard: React.FC = () => {
     <div className="fresh-fast-bingo-card">
       {/* Top Badges Row */}
       <div className="card-top-badges">
-        <span className="badge-fast-pill" style={{ background: '#f59e0b', color: '#fff' }}>
-          <i className="fa-solid fa-clock"></i>
-          <span>{lang === 'am' ? 'በቅርብ ቀን' : 'Coming Soon'}</span>
+        <span className="badge-fast-pill" style={{ background: '#16a34a', color: '#fff' }}>
+          <i className="fa-solid fa-circle" style={{ fontSize: '0.5rem', marginRight: 4 }}></i>
+          <span>{lang === 'am' ? 'ቀጥታ ስርጭት' : 'LIVE ROOM'}</span>
         </span>
         <span className="badge-players-pill">
           <i className="fa-solid fa-bolt" style={{ color: '#eab308' }}></i>
@@ -32,7 +32,7 @@ export const BigBingoCard: React.FC = () => {
         {/* Left Info Column */}
         <div className="card-left-info">
           <h3 className="card-title-fast">{lang === 'am' ? 'ፈጣን ቢንጎ' : 'Fast Bingo'}</h3>
-          <span className="badge-75-ball">{lang === 'am' ? 'በቅርብ ቀን የሚጀመር' : 'Launching Soon'}</span>
+          <span className="badge-75-ball">{lang === 'am' ? '75-ኳስ ፈጣን ጨዋታ' : '75-Ball Fast Action'}</span>
 
           <div className="stakes-values-txt">10 • 20 • 50 • 100 ETB</div>
           <div className="stakes-limits-sub">
@@ -79,7 +79,7 @@ export const BigBingoCard: React.FC = () => {
         className="btn-play-fast-bingo-cta"
         onClick={handlePlayNow}
       >
-        <span>{lang === 'am' ? 'የቢንጎ ገጽ ይመልከቱ (በቅርብ ቀን)' : 'Preview Bingo (Coming Soon)'}</span>
+        <span>{lang === 'am' ? 'አሁን 75-ኳስ ቢንጎ ይጫወቱ' : 'PLAY 75-BALL BINGO NOW'}</span>
         <i className="fa-solid fa-arrow-right"></i>
       </button>
     </div>

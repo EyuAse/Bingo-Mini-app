@@ -12,12 +12,9 @@ export const BettingBar: React.FC = () => {
     setCardQuantity,
     totalPlayableCards,
     selectedCartelaIds,
-    openCartelaPicker,
     buyTicket,
-    preBuyNextRound,
     roundPhase,
-    hasTicket,
-    hasPreBoughtNext
+    hasTicket
   } = useBingo();
   const { balance, bonus, isBalanceVisible } = useWallet();
   const { buy2Get1Bonus } = useAdmin();
@@ -25,7 +22,6 @@ export const BettingBar: React.FC = () => {
 
   const betChips = [10, 20, 50, 100];
   const totalCost = betAmount * cardQuantity;
-  const canBuy = roundPhase === 'lobby' || roundPhase === 'playing';
   const hasBonus = cardQuantity >= 2 && buy2Get1Bonus;
 
   return (
@@ -58,10 +54,10 @@ export const BettingBar: React.FC = () => {
         ))}
       </div>
 
-      {/* Cartelas Selection & 400 Pool Info */}
+      {/* System-Assigned Cartelas Info Row (No manual handpick per client rule) */}
       <div className="betting-cartela-pool-meta-row">
         <div className="cartela-assigned-badges">
-          <span className="cartela-badge-label">Cartelas:</span>
+          <span className="cartela-badge-label">Assigned:</span>
           <span className="cartela-id-pill">#{selectedCartelaIds[0]}</span>
           {cardQuantity >= 2 && (
             <span className="cartela-id-pill">#{selectedCartelaIds[1]}</span>
@@ -71,16 +67,10 @@ export const BettingBar: React.FC = () => {
           )}
         </div>
 
-        <button
-          type="button"
-          className="btn-open-400-picker"
-          onClick={openCartelaPicker}
-          disabled={hasTicket}
-          title="Pick favorite Cartela numbers from 1 to 400"
-        >
-          <i className="fa-solid fa-table-cells-large"></i>
-          <span>400 Pool</span>
-        </button>
+        <div className="system-assigned-auto-badge" title="Cartelas are securely auto-assigned by the system">
+          <i className="fa-solid fa-dice" style={{ color: '#ca8a04', marginRight: 4 }}></i>
+          <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#854d0e' }}>System Assigned</span>
+        </div>
       </div>
 
       {/* Buy 2 Get 1 FREE Bonus Highlight Banner */}

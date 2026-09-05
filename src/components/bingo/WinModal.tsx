@@ -120,7 +120,7 @@ export const WinModal: React.FC = () => {
         {/* Prize Box */}
         <div className="victory-prize-display-card">
           <span className="victory-prize-label">
-            {isOpponentWin ? 'ROUND PRIZE POOL' : isSplit ? 'YOUR SPLIT POT SHARE (50%)' : 'YOUR TOTAL WINNINGS'}
+            {isOpponentWin ? 'ROUND PRIZE POOL' : isSplit ? 'YOUR SPLIT POT SHARE' : 'YOUR TOTAL WINNINGS'}
           </span>
           <strong className={`victory-prize-amount ${isOpponentWin ? 'gold' : 'green'}`}>
             {isOpponentWin

@@ -154,10 +154,11 @@ CREATE INDEX IF NOT EXISTS idx_tickets_user ON game_tickets(user_id);
 -- 9. Seed Default Game Rooms (Idempotent)
 INSERT INTO game_rooms (id, name, stake_amount, min_players, max_players, house_commission_percent, is_active)
 VALUES
-    ('room-10', '10 Birr Room', 10.00, 1, 500, 15.00, TRUE),
-    ('room-25', '25 Birr Room', 25.00, 1, 500, 15.00, TRUE),
-    ('room-50', '50 Birr Room', 50.00, 1, 500, 15.00, TRUE),
-    ('room-100', '100 Birr VIP Room', 100.00, 1, 500, 15.00, TRUE)
+    ('room-10', '10 Birr Room', 10.00, 3, 50, 10.00, TRUE),
+    ('room-20', '20 Birr Room', 20.00, 3, 50, 10.00, TRUE),
+    ('room-50', '50 Birr Room', 50.00, 3, 50, 10.00, TRUE),
+    ('room-100', '100 Birr VIP Room', 100.00, 3, 50, 10.00, TRUE)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
-    stake_amount = EXCLUDED.stake_amount;
+    stake_amount = EXCLUDED.stake_amount,
+    house_commission_percent = EXCLUDED.house_commission_percent;

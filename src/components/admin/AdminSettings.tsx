@@ -22,7 +22,9 @@ export const AdminSettings: React.FC = () => {
     referralBonusRate,
     setReferralBonusRate,
     ownerWinTarget,
-    setOwnerWinTarget
+    setOwnerWinTarget,
+    botWinRate,
+    setBotWinRate
   } = useAdmin();
 
   const { showToast } = useApp();
@@ -31,6 +33,8 @@ export const AdminSettings: React.FC = () => {
   const [newPin, setNewPin] = useState(adminPin || '1234');
   const [confirmPin, setConfirmPin] = useState('');
   const [showPinChange, setShowPinChange] = useState(false);
+
+  const realPlayerWinRate = Math.max(0, 100 - ownerWinTarget - botWinRate);
 
   const handleSaveBrand = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,13 +128,13 @@ export const AdminSettings: React.FC = () => {
             <div className="settings-control-row">
               <div className="control-left-meta">
                 <div className="control-title-row">
-                  <strong className="control-title">Enable 20% House Commission Cut</strong>
+                  <strong className="control-title">Enable System Lock (House Commission Cut)</strong>
                   <span className={`control-status-pill ${houseCommissionEnabled ? 'active' : 'inactive'}`}>
                     {houseCommissionEnabled ? 'ACTIVE' : 'PAUSED'}
                   </span>
                 </div>
                 <p className="control-desc">
-                  Automatically reserve a commission percentage from each round's prize pool before winner payout.
+                  Automatically reserve a commission percentage from each round's prize pool before winner payout (Default: 10%).
                 </p>
               </div>
               <label className="dash-toggle-switch">
@@ -139,7 +143,7 @@ export const AdminSettings: React.FC = () => {
                   checked={houseCommissionEnabled}
                   onChange={e => {
                     setHouseCommissionEnabled(e.target.checked);
-                    showToast(`House Commission ${e.target.checked ? 'Enabled' : 'Paused'}`);
+                    showToast(`System Lock ${e.target.checked ? 'Enabled' : 'Paused'}`);
                   }}
                 />
                 <span className="dash-toggle-slider"></span>
@@ -150,11 +154,11 @@ export const AdminSettings: React.FC = () => {
             <div className="settings-control-row">
               <div className="control-left-meta">
                 <div className="control-title-row">
-                  <strong className="control-title">Commission Percentage Rate</strong>
+                  <strong className="control-title">System Lock Percentage Rate</strong>
                   <span className="control-val-pill gold">{commissionRate}% Cut</span>
                 </div>
                 <p className="control-desc">
-                  Adjust standard platform profit percentage cut per 75-ball game round (Default: 20%).
+                  Adjust platform profit percentage cut per 75-ball game round (Default: 10%).
                 </p>
               </div>
               <div className="settings-slider-box">
@@ -217,6 +221,67 @@ export const AdminSettings: React.FC = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            {/* Control 4: Fake Bot Win Share Rate */}
+            <div className="settings-control-row">
+              <div className="control-left-meta">
+                <div className="control-title-row">
+                  <strong className="control-title">Fake Bot Win Percentage Rate</strong>
+                  <span className="control-val-pill blue">{botWinRate}% Bot Win Rate</span>
+                </div>
+                <p className="control-desc">
+                  Percentage of rounds won by simulated Ethiopian bots to keep player excitement high (Default: 30%).
+                </p>
+              </div>
+              <div className="settings-slider-box">
+                <input
+                  type="range"
+                  min="5"
+                  max="60"
+                  step="5"
+                  value={botWinRate}
+                  className="dash-range-slider"
+                  onChange={e => setBotWinRate(parseInt(e.target.value, 10))}
+                />
+                <div className="slider-presets-row">
+                  <span className="preset-label">Presets:</span>
+                  {[15, 20, 30, 40, 50].map(val => (
+                    <button
+                      key={val}
+                      type="button"
+                      className={`btn-dash-preset-chip ${botWinRate === val ? 'active' : ''}`}
+                      onClick={() => setBotWinRate(val)}
+                    >
+                      {val}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Tri-Tier Win Allocation Breakdown Box */}
+            <div className="tri-tier-breakdown-box">
+              <div className="tri-tier-header">
+                <span className="tri-tier-title">🎮 Tri-Tier Round Outcome Distribution</span>
+                <span className="tri-tier-sum">Total: 100%</span>
+              </div>
+              <div className="tri-tier-bar">
+                <div className="tri-tier-segment owner" style={{ width: `${ownerWinTarget}%` }}>
+                  <span>Owner: {ownerWinTarget}%</span>
+                </div>
+                <div className="tri-tier-segment bot" style={{ width: `${botWinRate}%` }}>
+                  <span>Bots: {botWinRate}%</span>
+                </div>
+                <div className="tri-tier-segment real" style={{ width: `${realPlayerWinRate}%` }}>
+                  <span>Real: {realPlayerWinRate}%</span>
+                </div>
+              </div>
+              <div className="tri-tier-legend">
+                <span className="legend-item"><span className="dot purple"></span> Owner/House: {ownerWinTarget}%</span>
+                <span className="legend-item"><span className="dot blue"></span> 200+ Bots: {botWinRate}%</span>
+                <span className="legend-item"><span className="dot green"></span> Real Players: {realPlayerWinRate}%</span>
               </div>
             </div>
           </div>

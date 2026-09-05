@@ -160,9 +160,10 @@ const generateEthiopianBots = (): BotPlayer[] => {
   const avatars = ['av-purple', 'av-green', 'av-orange', 'av-blue', 'av-pink'];
   const bots: BotPlayer[] = [];
 
-  for (let i = 0; i < 50; i++) {
+  // Generate 260+ Unique Ethiopian Bot Identities
+  for (let i = 0; i < 260; i++) {
     const fName = firstNames[i % firstNames.length];
-    const lName = lastNames[i % lastNames.length];
+    const lName = lastNames[(Math.floor(i / firstNames.length) + i) % lastNames.length];
     bots.push({
       id: `bot-${i + 1}`,
       name: `${fName} ${lName}`,
@@ -227,21 +228,46 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return sessionStorage.getItem('lomibingo_admin_auth') === 'true';
   });
 
-  const [houseCommissionEnabled, setHouseCommissionEnabled] = useState<boolean>(true);
-  const [commissionRate, setCommissionRate] = useState<number>(15);
+  // 10% System Lock (House Commission) Default
+  const [houseCommissionEnabled, setHouseCommissionEnabledState] = useState<boolean>(true);
+  const [commissionRate, setCommissionRateState] = useState<number>(10);
 
-  const [stakes, setStakes] = useState<number[]>([10, 25, 50, 100]);
+  // Stakes: 10, 20, 50, 100 ETB
+  const [stakes, setStakes] = useState<number[]>([10, 20, 50, 100]);
   const [buy2Get1Bonus, setBuy2Get1Bonus] = useState<boolean>(true);
   const [verticalBoardMode, setVerticalBoardMode] = useState<boolean>(false);
 
   const [registerBonus, setRegisterBonus] = useState<number>(10);
   const [referralBonusRate, setReferralBonusRate] = useState<number>(10);
 
-  const [simulatedPlayerCount, setSimulatedPlayerCount] = useState<number>(45);
-  const [botWinRate, setBotWinRate] = useState<number>(30);
-  const [ownerWinTarget, setOwnerWinTarget] = useState<number>(20);
+  // 50-Player Room Density & Win Rates
+  const [simulatedPlayerCount, setSimulatedPlayerCount] = useState<number>(50);
+  const [botWinRate, setBotWinRateState] = useState<number>(30);
+  const [ownerWinTarget, setOwnerWinTargetState] = useState<number>(20);
   const [botPool] = useState<BotPlayer[]>(generateEthiopianBots);
   const [cartelaPool] = useState<CartelaCard[]>(generate400Cartelas);
+
+  const setHouseCommissionEnabled = (enabled: boolean) => {
+    setHouseCommissionEnabledState(enabled);
+    socketService.getSocket().emit('admin_set_commission', { enabled, rate: commissionRate });
+  };
+
+  const setCommissionRate = (rate: number) => {
+    setCommissionRateState(rate);
+    socketService.getSocket().emit('admin_set_commission', { enabled: houseCommissionEnabled, rate });
+  };
+
+  const setBotWinRate = (rate: number) => {
+    setBotWinRateState(rate);
+    const real = Math.max(0, 100 - ownerWinTarget - rate);
+    socketService.getSocket().emit('admin_set_win_rates', { ownerRate: ownerWinTarget, botRate: rate, realRate: real });
+  };
+
+  const setOwnerWinTarget = (rate: number) => {
+    setOwnerWinTargetState(rate);
+    const real = Math.max(0, 100 - rate - botWinRate);
+    socketService.getSocket().emit('admin_set_win_rates', { ownerRate: rate, botRate: botWinRate, realRate: real });
+  };
 
   // Real Database-Backed Users & Transactions (Zero Mock Data)
   const [users, setUsers] = useState<UserAccount[]>([]);

@@ -207,16 +207,16 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Round Lifecycle Phase
   const [roundPhase, setRoundPhase] = useState<RoundPhase>('lobby');
-  const [lobbyCountdown, setLobbyCountdown] = useState<number>(20);
+  const [lobbyCountdown, setLobbyCountdown] = useState<number>(45);
   const [winnerCountdown, setWinnerCountdown] = useState<number>(8);
 
-  // Betting state (Stakes: 10, 25, 50, 100 Birr)
+  // Betting state (Stakes: 10, 20, 50, 100 Birr)
   const [betAmount, setBetAmount] = useState<number>(10);
   const [cardQuantity, setCardQuantityState] = useState<number>(1);
   const [hasTicket, setHasTicket] = useState<boolean>(false);
   const [hasPreBoughtNext, setHasPreBoughtNext] = useState<boolean>(false);
 
-  // 400 Cartelas Pool Selection
+  // 400 Cartelas Pool Selection (System Assigned)
   const [selectedCartelaIds, setSelectedCartelaIds] = useState<[number, number, number]>([
     Math.floor(1 + Math.random() * 120),
     Math.floor(121 + Math.random() * 140),
@@ -247,8 +247,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   autoPlayRef.current = autoPlay;
 
   // Room State
-  const [playersCount, setPlayersCount] = useState<number>(simulatedPlayerCount || 45);
-  const [prizePool, setPrizePool] = useState<number>(340);
+  const [playersCount, setPlayersCount] = useState<number>(50);
+  const [prizePool, setPrizePool] = useState<number>(450);
   const [opponents, setOpponents] = useState<Opponent[]>([]);
   const [canWin, setCanWin] = useState<boolean>(false);
   const [winResult, setWinResult] = useState<WinResult | null>(null);
@@ -261,7 +261,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const getActiveRoomId = useCallback(() => {
     if (betAmount >= 100) return 'room-100';
     if (betAmount >= 50) return 'room-50';
-    if (betAmount >= 25) return 'room-25';
+    if (betAmount >= 20) return 'room-20';
     return 'room-10';
   }, [betAmount]);
 
@@ -319,6 +319,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setCartela3Data(prev => daubCard(prev));
   }, []);
 
+  const hasPreBoughtNextRef = useRef<boolean>(false);
+  hasPreBoughtNextRef.current = hasPreBoughtNext;
+
   // Socket.IO Multiplayer Room Listener
   useEffect(() => {
     const roomId = getActiveRoomId();
@@ -326,7 +329,18 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     // 1. Room State / Sync
     const unsubRoomState = socketService.onRoomState((state: any) => {
-      if (state.phase) setRoundPhase(state.phase);
+      if (state.phase) {
+        setRoundPhase(prev => {
+          if (prev === 'winner' && state.phase === 'lobby') {
+            setShowWinModal(false);
+            setHasTicket(hasPreBoughtNextRef.current);
+            setHasPreBoughtNext(false);
+            setCalledNumbers([]);
+            setCurrentCall(null);
+          }
+          return state.phase;
+        });
+      }
       if (typeof state.lobbyCountdown === 'number') setLobbyCountdown(state.lobbyCountdown);
       if (typeof state.winnerCountdown === 'number') setWinnerCountdown(state.winnerCountdown);
       if (typeof state.playersCount === 'number') setPlayersCount(state.playersCount);
@@ -382,34 +396,54 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setCartela3Data(generateCardFromId(selectedCartelaIds[2]));
     });
 
-    // 4. Round Winner
+    // 4. Round Winner & Split Pot Handler
     const unsubRoundWinner = socketService.onRoundWinner((winData: any) => {
       setRoundPhase('winner');
+      const isRealUserWin = 
+        winData.winnerId?.includes(user?.id) || 
+        (winData.winnerNames && winData.winnerNames.includes(user?.fullName)) ||
+        (user?.id && winData.winnerId === user.id);
+
+      const winType = winData.isSplit
+        ? (isRealUserWin ? 'user_split' : 'opponent_win')
+        : (isRealUserWin ? 'user_solo' : 'opponent_win');
+
+      const payout = isRealUserWin ? (winData.sharePerWinner || winData.userShare || 0) : 0;
+
       setWinResult({
-        winType: winData.winnerId === user?.id ? 'user_solo' : 'opponent_win',
+        winType,
         winningCartelaNumber: winData.winningCartelaNumber,
         winningLine: winData.winningIndices || [],
-        winnerName: winData.winnerName,
-        coWinners: [],
+        winnerName: winData.winnerName || 'Winner',
+        coWinners: winData.coWinners || [],
         totalPot: winData.totalPot || prizePool,
-        userShare: winData.winnerId === user?.id ? winData.userShare : 0
+        userShare: payout
       });
       setShowWinModal(true);
 
-      if (winData.winnerId === user?.id) {
+      if (isRealUserWin) {
         soundEngine.playWinFanfare();
-        addBalance(winData.userShare);
+        addBalance(payout);
       } else {
         soundEngine.playPop();
       }
       refreshBalance();
     });
 
+    // 5. Real-Time Server Balance Push
+    let unsubBalance: (() => void) | null = null;
+    if (user?.id) {
+      unsubBalance = socketService.onUserBalanceUpdate(user.id, () => {
+        refreshBalance();
+      });
+    }
+
     return () => {
       unsubRoomState();
       unsubBallCalled();
       unsubRoundStarted();
       unsubRoundWinner();
+      if (unsubBalance) unsubBalance();
     };
   }, [getActiveRoomId, user, applyDrawnNumber, selectedCartelaIds, prizePool, addBalance, refreshBalance]);
 
@@ -462,6 +496,18 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (!res.success) {
         showToast(`❌ ${res.error || 'Ticket purchase failed'}`);
         return;
+      }
+      if (res.tickets && res.tickets.length > 0) {
+        const newIds = res.tickets.map((t: any) => t.cartelaId);
+        const updatedIds: [number, number, number] = [
+          newIds[0] || selectedCartelaIds[0],
+          newIds[1] || selectedCartelaIds[1],
+          newIds[2] || selectedCartelaIds[2]
+        ];
+        setSelectedCartelaIds(updatedIds);
+        if (res.tickets[0]) setCartela1Data(res.tickets[0].cardMatrix);
+        if (res.tickets[1]) setCartela2Data(res.tickets[1].cardMatrix);
+        if (res.tickets[2]) setCartela3Data(res.tickets[2].cardMatrix);
       }
     } else {
       // Local fallback

@@ -24,6 +24,7 @@ export const BotsSimulatorDesk: React.FC = () => {
   const totalBots = safeBotPool.length;
   const totalBotWins = safeBotPool.reduce((acc, b) => acc + (b.winsCount || 0), 0);
   const topWinningBots = safeBotPool.filter(b => (b.winsCount || 0) >= 5);
+  const realPlayerWinRate = Math.max(0, 100 - ownerWinTarget - botWinRate);
 
   const filteredBots = safeBotPool.filter(bot => {
     if (filterMode === 'top-winners' && (bot.winsCount || 0) < 5) return false;
@@ -280,6 +281,30 @@ export const BotsSimulatorDesk: React.FC = () => {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Tri-Tier Win Allocation Breakdown Box */}
+          <div className="tri-tier-breakdown-box">
+            <div className="tri-tier-header">
+              <span className="tri-tier-title">🎮 Tri-Tier Dynamic Outcome Routing</span>
+              <span className="tri-tier-sum">Total: 100%</span>
+            </div>
+            <div className="tri-tier-bar">
+              <div className="tri-tier-segment owner" style={{ width: `${ownerWinTarget}%` }}>
+                <span>Owner: {ownerWinTarget}%</span>
+              </div>
+              <div className="tri-tier-segment bot" style={{ width: `${botWinRate}%` }}>
+                <span>Bots: {botWinRate}%</span>
+              </div>
+              <div className="tri-tier-segment real" style={{ width: `${realPlayerWinRate}%` }}>
+                <span>Real: {realPlayerWinRate}%</span>
+              </div>
+            </div>
+            <div className="tri-tier-legend">
+              <span className="legend-item"><span className="dot purple"></span> Owner/House: {ownerWinTarget}%</span>
+              <span className="legend-item"><span className="dot blue"></span> 200+ Bots: {botWinRate}%</span>
+              <span className="legend-item"><span className="dot green"></span> Real Players: {realPlayerWinRate}%</span>
             </div>
           </div>
         </div>
