@@ -9,7 +9,6 @@ import { LiveSocialProofTicker } from './components/common/LiveSocialProofTicker
 import { BottomNav } from './components/common/BottomNav.tsx';
 import { Toast } from './components/common/Toast.tsx';
 import { NewPlayerWelcomeModal } from './components/auth/NewPlayerWelcomeModal.tsx';
-import { DailyStreakModal } from './components/rewards/DailyStreakModal.tsx';
 
 // Pages
 import { LandingPage } from './pages/LandingPage.tsx';
@@ -33,7 +32,6 @@ export const App: React.FC = () => {
   const { user, isAuthenticated, isFirstTimeTelegramUser, dismissFirstTimeModal } = useAuth();
   const { addUser, registerBonus } = useAdmin();
   const { addBonus } = useWallet();
-  const [isDailyStreakOpen, setIsDailyStreakOpen] = useState(false);
 
   // Seamless routing: If user is authenticated in Telegram, jump straight into games!
   useEffect(() => {
@@ -88,7 +86,7 @@ export const App: React.FC = () => {
 
       {/* Phase 3: Live Online Players & Winners Ticker */}
       {!isStandalonePage && !isSubpage && (
-        <LiveSocialProofTicker onOpenStreak={() => setIsDailyStreakOpen(true)} />
+        <LiveSocialProofTicker />
       )}
 
       {/* Active Page View */}
@@ -116,12 +114,6 @@ export const App: React.FC = () => {
         user={user}
         bonusAmount={registerBonus}
         onClose={dismissFirstTimeModal}
-      />
-
-      {/* Phase 2: Daily Login Streak Calendar Modal */}
-      <DailyStreakModal
-        isOpen={isDailyStreakOpen}
-        onClose={() => setIsDailyStreakOpen(false)}
       />
 
       {/* Global Toast */}

@@ -75,13 +75,14 @@ class SocketService {
     roomId: string,
     userId: string,
     userName: string,
-    cartelaIds: number[]
+    cartelaIds: number[],
+    stakeAmount?: number
   ): Promise<{ success: boolean; error?: string; tickets?: any[]; remainingBalance?: number }> {
     return new Promise((resolve) => {
       const sock = this.getSocket();
       sock.emit(
         'buy_ticket',
-        { roomId, userId, userName, cartelaIds },
+        { roomId, userId, userName, cartelaIds, stakeAmount },
         (response: any) => {
           resolve(response || { success: false, error: 'No response from game server' });
         }

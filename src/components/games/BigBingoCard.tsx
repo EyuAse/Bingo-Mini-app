@@ -56,8 +56,8 @@ export const BigBingoCard: React.FC = () => {
                 <i className="fa-solid fa-trophy"></i>
               </div>
               <div className="stat-text-meta">
-                <strong className="stat-bold-val">{prizePool} ETB</strong>
-                <span className="stat-sub-lbl">{lang === 'am' ? 'የጨዋታ ሽልማት' : 'Room Net Prize'}</span>
+                <strong className="stat-bold-val">45x MULTI</strong>
+                <span className="stat-sub-lbl">{lang === 'am' ? 'እስከ 4,500 ብር ሽልማት' : 'Up to 4,500 ETB'}</span>
               </div>
             </div>
           </div>

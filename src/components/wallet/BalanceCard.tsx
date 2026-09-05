@@ -25,18 +25,22 @@ export const BalanceCard: React.FC = () => {
           </div>
         </div>
 
-        <div className="overview-col-divider"></div>
+        {bonus > 0 && (
+          <>
+            <div className="overview-col-divider"></div>
 
-        {/* Column 2: Welcome Bonus Balance */}
-        <div className="balance-overview-col">
-          <div className="overview-icon-circ green">
-            <i className="fa-solid fa-gift"></i>
-          </div>
-          <div className="overview-col-text">
-            <span className="overview-col-lbl">{t('wallet.bonusBalance')}</span>
-            <strong className="overview-col-val" style={{ color: '#22c55e' }}>{bonus.toFixed(2)} ETB</strong>
-          </div>
-        </div>
+            {/* Column 2: Welcome Bonus Balance */}
+            <div className="balance-overview-col">
+              <div className="overview-icon-circ green">
+                <i className="fa-solid fa-gift"></i>
+              </div>
+              <div className="overview-col-text">
+                <span className="overview-col-lbl">{t('wallet.bonusBalance')}</span>
+                <strong className="overview-col-val" style={{ color: '#22c55e' }}>{bonus.toFixed(2)} ETB</strong>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Playable Summary Bar if Bonus is active */}

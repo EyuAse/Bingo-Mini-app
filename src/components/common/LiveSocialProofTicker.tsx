@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 
-interface LiveSocialProofTickerProps {
-  onOpenStreak?: () => void;
-}
-
-export const LiveSocialProofTicker: React.FC<LiveSocialProofTickerProps> = ({ onOpenStreak }) => {
+export const LiveSocialProofTicker: React.FC = () => {
   const { lang } = useLanguage();
   const [onlineCount, setOnlineCount] = useState(1843);
   const [winnerIndex, setWinnerIndex] = useState(0);
@@ -109,32 +105,6 @@ export const LiveSocialProofTicker: React.FC<LiveSocialProofTickerProps> = ({ on
           <span style={{ color: '#4ade80', fontWeight: '900' }}>+{currentWinner.amount} ETB</span>
         </div>
       </div>
-
-      {/* Right: Daily Streak Button */}
-      {onOpenStreak && (
-        <button
-          type="button"
-          onClick={onOpenStreak}
-          style={{
-            background: 'linear-gradient(135deg, #facc15 0%, #eab308 100%)',
-            color: '#0f172a',
-            border: 'none',
-            borderRadius: '999px',
-            padding: '2px 8px',
-            fontSize: '10.5px',
-            fontWeight: '900',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '3px',
-            boxShadow: '0 2px 6px rgba(234, 179, 8, 0.4)',
-            flexShrink: 0
-          }}
-        >
-          <span>🔥</span>
-          <span>{lang === 'am' ? 'የቀን ቦነስ' : 'Streak'}</span>
-        </button>
-      )}
     </div>
   );
 };

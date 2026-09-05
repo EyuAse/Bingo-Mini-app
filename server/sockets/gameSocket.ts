@@ -56,16 +56,17 @@ export function setupGameSockets(io: Server) {
     socket.on(
       'buy_ticket',
       async (
-        data: { roomId: string; userId: string; userName: string; cartelaIds: number[] },
+        data: { roomId: string; userId: string; userName: string; cartelaIds: number[]; stakeAmount?: number },
         callback?: (res: any) => void
       ) => {
-        const { roomId, userId, userName, cartelaIds } = data;
+        const { roomId, userId, userName, cartelaIds, stakeAmount } = data;
         const result = await gameEngine.handleBuyTicket(
           userId,
           userName || authUserName,
           roomId,
           cartelaIds,
-          socket.id
+          socket.id,
+          stakeAmount
         );
 
         if (callback) {

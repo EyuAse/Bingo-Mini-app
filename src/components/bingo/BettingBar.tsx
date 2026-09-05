@@ -130,7 +130,7 @@ export const BettingBar: React.FC = () => {
           <span>
             {hasTicket
               ? `PLAYING ${totalPlayableCards} CARDS`
-              : `${t('bingo.buyTicket')} • ${totalCost} ETB`}
+              : `${t('bingo.buyTicket')} • ${totalCost} ETB (Win ${betAmount * 45} ETB)`}
           </span>
         </button>
       </div>

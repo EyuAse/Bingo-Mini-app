@@ -54,13 +54,19 @@ export const BingoPage: React.FC = () => {
             {hasTicket ? (
               <div className="active-playing-cartela-box">
                 <BingoGrid />
-                <BingoActions />
               </div>
             ) : (
               <SpectatorCard />
             )}
           </div>
         </div>
+
+        {/* 4.5 Full-Width Action Bar (Auto Daub / Golden BINGO / Match) */}
+        {hasTicket && (
+          <div className="bingo-full-width-actions-wrap">
+            <BingoActions />
+          </div>
+        )}
 
         {/* 5. Stake Selector, System Cartelas & Buy Ticket Bar */}
         <BettingBar />

@@ -213,7 +213,8 @@ class BingoGameEngine {
     userName: string,
     roomId: string,
     requestedCartelaIds: number[] | number,
-    socketId: string
+    socketId: string,
+    customStake?: number
   ): Promise<{ success: boolean; error?: string; tickets?: PlayerTicket[]; remainingBalance?: number }> {
     const room = this.rooms.get(roomId);
     if (!room) {
@@ -227,6 +228,12 @@ class BingoGameEngine {
       };
     }
 
+    // Model A: Support individual ticket stake levels (10, 20, 50, 100 ETB)
+    const validStakes = [10, 20, 50, 100];
+    const stakePerCard = customStake && validStakes.includes(Number(customStake))
+      ? Number(customStake)
+      : room.stakeAmount;
+
     // Determine quantity requested (1 or 2 cards)
     let quantity = 1;
     if (Array.isArray(requestedCartelaIds)) {
@@ -235,7 +242,7 @@ class BingoGameEngine {
       quantity = Math.max(1, Math.min(2, requestedCartelaIds));
     }
 
-    const totalCost = quantity * room.stakeAmount;
+    const totalCost = quantity * stakePerCard;
 
     // Collect already assigned Cartela IDs in this room to ensure unique cards
     const assignedIds = new Set<number>();
@@ -326,7 +333,7 @@ class BingoGameEngine {
         userName,
         cartelaId: id,
         cardMatrix: generateCardFromId(id),
-        betAmount: idx === 2 ? 0 : room.stakeAmount, // 3rd card is FREE bonus
+        betAmount: idx === 2 ? 0 : stakePerCard, // 3rd card is FREE bonus
         socketId,
         isBonus: idx === 2
       }));
@@ -659,7 +666,6 @@ class BingoGameEngine {
     room.phase = 'winner';
 
     const winnerCount = winningCards.length;
-    const sharePerWinner = Math.floor(room.winnerPayout / winnerCount);
     const realWinners = winningCards.filter(w => w.isReal);
     const isSplit = winnerCount > 1;
 
@@ -669,6 +675,15 @@ class BingoGameEngine {
         await withTransaction(async (client) => {
           for (const rw of realWinners) {
             if (!rw.userId) continue;
+
+            const userTickets = room.tickets.get(rw.userId) || [];
+            const matchingTicket = userTickets.find(t => t.cartelaId === rw.cartelaId);
+            const ticketStake = matchingTicket && matchingTicket.betAmount > 0
+              ? matchingTicket.betAmount
+              : (userTickets[0]?.betAmount > 0 ? userTickets[0].betAmount : room.stakeAmount);
+
+            // Model A Multi-Stake: Base 45x multiplier, divided equally among ties
+            const sharePerWinner = Math.floor((ticketStake * 45) / winnerCount);
 
             const walletRes = await client.query(
               'SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE',
@@ -694,8 +709,8 @@ class BingoGameEngine {
                   newBal,
                   winRef,
                   isSplit
-                    ? `Split Pot Winner (1 of ${winnerCount}) in ${room.name} (Cartela #${rw.cartelaId})`
-                    : `Bingo Solo Winner in ${room.name} (Cartela #${rw.cartelaId})`
+                    ? `Split Pot Winner (1 of ${winnerCount}, ${ticketStake} ETB Stake) in ${room.name} (Cartela #${rw.cartelaId})`
+                    : `Bingo Solo Winner (${ticketStake} ETB Stake) in ${room.name} (Cartela #${rw.cartelaId})`
                 ]
               );
 

@@ -512,7 +512,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     // Send to live server
     if (user?.id) {
-      const res = await socketService.buyTicket(roomId, user.id, user.fullName, activeIds);
+      const res = await socketService.buyTicket(roomId, user.id, user.fullName, activeIds, betAmount);
       if (!res.success) {
         showToast(`❌ ${res.error || 'Ticket purchase failed'}`);
         return;

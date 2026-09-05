@@ -19,7 +19,7 @@ export const StatsStrip: React.FC = () => {
       icon: 'fa-trophy',
       iconColor: 'green',
       label: t('bingo.winningAmount'),
-      value: prizePool >= 1000 ? `${(prizePool / 1000).toFixed(1)}K` : `${prizePool}`,
+      value: (betAmount * 45) >= 1000 ? `${((betAmount * 45) / 1000).toFixed(1)}K` : `${betAmount * 45}`,
       unit: 'ETB',
       valColor: 'green'
     },
