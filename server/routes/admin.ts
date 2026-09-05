@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { query, withTransaction } from '../db.ts';
 import { requireAdmin, AuthenticatedRequest } from '../middleware/auth.ts';
 import { io } from '../server.ts';
+import { gameEngine } from '../game/BingoGameEngine.ts';
 
 const router = Router();
 
@@ -396,6 +397,19 @@ router.get('/stats', requireAdmin, async (_req, res) => {
   } catch (error: any) {
     console.error('❌ [Admin Stats Error]:', error);
     return res.status(500).json({ success: false, error: 'Failed to retrieve stats' });
+  }
+});
+
+/**
+ * Live Network Health & Disconnect Protection Metrics
+ */
+router.get('/network-health', requireAdmin, async (_req, res) => {
+  try {
+    const metrics = gameEngine.getNetworkMetrics();
+    return res.json({ success: true, metrics });
+  } catch (error: any) {
+    console.error('❌ [Admin Network Health Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to retrieve network metrics' });
   }
 });
 

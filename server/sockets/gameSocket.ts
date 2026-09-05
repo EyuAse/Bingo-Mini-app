@@ -18,7 +18,14 @@ export function setupGameSockets(io: Server) {
       }
 
       currentRoomId = roomId;
-      if (userId) authUserId = userId;
+      if (userId) {
+        authUserId = userId;
+        // Check for Disconnect Protection wins that occurred while offline
+        const unackedWins = gameEngine.getUnacknowledgedWins(userId);
+        if (unackedWins && unackedWins.length > 0) {
+          socket.emit('offline_win_notification', unackedWins);
+        }
+      }
       if (userName) authUserName = userName;
 
       socket.join(roomId);
@@ -112,7 +119,24 @@ export function setupGameSockets(io: Server) {
       }
     });
 
-    // 5. Disconnect
+    // 5. Authoritative Disconnect Protection Acknowledgement
+    socket.on('acknowledge_offline_win', (data: { winId: string }) => {
+      if (data?.winId) {
+        gameEngine.acknowledgeOfflineWin(data.winId);
+      }
+    });
+
+    // 6. Network Latency Ping Check
+    socket.on('ping_check', (clientTimestamp: number, callback?: (data: any) => void) => {
+      const serverTime = Date.now();
+      if (typeof callback === 'function') {
+        callback({ clientTimestamp, serverTime });
+      } else {
+        socket.emit('pong_check', { clientTimestamp, serverTime });
+      }
+    });
+
+    // 7. Disconnect
     socket.on('disconnect', () => {
       if (currentRoomId) {
         gameEngine.handleLeaveRoom(socket.id, currentRoomId);

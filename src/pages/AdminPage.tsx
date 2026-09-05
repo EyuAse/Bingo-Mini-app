@@ -11,6 +11,7 @@ import { PlayerAccountsDesk } from '../components/admin/PlayerAccountsDesk.tsx';
 import { BotsSimulatorDesk } from '../components/admin/BotsSimulatorDesk.tsx';
 import { CartelasDesk } from '../components/admin/CartelasDesk.tsx';
 import { AdminSettings } from '../components/admin/AdminSettings.tsx';
+import { NetworkHealthDesk } from '../components/admin/NetworkHealthDesk.tsx';
 import '../styles/admin.css';
 
 export const AdminPage: React.FC = () => {
@@ -55,6 +56,7 @@ export const AdminPage: React.FC = () => {
                 {activeTab === 'users' && 'Player Accounts & Wallets Directory'}
                 {activeTab === 'bots' && '200+ Smart Bots & Crowd Simulator'}
                 {activeTab === 'cartelas' && '400 Serial Cartela Cards Library'}
+                {activeTab === 'network' && 'Live Network Health & Disconnect Protection Desk'}
                 {activeTab === 'settings' && 'System & Commission Settings'}
               </h2>
               <p className="viewport-page-amharic-sub">
@@ -64,6 +66,7 @@ export const AdminPage: React.FC = () => {
                 {activeTab === 'users' && 'የተመዘገቡ ተጫዋቾች፣ የዋሌት ቀሪ ሂሳብ እና የቦነስ ማበረታቻዎች'}
                 {activeTab === 'bots' && 'የተቀላጠፈ የቦቶች ቁጥር እና የጨዋታ አሸናፊነት ተመን'}
                 {activeTab === 'cartelas' && '400 የቢንጎ ካርቴላ ካርዶች ቤተ-መጽሐፍት'}
+                {activeTab === 'network' && 'የቀጥታ ሶኬት ፍጥነት፣ የኔትዎርክ ጤንነት እና የራስ-ሰር አሸናፊነት መዝገብ'}
                 {activeTab === 'settings' && 'የኮሚሽን ተመን፣ የጨዋታ ህጎች እና የአስተዳዳሪ ደህንነት'}
               </p>
             </div>
@@ -121,7 +124,10 @@ export const AdminPage: React.FC = () => {
           {/* TAB 6: 400 SERIAL CARTELA CARDS LIBRARY */}
           {activeTab === 'cartelas' && <CartelasDesk />}
 
-          {/* TAB 7: SYSTEM & COMMISSION SETTINGS */}
+          {/* TAB 7: LIVE NETWORK HEALTH & DISCONNECT PROTECTION */}
+          {activeTab === 'network' && <NetworkHealthDesk />}
+
+          {/* TAB 8: SYSTEM & COMMISSION SETTINGS */}
           {activeTab === 'settings' && <AdminSettings />}
         </main>
 

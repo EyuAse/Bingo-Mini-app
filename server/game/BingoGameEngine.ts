@@ -25,6 +25,21 @@ export interface OpponentCard {
   isHouseBot?: boolean;
 }
 
+export interface OfflineWinRecord {
+  id: string;
+  userId: string;
+  userName: string;
+  roomId: string;
+  roundNumber: number;
+  cartelaId: number;
+  amount: number;
+  referenceCode: string;
+  timestamp: string;
+  isOffline: boolean;
+  acknowledged: boolean;
+  winningPattern: string;
+}
+
 export interface GameRoomState {
   id: string;
   name: string;
@@ -89,6 +104,9 @@ class BingoGameEngine {
   private ownerWinRate: number = 20;
   private botWinRate: number = 30;
   private realPlayerWinRate: number = 50;
+
+  // Disconnect Protection: Rolling ledger of auto-credited wins
+  private offlineWins: OfflineWinRecord[] = [];
 
   private constructor() {
     this.initializeRooms();
@@ -669,6 +687,9 @@ class BingoGameEngine {
     const realWinners = winningCards.filter(w => w.isReal);
     const isSplit = winnerCount > 1;
 
+    const defaultShare = Math.floor((room.stakeAmount * 45) / winnerCount);
+    let winningSharePerWinner = defaultShare;
+
     // Credit all winning real players atomically via Neon PostgreSQL
     if (realWinners.length > 0) {
       try {
@@ -684,6 +705,7 @@ class BingoGameEngine {
 
             // Model A Multi-Stake: Base 45x multiplier, divided equally among ties
             const sharePerWinner = Math.floor((ticketStake * 45) / winnerCount);
+            winningSharePerWinner = sharePerWinner;
 
             const walletRes = await client.query(
               'SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE',
@@ -699,20 +721,43 @@ class BingoGameEngine {
                 [newBal, rw.userId]
               );
 
+              // Check if player is currently connected to the room socket
+              const isSocketConnected = userTickets.some(t => room.activeSockets.has(t.socketId));
+
               const winRef = `WIN-${room.id.toUpperCase()}-${Date.now().toString().slice(-6)}`;
+              const description = isSplit
+                ? `Split Pot Winner (1 of ${winnerCount}, ${ticketStake} ETB Stake) in ${room.name} (Cartela #${rw.cartelaId})${!isSocketConnected ? ' [Protected Offline Auto-Claim]' : ''}`
+                : `Bingo Solo Winner (${ticketStake} ETB Stake) in ${room.name} (Cartela #${rw.cartelaId})${!isSocketConnected ? ' [Protected Offline Auto-Claim]' : ''}`;
+
               await client.query(
                 `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, payment_method, description)
                  VALUES ($1, 'win', $2, $3, $4, 'completed', 'in_game', $5)`,
-                [
-                  rw.userId,
-                  sharePerWinner,
-                  newBal,
-                  winRef,
-                  isSplit
-                    ? `Split Pot Winner (1 of ${winnerCount}, ${ticketStake} ETB Stake) in ${room.name} (Cartela #${rw.cartelaId})`
-                    : `Bingo Solo Winner (${ticketStake} ETB Stake) in ${room.name} (Cartela #${rw.cartelaId})`
-                ]
+                [rw.userId, sharePerWinner, newBal, winRef, description]
               );
+
+              // Disconnect Protection: Record in authoritative offline/online ledger
+              const winRecord: OfflineWinRecord = {
+                id: `WINREC-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+                userId: rw.userId,
+                userName: rw.userName,
+                roomId: room.id,
+                roundNumber: room.roundNumber,
+                cartelaId: rw.cartelaId,
+                amount: sharePerWinner,
+                referenceCode: winRef,
+                timestamp: new Date().toISOString(),
+                isOffline: !isSocketConnected,
+                acknowledged: false,
+                winningPattern: rw.winningPattern
+              };
+              this.offlineWins.unshift(winRecord);
+              if (this.offlineWins.length > 200) this.offlineWins.pop();
+
+              if (!isSocketConnected) {
+                console.log(`🛡️ [Disconnect Protection] User ${rw.userName} (${rw.userId}) won while disconnected. Auto-claimed and deposited ${sharePerWinner} ETB to Neon DB!`);
+              }
+
+              io.emit('offline_win_recorded', winRecord);
 
               io.emit(`user_${rw.userId}_balance`, {
                 type: 'bingo_win',
@@ -769,8 +814,8 @@ class BingoGameEngine {
       winningIndices: firstWinner.winningIndices,
       totalPot: room.totalPot,
       winnerPayout: room.winnerPayout,
-      sharePerWinner,
-      userShare: realWinners.length > 0 ? sharePerWinner : 0,
+      sharePerWinner: winningSharePerWinner,
+      userShare: realWinners.length > 0 ? winningSharePerWinner : 0,
       coWinners: winningCards.map(w => w.userName),
       isSplit,
       winnersCount: winnerCount
@@ -876,6 +921,48 @@ class BingoGameEngine {
       currentCall: room.currentCall,
       winResult: room.winResult
     });
+  }
+
+  // Authoritative Disconnect Protection Helpers
+  public getUnacknowledgedWins(userId: string): OfflineWinRecord[] {
+    return this.offlineWins.filter(w => w.userId === userId && !w.acknowledged);
+  }
+
+  public acknowledgeOfflineWin(winId: string): boolean {
+    const target = this.offlineWins.find(w => w.id === winId);
+    if (target) {
+      target.acknowledged = true;
+      return true;
+    }
+    return false;
+  }
+
+  // Live Network Health & Diagnostics for Admin Desk
+  public getNetworkMetrics() {
+    const roomMetrics = Array.from(this.rooms.values()).map(r => ({
+      id: r.id,
+      name: r.name,
+      stakeAmount: r.stakeAmount,
+      phase: r.phase,
+      roundNumber: r.roundNumber,
+      activeSocketsCount: r.activeSockets.size,
+      ticketsCount: r.tickets.size,
+      playersCount: this.getRoomPlayersCount(r),
+      drawnBallsCount: r.drawnNumbers.length
+    }));
+
+    const totalActiveSockets = roomMetrics.reduce((sum, r) => sum + r.activeSocketsCount, 0);
+
+    return {
+      totalActiveSockets,
+      engineStatus: 'healthy',
+      disconnectProtectionActive: true,
+      transportsSupported: ['WebSocket', 'HTTP Polling Fallback'],
+      rooms: roomMetrics,
+      totalOfflineWinsRecorded: this.offlineWins.length,
+      recentOfflineWins: this.offlineWins.slice(0, 30),
+      serverTimestamp: new Date().toISOString()
+    };
   }
 }
 

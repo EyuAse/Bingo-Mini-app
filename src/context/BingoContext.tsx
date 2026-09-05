@@ -107,6 +107,12 @@ interface BingoContextType {
   claimBingo: () => void;
   closeWinModalAndRestart: () => void;
   stopGame: () => void;
+
+  // Network Resilience & Disconnect Protection
+  networkStatus: 'connected' | 'reconnecting' | 'polling' | 'disconnected';
+  networkLatency: number;
+  offlineWinsNotice: any[];
+  dismissOfflineWin: (winId: string) => void;
 }
 
 const BingoContext = createContext<BingoContextType | undefined>(undefined);
@@ -258,6 +264,16 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [showMasterBoard, setShowMasterBoard] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(() => soundEngine.getMuted());
 
+  // Low-Network & Disconnect Protection States
+  const [networkStatus, setNetworkStatus] = useState<'connected' | 'reconnecting' | 'polling' | 'disconnected'>('connected');
+  const [networkLatency, setNetworkLatency] = useState<number>(24);
+  const [offlineWinsNotice, setOfflineWinsNotice] = useState<any[]>([]);
+
+  const dismissOfflineWin = useCallback((winId: string) => {
+    socketService.acknowledgeOfflineWin(winId);
+    setOfflineWinsNotice(prev => prev.filter(w => w.id !== winId));
+  }, []);
+
   const getActiveRoomId = useCallback(() => {
     if (betAmount >= 100) return 'room-100';
     if (betAmount >= 50) return 'room-50';
@@ -319,6 +335,29 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setCartela3Data(prev => daubCard(prev));
   }, []);
 
+  // Instant State Catch-Up Protocol: Daub all drawn numbers within 100ms
+  const fastForwardCatchUp = useCallback((drawnNums: number[]) => {
+    if (!drawnNums || drawnNums.length === 0) return;
+    setCalledNumbers(drawnNums);
+
+    const lastNum = drawnNums[drawnNums.length - 1];
+    const colLetter = lastNum <= 15 ? 'B' : lastNum <= 30 ? 'I' : lastNum <= 45 ? 'N' : lastNum <= 60 ? 'G' : 'O';
+    setCurrentCall({ num: lastNum, col: colLetter });
+
+    const markMatching = (cells: BingoCell[]) => {
+      return cells.map(c => {
+        if (!c.marked && !c.isFree && drawnNums.includes(c.val as number)) {
+          return { ...c, marked: true };
+        }
+        return c;
+      });
+    };
+
+    setCartela1Data(prev => markMatching(prev));
+    setCartela2Data(prev => markMatching(prev));
+    setCartela3Data(prev => markMatching(prev));
+  }, []);
+
   const hasPreBoughtNextRef = useRef<boolean>(false);
   hasPreBoughtNextRef.current = hasPreBoughtNext;
 
@@ -352,7 +391,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
 
       if (state.drawnNumbers && Array.isArray(state.drawnNumbers)) {
-        setCalledNumbers(state.drawnNumbers);
+        fastForwardCatchUp(state.drawnNumbers);
       }
 
       if (state.winResult) {
@@ -458,14 +497,110 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       });
     }
 
+    // 6. Network Connection Status & Offline Win Listeners
+    const unsubConn = socketService.onConnectionStatusChange((status, latency) => {
+      setNetworkLatency(latency);
+      if (status === 'connected') {
+        setNetworkStatus('connected');
+      } else {
+        setNetworkStatus('reconnecting');
+      }
+    });
+
+    const unsubOfflineWins = socketService.onOfflineWinNotification((wins) => {
+      if (Array.isArray(wins) && wins.length > 0) {
+        setOfflineWinsNotice(wins);
+        soundEngine.playWinFanfare();
+        refreshBalance();
+      }
+    });
+
     return () => {
       unsubRoomState();
       unsubBallCalled();
       unsubRoundStarted();
       unsubRoundWinner();
       if (unsubBalance) unsubBalance();
+      unsubConn();
+      unsubOfflineWins();
     };
-  }, [getActiveRoomId, user, applyDrawnNumber, selectedCartelaIds, prizePool, addBalance, refreshBalance]);
+  }, [getActiveRoomId, user, applyDrawnNumber, selectedCartelaIds, prizePool, addBalance, refreshBalance, fastForwardCatchUp]);
+
+  // Dual-Engine HTTP Polling Fallback (Runs if Socket drops or is reconnecting)
+  useEffect(() => {
+    if (networkStatus !== 'reconnecting' && networkStatus !== 'polling') {
+      return;
+    }
+
+    const roomId = getActiveRoomId();
+    let isCancelled = false;
+
+    const pollSync = async () => {
+      try {
+        const res = await fetch(`/api/rooms/${roomId}/sync`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (isCancelled || !data.success) return;
+
+        setNetworkStatus('polling');
+
+        if (data.phase) {
+          setRoundPhase(prev => {
+            if (prev === 'winner' && data.phase === 'lobby') {
+              setShowWinModal(false);
+              setHasTicket(hasPreBoughtNextRef.current);
+              setHasPreBoughtNext(false);
+              setCalledNumbers([]);
+              setCurrentCall(null);
+            }
+            return data.phase;
+          });
+        }
+        if (typeof data.lobbyCountdown === 'number') setLobbyCountdown(data.lobbyCountdown);
+        if (typeof data.winnerCountdown === 'number') setWinnerCountdown(data.winnerCountdown);
+        if (typeof data.playersCount === 'number') setPlayersCount(data.playersCount);
+        if (typeof data.winnerPayout === 'number') setPrizePool(data.winnerPayout);
+
+        if (Array.isArray(data.drawnNumbers) && data.drawnNumbers.length > 0) {
+          fastForwardCatchUp(data.drawnNumbers);
+        }
+
+        if (data.winResult && !showWinModal) {
+          const isRealUserWin = 
+            Boolean(user?.id && Array.isArray(data.winResult.winnerUserIds) && data.winResult.winnerUserIds.includes(user.id)) ||
+            Boolean(user?.id && data.winResult.winnerId && data.winResult.winnerId.includes(user.id)) || 
+            Boolean(user?.fullName && data.winResult.winnerNames && data.winResult.winnerNames.includes(user.fullName));
+
+          const winType = data.winResult.isSplit
+            ? (isRealUserWin ? 'user_split' : 'opponent_win')
+            : (isRealUserWin ? 'user_solo' : 'opponent_win');
+
+          const payout = isRealUserWin ? (data.winResult.sharePerWinner || data.winResult.userShare || 0) : 0;
+
+          setWinResult({
+            winType,
+            winningCartelaNumber: data.winResult.winningCartelaNumber || 1,
+            winningLine: data.winResult.winningIndices || [],
+            winnerName: data.winResult.winnerName || 'Winner',
+            coWinners: Array.isArray(data.winResult.coWinners) ? data.winResult.coWinners : [],
+            totalPot: data.winResult.totalPot || 450,
+            userShare: payout
+          });
+          setShowWinModal(true);
+        }
+      } catch (err) {
+        // Mobile network drop; next poll will retry automatically
+      }
+    };
+
+    pollSync();
+    const interval = setInterval(pollSync, 2000);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, [networkStatus, getActiveRoomId, fastForwardCatchUp, showWinModal, user]);
 
   const toggleVerticalBoard = () => setIsVerticalBoard(prev => !prev);
   const toggleMasterBoard = () => setShowMasterBoard(prev => !prev);
@@ -694,7 +829,11 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         handleManualDaub,
         claimBingo,
         closeWinModalAndRestart,
-        stopGame
+        stopGame,
+        networkStatus,
+        networkLatency,
+        offlineWinsNotice,
+        dismissOfflineWin
       }}
     >
       {children}

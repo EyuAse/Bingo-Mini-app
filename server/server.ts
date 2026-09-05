@@ -33,8 +33,8 @@ export const io = new SocketIOServer(server, {
     methods: ['GET', 'POST'],
     credentials: true
   },
-  pingInterval: 10000,
-  pingTimeout: 5000,
+  pingInterval: 5000,
+  pingTimeout: 4000,
   transports: ['websocket', 'polling']
 });
 
@@ -72,11 +72,43 @@ app.get('/api/health', async (_req, res) => {
   });
 });
 
+// Network Health & Diagnostics Endpoint (Open for Admin and Client Status)
+app.get('/api/network-health', (_req, res) => {
+  res.json({
+    success: true,
+    metrics: gameEngine.getNetworkMetrics()
+  });
+});
+
 // Rooms List Endpoint
 app.get('/api/rooms', (_req, res) => {
   res.json({
     success: true,
     rooms: gameEngine.getAllRooms()
+  });
+});
+
+// Dual-Engine HTTP Fallback State Sync for Low-Network / Disconnected Devices
+app.get('/api/rooms/:id/sync', (req, res) => {
+  const room = gameEngine.getRoom(req.params.id);
+  if (!room) {
+    return res.status(404).json({ success: false, error: 'Room not found' });
+  }
+
+  res.json({
+    success: true,
+    roomId: room.id,
+    phase: room.phase,
+    lobbyCountdown: room.lobbyCountdown,
+    winnerCountdown: room.winnerCountdown,
+    stakeAmount: room.stakeAmount,
+    totalPot: room.totalPot,
+    winnerPayout: room.winnerPayout,
+    playersCount: gameEngine.getRoomPlayersCount(room),
+    drawnNumbers: room.drawnNumbers,
+    currentCall: room.currentCall,
+    winResult: room.winResult,
+    serverTime: Date.now()
   });
 });
 

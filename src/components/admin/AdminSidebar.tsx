@@ -9,6 +9,7 @@ export type AdminTab =
   | 'users'
   | 'bots'
   | 'cartelas'
+  | 'network'
   | 'settings';
 
 interface AdminSidebarProps {
@@ -200,7 +201,25 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             )}
           </button>
 
-          {/* 7. Settings */}
+          {/* 7. Network Health & Disconnects */}
+          <button
+            type="button"
+            className={`light-nav-item ${activeTab === 'network' ? 'active' : ''}`}
+            onClick={() => handleSelectTab('network')}
+            title="Live Network Health & Disconnect Protection"
+          >
+            <div className="light-nav-icon">
+              <i className="fa-solid fa-tower-broadcast"></i>
+            </div>
+            {!isSidebarCollapsed && (
+              <>
+                <span className="light-nav-text">Network Health</span>
+                <span className="light-nav-badge green-badge">🛡️ Live</span>
+              </>
+            )}
+          </button>
+
+          {/* 8. Settings */}
           <button
             type="button"
             className={`light-nav-item ${activeTab === 'settings' ? 'active' : ''}`}

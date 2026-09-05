@@ -1,9 +1,32 @@
 import { io, Socket } from 'socket.io-client';
 
+export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
+
+export interface OfflineWinData {
+  id: string;
+  userId: string;
+  userName: string;
+  roomId: string;
+  roundNumber: number;
+  cartelaId: number;
+  amount: number;
+  referenceCode: string;
+  timestamp: string;
+  isOffline: boolean;
+  winningPattern: string;
+}
+
 class SocketService {
   private static instance: SocketService;
   private socket: Socket | null = null;
   private currentRoomId: string | null = null;
+  private currentUserId: string | null = null;
+  private currentUserName: string | null = null;
+
+  private status: ConnectionStatus = 'disconnected';
+  private latencyMs: number = 24;
+  private statusListeners: Array<(status: ConnectionStatus, latencyMs: number) => void> = [];
+  private pingInterval: any = null;
 
   private constructor() {}
 
@@ -24,30 +47,97 @@ class SocketService {
       ? 'https://bingo-mini-app-30pe.onrender.com'
       : undefined;
 
-    this.socket = socketOrigin ? io(socketOrigin, {
+    // Resilient Mobile Network Socket.IO Configuration (Infinite reconnects with jitter backoff)
+    const socketOptions = {
       transports: ['websocket', 'polling'],
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-      timeout: 10000
-    }) : io({
-      transports: ['websocket', 'polling'],
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-      timeout: 10000
-    });
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 3000,
+      randomizationFactor: 0.2,
+      timeout: 8000
+    };
+
+    this.socket = socketOrigin ? io(socketOrigin, socketOptions) : io(socketOptions);
 
     this.socket.on('connect', () => {
       console.log('⚡ [Socket.IO] Connected to game server:', this.socket?.id);
+      this.updateStatus('connected');
+      this.measurePing();
+
       if (this.currentRoomId) {
-        this.socket?.emit('join_room', { roomId: this.currentRoomId });
+        this.socket?.emit('join_room', {
+          roomId: this.currentRoomId,
+          userId: this.currentUserId,
+          userName: this.currentUserName
+        });
       }
     });
 
     this.socket.on('disconnect', (reason) => {
       console.warn('⚠️ [Socket.IO] Disconnected:', reason);
+      this.updateStatus('reconnecting');
     });
 
+    this.socket.on('connect_error', (error) => {
+      console.warn('⚠️ [Socket.IO] Connection Error (reconnecting):', error.message);
+      this.updateStatus('reconnecting');
+    });
+
+    this.socket.io.on('reconnect_attempt', () => {
+      this.updateStatus('reconnecting');
+    });
+
+    this.socket.io.on('reconnect', () => {
+      console.log('✅ [Socket.IO] Successfully reconnected!');
+      this.updateStatus('connected');
+    });
+
+    // Start background ping latency check
+    if (!this.pingInterval) {
+      this.pingInterval = setInterval(() => {
+        if (this.socket?.connected) {
+          this.measurePing();
+        }
+      }, 10000);
+    }
+
     return this.socket;
+  }
+
+  private updateStatus(newStatus: ConnectionStatus) {
+    this.status = newStatus;
+    this.statusListeners.forEach(cb => cb(this.status, this.latencyMs));
+  }
+
+  public measurePing(): Promise<number> {
+    return new Promise((resolve) => {
+      if (!this.socket || !this.socket.connected) {
+        resolve(this.latencyMs);
+        return;
+      }
+      const start = Date.now();
+      this.socket.emit('ping_check', start, () => {
+        const roundTrip = Date.now() - start;
+        this.latencyMs = Math.max(8, roundTrip);
+        this.statusListeners.forEach(cb => cb(this.status, this.latencyMs));
+        resolve(this.latencyMs);
+      });
+      // Safety timeout
+      setTimeout(() => resolve(this.latencyMs), 1500);
+    });
+  }
+
+  public getConnectionStatus(): { status: ConnectionStatus; latencyMs: number } {
+    return { status: this.status, latencyMs: this.latencyMs };
+  }
+
+  public onConnectionStatusChange(callback: (status: ConnectionStatus, latencyMs: number) => void): () => void {
+    this.statusListeners.push(callback);
+    callback(this.status, this.latencyMs);
+    return () => {
+      this.statusListeners = this.statusListeners.filter(cb => cb !== callback);
+    };
   }
 
   public getSocket(): Socket {
@@ -59,6 +149,9 @@ class SocketService {
 
   public joinRoom(roomId: string, userId?: string, userName?: string) {
     this.currentRoomId = roomId;
+    if (userId) this.currentUserId = userId;
+    if (userName) this.currentUserName = userName;
+
     const sock = this.getSocket();
     sock.emit('join_room', { roomId, userId, userName });
   }
@@ -141,6 +234,25 @@ class SocketService {
     const eventName = `user_${userId}_balance`;
     sock.on(eventName, callback);
     return () => sock.off(eventName, callback);
+  }
+
+  // Disconnect Protection Listeners
+  public onOfflineWinNotification(callback: (wins: OfflineWinData[]) => void): () => void {
+    const sock = this.getSocket();
+    sock.on('offline_win_notification', callback);
+    return () => sock.off('offline_win_notification', callback);
+  }
+
+  public acknowledgeOfflineWin(winId: string) {
+    const sock = this.getSocket();
+    sock.emit('acknowledge_offline_win', { winId });
+  }
+
+  public forceReconnect() {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket.connect();
+    }
   }
 }
 

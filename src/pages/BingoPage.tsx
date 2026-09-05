@@ -10,6 +10,8 @@ import { BettingBar } from '../components/bingo/BettingBar.tsx';
 import { WinModal } from '../components/bingo/WinModal.tsx';
 import { ConfettiCanvas } from '../components/common/ConfettiCanvas.tsx';
 
+import { NetworkStatusBanner, NetworkLatencyPill } from '../components/bingo/NetworkStatusBanner.tsx';
+
 export const BingoPage: React.FC = () => {
   const { hasTicket, showWinModal, showMasterBoard, toggleMasterBoard } = useBingo();
 
@@ -20,12 +22,15 @@ export const BingoPage: React.FC = () => {
 
       <div className="bingo-page-content-wrapper">
 
-        {/* 1. Top Bar: Engine V3 Badge + 75-Ball Board Toggle Button */}
+        {/* 1. Top Bar: Engine V3 Badge + Network Latency Pill + 75-Ball Board Toggle Button */}
         <div className="bingo-engine-pill-row">
-          <span className="engine-v3-pill">
-            <i className="fa-solid fa-bolt purple-bolt"></i>
-            <span>ENGINE V3</span>
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="engine-v3-pill">
+              <i className="fa-solid fa-bolt purple-bolt"></i>
+              <span>ENGINE V3</span>
+            </span>
+            <NetworkLatencyPill />
+          </div>
           <button
             type="button"
             className="engine-board-toggle-btn"
@@ -35,6 +40,9 @@ export const BingoPage: React.FC = () => {
             <span>75-Ball Board</span>
           </button>
         </div>
+
+        {/* Real-Time Network Resilience Alerts & Offline Win Celebration Modal */}
+        <NetworkStatusBanner />
 
         {/* 2. Live Current Call Banner (with hourglass, current ball & recent calls trail) */}
         <CurrentCallBanner />
