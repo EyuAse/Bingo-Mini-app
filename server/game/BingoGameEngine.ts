@@ -65,6 +65,7 @@ export interface GameRoomState {
   winResult: any | null;
   opponentCards: OpponentCard[];
   targetWinnerType: 'owner' | 'bot' | 'real';
+  targetFinishBall?: number;
 }
 
 interface BotProfile {
@@ -227,7 +228,8 @@ class BingoGameEngine {
       activeSockets: new Set(),
       winResult: null,
       opponentCards: [],
-      targetWinnerType: 'real'
+      targetWinnerType: 'real',
+      targetFinishBall: 15
     };
 
     // Store under primary arena ID
@@ -686,8 +688,23 @@ class BingoGameEngine {
   }
 
   /**
-   * Prepares 75-Ball sequence with Fast Cadence completing at ball 15
-   * Guarantees target category (Real Player 50%, Bot 30%, Owner 20%) wins reliably
+   * Computes evenly spaced insertion positions ending precisely at finishIndex.
+   * Guarantees target line completes on exact finishIndex without duplicate indices.
+   */
+  private getInsertPositions(count: number, finishIndex: number): number[] {
+    const positions: number[] = [];
+    const step = finishIndex / count;
+    for (let i = 1; i < count; i++) {
+      positions.push(Math.round(i * step));
+    }
+    positions.push(finishIndex);
+    return positions;
+  }
+
+  /**
+   * Prepares 75-Ball sequence with Dynamic Cadence completing between Ball 15 and 18.
+   * Eliminates predictability while guaranteeing target category (Real Player 50%, Bot 30%, Owner 20%)
+   * completes reliably without early bot interception.
    */
   private prepareBallSequence(room: GameRoomState): number[] {
     const baseBalls = generateRandomShuffledBalls();
@@ -714,7 +731,10 @@ class BingoGameEngine {
       }
     }
 
-    if (!targetCardMatrix) return baseBalls;
+    if (!targetCardMatrix) {
+      room.targetFinishBall = 15;
+      return baseBalls;
+    }
 
     // Pick winning line on target card (e.g. Row 1 or Column B or Diagonal)
     const winningPatternsIndices = [
@@ -728,13 +748,18 @@ class BingoGameEngine {
       .map(idx => targetCardMatrix![idx]?.val)
       .filter((v): v is number => typeof v === 'number');
 
-    // Place target numbers across balls at fast natural cadence [2, 5, 8, 11, 14]
-    // Completes at ball 15 so real players and target winners hit before bots intercept
+    // Dynamically pick round completion ball: Ball 15, 16, 17, or 18
+    const targetFinishBall = 15 + Math.floor(Math.random() * 4); // 15, 16, 17, or 18
+    room.targetFinishBall = targetFinishBall;
+    const finishIndex = targetFinishBall - 1; // 14, 15, 16, or 17
+
+    console.log(`🎯 [GameEngine] Round #${room.roundNumber} targeting ${room.targetWinnerType.toUpperCase()} win on Ball #${targetFinishBall}`);
+
     const otherBalls = baseBalls.filter(b => !targetNumbers.includes(b));
     const finalSequence: number[] = [];
 
-    // Distribute target numbers smoothly at cadence [2, 5, 8, 11, 14]
-    const insertPositions = [2, 5, 8, 11, 14];
+    // Distribute target numbers smoothly up to finishIndex
+    const insertPositions = this.getInsertPositions(targetNumbers.length, finishIndex);
     for (let i = 0; i < 75; i++) {
       if (insertPositions.includes(i) && targetNumbers.length > 0) {
         finalSequence.push(targetNumbers.shift()!);
@@ -788,8 +813,9 @@ class BingoGameEngine {
         });
       }
 
-      // Evaluate Winning Patterns on each ball drawn (after min 15 balls)
-      if (room.drawnNumbers.length >= 15) {
+      // Evaluate Winning Patterns on each ball drawn once round target finish ball is reached
+      const evalThreshold = room.targetFinishBall || 15;
+      if (room.drawnNumbers.length >= evalThreshold) {
         const winningCards: Array<{
           userId?: string;
           userName: string;

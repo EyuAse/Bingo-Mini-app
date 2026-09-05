@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 
-export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
+export type ConnectionStatus = 'connected' | 'reconnecting' | 'polling' | 'disconnected' | 'degraded';
 
 export interface OfflineWinData {
   id: string;
@@ -28,6 +28,8 @@ class SocketService {
   private statusListeners: Array<(status: ConnectionStatus, latencyMs: number) => void> = [];
   private foregroundListeners: Array<() => void> = [];
   private pingInterval: any = null;
+  private silenceCheckInterval: any = null;
+  private lastMessageTime: number = Date.now();
 
   private constructor() {
     this.initLifecycleListeners();
@@ -109,6 +111,7 @@ class SocketService {
 
     this.socket.on('connect', () => {
       console.log('⚡ [Socket.IO] Connected to game server:', this.socket?.id);
+      this.lastMessageTime = Date.now();
       this.updateStatus('connected');
       this.measurePing();
 
@@ -118,6 +121,14 @@ class SocketService {
           userId: this.currentUserId,
           userName: this.currentUserName
         });
+      }
+    });
+
+    // Active Inbound Traffic Heartbeat
+    this.socket.onAny(() => {
+      this.lastMessageTime = Date.now();
+      if (this.status === 'degraded') {
+        this.updateStatus('connected');
       }
     });
 
@@ -137,6 +148,7 @@ class SocketService {
 
     this.socket.io.on('reconnect', () => {
       console.log('✅ [Socket.IO] Successfully reconnected!');
+      this.lastMessageTime = Date.now();
       this.updateStatus('connected');
     });
 
@@ -149,7 +161,53 @@ class SocketService {
       }, 10000);
     }
 
+    // Active Packet Silence Detector (Catches Half-Open TCP Stalls within 4.5s)
+    if (!this.silenceCheckInterval) {
+      this.silenceCheckInterval = setInterval(() => {
+        if (this.socket?.connected) {
+          const elapsed = Date.now() - this.lastMessageTime;
+          if (elapsed > 4500 && this.status === 'connected') {
+            console.warn(`⚠️ [SocketService] Inbound traffic stalled for ${(elapsed / 1000).toFixed(1)}s. Degrading connection status.`);
+            this.updateStatus('degraded');
+          }
+        }
+      }, 2000);
+    }
+
     return this.socket;
+  }
+
+  public getLastMessageTime(): number {
+    return this.lastMessageTime;
+  }
+
+  public markActivity() {
+    this.lastMessageTime = Date.now();
+    if (this.status === 'degraded') {
+      this.updateStatus('connected');
+    }
+  }
+
+  public forceHardReconnect() {
+    console.log('🔄 [SocketService] Performing hard socket reconnection...');
+    if (this.socket) {
+      try {
+        this.socket.disconnect();
+      } catch (e) {
+        console.warn('Socket disconnect error:', e);
+      }
+      this.socket = null;
+    }
+    this.status = 'reconnecting';
+    this.updateStatus('reconnecting');
+    const newSock = this.connect();
+    if (this.currentRoomId) {
+      newSock.emit('join_room', {
+        roomId: this.currentRoomId,
+        userId: this.currentUserId,
+        userName: this.currentUserName
+      });
+    }
   }
 
   private updateStatus(newStatus: ConnectionStatus) {
@@ -217,7 +275,7 @@ class SocketService {
     userName: string,
     cartelaIds: number[],
     stakeAmount?: number
-  ): Promise<{ success: boolean; error?: string; tickets?: any[]; remainingBalance?: number }> {
+  ): Promise<{ success: boolean; error?: string; tickets?: any[]; remainingBalance?: number; preBoughtForNextRound?: boolean }> {
     return new Promise((resolve) => {
       const sock = this.getSocket();
       sock.emit(
@@ -296,10 +354,7 @@ class SocketService {
   }
 
   public forceReconnect() {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket.connect();
-    }
+    this.forceHardReconnect();
   }
 }
 

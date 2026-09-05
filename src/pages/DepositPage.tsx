@@ -103,7 +103,7 @@ export const DepositPage: React.FC = () => {
       });
 
       if (!res.success) {
-        showToast(`❌ ${res.error || (lang === 'am' ? 'የተቀማጭ ጥያቄ አልተሳካም' : 'Deposit request failed')}`);
+        showToast(`❌ ${(res as any).error || (res as any).message || (lang === 'am' ? 'የተቀማጭ ጥያቄ አልተሳካም' : 'Deposit request failed')}`);
         return;
       }
 

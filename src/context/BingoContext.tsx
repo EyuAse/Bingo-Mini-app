@@ -111,10 +111,11 @@ interface BingoContextType {
   stopGame: () => void;
 
   // Network Resilience & Disconnect Protection
-  networkStatus: 'connected' | 'reconnecting' | 'polling' | 'disconnected';
+  networkStatus: 'connected' | 'reconnecting' | 'polling' | 'disconnected' | 'degraded';
   networkLatency: number;
   offlineWinsNotice: any[];
   dismissOfflineWin: (winId: string) => void;
+  triggerManualSync: () => Promise<void>;
 
   // Insufficient Balance Modal
   showInsufficientBalanceModal: boolean;
@@ -207,6 +208,21 @@ const checkWinningPatterns = (cells: BingoCell[]): number[] | null => {
   return null;
 };
 
+const fetchRoomSyncWithTimeout = async (roomId: string, timeoutMs = 2500): Promise<any | null> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`/api/rooms/${roomId}/sync`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && data.success ? data : null;
+  } catch {
+    clearTimeout(timeoutId);
+    return null;
+  }
+};
+
 export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { deductBalance, addBalance, refreshBalance, balance, bonus } = useWallet();
   const { user } = useAuth();
@@ -272,7 +288,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [isMuted, setIsMuted] = useState<boolean>(() => soundEngine.getMuted());
 
   // Low-Network & Disconnect Protection States
-  const [networkStatus, setNetworkStatus] = useState<'connected' | 'reconnecting' | 'polling' | 'disconnected'>('connected');
+  const [networkStatus, setNetworkStatus] = useState<'connected' | 'reconnecting' | 'polling' | 'disconnected' | 'degraded'>('connected');
   const [networkLatency, setNetworkLatency] = useState<number>(24);
   const [offlineWinsNotice, setOfflineWinsNotice] = useState<any[]>([]);
 
@@ -562,11 +578,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // 6. Network Connection Status & Offline Win Listeners
     const unsubConn = socketService.onConnectionStatusChange((status, latency) => {
       setNetworkLatency(latency);
-      if (status === 'connected') {
-        setNetworkStatus('connected');
-      } else {
-        setNetworkStatus('reconnecting');
-      }
+      setNetworkStatus(status);
     });
 
     const unsubOfflineWins = socketService.onOfflineWinNotification((wins) => {
@@ -588,9 +600,91 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
   }, [getActiveRoomId, user?.id]);
 
-  // Dual-Engine HTTP Polling Fallback (Runs if Socket drops or is reconnecting)
+  // Central Authoritative Room Snapshot Reconciliation
+  const applyRoomSnapshot = useCallback((data: any) => {
+    if (!data || !data.success) return;
+
+    if (typeof data.roundNumber === 'number') {
+      setRoundNumber(data.roundNumber);
+    }
+
+    if (data.phase) {
+      setRoundPhase(prev => {
+        if (prev !== 'lobby' && data.phase === 'lobby') {
+          setShowWinModal(false);
+          setHasTicket(hasPreBoughtNextRef.current);
+          setHasPreBoughtNext(false);
+          setCalledNumbers([]);
+          setCurrentCall(null);
+        } else if (data.phase === 'playing') {
+          setGameActive(true);
+        }
+        return data.phase;
+      });
+    }
+
+    if (typeof data.lobbyCountdown === 'number') setLobbyCountdown(data.lobbyCountdown);
+    if (typeof data.winnerCountdown === 'number') setWinnerCountdown(data.winnerCountdown);
+    if (typeof data.playersCount === 'number') setPlayersCount(data.playersCount);
+    if (typeof data.winnerPayout === 'number') setPrizePool(data.winnerPayout);
+
+    if (Array.isArray(data.drawnNumbers) && data.drawnNumbers.length > 0) {
+      fastForwardCatchUpRef.current(data.drawnNumbers);
+      lastBallTimeRef.current = Date.now();
+    }
+
+    if (data.currentCall) {
+      setCurrentCall(data.currentCall);
+    }
+
+    if (data.winResult && !showWinModal) {
+      const currentUser = userRef.current;
+      const isRealUserWin = 
+        Boolean(currentUser?.id && Array.isArray(data.winResult.winnerUserIds) && data.winResult.winnerUserIds.includes(currentUser.id)) ||
+        Boolean(currentUser?.id && data.winResult.winnerId && data.winResult.winnerId.includes(currentUser.id)) || 
+        Boolean(currentUser?.fullName && data.winResult.winnerNames && data.winResult.winnerNames.includes(currentUser.fullName));
+
+      const winType = data.winResult.isSplit
+        ? (isRealUserWin ? 'user_split' : 'opponent_win')
+        : (isRealUserWin ? 'user_solo' : 'opponent_win');
+
+      const payout = isRealUserWin ? (data.winResult.sharePerWinner || data.winResult.userShare || 0) : 0;
+      setWinResult({
+        winType,
+        winningCartelaNumber: data.winResult.winningCartelaNumber || 1,
+        winningLine: data.winResult.winningIndices || [],
+        winnerName: data.winResult.winnerName || 'Winner',
+        coWinners: Array.isArray(data.winResult.coWinners) ? data.winResult.coWinners : [],
+        totalPot: data.winResult.totalPot || 450,
+        userShare: payout,
+        winnerPayout: data.winResult.winnerPayout || 450,
+        stakeAmount: data.winResult.stakeAmount || 10
+      });
+      setShowWinModal(true);
+    }
+  }, [showWinModal]);
+
+  // 1-Tap Manual Refresh Trigger (Instantly resolves freezes on weak network)
+  const triggerManualSync = useCallback(async () => {
+    const roomId = getActiveRoomId();
+    console.log('⚡ [BingoContext] Manual 1-Tap Re-Sync triggered by user.');
+    showToast('🔄 Synchronizing game state...');
+    const data = await fetchRoomSyncWithTimeout(roomId, 2500);
+    if (data) {
+      applyRoomSnapshot(data);
+      socketService.markActivity();
+      setNetworkStatus('connected');
+      soundEngine.resumeAudioContext();
+      showToast('✅ Game state synchronized!');
+    } else {
+      socketService.forceHardReconnect();
+      showToast('⚠️ Reconnecting to live game server...');
+    }
+  }, [getActiveRoomId, applyRoomSnapshot, showToast]);
+
+  // Dual-Engine HTTP Polling Fallback (Runs if Socket drops, degraded, or reconnecting)
   useEffect(() => {
-    if (networkStatus !== 'reconnecting' && networkStatus !== 'polling') {
+    if (networkStatus !== 'reconnecting' && networkStatus !== 'polling' && networkStatus !== 'degraded') {
       return;
     }
 
@@ -598,65 +692,12 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     let isCancelled = false;
 
     const pollSync = async () => {
-      try {
-        const res = await fetch(`/api/rooms/${roomId}/sync`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (isCancelled || !data.success) return;
-
+      const data = await fetchRoomSyncWithTimeout(roomId, 2500);
+      if (isCancelled || !data) return;
+      if (networkStatus === 'reconnecting' || networkStatus === 'degraded') {
         setNetworkStatus('polling');
-
-        if (data.phase) {
-          setRoundPhase(prev => {
-            if (prev !== 'lobby' && data.phase === 'lobby') {
-              setShowWinModal(false);
-              setHasTicket(hasPreBoughtNextRef.current);
-              setHasPreBoughtNext(false);
-              setCalledNumbers([]);
-              setCurrentCall(null);
-            } else if (data.phase === 'playing') {
-              setGameActive(true);
-            }
-            return data.phase;
-          });
-        }
-        if (typeof data.roundNumber === 'number') setRoundNumber(data.roundNumber);
-        if (typeof data.lobbyCountdown === 'number') setLobbyCountdown(data.lobbyCountdown);
-        if (typeof data.winnerCountdown === 'number') setWinnerCountdown(data.winnerCountdown);
-        if (typeof data.playersCount === 'number') setPlayersCount(data.playersCount);
-        if (typeof data.winnerPayout === 'number') setPrizePool(data.winnerPayout);
-
-        if (Array.isArray(data.drawnNumbers) && data.drawnNumbers.length > 0) {
-          fastForwardCatchUp(data.drawnNumbers);
-          lastBallTimeRef.current = Date.now();
-        }
-
-        if (data.winResult && !showWinModal) {
-          const isRealUserWin = 
-            Boolean(user?.id && Array.isArray(data.winResult.winnerUserIds) && data.winResult.winnerUserIds.includes(user.id)) ||
-            Boolean(user?.id && data.winResult.winnerId && data.winResult.winnerId.includes(user.id)) || 
-            Boolean(user?.fullName && data.winResult.winnerNames && data.winResult.winnerNames.includes(user.fullName));
-
-          const winType = data.winResult.isSplit
-            ? (isRealUserWin ? 'user_split' : 'opponent_win')
-            : (isRealUserWin ? 'user_solo' : 'opponent_win');
-
-          const payout = isRealUserWin ? (data.winResult.sharePerWinner || data.winResult.userShare || 0) : 0;
-
-          setWinResult({
-            winType,
-            winningCartelaNumber: data.winResult.winningCartelaNumber || 1,
-            winningLine: data.winResult.winningIndices || [],
-            winnerName: data.winResult.winnerName || 'Winner',
-            coWinners: Array.isArray(data.winResult.coWinners) ? data.winResult.coWinners : [],
-            totalPot: data.winResult.totalPot || 450,
-            userShare: payout
-          });
-          setShowWinModal(true);
-        }
-      } catch (err) {
-        // Mobile network drop; next poll will retry automatically
       }
+      applyRoomSnapshot(data);
     };
 
     pollSync();
@@ -666,7 +707,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       isCancelled = true;
       clearInterval(interval);
     };
-  }, [networkStatus, getActiveRoomId, fastForwardCatchUp, showWinModal, user]);
+  }, [networkStatus, getActiveRoomId, applyRoomSnapshot]);
 
   // 1. Mobile Foreground Lifecycle Resynchronization (Zero-Freeze Recovery)
   useEffect(() => {
@@ -674,74 +715,16 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       soundEngine.resumeAudioContext();
       const roomId = getActiveRoomId();
       try {
-        const res = await fetch(`/api/rooms/${roomId}/sync`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!data || !data.success) return;
-
-        console.log('⚡ [BingoContext] Fast-forward catch-up on foreground resume:', {
-          phase: data.phase,
-          roundNumber: data.roundNumber,
-          totalDrawn: data.totalDrawn
-        });
-
-        if (typeof data.roundNumber === 'number') {
-          setRoundNumber(data.roundNumber);
-        }
-
-        if (data.phase) {
-          setRoundPhase(prev => {
-            if (prev !== 'lobby' && data.phase === 'lobby') {
-              setShowWinModal(false);
-              setHasTicket(hasPreBoughtNextRef.current);
-              setHasPreBoughtNext(false);
-              setCalledNumbers([]);
-              setCurrentCall(null);
-            } else if (data.phase === 'playing') {
-              setGameActive(true);
-            }
-            return data.phase;
+        const data = await fetchRoomSyncWithTimeout(roomId, 2500);
+        if (data) {
+          console.log('⚡ [BingoContext] Fast-forward catch-up on foreground resume:', {
+            phase: data.phase,
+            roundNumber: data.roundNumber,
+            totalDrawn: data.totalDrawn
           });
-        }
-
-        if (typeof data.lobbyCountdown === 'number') setLobbyCountdown(data.lobbyCountdown);
-        if (typeof data.winnerCountdown === 'number') setWinnerCountdown(data.winnerCountdown);
-        if (typeof data.playersCount === 'number') setPlayersCount(data.playersCount);
-        if (typeof data.winnerPayout === 'number') setPrizePool(data.winnerPayout);
-
-        if (Array.isArray(data.drawnNumbers) && data.drawnNumbers.length > 0) {
-          fastForwardCatchUpRef.current(data.drawnNumbers);
-          lastBallTimeRef.current = Date.now();
-        }
-
-        if (data.currentCall) {
-          setCurrentCall(data.currentCall);
-        }
-
-        if (data.winResult && !showWinModal) {
-          const currentUser = userRef.current;
-          const isRealUserWin = 
-            Boolean(currentUser?.id && Array.isArray(data.winResult.winnerUserIds) && data.winResult.winnerUserIds.includes(currentUser.id)) ||
-            Boolean(currentUser?.id && data.winResult.winnerId && data.winResult.winnerId.includes(currentUser.id)) || 
-            Boolean(currentUser?.fullName && data.winResult.winnerNames && data.winResult.winnerNames.includes(currentUser.fullName));
-
-          const winType = data.winResult.isSplit
-            ? (isRealUserWin ? 'user_split' : 'opponent_win')
-            : (isRealUserWin ? 'user_solo' : 'opponent_win');
-
-          const payout = isRealUserWin ? (data.winResult.sharePerWinner || data.winResult.userShare || 0) : 0;
-          setWinResult({
-            winType,
-            winningCartelaNumber: data.winResult.winningCartelaNumber || 1,
-            winningLine: data.winResult.winningIndices || [],
-            winnerName: data.winResult.winnerName || 'Winner',
-            coWinners: Array.isArray(data.winResult.coWinners) ? data.winResult.coWinners : [],
-            totalPot: data.winResult.totalPot || 450,
-            userShare: payout,
-            winnerPayout: data.winResult.winnerPayout || 450,
-            stakeAmount: data.winResult.stakeAmount || 10
-          });
-          setShowWinModal(true);
+          applyRoomSnapshot(data);
+          socketService.markActivity();
+          setNetworkStatus('connected');
         }
       } catch (err) {
         console.warn('Foreground sync notice:', err);
@@ -752,42 +735,47 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return () => {
       unsubResume();
     };
-  }, [getActiveRoomId, showWinModal]);
+  }, [getActiveRoomId, applyRoomSnapshot]);
 
-  // 2. 6.5-Second Mid-Game Liveness Watchdog (Prevents Silent Freezes During Active Play)
+  // 2. Universal All-Phase Liveness Watchdog (Lobby + Playing + Winner)
+  // Ensures countdowns, ball calls, and phase transitions never freeze even with packet drops
   useEffect(() => {
-    if (roundPhase !== 'playing') return;
-
     const watchdogInterval = setInterval(async () => {
-      const elapsedSinceLastBall = Date.now() - lastBallTimeRef.current;
-      // Normal ball cadence is 3.5s. If > 6.5s has elapsed without a ball event:
-      if (elapsedSinceLastBall > 6500) {
-        console.warn(`⚠️ [Bingo Watchdog] No ball event for ${(elapsedSinceLastBall / 1000).toFixed(1)}s. Running silent sync...`);
-        const roomId = getActiveRoomId();
-        try {
-          const res = await fetch(`/api/rooms/${roomId}/sync`);
-          if (!res.ok) return;
-          const data = await res.json();
-          if (!data || !data.success) return;
+      const roomId = getActiveRoomId();
 
-          if (data.phase !== 'playing') {
-            setRoundPhase(data.phase);
-            if (data.phase === 'lobby') {
-              setCalledNumbers([]);
-              setCurrentCall(null);
-            }
-          } else if (Array.isArray(data.drawnNumbers) && data.drawnNumbers.length > 0) {
-            fastForwardCatchUpRef.current(data.drawnNumbers);
+      if (roundPhase === 'playing') {
+        const elapsedSinceLastBall = Date.now() - lastBallTimeRef.current;
+        // Normal cadence is 3.5s. If > 4.5s has elapsed without a ball event:
+        if (elapsedSinceLastBall > 4500) {
+          console.warn(`⚠️ [Bingo Watchdog] No ball event for ${(elapsedSinceLastBall / 1000).toFixed(1)}s. Running silent sync...`);
+          const data = await fetchRoomSyncWithTimeout(roomId, 2500);
+          if (data) {
+            applyRoomSnapshot(data);
             lastBallTimeRef.current = Date.now();
           }
-        } catch {
-          // Network drop; fallback polling will take over
+        }
+      } else if (roundPhase === 'lobby') {
+        // If lobby timer reaches <= 0 or stops updating for > 3s, verify if round started on server
+        if (lobbyCountdown <= 0) {
+          const data = await fetchRoomSyncWithTimeout(roomId, 2000);
+          if (data && data.phase !== 'lobby') {
+            console.log('⚡ [Bingo Watchdog] Lobby ended. Auto-transitioning to active round...');
+            applyRoomSnapshot(data);
+          }
+        }
+      } else if (roundPhase === 'winner') {
+        // If in winner phase and countdown is 0 or > 8s elapsed, sync to enter lobby
+        if (winnerCountdown <= 0) {
+          const data = await fetchRoomSyncWithTimeout(roomId, 2000);
+          if (data && data.phase !== 'winner') {
+            applyRoomSnapshot(data);
+          }
         }
       }
-    }, 3000);
+    }, 2000);
 
     return () => clearInterval(watchdogInterval);
-  }, [roundPhase, getActiveRoomId]);
+  }, [roundPhase, lobbyCountdown, winnerCountdown, getActiveRoomId, applyRoomSnapshot]);
 
   const toggleVerticalBoard = () => setIsVerticalBoard(prev => !prev);
   const toggleMasterBoard = () => setShowMasterBoard(prev => !prev);
@@ -1078,6 +1066,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         networkLatency,
         offlineWinsNotice,
         dismissOfflineWin,
+        triggerManualSync,
         showInsufficientBalanceModal,
         setShowInsufficientBalanceModal,
         insufficientBalanceDetails

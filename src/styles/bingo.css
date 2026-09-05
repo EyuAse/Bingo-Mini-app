@@ -2002,7 +2002,8 @@
   color: #92400e;
 }
 
-.network-status-alert.polling {
+.network-status-alert.polling,
+.network-status-alert.degraded {
   background: #ecfeff;
   border: 1.5px solid #a5f3fc;
   color: #0e7490;
@@ -2047,6 +2048,27 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.status-retry-action-btn.cyan {
+  background: #cffafe;
+  border: 1px solid #06b6d4;
+  color: #155e75;
+}
+
+.status-retry-action-btn:active {
+  transform: scale(0.95);
+}
+
+.network-latency-pill {
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease;
+}
+
+.network-latency-pill:active {
+  transform: scale(0.94);
 }
 
 /* ── Authoritative Offline Win Modal ─────────────────────────────────── */

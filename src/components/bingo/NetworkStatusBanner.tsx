@@ -3,7 +3,7 @@ import { useBingo } from '../../context/BingoContext.tsx';
 import { socketService } from '../../services/socketService.ts';
 
 export const NetworkStatusBanner: React.FC = () => {
-  const { networkStatus, offlineWinsNotice, dismissOfflineWin } = useBingo();
+  const { networkStatus, offlineWinsNotice, dismissOfflineWin, triggerManualSync } = useBingo();
 
   const currentOfflineWin = offlineWinsNotice && offlineWinsNotice.length > 0 ? offlineWinsNotice[0] : null;
 
@@ -64,27 +64,36 @@ export const NetworkStatusBanner: React.FC = () => {
           <div className="status-alert-left">
             <span className="pulsing-warning-dot"></span>
             <span className="status-alert-text">
-              <strong>Reconnecting...</strong> Server Disconnect Protection is ACTIVE. Your ticket is protected.
+              <strong>Reconnecting...</strong> Server Disconnect Protection is ACTIVE.
             </span>
           </div>
           <button
             type="button"
             className="status-retry-action-btn"
-            onClick={() => socketService.forceReconnect()}
+            onClick={() => triggerManualSync()}
+            title="Click to reconnect immediately"
           >
-            <i className="fa-solid fa-rotate-right"></i> Retry
+            <i className="fa-solid fa-arrows-rotate"></i> Re-sync Now
           </button>
         </div>
       )}
 
-      {networkStatus === 'polling' && (
+      {(networkStatus === 'polling' || networkStatus === 'degraded') && (
         <div className="network-status-alert polling">
           <div className="status-alert-left">
             <span className="pulse-cyan-dot"></span>
             <span className="status-alert-text">
-              <strong>⚡ Low Network Mode:</strong> Dual-Engine HTTP Sync active. Ball calls will not freeze.
+              <strong>⚡ Weak Network:</strong> Auto-Sync active. Ball calls will not freeze.
             </span>
           </div>
+          <button
+            type="button"
+            className="status-retry-action-btn cyan"
+            onClick={() => triggerManualSync()}
+            title="Click to force refresh game state"
+          >
+            <i className="fa-solid fa-arrows-rotate"></i> Refresh
+          </button>
         </div>
       )}
     </>
@@ -92,22 +101,30 @@ export const NetworkStatusBanner: React.FC = () => {
 };
 
 export const NetworkLatencyPill: React.FC = () => {
-  const { networkStatus, networkLatency } = useBingo();
+  const { networkStatus, networkLatency, triggerManualSync } = useBingo();
 
   if (networkStatus === 'reconnecting') {
     return (
-      <span className="network-latency-pill pill-warning" title="Reconnecting to game server">
+      <span
+        className="network-latency-pill pill-warning"
+        title="Reconnecting — Click to Re-sync immediately"
+        onClick={() => triggerManualSync()}
+      >
         <span className="ping-dot dot-yellow"></span>
         <span>Reconnecting</span>
       </span>
     );
   }
 
-  if (networkStatus === 'polling') {
+  if (networkStatus === 'polling' || networkStatus === 'degraded') {
     return (
-      <span className="network-latency-pill pill-cyan" title="HTTP Polling Fallback Active">
+      <span
+        className="network-latency-pill pill-cyan"
+        title="HTTP Auto-Sync Active — Click to Refresh"
+        onClick={() => triggerManualSync()}
+      >
         <span className="ping-dot dot-cyan"></span>
-        <span>HTTP Sync</span>
+        <span>Auto-Sync</span>
       </span>
     );
   }
@@ -115,7 +132,8 @@ export const NetworkLatencyPill: React.FC = () => {
   return (
     <span
       className={`network-latency-pill ${networkLatency < 150 ? 'pill-good' : networkLatency < 400 ? 'pill-moderate' : 'pill-slow'}`}
-      title={`Server Ping: ${networkLatency}ms`}
+      title={`Server Ping: ${networkLatency}ms (Click to test)`}
+      onClick={() => triggerManualSync()}
     >
       <span className="ping-dot dot-green"></span>
       <span>{networkLatency}ms</span>

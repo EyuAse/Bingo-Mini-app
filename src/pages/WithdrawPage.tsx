@@ -59,7 +59,7 @@ export const WithdrawPage: React.FC = () => {
       });
 
       if (!res.success) {
-        showToast(`❌ ${res.error || (lang === 'am' ? 'የወጪ ጥያቄ አልተሳካም' : 'Withdrawal request failed')}`);
+        showToast(`❌ ${(res as any).error || (res as any).message || (lang === 'am' ? 'የወጪ ጥያቄ አልተሳካም' : 'Withdrawal request failed')}`);
         return;
       }
 

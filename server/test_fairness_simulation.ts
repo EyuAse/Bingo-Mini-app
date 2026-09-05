@@ -58,7 +58,50 @@ function prepareBallSequenceFast(targetCardMatrix: BingoCell[]): number[] {
   return finalSequence.reverse();
 }
 
-function runSimulation(mode: 'CURRENT' | 'FAST_CADENCE', rounds: number) {
+function getInsertPositionsSim(count: number, finishIndex: number): number[] {
+  const positions: number[] = [];
+  const step = finishIndex / count;
+  for (let i = 1; i < count; i++) {
+    positions.push(Math.round(i * step));
+  }
+  positions.push(finishIndex);
+  return positions;
+}
+
+// Replicate prepareBallSequence with Synchronized Dynamic Variation (Balls 15 - 18)
+function prepareBallSequenceDynamic(targetCardMatrix: BingoCell[]): { sequence: number[]; targetFinishBall: number } {
+  const baseBalls = generateRandomShuffledBalls();
+  const winningPatternsIndices = [
+    [0, 1, 2, 3, 4],
+    [5, 6, 7, 8, 9],
+    [0, 5, 10, 15, 20],
+    [0, 6, 12, 18, 24]
+  ];
+  const chosenPattern = winningPatternsIndices[Math.floor(Math.random() * winningPatternsIndices.length)];
+  const targetNumbers = chosenPattern
+    .map(idx => targetCardMatrix[idx]?.val)
+    .filter((v): v is number => typeof v === 'number');
+
+  const otherBalls = baseBalls.filter(b => !targetNumbers.includes(b));
+  const finalSequence: number[] = [];
+
+  // Varies naturally between Ball 15 and Ball 18 (index 14, 15, 16, 17)
+  const targetFinishBall = 15 + Math.floor(Math.random() * 4); // 15, 16, 17, or 18
+  const finishIndex = targetFinishBall - 1;
+  const insertPositions = getInsertPositionsSim(targetNumbers.length, finishIndex);
+
+  for (let i = 0; i < 75; i++) {
+    if (insertPositions.includes(i) && targetNumbers.length > 0) {
+      finalSequence.push(targetNumbers.shift()!);
+    } else if (otherBalls.length > 0) {
+      finalSequence.push(otherBalls.shift()!);
+    }
+  }
+
+  return { sequence: finalSequence.reverse(), targetFinishBall };
+}
+
+function runSimulation(mode: 'CURRENT' | 'FAST_CADENCE' | 'DYNAMIC_VARIATION', rounds: number) {
   let realTargeted = 0;
   let realWonSolo = 0;
   let realWonSplit = 0;
@@ -80,13 +123,23 @@ function runSimulation(mode: 'CURRENT' | 'FAST_CADENCE', rounds: number) {
 
     const targetMatrix = isTargetReal ? realCard : botCards[Math.floor(Math.random() * botCards.length)].matrix;
 
-    const ballSequence = mode === 'CURRENT' 
-      ? prepareBallSequenceCurrent(targetMatrix)
-      : prepareBallSequenceFast(targetMatrix);
+    let ballSequence: number[];
+    let minEvaluation = 15;
+
+    if (mode === 'CURRENT') {
+      ballSequence = prepareBallSequenceCurrent(targetMatrix);
+      minEvaluation = 20;
+    } else if (mode === 'FAST_CADENCE') {
+      ballSequence = prepareBallSequenceFast(targetMatrix);
+      minEvaluation = 15;
+    } else {
+      const dynamicRes = prepareBallSequenceDynamic(targetMatrix);
+      ballSequence = dynamicRes.sequence;
+      minEvaluation = dynamicRes.targetFinishBall;
+    }
 
     const drawnNumbers: number[] = [];
     let roundEnded = false;
-    const minEvaluation = mode === 'CURRENT' ? 20 : 15;
 
     while (ballSequence.length > 0) {
       const nextNum = ballSequence.pop()!;
@@ -128,6 +181,9 @@ function runSimulation(mode: 'CURRENT' | 'FAST_CADENCE', rounds: number) {
   }
 
   const avgBall = winningBalls.reduce((a, b) => a + b, 0) / winningBalls.length;
+  const ballCounts: Record<number, number> = {};
+  winningBalls.forEach(b => ballCounts[b] = (ballCounts[b] || 0) + 1);
+
   console.log(`\n=== RESULTS FOR ${mode} (Total Rounds: ${rounds}) ===`);
   console.log(`Real Player Target Frequency: ${realTargeted}/${rounds} (${(realTargeted/rounds*100).toFixed(1)}%)`);
   console.log(`Real Solo Wins: ${realWonSolo} (${(realWonSolo/rounds*100).toFixed(1)}%)`);
@@ -135,8 +191,9 @@ function runSimulation(mode: 'CURRENT' | 'FAST_CADENCE', rounds: number) {
   console.log(`Total Real Wins (Solo + Split): ${realWonSolo + realWonSplit} (${((realWonSolo+realWonSplit)/rounds*100).toFixed(1)}%)`);
   console.log(`Bot Wins: ${botWon} (${(botWon/rounds*100).toFixed(1)}%)`);
   console.log(`Average Ball When Round Ends: ${avgBall.toFixed(2)}`);
+  console.log(`Winning Ball Distribution:`, ballCounts);
 }
 
 console.log('Running 500-round fairness audit...');
-runSimulation('CURRENT', 500);
+runSimulation('DYNAMIC_VARIATION', 500);
 runSimulation('FAST_CADENCE', 500);
