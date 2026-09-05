@@ -7,10 +7,12 @@ export const BingoActions: React.FC = () => {
     toggleAutoPlay,
     claimBingo,
     canWin,
-    roundPhase
+    roundPhase,
+    lobbyCountdown
   } = useBingo();
 
   const isPlaying = roundPhase === 'playing';
+  const isLobby = roundPhase === 'lobby';
 
   return (
     <div className="fresh-bingo-actions-bar">
@@ -26,15 +28,20 @@ export const BingoActions: React.FC = () => {
         <span className="autoplay-label">{autoPlay ? 'AUTO ON' : 'MANUAL'}</span>
       </button>
 
-      {/* 2. BINGO! Call Button — disabled when auto-play on (engine handles it) */}
+      {/* 2. BINGO! Call Button — disabled when in lobby or when auto-play on */}
       <button
         type="button"
-        className={`btn-claim-bingo-gold ${canWin && !autoPlay ? 'can-claim-pulsing' : ''} ${autoPlay ? 'auto-claimed' : ''}`}
-        onClick={autoPlay ? undefined : claimBingo}
+        className={`btn-claim-bingo-gold ${canWin && !autoPlay && isPlaying ? 'can-claim-pulsing' : ''} ${autoPlay ? 'auto-claimed' : ''} ${isLobby ? 'lobby-waiting' : ''}`}
+        onClick={autoPlay || !isPlaying ? undefined : claimBingo}
         disabled={!isPlaying}
-        title={autoPlay ? 'Auto-Play will claim BINGO automatically!' : 'Claim BINGO'}
+        title={isLobby ? `Round starts in ${lobbyCountdown}s` : autoPlay ? 'Auto-Play will claim BINGO automatically!' : 'Claim BINGO'}
       >
-        {autoPlay ? (
+        {isLobby ? (
+          <>
+            <i className="fa-solid fa-hourglass-half"></i>
+            <span>STARTS IN {lobbyCountdown}s</span>
+          </>
+        ) : autoPlay ? (
           <>
             <i className="fa-solid fa-bolt"></i>
             <span>AUTO</span>

@@ -22,8 +22,8 @@ export const BigBingoCard: React.FC = () => {
           <span>{lang === 'am' ? 'ቀጥታ ስርጭት' : 'LIVE ROOM'}</span>
         </span>
         <span className="badge-players-pill">
-          <i className="fa-solid fa-bolt" style={{ color: '#eab308' }}></i>
-          <span>75-Ball Multiplayer</span>
+          <i className="fa-solid fa-users" style={{ color: '#eab308', marginRight: 4 }}></i>
+          <span>{playersCount}/50 {lang === 'am' ? 'ተጫዋቾች' : 'PLAYERS'}</span>
         </span>
       </div>
 
@@ -36,7 +36,7 @@ export const BigBingoCard: React.FC = () => {
 
           <div className="stakes-values-txt">10 • 20 • 50 • 100 ETB</div>
           <div className="stakes-limits-sub">
-            {lang === 'am' ? 'ዝቅተኛ፡ 10 • ከፍተኛ፡ 2,000 ብር' : 'Min: 10 • Max: 2,000 ETB'}
+            {lang === 'am' ? 'ዝቅተኛ፡ 10 • 50 ተጫዋቾች ሙሉ ክፍል' : 'Min: 10 • 50-Player Full Arena'}
           </div>
 
           {/* Micro Stats: Players & Top Prize */}
@@ -56,8 +56,8 @@ export const BigBingoCard: React.FC = () => {
                 <i className="fa-solid fa-trophy"></i>
               </div>
               <div className="stat-text-meta">
-                <strong className="stat-bold-val">5,000+ ETB</strong>
-                <span className="stat-sub-lbl">{lang === 'am' ? 'ጃክፖት ሽልማት' : 'Jackpot Pot'}</span>
+                <strong className="stat-bold-val">{prizePool} ETB</strong>
+                <span className="stat-sub-lbl">{lang === 'am' ? 'የጨዋታ ሽልማት' : 'Room Net Prize'}</span>
               </div>
             </div>
           </div>

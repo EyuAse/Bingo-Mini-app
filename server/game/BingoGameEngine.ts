@@ -161,9 +161,11 @@ class BingoGameEngine {
     if (room.phase === 'playing' || room.phase === 'locked') {
       return 50; // Always 50 players active during a live round
     }
+    // During 45s lobby, room density builds towards 50
+    const progress = Math.max(0, Math.min(1, (45 - room.lobbyCountdown) / 45));
+    const dynamicBots = Math.floor(38 + progress * 11); // 38 -> 49
     const realTickets = room.tickets.size;
-    const connected = room.activeSockets.size;
-    return Math.min(50, Math.max(realTickets, connected, 12));
+    return Math.min(50, Math.max(realTickets, dynamicBots));
   }
 
   // Admin Controls: System Lock (House Commission)
@@ -218,12 +220,11 @@ class BingoGameEngine {
       return { success: false, error: 'Room not found' };
     }
 
-    if (room.phase === 'winner') {
-      return { success: false, error: 'Round is concluding. Next round starts in a few seconds.' };
-    }
-
-    if (room.phase === 'playing' && room.drawnNumbers.length > 55) {
-      return { success: false, error: 'Round is almost over. Please wait for the next 45s lobby.' };
+    if (room.phase !== 'lobby') {
+      return {
+        success: false,
+        error: 'Round is already in progress! Please wait for the 45s lobby countdown to join the next round.'
+      };
     }
 
     // Determine quantity requested (1 or 2 cards)
@@ -703,6 +704,14 @@ class BingoGameEngine {
                 amount: sharePerWinner,
                 newBalance: newBal
               });
+
+              io.emit('user_balance_updated', {
+                userId: rw.userId,
+                type: 'bingo_win',
+                amount: sharePerWinner,
+                newBalance: newBal,
+                balance: newBal
+              });
             }
           }
 
@@ -738,6 +747,7 @@ class BingoGameEngine {
       winnerId: firstWinner.userId || `bot_${firstWinner.cartelaId}`,
       winnerName: firstWinner.userName,
       winnerNames: winningCards.map(w => w.userName),
+      winnerUserIds: realWinners.map(rw => rw.userId),
       winningCartelaNumber: firstWinner.cartelaId,
       winningCartelas: winningCards.map(w => w.cartelaId),
       winningPattern: firstWinner.winningPattern,

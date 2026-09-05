@@ -28,7 +28,7 @@ export const StatsStrip: React.FC = () => {
       iconColor: 'purple',
       label: t('bingo.players'),
       value: `${playersCount}`,
-      unit: '',
+      unit: '/50',
       valColor: 'purple'
     },
     {

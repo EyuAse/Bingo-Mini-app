@@ -107,7 +107,8 @@ export const BingoGrid: React.FC = () => {
     winResult,
     autoPlay,
     openCartelaPicker,
-    roundPhase
+    roundPhase,
+    lobbyCountdown
   } = useBingo();
 
   const c1Status = getCardStatus(cartela1Data);
@@ -169,6 +170,27 @@ export const BingoGrid: React.FC = () => {
           )
         )}
       </div>
+
+      {/* If in lobby phase, show prominent round start countdown banner */}
+      {isLobby && (
+        <div className="cartela-lobby-waiting-banner" style={{
+          background: 'linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)',
+          border: '1.5px solid #facc15',
+          borderRadius: '12px',
+          padding: '8px 12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          margin: '6px 0 10px',
+          boxShadow: '0 2px 8px rgba(250, 204, 21, 0.2)'
+        }}>
+          <span className="pulse-green-dot"></span>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#854d0e' }}>
+            ⏳ ROUND STARTS IN <strong style={{ color: '#b45309', fontSize: '0.875rem' }}>{lobbyCountdown}s</strong> (Waiting for 50 Players...)
+          </span>
+        </div>
+      )}
 
       {/* Bonus Card Banner when 3 cards active */}
       {totalPlayableCards >= 3 && activeCartelaIndex === 2 && (

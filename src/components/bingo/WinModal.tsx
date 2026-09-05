@@ -27,9 +27,19 @@ export const WinModal: React.FC = () => {
   const isSplit = winResult.winType === 'user_split';
   const isOpponentWin = winResult.winType === 'opponent_win';
 
+  const userShare = typeof winResult.userShare === 'number' 
+    ? winResult.userShare 
+    : (typeof (winResult as any).sharePerWinner === 'number' ? (winResult as any).sharePerWinner : 0);
+  const totalPot = typeof winResult.totalPot === 'number' ? winResult.totalPot : 450;
+  const cartelaNum = winResult.winningCartelaNumber || (winResult as any).winningCartela || 1;
+  const winnerName = winResult.winnerName || (winResult as any).winnerNames?.[0] || 'Player';
+  const coWinnersList = Array.isArray(winResult.coWinners) && winResult.coWinners.length > 0
+    ? winResult.coWinners.join(', ')
+    : (Array.isArray((winResult as any).winnerNames) ? (winResult as any).winnerNames.join(', ') : 'Co-Winners');
+
   const handleShareWin = () => {
     const text = encodeURIComponent(
-      `🎉 I just won ${winResult.userShare.toLocaleString()} ETB on Lomi 75-Ball Bingo! Come play and win with me: https://t.me/LomiBingoBot`
+      `🎉 I just won ${userShare.toLocaleString()} ETB on Lomi 75-Ball Bingo! Come play and win with me: https://t.me/LomiBingoBot`
     );
     window.open(`https://t.me/share/url?url=https://t.me/LomiBingoBot&text=${text}`, '_blank');
   };
@@ -104,15 +114,15 @@ export const WinModal: React.FC = () => {
         <p className="victory-celebration-sub">
           {isOpponentWin ? (
             <>
-              Winner: <strong>{winResult.winnerName}</strong> (Cartela #{winResult.winningCartelaNumber})
+              Winner: <strong>{winnerName}</strong> (Cartela #{cartelaNum})
             </>
           ) : isSolo ? (
             <>
-              Congratulations! Your <strong>Cartela #{winResult.winningCartelaNumber}</strong> completed BINGO first!
+              Congratulations! Your <strong>Cartela #{cartelaNum}</strong> completed BINGO first!
             </>
           ) : (
             <>
-              Multiplayer Split: You and {winResult.coWinners.join(', ')} called BINGO on the same ball!
+              Multiplayer Split: You and {coWinnersList} called BINGO on the same ball!
             </>
           )}
         </p>
@@ -124,8 +134,8 @@ export const WinModal: React.FC = () => {
           </span>
           <strong className={`victory-prize-amount ${isOpponentWin ? 'gold' : 'green'}`}>
             {isOpponentWin
-              ? `${winResult.totalPot.toLocaleString()}.00 ETB`
-              : `+${winResult.userShare.toLocaleString()}.00 ETB`}
+              ? `${totalPot.toLocaleString()}.00 ETB`
+              : `+${userShare.toLocaleString()}.00 ETB`}
           </strong>
           <span className="victory-credited-tag">
             {isOpponentWin

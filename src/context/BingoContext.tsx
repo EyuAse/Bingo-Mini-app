@@ -356,7 +356,26 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
 
       if (state.winResult) {
-        setWinResult(state.winResult);
+        const isRealUserWin = 
+          Boolean(user?.id && Array.isArray(state.winResult.winnerUserIds) && state.winResult.winnerUserIds.includes(user.id)) ||
+          Boolean(user?.id && state.winResult.winnerId && state.winResult.winnerId.includes(user.id)) || 
+          Boolean(user?.fullName && state.winResult.winnerNames && state.winResult.winnerNames.includes(user.fullName));
+
+        const winType = state.winResult.isSplit
+          ? (isRealUserWin ? 'user_split' : 'opponent_win')
+          : (isRealUserWin ? 'user_solo' : 'opponent_win');
+
+        const payout = isRealUserWin ? (state.winResult.sharePerWinner || state.winResult.userShare || 0) : 0;
+
+        setWinResult({
+          winType,
+          winningCartelaNumber: state.winResult.winningCartelaNumber || (state.winResult.winningCartelas?.[0]) || 1,
+          winningLine: state.winResult.winningIndices || [],
+          winnerName: state.winResult.winnerName || (state.winResult.winnerNames?.[0]) || 'Winner',
+          coWinners: Array.isArray(state.winResult.coWinners) ? state.winResult.coWinners : (Array.isArray(state.winResult.winnerNames) ? state.winResult.winnerNames : []),
+          totalPot: state.winResult.totalPot || 450,
+          userShare: payout
+        });
         setShowWinModal(true);
       }
     });
@@ -400,9 +419,10 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const unsubRoundWinner = socketService.onRoundWinner((winData: any) => {
       setRoundPhase('winner');
       const isRealUserWin = 
-        winData.winnerId?.includes(user?.id) || 
-        (winData.winnerNames && winData.winnerNames.includes(user?.fullName)) ||
-        (user?.id && winData.winnerId === user.id);
+        Boolean(user?.id && Array.isArray(winData.winnerUserIds) && winData.winnerUserIds.includes(user.id)) ||
+        Boolean(user?.id && winData.winnerId && winData.winnerId.includes(user.id)) || 
+        Boolean(user?.fullName && winData.winnerNames && winData.winnerNames.includes(user.fullName)) ||
+        Boolean(user?.id && winData.winnerId === user.id);
 
       const winType = winData.isSplit
         ? (isRealUserWin ? 'user_split' : 'opponent_win')
@@ -412,10 +432,10 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       setWinResult({
         winType,
-        winningCartelaNumber: winData.winningCartelaNumber,
+        winningCartelaNumber: winData.winningCartelaNumber || (winData.winningCartelas?.[0]) || 1,
         winningLine: winData.winningIndices || [],
-        winnerName: winData.winnerName || 'Winner',
-        coWinners: winData.coWinners || [],
+        winnerName: winData.winnerName || (winData.winnerNames?.[0]) || 'Winner',
+        coWinners: Array.isArray(winData.coWinners) ? winData.coWinners : (Array.isArray(winData.winnerNames) ? winData.winnerNames : []),
         totalPot: winData.totalPot || prizePool,
         userShare: payout
       });

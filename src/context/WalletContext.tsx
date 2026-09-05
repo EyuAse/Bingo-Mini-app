@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { apiClient } from '../services/apiClient';
 import { socketService } from '../services/socketService';
+import { useAuth } from './AuthContext.tsx';
 
 interface WalletContextType {
   balance: number;
@@ -18,6 +19,8 @@ interface WalletContextType {
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+
   // Purge any legacy mock storage on initial run
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -93,6 +96,10 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const socket = socketService.connect();
     const handleBalanceEvent = (data: any) => {
+      // If event is scoped to a specific userId, ignore if it's not for current user
+      if (data && data.userId && user?.id && data.userId !== user.id) {
+        return;
+      }
       console.log('⚡ [Live Real Balance Event Received]:', data);
       if (typeof data.newBalance === 'number') {
         setBalance(data.newBalance);
@@ -105,6 +112,11 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     socket.on('user_balance_updated', handleBalanceEvent);
     socket.on('deposit_status_updated', () => fetchLiveBalance());
     socket.on('withdrawal_status_updated', () => fetchLiveBalance());
+
+    let unsubUserBalance: (() => void) | null = null;
+    if (user?.id) {
+      unsubUserBalance = socketService.onUserBalanceUpdate(user.id, handleBalanceEvent);
+    }
 
     // 3-second background polling to guarantee real-time balance updates
     const pollInterval = setInterval(() => {
@@ -119,8 +131,9 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       socket.off('user_balance_updated', handleBalanceEvent);
       socket.off('deposit_status_updated');
       socket.off('withdrawal_status_updated');
+      if (unsubUserBalance) unsubUserBalance();
     };
-  }, []);
+  }, [user, fetchLiveBalance]);
 
   const toggleBalanceVisibility = () => {
     setIsBalanceVisible(prev => !prev);
