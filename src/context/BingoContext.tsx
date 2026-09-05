@@ -208,11 +208,14 @@ const checkWinningPatterns = (cells: BingoCell[]): number[] | null => {
   return null;
 };
 
-const fetchRoomSyncWithTimeout = async (roomId: string, timeoutMs = 2500): Promise<any | null> => {
+const fetchRoomSyncWithTimeout = async (roomId: string, timeoutMs = 2500, userId?: string): Promise<any | null> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(`/api/rooms/${roomId}/sync`, { signal: controller.signal });
+    const url = userId
+      ? `/api/rooms/${roomId}/sync?userId=${encodeURIComponent(userId)}`
+      : `/api/rooms/${roomId}/sync`;
+    const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (!res.ok) return null;
     const data = await res.json();
@@ -575,7 +578,34 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       });
     }
 
-    // 6. Network Connection Status & Offline Win Listeners
+    // 6. Cross-Device Live Mirroring: Tickets Synced Across All Logged-in Devices
+    const unsubTicketsSynced = socketService.onUserTicketsSynced((data: any) => {
+      console.log('🎟️ [BingoContext] Multi-device ticket sync event received:', data);
+      if (data.tickets && Array.isArray(data.tickets) && data.tickets.length > 0) {
+        const tickets = data.tickets;
+        const newIds = tickets.map((t: any) => t.cartelaId);
+        const updatedIds: [number, number, number] = [
+          newIds[0] || selectedCartelaIdsRef.current[0],
+          newIds[1] || selectedCartelaIdsRef.current[1],
+          newIds[2] || selectedCartelaIdsRef.current[2]
+        ];
+        setSelectedCartelaIds(updatedIds);
+        if (tickets[0]?.cardMatrix) setCartela1Data(tickets[0].cardMatrix);
+        if (tickets[1]?.cardMatrix) setCartela2Data(tickets[1].cardMatrix);
+        if (tickets[2]?.cardMatrix) setCartela3Data(tickets[2].cardMatrix);
+
+        if (data.isPreBuy) {
+          setHasPreBoughtNext(true);
+          showToast('🎟️ Tickets synced from your other phone (Pre-Bought for Next Round)!');
+        } else {
+          setHasTicket(true);
+          showToast('🎟️ Tickets synced from your other phone! Ready for round.');
+        }
+      }
+      refreshBalanceRef.current();
+    });
+
+    // 7. Network Connection Status & Offline Win Listeners
     const unsubConn = socketService.onConnectionStatusChange((status, latency) => {
       setNetworkLatency(latency);
       setNetworkStatus(status);
@@ -595,6 +625,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       unsubRoundStarted();
       unsubRoundWinner();
       if (unsubBalance) unsubBalance();
+      unsubTicketsSynced();
       unsubConn();
       unsubOfflineWins();
     };
@@ -637,6 +668,30 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setCurrentCall(data.currentCall);
     }
 
+    // Multi-Device Hydration: If user has active tickets on server, sync into local state
+    if (data.userTickets && Array.isArray(data.userTickets) && data.userTickets.length > 0) {
+      const tickets = data.userTickets;
+      const newIds = tickets.map((t: any) => t.cartelaId);
+      const updatedIds: [number, number, number] = [
+        newIds[0] || selectedCartelaIdsRef.current[0],
+        newIds[1] || selectedCartelaIdsRef.current[1],
+        newIds[2] || selectedCartelaIdsRef.current[2]
+      ];
+      setSelectedCartelaIds(updatedIds);
+      if (tickets[0]?.cardMatrix) setCartela1Data(tickets[0].cardMatrix);
+      if (tickets[1]?.cardMatrix) setCartela2Data(tickets[1].cardMatrix);
+      if (tickets[2]?.cardMatrix) setCartela3Data(tickets[2].cardMatrix);
+
+      if (data.isPreBuy) {
+        setHasPreBoughtNext(true);
+      } else {
+        setHasTicket(true);
+        if (data.phase === 'playing') {
+          setGameActive(true);
+        }
+      }
+    }
+
     if (data.winResult && !showWinModal) {
       const currentUser = userRef.current;
       const isRealUserWin = 
@@ -669,7 +724,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const roomId = getActiveRoomId();
     console.log('⚡ [BingoContext] Manual 1-Tap Re-Sync triggered by user.');
     showToast('🔄 Synchronizing game state...');
-    const data = await fetchRoomSyncWithTimeout(roomId, 2500);
+    const data = await fetchRoomSyncWithTimeout(roomId, 2500, userRef.current?.id);
     if (data) {
       applyRoomSnapshot(data);
       socketService.markActivity();
@@ -692,7 +747,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     let isCancelled = false;
 
     const pollSync = async () => {
-      const data = await fetchRoomSyncWithTimeout(roomId, 2500);
+      const data = await fetchRoomSyncWithTimeout(roomId, 2500, userRef.current?.id);
       if (isCancelled || !data) return;
       if (networkStatus === 'reconnecting' || networkStatus === 'degraded') {
         setNetworkStatus('polling');
@@ -715,7 +770,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       soundEngine.resumeAudioContext();
       const roomId = getActiveRoomId();
       try {
-        const data = await fetchRoomSyncWithTimeout(roomId, 2500);
+        const data = await fetchRoomSyncWithTimeout(roomId, 2500, userRef.current?.id);
         if (data) {
           console.log('⚡ [BingoContext] Fast-forward catch-up on foreground resume:', {
             phase: data.phase,
@@ -748,7 +803,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         // Normal cadence is 3.5s. If > 4.5s has elapsed without a ball event:
         if (elapsedSinceLastBall > 4500) {
           console.warn(`⚠️ [Bingo Watchdog] No ball event for ${(elapsedSinceLastBall / 1000).toFixed(1)}s. Running silent sync...`);
-          const data = await fetchRoomSyncWithTimeout(roomId, 2500);
+          const data = await fetchRoomSyncWithTimeout(roomId, 2500, userRef.current?.id);
           if (data) {
             applyRoomSnapshot(data);
             lastBallTimeRef.current = Date.now();
@@ -757,7 +812,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       } else if (roundPhase === 'lobby') {
         // If lobby timer reaches <= 0 or stops updating for > 3s, verify if round started on server
         if (lobbyCountdown <= 0) {
-          const data = await fetchRoomSyncWithTimeout(roomId, 2000);
+          const data = await fetchRoomSyncWithTimeout(roomId, 2000, userRef.current?.id);
           if (data && data.phase !== 'lobby') {
             console.log('⚡ [Bingo Watchdog] Lobby ended. Auto-transitioning to active round...');
             applyRoomSnapshot(data);
@@ -766,7 +821,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       } else if (roundPhase === 'winner') {
         // If in winner phase and countdown is 0 or > 8s elapsed, sync to enter lobby
         if (winnerCountdown <= 0) {
-          const data = await fetchRoomSyncWithTimeout(roomId, 2000);
+          const data = await fetchRoomSyncWithTimeout(roomId, 2000, userRef.current?.id);
           if (data && data.phase !== 'winner') {
             applyRoomSnapshot(data);
           }

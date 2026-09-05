@@ -384,6 +384,17 @@ class BingoGameEngine {
       quantity = Math.max(1, Math.min(2, requestedCartelaIds));
     }
 
+    // Multi-Device Protection: If user already has active tickets for this round, return existing tickets without deducting balance again
+    if (room.phase === 'lobby' && room.tickets.has(userId) && (room.tickets.get(userId)?.length || 0) > 0) {
+      const existing = room.tickets.get(userId)!;
+      console.log(`🎟️ [Multi-Device] User ${userName} (${userId}) already has ${existing.length} tickets for Round #${room.roundNumber}. Returning active cards.`);
+      return {
+        success: true,
+        preBoughtForNextRound: false,
+        tickets: existing
+      };
+    }
+
     const totalCost = quantity * stakePerCard;
 
     // Collect already assigned Cartela IDs in this room to ensure unique cards
@@ -887,89 +898,108 @@ class BingoGameEngine {
       return;
     }
     this.isProcessingVictory = true;
-
     room.phase = 'winner';
-
-    const winnerCount = winningCards.length;
+    const totalWinningCards = winningCards.length;
     const realWinners = winningCards.filter(w => w.isReal);
     const botWinners = winningCards.filter(w => !w.isReal);
-    const isSplit = winnerCount > 1;
 
-    let winningSharePerWinner = 450;
+    // Group winning cards by unique entity: real users by userId, bots by opponent ID
+    const distinctEntities = new Set(winningCards.map(w => w.isReal ? `real_${w.userId}` : `bot_${w.cartelaId}`));
+    const isSplit = distinctEntities.size > 1;
+
+    // Group real winning cards by userId
+    const realWinnersByUser = new Map<string, typeof realWinners>();
+    for (const rw of realWinners) {
+      if (!rw.userId) continue;
+      const list = realWinnersByUser.get(rw.userId) || [];
+      list.push(rw);
+      realWinnersByUser.set(rw.userId, list);
+    }
+
+    let primaryUserPayout = 0;
     let displayWinnerPayout = 450;
 
     // 1. Credit all winning real players atomically via Neon PostgreSQL
-    if (realWinners.length > 0) {
+    if (realWinnersByUser.size > 0) {
       try {
         await withTransaction(async (client) => {
-          for (const rw of realWinners) {
-            if (!rw.userId) continue;
+          for (const [userId, userWinningCards] of realWinnersByUser.entries()) {
+            const userTickets = room.tickets.get(userId) || [];
 
-            const userTickets = room.tickets.get(rw.userId) || [];
-            const matchingTicket = userTickets.find(t => t.cartelaId === rw.cartelaId);
-            const ticketStake = matchingTicket && matchingTicket.betAmount > 0
-              ? matchingTicket.betAmount
-              : (userTickets[0]?.betAmount > 0 ? userTickets[0].betAmount : room.stakeAmount);
+            // Calculate total payout for this user:
+            // Each winning card gets (ticketStake * 45) / totalWinningCards.
+            // If all winning cards belong to this user (e.g. 2 cards), user receives 2 * 225 = 450 ETB (100% Solo Win)!
+            const userTotalWin = userWinningCards.reduce((sum, rw) => {
+              const matchingTicket = userTickets.find(t => t.cartelaId === rw.cartelaId);
+              const ticketStake = matchingTicket && matchingTicket.betAmount > 0
+                ? matchingTicket.betAmount
+                : (userTickets[0]?.betAmount > 0 ? userTickets[0].betAmount : room.stakeAmount);
 
-            // Model A Multi-Stake: Base 45x multiplier, divided equally among ties
-            const sharePerWinner = Math.floor((ticketStake * 45) / winnerCount);
-            winningSharePerWinner = sharePerWinner;
-            displayWinnerPayout = sharePerWinner;
+              const perCardPayout = Math.floor((ticketStake * 45) / totalWinningCards);
+              return sum + perCardPayout;
+            }, 0);
+
+            primaryUserPayout = userTotalWin;
+            displayWinnerPayout = userTotalWin;
 
             const walletRes = await client.query(
               'SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE',
-              [rw.userId]
+              [userId]
             );
 
             if (walletRes.rows.length > 0) {
               const currentBal = parseFloat(walletRes.rows[0].balance || '0');
-              const newBal = currentBal + sharePerWinner;
+              const newBal = currentBal + userTotalWin;
 
               await client.query(
                 'UPDATE wallets SET balance = $1, updated_at = NOW() WHERE user_id = $2',
-                [newBal, rw.userId]
+                [newBal, userId]
               );
 
               const isSocketConnected = userTickets.some(t => room.activeSockets.has(t.socketId));
               const winRef = `WIN-ARENA-${Date.now().toString().slice(-6)}`;
+              const winningCardIds = userWinningCards.map(w => `#${w.cartelaId}`).join(', ');
+              const firstTicket = userTickets.find(t => t.cartelaId === userWinningCards[0].cartelaId);
+              const ticketStake = firstTicket?.betAmount || room.stakeAmount;
+
               const description = isSplit
-                ? `Split Pot Winner (1 of ${winnerCount}, ${ticketStake} ETB Stake) in ${room.name} (Cartela #${rw.cartelaId})${!isSocketConnected ? ' [Protected Offline Auto-Claim]' : ''}`
-                : `Bingo Solo Winner (${ticketStake} ETB Stake) in ${room.name} (Cartela #${rw.cartelaId})${!isSocketConnected ? ' [Protected Offline Auto-Claim]' : ''}`;
+                ? `Split Pot Winner (${userWinningCards.length} of ${totalWinningCards} cards, ${ticketStake} ETB Stake) in ${room.name} (Cartela ${winningCardIds})${!isSocketConnected ? ' [Protected Offline Auto-Claim]' : ''}`
+                : `Bingo Solo Winner (${ticketStake} ETB Stake) in ${room.name} (Cartela ${winningCardIds})${!isSocketConnected ? ' [Protected Offline Auto-Claim]' : ''}`;
 
               await client.query(
                 `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, payment_method, description)
                  VALUES ($1, 'win', $2, $3, $4, 'completed', 'in_game', $5)`,
-                [rw.userId, sharePerWinner, newBal, winRef, description]
+                [userId, userTotalWin, newBal, winRef, description]
               );
 
               // Disconnect Protection: Record in authoritative offline/online ledger
               const winRecord: OfflineWinRecord = {
                 id: `WINREC-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
-                userId: rw.userId,
-                userName: rw.userName,
+                userId,
+                userName: userWinningCards[0].userName,
                 roomId: room.id,
                 roundNumber: room.roundNumber,
-                cartelaId: rw.cartelaId,
-                amount: sharePerWinner,
+                cartelaId: userWinningCards[0].cartelaId,
+                amount: userTotalWin,
                 referenceCode: winRef,
                 timestamp: new Date().toISOString(),
                 isOffline: !isSocketConnected,
                 acknowledged: false,
-                winningPattern: rw.winningPattern
+                winningPattern: userWinningCards[0].winningPattern
               };
               this.offlineWins.unshift(winRecord);
               if (this.offlineWins.length > 200) this.offlineWins.pop();
 
               io.emit('offline_win_recorded', winRecord);
-              io.emit(`user_${rw.userId}_balance`, {
+              io.emit(`user_${userId}_balance`, {
                 type: 'bingo_win',
-                amount: sharePerWinner,
+                amount: userTotalWin,
                 newBalance: newBal
               });
               io.emit('user_balance_updated', {
-                userId: rw.userId,
+                userId,
                 type: 'bingo_win',
-                amount: sharePerWinner,
+                amount: userTotalWin,
                 newBalance: newBal,
                 balance: newBal
               });
@@ -986,7 +1016,7 @@ class BingoGameEngine {
                    ended_at = NOW() 
                WHERE id = $4`,
               [
-                JSON.stringify(realWinners.map(rw => rw.userId)),
+                JSON.stringify(Array.from(realWinnersByUser.keys())),
                 JSON.stringify(winningCards.map(w => w.cartelaId)),
                 JSON.stringify(winningCards.map(w => w.userName)),
                 room.currentRoundId
@@ -1005,9 +1035,8 @@ class BingoGameEngine {
         for (const bw of botWinners) {
           const matchingOpp = room.opponentCards.find(o => o.cartelaId === bw.cartelaId);
           const botStake = matchingOpp?.stakeAmount || 10;
-          const botPayout = Math.floor((botStake * 45) / winnerCount);
+          const botPayout = Math.floor((botStake * 45) / totalWinningCards);
           displayWinnerPayout = botPayout;
-          winningSharePerWinner = botPayout;
 
           if (matchingOpp?.botUserId && !matchingOpp.botUserId.startsWith('bot_legacy_')) {
             // Deposit real 45x winnings into the bot's Neon DB wallet!
@@ -1024,7 +1053,9 @@ class BingoGameEngine {
                 matchingOpp.botUserId,
                 botPayout,
                 botWinRef,
-                `Bingo Solo Winner (${botStake} ETB Stake) in ${room.name} (Cartela #${bw.cartelaId})`
+                isSplit
+                  ? `Split Pot Winner (1 of ${totalWinningCards}, ${botStake} ETB Stake) in ${room.name} (Cartela #${bw.cartelaId})`
+                  : `Bingo Solo Winner (${botStake} ETB Stake) in ${room.name} (Cartela #${bw.cartelaId})`
               ]
             );
           }
@@ -1040,26 +1071,36 @@ class BingoGameEngine {
       ? (room.tickets.get(firstWinner.userId || '')?.[0]?.betAmount || 10)
       : (matchingOpp?.stakeAmount || 10);
 
+    // List other external winner names, excluding the primary winner's own entity
+    const primaryEntityId = firstWinner.isReal ? `real_${firstWinner.userId}` : `bot_${firstWinner.cartelaId}`;
+    const externalCoWinners = Array.from(
+      new Set(
+        winningCards
+          .filter(w => (w.isReal ? `real_${w.userId}` : `bot_${w.cartelaId}`) !== primaryEntityId)
+          .map(w => w.userName)
+      )
+    );
+
     const winResult = {
       winType: isSplit
         ? (realWinners.length > 0 ? 'user_split' : 'opponent_win')
         : (firstWinner.isReal ? 'user_solo' : 'opponent_win'),
       winnerId: firstWinner.userId || matchingOpp?.botUserId || `bot_${firstWinner.cartelaId}`,
       winnerName: firstWinner.userName,
-      winnerNames: winningCards.map(w => w.userName),
-      winnerUserIds: realWinners.map(rw => rw.userId),
+      winnerNames: Array.from(new Set(winningCards.map(w => w.userName))),
+      winnerUserIds: Array.from(new Set(realWinners.map(rw => rw.userId))),
       winningCartelaNumber: firstWinner.cartelaId,
       winningCartelas: winningCards.map(w => w.cartelaId),
       winningPattern: firstWinner.winningPattern,
       winningIndices: firstWinner.winningIndices,
       totalPot: room.totalPot,
-      winnerPayout: displayWinnerPayout, // Exact 45x payout won (e.g. 450, 900, 2,250, 4,500 ETB)!
+      winnerPayout: displayWinnerPayout, // Exact payout won
       stakeAmount: winnerStake,
-      sharePerWinner: winningSharePerWinner,
-      userShare: realWinners.length > 0 ? winningSharePerWinner : 0,
-      coWinners: winningCards.map(w => w.userName),
+      sharePerWinner: isSplit ? Math.floor((winnerStake * 45) / totalWinningCards) : displayWinnerPayout,
+      userShare: primaryUserPayout,
+      coWinners: isSplit ? externalCoWinners : [],
       isSplit,
-      winnersCount: winnerCount
+      winnersCount: distinctEntities.size
     };
 
     room.winResult = winResult;

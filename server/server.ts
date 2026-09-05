@@ -97,6 +97,19 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     return res.status(404).json({ success: false, error: 'Room not found' });
   }
 
+  const userId = req.query.userId as string | undefined;
+  let userTickets = null;
+  let isPreBuy = false;
+
+  if (userId) {
+    if (room.tickets.has(userId)) {
+      userTickets = room.tickets.get(userId);
+    } else if (room.nextRoundTickets && room.nextRoundTickets.has(userId)) {
+      userTickets = room.nextRoundTickets.get(userId);
+      isPreBuy = true;
+    }
+  }
+
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.json({
     success: true,
@@ -113,6 +126,8 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     totalDrawn: room.drawnNumbers.length,
     currentCall: room.currentCall,
     winResult: room.winResult,
+    userTickets,
+    isPreBuy,
     serverTime: Date.now()
   });
 });

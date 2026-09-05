@@ -341,6 +341,13 @@ class SocketService {
     return () => sock.off(eventName, callback);
   }
 
+  // Multi-Device Cross-Session Ticket Synchronization
+  public onUserTicketsSynced(callback: (data: any) => void): () => void {
+    const sock = this.getSocket();
+    sock.on('user_tickets_synced', callback);
+    return () => sock.off('user_tickets_synced', callback);
+  }
+
   // Disconnect Protection Listeners
   public onOfflineWinNotification(callback: (wins: OfflineWinData[]) => void): () => void {
     const sock = this.getSocket();

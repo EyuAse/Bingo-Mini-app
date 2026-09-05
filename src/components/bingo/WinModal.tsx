@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
+import { useAuth } from '../../context/AuthContext.tsx';
 
 export const WinModal: React.FC = () => {
   const {
@@ -11,6 +12,7 @@ export const WinModal: React.FC = () => {
   } = useBingo();
   const { showToast } = useApp();
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   // Auto-dismiss after 8 seconds to match celebration countdown
   useEffect(() => {
@@ -36,9 +38,22 @@ export const WinModal: React.FC = () => {
   const stakeAmt = winResult.stakeAmount || 10;
   const cartelaNum = winResult.winningCartelaNumber || (winResult as any).winningCartela || 1;
   const winnerName = winResult.winnerName || (winResult as any).winnerNames?.[0] || 'Player';
-  const coWinnersList = Array.isArray(winResult.coWinners) && winResult.coWinners.length > 0
-    ? winResult.coWinners.join(', ')
-    : (Array.isArray((winResult as any).winnerNames) ? (winResult as any).winnerNames.join(', ') : 'Co-Winners');
+
+  // Filter out current user's own name, 'You', and username from co-winners to eliminate the self-split bug
+  const rawCoWinners: string[] = Array.isArray(winResult.coWinners) && winResult.coWinners.length > 0
+    ? winResult.coWinners
+    : (Array.isArray((winResult as any).winnerNames) ? (winResult as any).winnerNames : []);
+
+  const otherCoWinners = rawCoWinners.filter(name => {
+    if (!name) return false;
+    if (name === 'You') return false;
+    if (user?.fullName && name.trim().toLowerCase() === user.fullName.trim().toLowerCase()) return false;
+    if (user?.username && name.toLowerCase().includes(user.username.toLowerCase())) return false;
+    return true;
+  });
+
+  const isTrueMultiplayerSplit = isSplit && otherCoWinners.length > 0;
+  const coWinnersList = otherCoWinners.join(', ');
 
   const handleShareWin = () => {
     const text = encodeURIComponent(
@@ -109,7 +124,7 @@ export const WinModal: React.FC = () => {
         <h2 className="victory-celebration-title">
           {isOpponentWin
             ? '🏆 BINGO CALLED!'
-            : isSplit
+            : isTrueMultiplayerSplit
             ? '🤝 SPLIT POT VICTORY!'
             : '🎉 BINGO! YOU WON!'}
         </h2>
@@ -119,13 +134,13 @@ export const WinModal: React.FC = () => {
             <>
               Winner: <strong>{winnerName}</strong> (Cartela #{cartelaNum})
             </>
-          ) : isSolo ? (
+          ) : !isTrueMultiplayerSplit ? (
             <>
-              Congratulations! Your <strong>Cartela #{cartelaNum}</strong> completed BINGO first!
+              Congratulations! Your <strong>Cartela #{cartelaNum}</strong> completed BINGO!
             </>
           ) : (
             <>
-              Multiplayer Split: You and {coWinnersList} called BINGO on the same ball!
+              Multiplayer Split: You and <strong>{coWinnersList}</strong> called BINGO on the same ball!
             </>
           )}
         </p>
@@ -133,7 +148,7 @@ export const WinModal: React.FC = () => {
         {/* Prize Box */}
         <div className="victory-prize-display-card">
           <span className="victory-prize-label">
-            {isOpponentWin ? 'PRIZE WON BY WINNER' : isSplit ? 'YOUR SPLIT POT SHARE' : 'YOUR TOTAL WINNINGS'}
+            {isOpponentWin ? 'PRIZE WON BY WINNER' : isTrueMultiplayerSplit ? 'YOUR SPLIT POT SHARE' : 'YOUR TOTAL WINNINGS'}
           </span>
           <strong className={`victory-prize-amount ${isOpponentWin ? 'gold' : 'green'}`}>
             {isOpponentWin

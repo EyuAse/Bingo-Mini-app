@@ -20,6 +20,7 @@ export function setupGameSockets(io: Server) {
       currentRoomId = roomId;
       if (userId) {
         authUserId = userId;
+        socket.join(`user_${userId}`);
         // Check for Disconnect Protection wins that occurred while offline
         const unackedWins = gameEngine.getUnacknowledgedWins(userId);
         if (unackedWins && unackedWins.length > 0) {
@@ -82,6 +83,19 @@ export function setupGameSockets(io: Server) {
           callback(result);
         } else {
           socket.emit('buy_ticket_response', result);
+        }
+
+        // Multi-Device Mirroring: Broadcast synced tickets to ALL devices logged in as this user
+        if (result.success && userId) {
+          const room = gameEngine.getRoom(roomId);
+          io.to(`user_${userId}`).emit('user_tickets_synced', {
+            roomId,
+            userId,
+            roundNumber: room?.roundNumber,
+            isPreBuy: result.preBoughtForNextRound,
+            tickets: result.tickets,
+            remainingBalance: result.remainingBalance
+          });
         }
       }
     );
