@@ -401,7 +401,7 @@ router.get('/stats', requireAdmin, async (_req, res) => {
 });
 
 /**
- * 200 Bot Player Accounts Desk (Dedicated Admin Management)
+ * Registered Bot Player Accounts Desk (Dedicated Admin Management)
  */
 router.get('/bot-users', requireAdmin, async (_req, res) => {
   try {

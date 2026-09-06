@@ -34,7 +34,7 @@ export const WinModal: React.FC = () => {
     : (typeof (winResult as any).sharePerWinner === 'number' ? (winResult as any).sharePerWinner : 0);
   const winnerPayout = typeof winResult.winnerPayout === 'number'
     ? winResult.winnerPayout
-    : (typeof (winResult as any).sharePerWinner === 'number' ? (winResult as any).sharePerWinner : 450);
+    : (typeof (winResult as any).sharePerWinner === 'number' ? (winResult as any).sharePerWinner : (winResult.totalPot || 50));
   const stakeAmt = winResult.stakeAmount || 10;
   const cartelaNum = winResult.winningCartelaNumber || (winResult as any).winningCartela || 1;
   const winnerName = winResult.winnerName || (winResult as any).winnerNames?.[0] || 'Player';

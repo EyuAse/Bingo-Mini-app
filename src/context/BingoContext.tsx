@@ -287,8 +287,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   autoPlayRef.current = autoPlay;
 
   // Room State
-  const [playersCount, setPlayersCount] = useState<number>(50);
-  const [prizePool, setPrizePool] = useState<number>(450);
+  const [playersCount, setPlayersCount] = useState<number>(0);
+  const [prizePool, setPrizePool] = useState<number>(0);
   const [opponents, setOpponents] = useState<Opponent[]>([]);
   const [canWin, setCanWin] = useState<boolean>(false);
   const [winResult, setWinResult] = useState<WinResult | null>(null);
@@ -482,7 +482,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const payout = isRealUserWin ? (state.winResult.sharePerWinner || state.winResult.userShare || 0) : 0;
         const displayPayout = typeof state.winResult.winnerPayout === 'number'
           ? state.winResult.winnerPayout
-          : (state.winResult.sharePerWinner || 450);
+          : (state.winResult.sharePerWinner || state.winResult.totalPot || 50);
 
         setWinResult({
           winType,
@@ -490,7 +490,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           winningLine: state.winResult.winningIndices || [],
           winnerName: state.winResult.winnerName || (state.winResult.winnerNames?.[0]) || 'Winner',
           coWinners: Array.isArray(state.winResult.coWinners) ? state.winResult.coWinners : (Array.isArray(state.winResult.winnerNames) ? state.winResult.winnerNames : []),
-          totalPot: state.winResult.totalPot || 450,
+          totalPot: state.winResult.totalPot || displayPayout,
           userShare: payout,
           winnerPayout: displayPayout,
           stakeAmount: state.winResult.stakeAmount || 10
@@ -557,7 +557,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const payout = isRealUserWin ? (winData.sharePerWinner || winData.userShare || 0) : 0;
       const displayPayout = typeof winData.winnerPayout === 'number'
         ? winData.winnerPayout
-        : (winData.sharePerWinner || 450);
+        : (winData.sharePerWinner || winData.totalPot || 50);
 
       setWinResult({
         winType,
@@ -565,7 +565,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         winningLine: winData.winningIndices || [],
         winnerName: winData.winnerName || (winData.winnerNames?.[0]) || 'Winner',
         coWinners: Array.isArray(winData.coWinners) ? winData.coWinners : (Array.isArray(winData.winnerNames) ? winData.winnerNames : []),
-        totalPot: winData.totalPot || 450,
+        totalPot: winData.totalPot || displayPayout,
         userShare: payout,
         winnerPayout: displayPayout,
         stakeAmount: winData.stakeAmount || 10
@@ -734,9 +734,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         winningLine: data.winResult.winningIndices || [],
         winnerName: data.winResult.winnerName || 'Winner',
         coWinners: Array.isArray(data.winResult.coWinners) ? data.winResult.coWinners : [],
-        totalPot: data.winResult.totalPot || 450,
+        totalPot: data.winResult.totalPot || (data.winResult.winnerPayout || 50),
         userShare: payout,
-        winnerPayout: data.winResult.winnerPayout || 450,
+        winnerPayout: data.winResult.winnerPayout || (data.winResult.totalPot || 50),
         stakeAmount: data.winResult.stakeAmount || 10
       });
       setShowWinModal(true);

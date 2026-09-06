@@ -19,15 +19,15 @@ async function runMultiDeviceVerification() {
   }
   console.log('   ✅ Real player accounts 100% verified & protected!\n');
 
-  // 2. Check 200 Bot Accounts in Neon DB
-  console.log('2️⃣ Checking 200 Bot Accounts in Neon DB:');
+  // 2. Check 3 Registered Bot Accounts in Neon DB
+  console.log('2️⃣ Checking Registered Bot Accounts in Neon DB:');
   const botCountRes = await query("SELECT COUNT(*) as count FROM users WHERE is_bot = true");
   const count = parseInt(botCountRes.rows[0].count, 10);
-  console.log(`   - Total Bot Accounts Seeded: ${count} (Expected: 200)`);
-  if (count !== 200) {
-    throw new Error(`❌ Expected 200 bot accounts, found ${count}`);
+  console.log(`   - Total Registered Bot Accounts: ${count} (Expected: 3)`);
+  if (count !== 3) {
+    throw new Error(`❌ Expected 3 bot accounts, found ${count}`);
   }
-  console.log('   ✅ 200 Persistent Bot Accounts confirmed in database!\n');
+  console.log('   ✅ 3 Registered Bot Accounts confirmed in database!\n');
 
   // 3. Connect 2 Phone Sockets to Server
   console.log('3️⃣ Connecting 2 Phones to Server Socket (Phone 1: room-10 / 10 ETB, Phone 2: room-20 / 20 ETB):');

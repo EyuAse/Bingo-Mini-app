@@ -76,37 +76,12 @@ interface BotProfile {
   phone: string;
 }
 
-// 200+ Authentic Ethiopian Bot Names Roster
-const ETHIOPIAN_FIRST_NAMES = [
-  'Abebe', 'Almaz', 'Bekele', 'Chaltu', 'Dawit', 'Eleni', 'Fikru', 'Genet',
-  'Haile', 'Hiwot', 'Kassahun', 'Lemlem', 'Mekonnen', 'Meseret', 'Natnael', 'Rahel',
-  'Samuel', 'Selam', 'Tariku', 'Tigist', 'Yonas', 'Zenebech', 'Biruk', 'Desta',
-  'Ermias', 'Fasika', 'Girma', 'Hanna', 'Kidus', 'Liya', 'Meron', 'Nebiyu',
-  'Robel', 'Saron', 'Tewodros', 'Tsedey', 'Yared', 'Zelalem', 'Bilen', 'Danait',
-  'Ephrem', 'Frehiwot', 'Getachew', 'Helen', 'Kalkidan', 'Mahlet', 'Muluken', 'Netsanet',
-  'Ruth', 'Solomon', 'Tadesse', 'Tsion', 'Yohannes', 'Zerihun', 'Bethel', 'Daniel',
-  'Eyob', 'Fitsum', 'Kaleb', 'Nardos', 'Sintayehu', 'Wondwossen', 'Birtukan', 'Abel'
+// Authoritative Registered 3 Bots (Registered as real users in Neon DB)
+export const REGISTERED_3_BOTS: BotProfile[] = [
+  { id: '00000000-0000-4000-8000-000000000001', name: 'Dawit Haile', phone: '0911445566' },
+  { id: '00000000-0000-4000-8000-000000000002', name: 'Selam Tesfaye', phone: '0922334455' },
+  { id: '00000000-0000-4000-8000-000000000003', name: 'Abebe Bikila', phone: '0933221100' }
 ];
-
-const ETHIOPIAN_LAST_NAMES = [
-  'Bikila', 'Tesfaye', 'Mengistu', 'Worku', 'Tadesse', 'Gebre', 'Alemu', 'Kassa',
-  'Assefa', 'Desta', 'Girma', 'Haile', 'Kebede', 'Melaku', 'Negash', 'Tilahun',
-  'Wolde', 'Yilma', 'Zewde', 'Ayele', 'Berhanu', 'Demissie', 'Fekadu', 'Getahun'
-];
-
-function generate200BotNames(): string[] {
-  const names: string[] = [];
-  for (const fn of ETHIOPIAN_FIRST_NAMES) {
-    for (const ln of ETHIOPIAN_LAST_NAMES) {
-      names.push(`${fn} ${ln}`);
-      if (names.length >= 260) break;
-    }
-    if (names.length >= 260) break;
-  }
-  return names;
-}
-
-const GLOBAL_BOT_POOL = generate200BotNames();
 
 // Fisher-Yates True Random Shuffle
 function shuffleArray<T>(array: T[]): T[] {
@@ -182,12 +157,12 @@ class BingoGameEngine {
   }
 
   /**
-   * Loads the 200 persistent bot accounts from Neon DB
+   * Loads the 3 registered bot accounts from Neon DB
    */
   public async loadBotAccounts() {
     try {
       const res = await query(
-        'SELECT id, full_name as name, phone FROM users WHERE is_bot = true ORDER BY created_at ASC'
+        'SELECT id, full_name as name, phone FROM users WHERE is_bot = true ORDER BY created_at ASC LIMIT 3'
       );
       if (res.rows.length > 0) {
         this.botAccounts = res.rows.map(r => ({
@@ -195,10 +170,13 @@ class BingoGameEngine {
           name: r.name,
           phone: r.phone
         }));
-        console.log(`🤖 [BingoGameEngine] Loaded ${this.botAccounts.length} real bot accounts from Neon DB`);
+        console.log(`🤖 [BingoGameEngine] Loaded ${this.botAccounts.length} registered bot accounts from Neon DB`);
+      } else {
+        this.botAccounts = [...REGISTERED_3_BOTS];
       }
     } catch (err) {
       console.error('⚠️ [BingoGameEngine] Error loading bot accounts from DB:', err);
+      this.botAccounts = [...REGISTERED_3_BOTS];
     }
   }
 
@@ -222,9 +200,9 @@ class BingoGameEngine {
       drawnNumbers: [],
       ballSequence: [],
       currentCall: null,
-      totalPot: 500,
-      winnerPayout: 450,
-      houseFee: 50,
+      totalPot: 0,
+      winnerPayout: 0,
+      houseFee: 0,
       tickets: new Map(),
       nextRoundTickets: new Map(),
       activeSockets: new Set(),
@@ -275,8 +253,8 @@ class BingoGameEngine {
         phase: arena.phase,
         lobbyCountdown: arena.lobbyCountdown,
         playersCount,
-        totalPot: 500,
-        winnerPayout: 450
+        totalPot: arena.totalPot,
+        winnerPayout: arena.winnerPayout
       },
       {
         id: 'room-20',
@@ -285,8 +263,8 @@ class BingoGameEngine {
         phase: arena.phase,
         lobbyCountdown: arena.lobbyCountdown,
         playersCount,
-        totalPot: 1000,
-        winnerPayout: 900
+        totalPot: arena.totalPot,
+        winnerPayout: arena.winnerPayout
       },
       {
         id: 'room-50',
@@ -295,8 +273,8 @@ class BingoGameEngine {
         phase: arena.phase,
         lobbyCountdown: arena.lobbyCountdown,
         playersCount,
-        totalPot: 2500,
-        winnerPayout: 2250
+        totalPot: arena.totalPot,
+        winnerPayout: arena.winnerPayout
       },
       {
         id: 'room-100',
@@ -305,21 +283,17 @@ class BingoGameEngine {
         phase: arena.phase,
         lobbyCountdown: arena.lobbyCountdown,
         playersCount,
-        totalPot: 5000,
-        winnerPayout: 4500
+        totalPot: arena.totalPot,
+        winnerPayout: arena.winnerPayout
       }
     ];
   }
 
+  // Returns live count of real players + active bots (unlimited, no 50 cap)
   public getRoomPlayersCount(room: GameRoomState): number {
-    if (room.phase === 'playing' || room.phase === 'locked') {
-      return 50; // Dynamic 50-Player Room Cap: strictly 50 players in action
-    }
-    // During 45s lobby, density builds up towards 50
-    const progress = Math.max(0, Math.min(1, (45 - room.lobbyCountdown) / 45));
-    const dynamicBots = Math.floor(38 + progress * 11);
-    const realTickets = room.tickets.size;
-    return Math.min(50, Math.max(realTickets, dynamicBots));
+    const realCount = room.tickets.size;
+    const botCount = room.opponentCards ? room.opponentCards.length : 0;
+    return realCount + botCount;
   }
 
   // Admin Controls: System Lock (House Commission)
@@ -508,6 +482,8 @@ class BingoGameEngine {
       } else {
         // Immediately active in current lobby
         room.tickets.set(userId, playerTickets);
+        room.realPlayerCount = room.tickets.size;
+        room.waitingForPlayers = room.tickets.size < 2;
         this.recalculatePot(room);
         this.broadcastRoomState(room);
 
@@ -644,20 +620,13 @@ class BingoGameEngine {
     room.opponentCards = [];
 
     if (realUserCount >= 11) {
-      if (this.botAccounts.length === 0) {
+      if (this.botAccounts.length < 3) {
         await this.loadBotAccounts();
       }
 
-      // Sample bot pool
-      const botPool = this.botAccounts.length > 0
-        ? shuffleArray(this.botAccounts)
-        : shuffleArray(GLOBAL_BOT_POOL.map((name, i) => ({
-            id: `bot_legacy_${i}`,
-            name,
-            phone: `09${10000000 + i}`
-          })));
+      const botPool = this.botAccounts.length >= 3 ? this.botAccounts : REGISTERED_3_BOTS;
 
-      // Add exactly 3 bots — always, regardless of how many real players (11, 50, 100...)
+      // Add exactly the 3 registered bots — always, regardless of how many real players (11, 50, 100...)
       for (let i = 0; i < 3; i++) {
         let botCartelaId = Math.floor(1 + Math.random() * 400);
         while (assignedIds.has(botCartelaId)) {
@@ -665,7 +634,7 @@ class BingoGameEngine {
         }
         assignedIds.add(botCartelaId);
 
-        const botProfile = botPool[i % botPool.length];
+        const botProfile = botPool[i];
         room.opponentCards.push({
           botUserId: botProfile.id,
           cartelaId: botCartelaId,
@@ -948,8 +917,11 @@ class BingoGameEngine {
       realWinnersByUser.set(rw.userId, list);
     }
 
+    const netPayout = room.winnerPayout > 0 ? room.winnerPayout : room.totalPot;
+    const perCardPayout = Math.max(1, Math.floor(netPayout / totalWinningCards));
+
     let primaryUserPayout = 0;
-    let displayWinnerPayout = 450;
+    let displayWinnerPayout = netPayout;
 
     // 1. Credit all winning real players atomically via Neon PostgreSQL
     if (realWinnersByUser.size > 0) {
@@ -958,18 +930,8 @@ class BingoGameEngine {
           for (const [userId, userWinningCards] of realWinnersByUser.entries()) {
             const userTickets = room.tickets.get(userId) || [];
 
-            // Calculate total payout for this user:
-            // Each winning card gets (ticketStake * 45) / totalWinningCards.
-            // If all winning cards belong to this user (e.g. 2 cards), user receives 2 * 225 = 450 ETB (100% Solo Win)!
-            const userTotalWin = userWinningCards.reduce((sum, rw) => {
-              const matchingTicket = userTickets.find(t => t.cartelaId === rw.cartelaId);
-              const ticketStake = matchingTicket && matchingTicket.betAmount > 0
-                ? matchingTicket.betAmount
-                : (userTickets[0]?.betAmount > 0 ? userTickets[0].betAmount : room.stakeAmount);
-
-              const perCardPayout = Math.floor((ticketStake * 45) / totalWinningCards);
-              return sum + perCardPayout;
-            }, 0);
+            // Calculate total payout for this user based on dynamic net prize pool:
+            const userTotalWin = userWinningCards.length * perCardPayout;
 
             primaryUserPayout = userTotalWin;
             displayWinnerPayout = userTotalWin;
@@ -1067,11 +1029,11 @@ class BingoGameEngine {
         for (const bw of botWinners) {
           const matchingOpp = room.opponentCards.find(o => o.cartelaId === bw.cartelaId);
           const botStake = matchingOpp?.stakeAmount || 10;
-          const botPayout = Math.floor((botStake * 45) / totalWinningCards);
+          const botPayout = perCardPayout;
           displayWinnerPayout = botPayout;
 
           if (matchingOpp?.botUserId && !matchingOpp.botUserId.startsWith('bot_legacy_')) {
-            // Deposit real 45x winnings into the bot's Neon DB wallet!
+            // Deposit real winnings into the bot's Neon DB wallet!
             await query(
               'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
               [botPayout, matchingOpp.botUserId]
@@ -1128,7 +1090,7 @@ class BingoGameEngine {
       totalPot: room.totalPot,
       winnerPayout: displayWinnerPayout, // Exact payout won
       stakeAmount: winnerStake,
-      sharePerWinner: isSplit ? Math.floor((winnerStake * 45) / totalWinningCards) : displayWinnerPayout,
+      sharePerWinner: isSplit ? perCardPayout : displayWinnerPayout,
       userShare: primaryUserPayout,
       coWinners: isSplit ? externalCoWinners : [],
       isSplit,
