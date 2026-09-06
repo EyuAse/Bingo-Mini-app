@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { socketService } from '../../services/socketService.ts';
+import { getApiBase } from '../../config/env.ts';
 
 interface RoomMetric {
   id: string;
@@ -49,7 +50,7 @@ export const NetworkHealthDesk: React.FC = () => {
 
   const fetchMetrics = async () => {
     try {
-      const res = await fetch('/api/network-health');
+      const res = await fetch(`${getApiBase()}/network-health`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.metrics) {

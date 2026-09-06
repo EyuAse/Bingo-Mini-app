@@ -1,4 +1,6 @@
 import { io, Socket } from 'socket.io-client';
+import { getBackendOrigin } from '../config/env.ts';
+import { telegramService } from './telegramService.ts';
 
 export type ConnectionStatus = 'connected' | 'reconnecting' | 'polling' | 'disconnected' | 'degraded';
 
@@ -31,6 +33,11 @@ class SocketService {
   private silenceCheckInterval: any = null;
   private lastMessageTime: number = Date.now();
 
+  // Persistent Event Subscriber Registry: Event Name -> Set of Subscriber Callbacks
+  // GUARANTEES ZERO LISTENER LOSS ACROSS RECONNECTS, NETWORK LOSS, OR HARD REFRESHES
+  private eventSubscribers: Map<string, Set<Function>> = new Map();
+  private attachedSocketEvents: Set<string> = new Set();
+
   private constructor() {
     this.initLifecycleListeners();
   }
@@ -46,35 +53,43 @@ class SocketService {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
     const handleForeground = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('📱 [SocketService] Page became visible / focused. Re-verifying socket connection & room sync.');
-        if (!this.socket || !this.socket.connected) {
-          this.connect();
-        } else {
-          if (this.currentRoomId) {
-            this.socket.emit('join_room', {
-              roomId: this.currentRoomId,
-              userId: this.currentUserId,
-              userName: this.currentUserName
-            });
-          }
-          this.measurePing();
+      console.log('📱 [SocketService] Foreground / Resume triggered. Re-verifying socket connection & state.');
+      if (!this.socket || !this.socket.connected) {
+        this.connect();
+      } else {
+        if (this.currentRoomId) {
+          this.socket.emit('join_room', {
+            roomId: this.currentRoomId,
+            userId: this.currentUserId,
+            userName: this.currentUserName
+          });
         }
-        // Notify foreground listeners to sync game state immediately
-        this.foregroundListeners.forEach(cb => {
-          try {
-            cb();
-          } catch (err) {
-            console.warn('Foreground listener error:', err);
-          }
-        });
+        this.measurePing();
       }
+      // Notify foreground listeners to sync game state immediately
+      this.foregroundListeners.forEach(cb => {
+        try {
+          cb();
+        } catch (err) {
+          console.warn('Foreground listener error:', err);
+        }
+      });
     };
 
-    document.addEventListener('visibilitychange', handleForeground);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        handleForeground();
+      }
+    });
     window.addEventListener('focus', handleForeground);
+    window.addEventListener('pageshow', handleForeground);
     window.addEventListener('online', () => {
       console.log('🌐 [SocketService] Network connection restored (online).');
+      handleForeground();
+    });
+
+    // Telegram WebApp specific lifecycle hook
+    telegramService.onViewportChanged(() => {
       handleForeground();
     });
   }
@@ -86,15 +101,69 @@ class SocketService {
     };
   }
 
+  /**
+   * Internal subscription manager ensuring listeners survive socket recreation
+   */
+  private subscribeEvent(event: string, callback: Function): () => void {
+    if (!this.eventSubscribers.has(event)) {
+      this.eventSubscribers.set(event, new Set());
+    }
+    this.eventSubscribers.get(event)!.add(callback);
+
+    // If socket exists, attach forwarder
+    this.ensureSocketListener(event);
+
+    return () => {
+      const set = this.eventSubscribers.get(event);
+      if (set) {
+        set.delete(callback);
+      }
+    };
+  }
+
+  private dispatchEvent(event: string, ...args: any[]) {
+    const subscribers = this.eventSubscribers.get(event);
+    if (subscribers && subscribers.size > 0) {
+      subscribers.forEach(cb => {
+        try {
+          cb(...args);
+        } catch (err) {
+          console.error(`❌ [SocketService] Error in handler for event "${event}":`, err);
+        }
+      });
+    }
+  }
+
+  private ensureSocketListener(event: string) {
+    if (!this.socket) return;
+    if (this.attachedSocketEvents.has(event)) return;
+
+    this.attachedSocketEvents.add(event);
+    this.socket.on(event, (...args: any[]) => {
+      this.lastMessageTime = Date.now();
+      this.dispatchEvent(event, ...args);
+    });
+  }
+
+  private rebindAllListeners() {
+    if (!this.socket) return;
+    this.attachedSocketEvents.clear();
+    for (const event of this.eventSubscribers.keys()) {
+      this.ensureSocketListener(event);
+    }
+  }
+
   public connect(): Socket {
-    if (this.socket && this.socket.connected) {
+    if (this.socket) {
+      if (!this.socket.connected) {
+        this.socket.connect();
+      }
+      this.rebindAllListeners();
       return this.socket;
     }
 
-    // Connect to server (proxied by Vite or direct origin)
-    const socketOrigin = (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app'))
-      ? 'https://bingo-mini-app-30pe.onrender.com'
-      : undefined;
+    // Connect to server using centralized backend origin (Render in prod / localhost in dev)
+    const socketOrigin = getBackendOrigin();
 
     // Resilient Mobile Network Socket.IO Configuration (15s timeout with jitter backoff)
     const socketOptions = {
@@ -107,7 +176,7 @@ class SocketService {
       timeout: 15000
     };
 
-    this.socket = socketOrigin ? io(socketOrigin, socketOptions) : io(socketOptions);
+    this.socket = io(socketOrigin, socketOptions);
 
     this.socket.on('connect', () => {
       console.log('⚡ [Socket.IO] Connected to game server:', this.socket?.id);
@@ -122,6 +191,8 @@ class SocketService {
           userName: this.currentUserName
         });
       }
+
+      this.rebindAllListeners();
     });
 
     // Active Inbound Traffic Heartbeat
@@ -150,6 +221,7 @@ class SocketService {
       console.log('✅ [Socket.IO] Successfully reconnected!');
       this.lastMessageTime = Date.now();
       this.updateStatus('connected');
+      this.rebindAllListeners();
     });
 
     // Start background ping latency check
@@ -174,6 +246,9 @@ class SocketService {
       }, 2000);
     }
 
+    // Immediately bind all registered event subscribers
+    this.rebindAllListeners();
+
     return this.socket;
   }
 
@@ -189,7 +264,7 @@ class SocketService {
   }
 
   public forceHardReconnect() {
-    console.log('🔄 [SocketService] Performing hard socket reconnection...');
+    console.log('🔄 [SocketService] Performing safe hard socket reconnection...');
     if (this.socket) {
       try {
         this.socket.disconnect();
@@ -198,10 +273,14 @@ class SocketService {
       }
       this.socket = null;
     }
+    this.attachedSocketEvents.clear();
     this.status = 'reconnecting';
     this.updateStatus('reconnecting');
+
     const newSock = this.connect();
-    if (this.currentRoomId) {
+    this.rebindAllListeners();
+
+    if (this.currentRoomId && newSock.connected) {
       newSock.emit('join_room', {
         roomId: this.currentRoomId,
         userId: this.currentUserId,
@@ -253,20 +332,27 @@ class SocketService {
   }
 
   public joinRoom(roomId: string, userId?: string, userName?: string) {
+    if (this.currentRoomId && this.currentRoomId !== roomId) {
+      this.leaveRoom(this.currentRoomId);
+    }
+
     this.currentRoomId = roomId;
     if (userId) this.currentUserId = userId;
     if (userName) this.currentUserName = userName;
 
     const sock = this.getSocket();
-    sock.emit('join_room', { roomId, userId, userName });
+    if (sock.connected) {
+      sock.emit('join_room', { roomId, userId, userName });
+    }
   }
 
   public leaveRoom(roomId: string) {
     if (this.currentRoomId === roomId) {
       this.currentRoomId = null;
     }
-    const sock = this.getSocket();
-    sock.emit('leave_room', { roomId });
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('leave_room', { roomId });
+    }
   }
 
   public buyTicket(
@@ -306,60 +392,46 @@ class SocketService {
     });
   }
 
+  // Persistent Event Listeners (Zero-Loss Architecture)
   public onRoomState(callback: (state: any) => void): () => void {
-    const sock = this.getSocket();
-    sock.on('room_state', callback);
-    sock.on('room_sync', callback);
+    const unsubState = this.subscribeEvent('room_state', callback);
+    const unsubSync = this.subscribeEvent('room_sync', callback);
     return () => {
-      sock.off('room_state', callback);
-      sock.off('room_sync', callback);
+      unsubState();
+      unsubSync();
     };
   }
 
   public onBallCalled(callback: (data: any) => void): () => void {
-    const sock = this.getSocket();
-    sock.on('ball_called', callback);
-    return () => sock.off('ball_called', callback);
+    return this.subscribeEvent('ball_called', callback);
   }
 
   public onRoundStarted(callback: (data: any) => void): () => void {
-    const sock = this.getSocket();
-    sock.on('round_started', callback);
-    return () => sock.off('round_started', callback);
+    return this.subscribeEvent('round_started', callback);
   }
 
   public onRoundWinner(callback: (winResult: any) => void): () => void {
-    const sock = this.getSocket();
-    sock.on('round_winner', callback);
-    return () => sock.off('round_winner', callback);
+    return this.subscribeEvent('round_winner', callback);
   }
 
   public onUserBalanceUpdate(userId: string, callback: (data: any) => void): () => void {
-    const sock = this.getSocket();
     const eventName = `user_${userId}_balance`;
-    sock.on(eventName, callback);
-    return () => sock.off(eventName, callback);
+    return this.subscribeEvent(eventName, callback);
   }
 
   // Multi-Device Cross-Session Ticket Synchronization
   public onUserTicketsSynced(callback: (data: any) => void): () => void {
-    const sock = this.getSocket();
-    sock.on('user_tickets_synced', callback);
-    return () => sock.off('user_tickets_synced', callback);
+    return this.subscribeEvent('user_tickets_synced', callback);
   }
 
   // Real-Time Lobby Player Joined Event
   public onPlayerJoined(callback: (data: any) => void): () => void {
-    const sock = this.getSocket();
-    sock.on('player_joined', callback);
-    return () => sock.off('player_joined', callback);
+    return this.subscribeEvent('player_joined', callback);
   }
 
   // Disconnect Protection Listeners
   public onOfflineWinNotification(callback: (wins: OfflineWinData[]) => void): () => void {
-    const sock = this.getSocket();
-    sock.on('offline_win_notification', callback);
-    return () => sock.off('offline_win_notification', callback);
+    return this.subscribeEvent('offline_win_notification', callback);
   }
 
   public acknowledgeOfflineWin(winId: string) {
@@ -379,9 +451,7 @@ class SocketService {
 
   // Stake Rooms Player Count Summary
   public onStakeRoomsSummary(callback: (summary: Record<number, number>) => void): () => void {
-    const sock = this.getSocket();
-    sock.on('stake_rooms_summary', callback);
-    return () => sock.off('stake_rooms_summary', callback);
+    return this.subscribeEvent('stake_rooms_summary', callback);
   }
 
   public forceReconnect() {

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
 import { useWallet } from '../../context/WalletContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useAdmin } from '../../context/AdminContext.tsx';
+import { RoomSwitchModal } from './RoomSwitchModal.tsx';
 
 export const BettingBar: React.FC = () => {
   const {
@@ -21,12 +22,38 @@ export const BettingBar: React.FC = () => {
   const { buy2Get1Bonus } = useAdmin();
   const { t } = useLanguage();
 
+  const [pendingSwitchStake, setPendingSwitchStake] = useState<number | null>(null);
+
   const betChips = [10, 20, 50, 100];
   const totalCost = betAmount * cardQuantity;
   const hasBonus = cardQuantity >= 2 && buy2Get1Bonus;
 
+  const handleChipClick = (chip: number) => {
+    if (chip === betAmount) return;
+    if (hasTicket && roundPhase === 'lobby') {
+      setPendingSwitchStake(chip);
+    } else {
+      setBetAmount(chip);
+    }
+  };
+
   return (
     <div className="fresh-bingo-bottom-betting-bar">
+      {/* Active Room Switch Confirmation Modal */}
+      <RoomSwitchModal
+        isOpen={pendingSwitchStake !== null}
+        currentStake={betAmount}
+        targetStake={pendingSwitchStake || 10}
+        totalRefundAmount={betAmount * cardQuantity}
+        onConfirm={() => {
+          if (pendingSwitchStake !== null) {
+            setBetAmount(pendingSwitchStake);
+          }
+          setPendingSwitchStake(null);
+        }}
+        onCancel={() => setPendingSwitchStake(null)}
+      />
+
       {/* Top Header: Select Stake & Balance */}
       <div className="betting-top-meta-row">
         <div className="betting-section-title">
@@ -40,6 +67,28 @@ export const BettingBar: React.FC = () => {
         </div>
       </div>
 
+      {/* Active Room Indicator Badge */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '4px 10px',
+        backgroundColor: 'rgba(234, 179, 8, 0.1)',
+        border: '1px solid rgba(234, 179, 8, 0.25)',
+        borderRadius: '6px',
+        fontSize: '0.75rem',
+        color: '#854d0e',
+        marginBottom: '6px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <i className="fa-solid fa-door-open" style={{ color: '#ca8a04' }}></i>
+          <span>Active Arena: <strong>{betAmount} ETB Room</strong></span>
+        </div>
+        <span style={{ fontWeight: 700, color: (stakeRoomsSummary[betAmount] || 0) >= 2 ? '#16a34a' : '#ca8a04' }}>
+          {(stakeRoomsSummary[betAmount] || 0) >= 2 ? '⚡ Active Match' : '⏳ Waiting'} ({stakeRoomsSummary[betAmount] || 0} players)
+        </span>
+      </div>
+
       {/* Stake Chips: 10, 20, 50, 100 Birr */}
       <div className="betting-stake-chips-row">
         {betChips.map(chip => {
@@ -49,7 +98,7 @@ export const BettingBar: React.FC = () => {
               key={chip}
               type="button"
               className={`btn-stake-chip ${betAmount === chip ? 'active' : ''}`}
-              onClick={() => setBetAmount(chip)}
+              onClick={() => handleChipClick(chip)}
               disabled={roundPhase === 'playing' && hasTicket}
             >
               <span className="chip-stake-val">{chip} ETB</span>

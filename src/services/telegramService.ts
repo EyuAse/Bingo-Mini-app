@@ -121,6 +121,25 @@ export class TelegramService {
       window.open(url, '_blank');
     }
   }
+
+  /**
+   * Register listener for Telegram WebApp viewport changes (e.g. app expanded or resumed)
+   */
+  public onViewportChanged(callback: (eventData?: any) => void): () => void {
+    const tg = this.webApp;
+    if (!tg || !tg.onEvent) return () => {};
+
+    try {
+      tg.onEvent('viewportChanged', callback);
+      return () => {
+        if (tg.offEvent) {
+          tg.offEvent('viewportChanged', callback);
+        }
+      };
+    } catch {
+      return () => {};
+    }
+  }
 }
 
 export const telegramService = TelegramService.getInstance();

@@ -30,7 +30,6 @@ export function setupGameSockets(io: Server) {
       if (userName) authUserName = userName;
 
       socket.join(roomId);
-      socket.join('lomi-arena');
       gameEngine.handleJoinRoom(socket.id, roomId, userId);
 
       const room = gameEngine.getRoom(roomId);

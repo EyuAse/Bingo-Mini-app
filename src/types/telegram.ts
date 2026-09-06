@@ -78,6 +78,8 @@ export interface TelegramWebApp {
   showAlert: (message: string, callback?: () => void) => void;
   showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void;
   requestContact?: (callback: (shared: boolean, event?: { response?: string; status?: string }) => void) => void;
+  onEvent?: (eventType: string, eventHandler: (eventData?: any) => void) => void;
+  offEvent?: (eventType: string, eventHandler: (eventData?: any) => void) => void;
 }
 
 declare global {

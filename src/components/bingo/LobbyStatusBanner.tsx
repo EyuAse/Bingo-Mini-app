@@ -78,17 +78,38 @@ export const LobbyStatusBanner: React.FC = () => {
                 </span>
               </div>
               <p className="waiting-subtext">
-                Round begins as soon as 2 real players buy tickets in {betAmount} ETB room • Countdown frozen at 45s
+                Waiting for 2 real players to enter the {betAmount} ETB arena • Countdown will start immediately
               </p>
               {suggestedStake && (
-                <button
-                  type="button"
-                  className="btn-switch-active-room-helper"
-                  onClick={() => setBetAmount(suggestedStake.stake)}
-                >
-                  <i className="fa-solid fa-bolt"></i>
-                  <span>Switch to {suggestedStake.stake} ETB Room ({suggestedStake.count} Players Ready!)</span>
-                </button>
+                <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <i className="fa-solid fa-bolt" style={{ color: '#eab308' }}></i>
+                    <span>Live Match Available in Another Room!</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-switch-active-room-helper"
+                    onClick={() => setBetAmount(suggestedStake.stake)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '10px 14px',
+                      backgroundColor: '#16a34a',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '0.8125rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(22, 163, 74, 0.3)'
+                    }}
+                  >
+                    <i className="fa-solid fa-play"></i>
+                    <span>Switch to {suggestedStake.stake} ETB Room ({suggestedStake.count} Players Ready!)</span>
+                  </button>
+                </div>
               )}
             </div>
           </div>

@@ -146,17 +146,49 @@ export const WinModal: React.FC = () => {
           )}
         </p>
 
-        {/* Prize Box */}
+        {/* Prize Box with Financial Transparency Breakdown */}
         <div className="victory-prize-display-card">
           <span className="victory-prize-label">
-            {isOpponentWin ? 'PRIZE WON BY WINNER' : isTrueMultiplayerSplit ? 'YOUR SPLIT POT SHARE' : 'YOUR TOTAL WINNINGS'}
+            {isOpponentWin ? 'PRIZE WON BY WINNER' : isTrueMultiplayerSplit ? 'YOUR SPLIT POT SHARE' : 'YOUR NET WINNINGS'}
           </span>
           <strong className={`victory-prize-amount ${isOpponentWin ? 'gold' : 'green'}`}>
             {isOpponentWin
-              ? `${winnerPayout.toLocaleString()}.00 ETB`
-              : `+${userShare.toLocaleString()}.00 ETB`}
+              ? `${winnerPayout.toLocaleString()} ETB`
+              : `+${userShare.toLocaleString()} ETB`}
           </strong>
-          <span className="victory-credited-tag">
+
+          {/* Pot & Commission Transparency Breakdown */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            marginTop: '8px',
+            padding: '8px 12px',
+            backgroundColor: 'rgba(0, 0, 0, 0.04)',
+            borderRadius: '8px',
+            fontSize: '0.75rem',
+            color: '#475569',
+            width: '100%'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Total Room Pot:</span>
+              <strong style={{ color: '#0f172a' }}>{(winResult.totalPot || winnerPayout).toLocaleString()} ETB</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>House Commission:</span>
+              <span style={{ color: ((winResult.totalPot || winnerPayout) - winnerPayout) > 0 ? '#b91c1c' : '#16a34a', fontWeight: 600 }}>
+                {((winResult.totalPot || winnerPayout) - winnerPayout) > 0
+                  ? `20% (-${((winResult.totalPot || winnerPayout) - winnerPayout).toLocaleString()} ETB)`
+                  : '0% (0.00 ETB • ≤5 Players)'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #cbd5e1', paddingTop: '4px' }}>
+              <span>Net Winner Payout:</span>
+              <strong style={{ color: '#16a34a' }}>{winnerPayout.toLocaleString()} ETB</strong>
+            </div>
+          </div>
+
+          <span className="victory-credited-tag" style={{ marginTop: '8px' }}>
             {isOpponentWin
               ? `Winner played in the ${stakeAmt} ETB Room`
               : '✓ Instantly credited to your wallet'}
@@ -171,7 +203,11 @@ export const WinModal: React.FC = () => {
             onClick={closeWinModalAndRestart}
           >
             <i className="fa-solid fa-play"></i>
-            <span>{isOpponentWin ? 'PLAY NEXT ROUND' : 'CLAIM & PLAY NEXT ROUND'}</span>
+            <span>
+              {isOpponentWin
+                ? 'PLAY NEXT ROUND'
+                : `CLAIM ${userShare.toLocaleString()} ETB & PLAY NEXT ROUND`}
+            </span>
           </button>
 
           {!isOpponentWin && (

@@ -3,7 +3,7 @@ import { useBingo } from '../../context/BingoContext.tsx';
 import { socketService } from '../../services/socketService.ts';
 
 export const NetworkStatusBanner: React.FC = () => {
-  const { networkStatus, offlineWinsNotice, dismissOfflineWin, triggerManualSync } = useBingo();
+  const { networkStatus, offlineWinsNotice, dismissOfflineWin, triggerManualSync, isSyncing } = useBingo();
 
   const currentOfflineWin = offlineWinsNotice && offlineWinsNotice.length > 0 ? offlineWinsNotice[0] : null;
 
@@ -71,9 +71,10 @@ export const NetworkStatusBanner: React.FC = () => {
             type="button"
             className="status-retry-action-btn"
             onClick={() => triggerManualSync()}
+            disabled={isSyncing}
             title="Click to reconnect immediately"
           >
-            <i className="fa-solid fa-arrows-rotate"></i> Re-sync Now
+            <i className={`fa-solid fa-arrows-rotate ${isSyncing ? 'fa-spin' : ''}`}></i> {isSyncing ? 'Syncing...' : 'Re-sync Now'}
           </button>
         </div>
       )}
@@ -90,9 +91,10 @@ export const NetworkStatusBanner: React.FC = () => {
             type="button"
             className="status-retry-action-btn cyan"
             onClick={() => triggerManualSync()}
+            disabled={isSyncing}
             title="Click to force refresh game state"
           >
-            <i className="fa-solid fa-arrows-rotate"></i> Refresh
+            <i className={`fa-solid fa-arrows-rotate ${isSyncing ? 'fa-spin' : ''}`}></i> {isSyncing ? 'Syncing...' : 'Refresh'}
           </button>
         </div>
       )}

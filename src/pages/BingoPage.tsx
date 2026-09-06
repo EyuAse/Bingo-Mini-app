@@ -16,7 +16,7 @@ import { LobbyStatusBanner } from '../components/bingo/LobbyStatusBanner.tsx';
 import { OneToGoAlert } from '../components/bingo/OneToGoAlert.tsx';
 
 export const BingoPage: React.FC = () => {
-  const { hasTicket, showWinModal, isMuted, toggleMute, triggerManualSync } = useBingo();
+  const { hasTicket, showWinModal, isMuted, toggleMute, triggerManualSync, isSyncing } = useBingo();
 
   return (
     <div className="page active fresh-bingo-page" id="page-bingo">
@@ -47,9 +47,10 @@ export const BingoPage: React.FC = () => {
               type="button"
               className="engine-control-mini-btn"
               onClick={triggerManualSync}
-              title="1-Tap State Sync"
+              disabled={isSyncing}
+              title={isSyncing ? 'Synchronizing game state...' : '1-Tap State Sync'}
             >
-              <i className="fa-solid fa-arrows-rotate"></i>
+              <i className={`fa-solid fa-arrows-rotate ${isSyncing ? 'fa-spin' : ''}`}></i>
             </button>
           </div>
         </div>
