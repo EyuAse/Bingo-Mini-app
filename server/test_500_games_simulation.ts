@@ -42,7 +42,7 @@ async function ensureSyntheticAccounts() {
     if (existing.rows.length === 0) {
       await query(
         `INSERT INTO users (id, phone, full_name, role, status, created_at)
-         VALUES ($1, $2, $3, 'player', 'active', NOW())`,
+         VALUES ($1, $2, $3, 'test', 'active', NOW())`,
         [p.id, p.phone, p.name]
       );
     } else {
@@ -424,10 +424,16 @@ async function run500GamesSimulation() {
   Object.entries(roomStats).forEach(([room, st]) => {
     console.log(`  ${room.padEnd(10, ' ')}: ${st.games} Games | Pot: ${st.potSum.toLocaleString()} ETB | House Fee: ${st.feeSum.toLocaleString()} ETB | Payout: ${st.winSum.toLocaleString()} ETB`);
   });
-  console.log('-----------------------------------------------------------------------------');
   console.log(`• Invariant Failures:           ${invariantFailures}`);
   console.log(`• Final Verdict:                ${invariantFailures === 0 ? '🏆 100% PRODUCTION READY' : '❌ AUDIT FAILED'}`);
   console.log('=============================================================================\n');
+
+  // 13. Teardown: Clean up temporary synthetic test records from database
+  console.log('🧹 Cleaning up temporary synthetic test accounts from database...');
+  await query(`DELETE FROM wallet_transactions WHERE user_id IN (${SYNTHETIC_PLAYERS.map(p => `'${p.id}'`).join(',')})`);
+  await query(`DELETE FROM wallets WHERE user_id IN (${SYNTHETIC_PLAYERS.map(p => `'${p.id}'`).join(',')})`);
+  await query(`DELETE FROM users WHERE id IN (${SYNTHETIC_PLAYERS.map(p => `'${p.id}'`).join(',')})`);
+  console.log('   ✓ Test accounts purged successfully.\n');
 
   process.exit(invariantFailures === 0 ? 0 : 1);
 }

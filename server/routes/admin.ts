@@ -27,7 +27,9 @@ router.get('/users', requireAdmin, async (_req, res) => {
         COALESCE((SELECT SUM(amount) FROM withdrawal_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalWithdrawn"
       FROM users u
       LEFT JOIN wallets w ON u.id = w.user_id
-      WHERE u.role != 'admin' AND (u.is_bot IS NULL OR u.is_bot = false)
+      WHERE u.role = 'player' 
+        AND (u.is_bot IS NULL OR u.is_bot = false)
+        AND u.full_name NOT LIKE 'Synthetic%'
       ORDER BY u.created_at DESC
       LIMIT 200
     `);
@@ -378,7 +380,9 @@ router.post('/withdrawals/:id/reject', requireAdmin, async (req: AuthenticatedRe
  */
 router.get('/stats', requireAdmin, async (_req, res) => {
   try {
-    const userCountRes = await query("SELECT COUNT(*) as count FROM users WHERE role = 'player'");
+    const userCountRes = await query(
+      "SELECT COUNT(*) as count FROM users WHERE role = 'player' AND (is_bot IS NULL OR is_bot = false) AND full_name NOT LIKE 'Synthetic%'"
+    );
     const depositSumRes = await query("SELECT COALESCE(SUM(amount), 0) as total FROM deposit_requests WHERE status = 'approved'");
     const withdrawSumRes = await query("SELECT COALESCE(SUM(amount), 0) as total FROM withdrawal_requests WHERE status = 'approved'");
     const gamesCountRes = await query("SELECT COUNT(*) as count FROM game_rounds WHERE phase = 'ended'");
