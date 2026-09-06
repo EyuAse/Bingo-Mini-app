@@ -25,7 +25,7 @@ const WIN_PATTERNS = [
 ];
 
 const getCardStatus = (cells: BingoCell[]) => {
-  if (!cells || !cells.length) return null;
+  if (!cells || !cells.length) return { label: '2 TO GO', hot: false };
   let max = 0;
   for (const p of WIN_PATTERNS) {
     const count = p.filter((idx: number) => cells[idx]?.marked).length;
@@ -34,7 +34,8 @@ const getCardStatus = (cells: BingoCell[]) => {
   if (max === 5) return { label: 'BINGO! 🎉', hot: true };
   if (max === 4) return { label: '1 TO GO! 🔥', hot: true };
   if (max === 3) return { label: '2 TO GO', hot: false };
-  return null;
+  if (max === 2) return { label: '3 TO GO', hot: false };
+  return { label: '4 TO GO', hot: false };
 };
 
 // Render Single 5x5 Card Grid Matrix
@@ -128,49 +129,26 @@ export const BingoGrid: React.FC = () => {
 
   return (
     <div className="fresh-cartela-play-card">
-      {/* Top Header: Tabs for Multiple Cartelas (Card 1, Card 2, Card 3 Bonus) */}
+      {/* Top Header: Tabs for Multiple Cartelas (Card 1, Card 2, Card 3 Bonus) + TO GO badge */}
       <div className="cartela-card-header-bar">
-        {totalPlayableCards > 1 ? (
-          <div className="cartela-switch-tabs">
-            {currentCards.map((c, idx) => (
-              <button
-                key={idx}
-                type="button"
-                className={`btn-cartela-tab ${activeCartelaIndex === idx ? 'active' : ''} ${c.isBonus ? 'bonus-tab' : ''}`}
-                onClick={() => setActiveCartelaIndex(idx)}
-              >
-                <span>{c.label} #{c.id}</span>
-                {c.isBonus && <span className="tab-bonus-star">🎁</span>}
-                {c.status?.hot && <span className="tab-hot-flame">🔥</span>}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="cartela-single-title">
-            <i className="fa-solid fa-ticket gold"></i>
-            <span>CARTELA #{selectedCartelaIds[0]}</span>
-          </div>
-        )}
+        <div className="cartela-switch-tabs">
+          {currentCards.map((c, idx) => (
+            <button
+              key={idx}
+              type="button"
+              className={`btn-cartela-tab ${activeCartelaIndex === idx ? 'active' : ''} ${c.isBonus ? 'bonus-tab' : ''}`}
+              onClick={() => setActiveCartelaIndex(idx)}
+            >
+              <span>Card {idx + 1} #{c.id}</span>
+              {c.isBonus && <span className="tab-bonus-star">🎁</span>}
+            </button>
+          ))}
+        </div>
 
-        {/* Change Cartelas button in lobby */}
-        {isLobby ? (
-          <button
-            type="button"
-            className="btn-change-cartela-mini"
-            onClick={openCartelaPicker}
-            title="Choose specific Cartela numbers from 400 pool"
-          >
-            <i className="fa-solid fa-arrow-rotate-right"></i>
-            <span>Pick #</span>
-          </button>
-        ) : (
-          /* Live Radar Status Badge */
-          activeCard.status && (
-            <span className={`cartela-radar-badge ${activeCard.status.hot ? 'radar-hot' : ''}`}>
-              {activeCard.status.label}
-            </span>
-          )
-        )}
+        {/* TO GO Pill Badge (Matches Reference Mockup) */}
+        <div className={`cartela-togo-badge ${activeCard.status?.hot ? 'hot' : ''}`}>
+          <span>{activeCard.status?.label || '2 TO GO'}</span>
+        </div>
       </div>
 
       {/* If in lobby phase, show prominent round start countdown banner */}

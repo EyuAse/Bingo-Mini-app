@@ -128,6 +128,9 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     winResult: room.winResult,
     userTickets,
     isPreBuy,
+    waitingForPlayers: room.waitingForPlayers || false,
+    realPlayerCount: room.tickets.size,
+    stakeRoomsSummary: gameEngine.getStakeRoomsSummary(),
     serverTime: Date.now()
   });
 });

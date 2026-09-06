@@ -180,18 +180,13 @@ class BingoGameEngine {
     }
   }
 
-  /**
-   * Initializes the Single Authoritative Arena Room (Model A).
-   * All stake requests (10, 20, 50, 100 ETB) play in the exact same room
-   * so all devices are 100% in sync with identical balls and timers.
-   */
-  private initializeUnifiedArena() {
-    const arenaState: GameRoomState = {
-      id: ARENA_ROOM_ID,
-      name: 'Lomi Unified Arena',
-      stakeAmount: 10.0,
-      commissionPercent: 10.0,
-      commissionEnabled: true,
+  private createRoomState(id: string, name: string, stakeAmount: number): GameRoomState {
+    return {
+      id,
+      name,
+      stakeAmount,
+      commissionPercent: 0,
+      commissionEnabled: false,
       phase: 'lobby',
       lobbyCountdown: 45,
       winnerCountdown: 8,
@@ -213,78 +208,104 @@ class BingoGameEngine {
       waitingForPlayers: true,
       realPlayerCount: 0
     };
-
-    // Store under primary arena ID
-    this.rooms.set(ARENA_ROOM_ID, arenaState);
-
-    // Alias all legacy room IDs to the exact same room instance
-    for (const alias of ROOM_ALIASES) {
-      this.rooms.set(alias, arenaState);
-    }
-
-    this.startLobbyTimer(ARENA_ROOM_ID);
   }
 
-  public getRoom(_roomId?: string): GameRoomState {
-    // Every query returns the authoritative unified arena
-    return this.rooms.get(ARENA_ROOM_ID)!;
+  /**
+   * Initializes Dedicated Stake Rooms (10, 20, 50, 100 ETB) with synchronized clock cycles.
+   * Every room has its uniform stake tier for 100% fair mathematical odds and payouts.
+   */
+  private initializeUnifiedArena() {
+    const stakeDefs = [
+      { id: 'room-10', name: '10 Birr Room', stake: 10.0 },
+      { id: 'room-20', name: '20 Birr Room', stake: 20.0 },
+      { id: 'room-50', name: '50 Birr Room', stake: 50.0 },
+      { id: 'room-100', name: '100 Birr VIP Room', stake: 100.0 }
+    ];
+
+    for (const def of stakeDefs) {
+      const state = this.createRoomState(def.id, def.name, def.stake);
+      this.rooms.set(def.id, state);
+      this.startLobbyTimer(def.id);
+    }
+
+    // Default aliases map to room-10
+    const primary = this.rooms.get('room-10')!;
+    this.rooms.set(ARENA_ROOM_ID, primary);
+    this.rooms.set('default', primary);
+  }
+
+  public getRoom(roomId?: string): GameRoomState {
+    if (roomId && this.rooms.has(roomId)) {
+      return this.rooms.get(roomId)!;
+    }
+    return this.rooms.get('room-10') || this.rooms.get(ARENA_ROOM_ID)!;
+  }
+
+  public getStakeRoomsSummary(): Record<number, number> {
+    return {
+      10: this.rooms.get('room-10')?.tickets.size || 0,
+      20: this.rooms.get('room-20')?.tickets.size || 0,
+      50: this.rooms.get('room-50')?.tickets.size || 0,
+      100: this.rooms.get('room-100')?.tickets.size || 0
+    };
   }
 
   public getAllRooms() {
-    const arena = this.rooms.get(ARENA_ROOM_ID)!;
-    const playersCount = this.getRoomPlayersCount(arena);
+    const r10 = this.getRoom('room-10');
+    const r20 = this.getRoom('room-20');
+    const r50 = this.getRoom('room-50');
+    const r100 = this.getRoom('room-100');
 
-    // Provide unified status across all aliases so any legacy client stays in sync
     return [
       {
         id: 'lomi-arena',
-        name: 'Lomi Unified Arena',
+        name: '10 Birr Arena (Default)',
         stakeAmount: 10.0,
-        phase: arena.phase,
-        lobbyCountdown: arena.lobbyCountdown,
-        playersCount,
-        totalPot: arena.totalPot,
-        winnerPayout: arena.winnerPayout
+        phase: r10.phase,
+        lobbyCountdown: r10.lobbyCountdown,
+        playersCount: this.getRoomPlayersCount(r10),
+        totalPot: r10.totalPot,
+        winnerPayout: r10.winnerPayout
       },
       {
         id: 'room-10',
         name: '10 Birr Room',
         stakeAmount: 10.0,
-        phase: arena.phase,
-        lobbyCountdown: arena.lobbyCountdown,
-        playersCount,
-        totalPot: arena.totalPot,
-        winnerPayout: arena.winnerPayout
+        phase: r10.phase,
+        lobbyCountdown: r10.lobbyCountdown,
+        playersCount: this.getRoomPlayersCount(r10),
+        totalPot: r10.totalPot,
+        winnerPayout: r10.winnerPayout
       },
       {
         id: 'room-20',
         name: '20 Birr Room',
         stakeAmount: 20.0,
-        phase: arena.phase,
-        lobbyCountdown: arena.lobbyCountdown,
-        playersCount,
-        totalPot: arena.totalPot,
-        winnerPayout: arena.winnerPayout
+        phase: r20.phase,
+        lobbyCountdown: r20.lobbyCountdown,
+        playersCount: this.getRoomPlayersCount(r20),
+        totalPot: r20.totalPot,
+        winnerPayout: r20.winnerPayout
       },
       {
         id: 'room-50',
         name: '50 Birr Room',
         stakeAmount: 50.0,
-        phase: arena.phase,
-        lobbyCountdown: arena.lobbyCountdown,
-        playersCount,
-        totalPot: arena.totalPot,
-        winnerPayout: arena.winnerPayout
+        phase: r50.phase,
+        lobbyCountdown: r50.lobbyCountdown,
+        playersCount: this.getRoomPlayersCount(r50),
+        totalPot: r50.totalPot,
+        winnerPayout: r50.winnerPayout
       },
       {
         id: 'room-100',
         name: '100 Birr VIP Room',
         stakeAmount: 100.0,
-        phase: arena.phase,
-        lobbyCountdown: arena.lobbyCountdown,
-        playersCount,
-        totalPot: arena.totalPot,
-        winnerPayout: arena.winnerPayout
+        phase: r100.phase,
+        lobbyCountdown: r100.lobbyCountdown,
+        playersCount: this.getRoomPlayersCount(r100),
+        totalPot: r100.totalPot,
+        winnerPayout: r100.winnerPayout
       }
     ];
   }
@@ -314,28 +335,86 @@ class BingoGameEngine {
     this.realPlayerWinRate = realRate;
   }
 
-  public handleJoinRoom(socketId: string, _roomId: string, _userId?: string) {
-    const arena = this.rooms.get(ARENA_ROOM_ID)!;
-    arena.activeSockets.add(socketId);
-    this.broadcastRoomState(arena);
+  public handleJoinRoom(socketId: string, roomId: string, _userId?: string) {
+    const room = this.getRoom(roomId);
+    room.activeSockets.add(socketId);
+    this.broadcastRoomState(room);
   }
 
-  public handleLeaveRoom(socketId: string, _roomId: string) {
-    const arena = this.rooms.get(ARENA_ROOM_ID)!;
-    arena.activeSockets.delete(socketId);
-    this.broadcastRoomState(arena);
+  public handleLeaveRoom(socketId: string, roomId: string) {
+    const room = this.getRoom(roomId);
+    room.activeSockets.delete(socketId);
+    this.broadcastRoomState(room);
+  }
+
+  /**
+   * Safe Lobby Ticket Cancellation / Room Switch Refund
+   * If player bought a ticket in a room lobby and switches to another stake, refund funds immediately.
+   */
+  public async handleCancelTicketLobby(
+    userId: string,
+    roomId: string
+  ): Promise<{ success: boolean; refunded?: number; error?: string }> {
+    const room = this.getRoom(roomId);
+    if (!room || room.phase !== 'lobby') {
+      return { success: false, error: 'Cannot cancel tickets outside lobby phase' };
+    }
+
+    const userTickets = room.tickets.get(userId);
+    if (!userTickets || userTickets.length === 0) {
+      return { success: false, error: 'No active tickets in this room lobby' };
+    }
+
+    let refundAmount = 0;
+    userTickets.forEach(t => { refundAmount += t.betAmount; });
+
+    if (refundAmount > 0) {
+      try {
+        await withTransaction(async (client) => {
+          await client.query(
+            'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
+            [refundAmount, userId]
+          );
+          const refCode = `REF-${Date.now().toString().slice(-6)}`;
+          await client.query(
+            `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, description)
+             VALUES ($1, 'refund', $2, (SELECT balance FROM wallets WHERE user_id = $1), $3, 'completed', $4)`,
+            [userId, refundAmount, refCode, `Refunded ${userTickets.length} cartelas from ${room.name} lobby`]
+          );
+        });
+
+        room.tickets.delete(userId);
+        room.realPlayerCount = room.tickets.size;
+        room.waitingForPlayers = room.tickets.size < 2;
+        this.recalculatePot(room);
+        this.broadcastRoomState(room);
+
+        io.emit(`user_${userId}_balance`, {
+          type: 'ticket_refunded',
+          refundAmount
+        });
+        io.emit('user_balance_updated', { userId });
+        io.emit('stake_rooms_summary', this.getStakeRoomsSummary());
+
+        console.log(`💸 [Lobby Refund] Refunded ${refundAmount} ETB to user ${userId} from ${room.name}`);
+        return { success: true, refunded: refundAmount };
+      } catch (err: any) {
+        console.error('❌ [GameEngine] Error in handleCancelTicketLobby:', err);
+        return { success: false, error: err.message || 'Refund failed' };
+      }
+    }
+    return { success: false };
   }
 
   /**
    * 100% System-Assigned Ticket Purchase with Anytime Pre-Betting
    * Players can choose 1 or 2 cartelas. If 2 cartelas, 3rd is FREE!
-   * If purchased while a round is actively playing, ticket is queued in `nextRoundTickets`
-   * and automatically activated for Round #N+1 when the lobby begins.
+   * Routes to the dedicated stake room matching customStake or requestedRoomId.
    */
   public async handleBuyTicket(
     userId: string,
     userName: string,
-    _roomId: string,
+    requestedRoomId: string,
     requestedCartelaIds: number[] | number,
     socketId: string,
     customStake?: number
@@ -346,13 +425,15 @@ class BingoGameEngine {
     remainingBalance?: number;
     preBoughtForNextRound?: boolean;
   }> {
-    const room = this.rooms.get(ARENA_ROOM_ID)!;
+    // Resolve target room based on customStake or requestedRoomId
+    let targetRoomId = requestedRoomId;
+    if (customStake === 20) targetRoomId = 'room-20';
+    else if (customStake === 50) targetRoomId = 'room-50';
+    else if (customStake === 100) targetRoomId = 'room-100';
+    else if (customStake === 10) targetRoomId = 'room-10';
 
-    // Model A: Support individual ticket stake levels (10, 20, 50, 100 ETB)
-    const validStakes = [10, 20, 50, 100];
-    const stakePerCard = customStake && validStakes.includes(Number(customStake))
-      ? Number(customStake)
-      : room.stakeAmount;
+    const room = this.getRoom(targetRoomId);
+    const stakePerCard = room.stakeAmount;
 
     // Determine quantity requested (1 or 2 cards)
     let quantity = 1;
@@ -440,7 +521,7 @@ class BingoGameEngine {
         await client.query(
           `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, description)
            VALUES ($1, 'bet', $2, $3, $4, 'completed', $5)`,
-          [userId, totalCost, newReal + newBonus, refCode, `Purchased ${drawnIds.length} cartelas in Lomi Bingo Arena`]
+          [userId, totalCost, newReal + newBonus, refCode, `Purchased ${drawnIds.length} cartelas in ${room.name}`]
         );
 
         return { newReal, newBonus };
@@ -487,16 +568,26 @@ class BingoGameEngine {
         this.recalculatePot(room);
         this.broadcastRoomState(room);
 
-        // Notify all clients a new real player joined (for lobby join feed UI)
-        for (const rid of ROOM_ALIASES) {
-          io.to(rid).emit('player_joined', {
+        // Notify room clients a new real player joined (for lobby join feed UI)
+        io.to(room.id).emit('player_joined', {
+          userName,
+          realPlayerCount: room.tickets.size,
+          waitingForPlayers: room.tickets.size < 2,
+          countdownStarted: room.tickets.size >= 2,
+          roomId: room.id
+        });
+        if (room.id === 'room-10') {
+          io.to(ARENA_ROOM_ID).emit('player_joined', {
             userName,
             realPlayerCount: room.tickets.size,
             waitingForPlayers: room.tickets.size < 2,
-            countdownStarted: room.tickets.size >= 2
+            countdownStarted: room.tickets.size >= 2,
+            roomId: ARENA_ROOM_ID
           });
         }
       }
+
+      io.emit('stake_rooms_summary', this.getStakeRoomsSummary());
 
       return {
         success: true,
@@ -535,8 +626,8 @@ class BingoGameEngine {
   /**
    * 45-Second Gap Between Games (Lobby Timer)
    */
-  private startLobbyTimer(_roomId?: string) {
-    const room = this.rooms.get(ARENA_ROOM_ID)!;
+  private startLobbyTimer(roomId: string = 'room-10') {
+    const room = this.rooms.get(roomId) || this.rooms.get('room-10') || this.rooms.get(ARENA_ROOM_ID)!;
 
     this.isProcessingVictory = false; // Reset victory lock for new round
     room.phase = 'lobby';
@@ -549,11 +640,17 @@ class BingoGameEngine {
     if (room.nextRoundTickets && room.nextRoundTickets.size > 0) {
       room.tickets = new Map(room.nextRoundTickets);
       room.nextRoundTickets.clear();
-      console.log(`🎟️ [Lobby] Activated pre-bought tickets for ${room.tickets.size} users for Round #${room.roundNumber}`);
-      for (const rid of ROOM_ALIASES) {
-        io.to(rid).emit('prebought_tickets_activated', {
+      console.log(`🎟️ [Lobby ${room.id}] Activated pre-bought tickets for ${room.tickets.size} users for Round #${room.roundNumber}`);
+      io.to(room.id).emit('prebought_tickets_activated', {
+        roundNumber: room.roundNumber,
+        activeTicketsCount: room.tickets.size,
+        roomId: room.id
+      });
+      if (room.id === 'room-10') {
+        io.to(ARENA_ROOM_ID).emit('prebought_tickets_activated', {
           roundNumber: room.roundNumber,
-          activeTicketsCount: room.tickets.size
+          activeTicketsCount: room.tickets.size,
+          roomId: ARENA_ROOM_ID
         });
       }
     } else {
@@ -562,8 +659,9 @@ class BingoGameEngine {
 
     this.recalculatePot(room);
 
-    if (this.intervals.has(ARENA_ROOM_ID)) {
-      clearInterval(this.intervals.get(ARENA_ROOM_ID)!);
+    const intervalKey = `lobby_${room.id}`;
+    if (this.intervals.has(intervalKey)) {
+      clearInterval(this.intervals.get(intervalKey)!);
     }
 
     const interval = setInterval(async () => {
@@ -590,113 +688,123 @@ class BingoGameEngine {
 
       if (room.lobbyCountdown <= 0) {
         clearInterval(interval);
-        await this.startRound(ARENA_ROOM_ID);
+        await this.startRound(room.id);
       }
     }, 1000);
 
-    this.intervals.set(ARENA_ROOM_ID, interval);
+    this.intervals.set(intervalKey, interval);
   }
 
   /**
-   * Start Dynamic 50-Player Live Round with Bot Backfilling (B = max(0, 50 - R))
+   * Start Live Round for a specific stake room
    */
-  private async startRound(_roomId?: string) {
-    const room = this.rooms.get(ARENA_ROOM_ID)!;
+  private async startRound(roomId: string = 'room-10') {
+    const room = this.rooms.get(roomId) || this.rooms.get('room-10') || this.rooms.get(ARENA_ROOM_ID)!;
 
-    room.phase = 'locked';
-    this.recalculatePot(room);
-    this.broadcastRoomState(room);
-
-    // 1. Count Real Player Tickets
-    let realTicketsCount = 0;
-    const assignedIds = new Set<number>();
-    room.tickets.forEach(list => {
-      realTicketsCount += list.length;
-      list.forEach(t => assignedIds.add(t.cartelaId));
-    });
-
-    // 2. New Rule: Inject exactly 3 bots ONLY when 11+ real players; otherwise no bots
-    const realUserCount = room.tickets.size; // distinct real users
-    room.opponentCards = [];
-
-    if (realUserCount >= 11) {
-      if (this.botAccounts.length < 3) {
-        await this.loadBotAccounts();
-      }
-
-      const botPool = this.botAccounts.length >= 3 ? this.botAccounts : REGISTERED_3_BOTS;
-
-      // Add exactly the 3 registered bots — always, regardless of how many real players (11, 50, 100...)
-      for (let i = 0; i < 3; i++) {
-        let botCartelaId = Math.floor(1 + Math.random() * 400);
-        while (assignedIds.has(botCartelaId)) {
-          botCartelaId = Math.floor(1 + Math.random() * 400);
-        }
-        assignedIds.add(botCartelaId);
-
-        const botProfile = botPool[i];
-        room.opponentCards.push({
-          botUserId: botProfile.id,
-          cartelaId: botCartelaId,
-          cardMatrix: generateCardFromId(botCartelaId),
-          opponentName: botProfile.name,
-          stakeAmount: room.stakeAmount, // bots bet same as room stake
-          isHouseBot: i === 0
-        });
-      }
-    }
-
-    // 3. Win routing: bots win 20% only when 11+ real players; real player wins otherwise
-    if (room.opponentCards.length > 0) {
-      // 11+ players: 20% collective bot win probability
-      room.targetWinnerType = Math.random() < 0.20 ? 'bot' : 'real';
-    } else {
-      // 2–10 players: real player always wins (no bots in the game)
-      room.targetWinnerType = 'real';
-    }
-
-    // 4. Save Round to Neon PostgreSQL
     try {
-      const roundRes = await query(
-        `INSERT INTO game_rounds (room_id, round_number, phase, total_pot, platform_fee, winner_payout, started_at)
-         VALUES ($1, $2, 'playing', $3, $4, $5, NOW())
-         RETURNING id`,
-        [room.id, room.roundNumber, room.totalPot, room.houseFee, room.winnerPayout]
-      );
-      room.currentRoundId = roundRes.rows[0]?.id;
+      room.phase = 'locked';
+      this.recalculatePot(room);
+      this.broadcastRoomState(room);
 
-      // Save purchased tickets to Neon DB
-      for (const [userId, tList] of room.tickets.entries()) {
-        for (const t of tList) {
-          await query(
-            `INSERT INTO game_tickets (round_id, user_id, cartela_id, card_matrix, bet_amount, status)
-             VALUES ($1, $2, $3, $4, $5, 'active')`,
-            [room.currentRoundId, userId, t.cartelaId, JSON.stringify(t.cardMatrix), t.betAmount]
-          );
+      // 1. Count Real Player Tickets
+      let realTicketsCount = 0;
+      const assignedIds = new Set<number>();
+      room.tickets.forEach(list => {
+        realTicketsCount += list.length;
+        list.forEach(t => assignedIds.add(t.cartelaId));
+      });
+
+      // 2. New Rule: Inject exactly 3 bots ONLY when 11+ real players; otherwise no bots
+      const realUserCount = room.tickets.size; // distinct real users
+      room.opponentCards = [];
+
+      if (realUserCount >= 11) {
+        if (this.botAccounts.length < 3) {
+          await this.loadBotAccounts();
+        }
+
+        const botPool = this.botAccounts.length >= 3 ? this.botAccounts : REGISTERED_3_BOTS;
+
+        // Add exactly the 3 registered bots — always, regardless of how many real players (11, 50, 100...)
+        for (let i = 0; i < 3; i++) {
+          let botCartelaId = Math.floor(1 + Math.random() * 400);
+          while (assignedIds.has(botCartelaId)) {
+            botCartelaId = Math.floor(1 + Math.random() * 400);
+          }
+          assignedIds.add(botCartelaId);
+
+          const botProfile = botPool[i];
+          room.opponentCards.push({
+            botUserId: botProfile.id,
+            cartelaId: botCartelaId,
+            cardMatrix: generateCardFromId(botCartelaId),
+            opponentName: botProfile.name,
+            stakeAmount: room.stakeAmount, // bots bet same as room stake
+            isHouseBot: i === 0
+          });
         }
       }
-    } catch (err) {
-      console.error('❌ [GameEngine Error saving round to DB]:', err);
-    }
 
-    // 5. Generate Shuffled 1-75 Balls with Natural Win Steering
-    room.ballSequence = this.prepareBallSequence(room);
-    room.drawnNumbers = [];
-    room.phase = 'playing';
+      // 3. Win routing: bots win 20% only when 11+ real players; real player wins otherwise
+      if (room.opponentCards.length > 0) {
+        // 11+ players: 20% collective bot win probability
+        room.targetWinnerType = Math.random() < 0.20 ? 'bot' : 'real';
+      } else {
+        // 2–10 players: real player always wins (no bots in the game)
+        room.targetWinnerType = 'real';
+      }
 
-    // Broadcast Round Started to all alias rooms
-    for (const rid of ROOM_ALIASES) {
-      io.to(rid).emit('round_started', {
+      // 4. Save Round to Neon PostgreSQL
+      try {
+        const roundRes = await query(
+          `INSERT INTO game_rounds (room_id, round_number, phase, total_pot, platform_fee, winner_payout, started_at)
+           VALUES ($1, $2, 'playing', $3, $4, $5, NOW())
+           RETURNING id`,
+          [room.id, room.roundNumber, room.totalPot, room.houseFee, room.winnerPayout]
+        );
+        room.currentRoundId = roundRes.rows[0]?.id;
+
+        // Save purchased tickets to Neon DB
+        for (const [userId, tList] of room.tickets.entries()) {
+          for (const t of tList) {
+            await query(
+              `INSERT INTO game_tickets (round_id, user_id, cartela_id, card_matrix, bet_amount, status)
+               VALUES ($1, $2, $3, $4, $5, 'active')`,
+              [room.currentRoundId, userId, t.cartelaId, JSON.stringify(t.cardMatrix), t.betAmount]
+            );
+          }
+        }
+      } catch (err) {
+        console.error(`❌ [GameEngine Error saving round to DB in ${room.id}]:`, err);
+      }
+
+      // 5. Generate Shuffled 1-75 Balls with Natural Win Steering
+      room.ballSequence = this.prepareBallSequence(room);
+      room.drawnNumbers = [];
+      room.phase = 'playing';
+
+      const roundStartedPayload = {
         roundId: room.currentRoundId,
         roundNumber: room.roundNumber,
         totalPot: room.totalPot,
         winnerPayout: room.winnerPayout,
-        playersCount: Math.min(roomCap, realTicketsCount + room.opponentCards.length)
-      });
-    }
+        playersCount: realTicketsCount + room.opponentCards.length,
+        roomId: room.id
+      };
 
-    // Start 3.5s Ball Drawing Loop
-    this.startBallCallingLoop(ARENA_ROOM_ID);
+      // Broadcast Round Started to room
+      io.to(room.id).emit('round_started', roundStartedPayload);
+      if (room.id === 'room-10') {
+        io.to(ARENA_ROOM_ID).emit('round_started', { ...roundStartedPayload, roomId: ARENA_ROOM_ID });
+        io.to('default').emit('round_started', { ...roundStartedPayload, roomId: 'default' });
+      }
+
+      // Start 3.5s Ball Drawing Loop
+      this.startBallCallingLoop(room.id);
+    } catch (err) {
+      console.error(`❌ [BingoGameEngine] Error in startRound for ${room.id}:`, err);
+      this.startLobbyTimer(room.id);
+    }
   }
 
   /**
@@ -787,11 +895,12 @@ class BingoGameEngine {
   /**
    * 3.5s Ball Drawing Loop with Authoritative Split Pot Tie Evaluation
    */
-  private startBallCallingLoop(_roomId?: string) {
-    const room = this.rooms.get(ARENA_ROOM_ID)!;
+  private startBallCallingLoop(roomId: string = 'room-10') {
+    const room = this.rooms.get(roomId) || this.rooms.get('room-10') || this.rooms.get(ARENA_ROOM_ID)!;
 
-    if (this.intervals.has(ARENA_ROOM_ID)) {
-      clearInterval(this.intervals.get(ARENA_ROOM_ID)!);
+    const intervalKey = `ball_${room.id}`;
+    if (this.intervals.has(intervalKey)) {
+      clearInterval(this.intervals.get(intervalKey)!);
     }
 
     const interval = setInterval(async () => {
@@ -802,7 +911,7 @@ class BingoGameEngine {
 
       if (room.ballSequence.length === 0) {
         clearInterval(interval);
-        this.finishRoundWithoutWinner(ARENA_ROOM_ID);
+        this.finishRoundWithoutWinner(room.id);
         return;
       }
 
@@ -816,13 +925,18 @@ class BingoGameEngine {
         index: room.drawnNumbers.length
       };
 
-      // Broadcast Ball Called to all alias rooms simultaneously
-      for (const rid of ROOM_ALIASES) {
-        io.to(rid).emit('ball_called', {
-          currentCall: room.currentCall,
-          drawnNumbers: room.drawnNumbers,
-          totalCalled: room.drawnNumbers.length
-        });
+      const ballPayload = {
+        currentCall: room.currentCall,
+        drawnNumbers: room.drawnNumbers,
+        totalCalled: room.drawnNumbers.length,
+        roomId: room.id
+      };
+
+      // Broadcast Ball Called to room
+      io.to(room.id).emit('ball_called', ballPayload);
+      if (room.id === 'room-10') {
+        io.to(ARENA_ROOM_ID).emit('ball_called', { ...ballPayload, roomId: ARENA_ROOM_ID });
+        io.to('default').emit('ball_called', { ...ballPayload, roomId: 'default' });
       }
 
       // Evaluate Winning Patterns on each ball drawn once round target finish ball is reached
@@ -877,7 +991,7 @@ class BingoGameEngine {
       }
     }, 3500);
 
-    this.intervals.set(ARENA_ROOM_ID, interval);
+    this.intervals.set(intervalKey, interval);
   }
 
   /**
@@ -1099,9 +1213,11 @@ class BingoGameEngine {
 
     room.winResult = winResult;
 
-    // Broadcast round winner to all alias rooms simultaneously
-    for (const rid of ROOM_ALIASES) {
-      io.to(rid).emit('round_winner', winResult);
+    // Broadcast round winner to room
+    io.to(room.id).emit('round_winner', winResult);
+    if (room.id === 'room-10') {
+      io.to(ARENA_ROOM_ID).emit('round_winner', winResult);
+      io.to('default').emit('round_winner', winResult);
     }
 
     // 8-Second celebration before transitioning to next 45s lobby
@@ -1114,10 +1230,10 @@ class BingoGameEngine {
   public async handleClaimBingo(
     userId: string,
     userName: string,
-    _roomId: string,
+    roomId: string,
     cartelaId: number
   ): Promise<{ success: boolean; message: string; winResult?: any }> {
-    const room = this.rooms.get(ARENA_ROOM_ID)!;
+    const room = this.getRoom(roomId);
     if (!room || room.phase !== 'playing' || this.isProcessingVictory) {
       return { success: false, message: 'Game is not currently in playing phase or victory is already being processed.' };
     }
@@ -1134,8 +1250,9 @@ class BingoGameEngine {
       };
     }
 
-    if (this.intervals.has(ARENA_ROOM_ID)) {
-      clearInterval(this.intervals.get(ARENA_ROOM_ID)!);
+    const intervalKey = `ball_${room.id}`;
+    if (this.intervals.has(intervalKey)) {
+      clearInterval(this.intervals.get(intervalKey)!);
     }
 
     await this.processRoundVictory(room, [
@@ -1156,19 +1273,26 @@ class BingoGameEngine {
     };
   }
 
-  private finishRoundWithoutWinner(_roomId?: string) {
-    const room = this.rooms.get(ARENA_ROOM_ID)!;
+  private finishRoundWithoutWinner(roomId: string = 'room-10') {
+    const room = this.rooms.get(roomId) || this.rooms.get('room-10') || this.rooms.get(ARENA_ROOM_ID)!;
     room.phase = 'winner';
-    for (const rid of ROOM_ALIASES) {
-      io.to(rid).emit('round_ended_no_winner', { totalPot: room.totalPot });
+    io.to(room.id).emit('round_ended_no_winner', { totalPot: room.totalPot, roomId: room.id });
+    if (room.id === 'room-10') {
+      io.to(ARENA_ROOM_ID).emit('round_ended_no_winner', { totalPot: room.totalPot, roomId: ARENA_ROOM_ID });
+      io.to('default').emit('round_ended_no_winner', { totalPot: room.totalPot, roomId: 'default' });
     }
-    this.startWinnerCelebrationTimer(ARENA_ROOM_ID);
+    this.startWinnerCelebrationTimer(room.id);
   }
 
-  private startWinnerCelebrationTimer(_roomId?: string) {
-    const room = this.rooms.get(ARENA_ROOM_ID)!;
+  private startWinnerCelebrationTimer(roomId: string = 'room-10') {
+    const room = this.rooms.get(roomId) || this.rooms.get('room-10') || this.rooms.get(ARENA_ROOM_ID)!;
 
     room.winnerCountdown = 8;
+    const intervalKey = `winner_${room.id}`;
+    if (this.intervals.has(intervalKey)) {
+      clearInterval(this.intervals.get(intervalKey)!);
+    }
+
     const interval = setInterval(() => {
       room.winnerCountdown -= 1;
       this.broadcastRoomState(room);
@@ -1177,9 +1301,11 @@ class BingoGameEngine {
         clearInterval(interval);
         room.roundNumber += 1;
         room.tickets.clear();
-        this.startLobbyTimer(ARENA_ROOM_ID); // Transition to 45s lobby
+        this.startLobbyTimer(room.id); // Transition to 45s lobby
       }
     }, 1000);
+
+    this.intervals.set(intervalKey, interval);
   }
 
   public broadcastRoomState(room: GameRoomState) {
@@ -1201,9 +1327,12 @@ class BingoGameEngine {
       realPlayerCount: room.tickets.size
     };
 
-    for (const rid of ROOM_ALIASES) {
-      io.to(rid).emit('room_state', { ...payload, roomId: rid });
+    io.to(room.id).emit('room_state', payload);
+    if (room.id === 'room-10') {
+      io.to(ARENA_ROOM_ID).emit('room_state', { ...payload, roomId: ARENA_ROOM_ID });
+      io.to('default').emit('room_state', { ...payload, roomId: 'default' });
     }
+    io.emit('stake_rooms_summary', this.getStakeRoomsSummary());
   }
 
   // Authoritative Disconnect Protection Helpers

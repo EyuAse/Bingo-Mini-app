@@ -46,10 +46,25 @@ export function setupGameSockets(io: Server) {
           totalPot: room.totalPot,
           winnerPayout: room.winnerPayout,
           playersCount: gameEngine.getRoomPlayersCount(room),
+          realPlayerCount: room.realPlayerCount,
+          waitingForPlayers: room.waitingForPlayers,
           drawnNumbers: room.drawnNumbers,
           currentCall: room.currentCall,
-          winResult: room.winResult
+          winResult: room.winResult,
+          stakeRoomsSummary: gameEngine.getStakeRoomsSummary()
         });
+      }
+      socket.emit('stake_rooms_summary', gameEngine.getStakeRoomsSummary());
+    });
+
+    // Cancel Ticket in Lobby (Room switch refund)
+    socket.on('cancel_ticket_lobby', async (data: { roomId: string; userId: string }, callback?: (res: any) => void) => {
+      const { roomId, userId } = data;
+      const result = await gameEngine.handleCancelTicketLobby(userId, roomId);
+      if (callback) {
+        callback(result);
+      } else {
+        socket.emit('cancel_ticket_lobby_response', result);
       }
     });
 

@@ -16,7 +16,10 @@ export const MasterBoard75: React.FC = () => {
 
   return (
     <div className="fresh-master-board-card">
-      <h3 className="master-board-main-title">{t('bingo.masterBoard')}</h3>
+      <div className="master-board-title-stacked">
+        <span className="mb-word">MASTER</span>
+        <span className="mb-word">BOARD</span>
+      </div>
 
       <div className="master-board-table-grid">
         {/* Column Headers: B I N G O */}

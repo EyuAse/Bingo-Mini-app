@@ -161,12 +161,12 @@ class SocketService {
       }, 10000);
     }
 
-    // Active Packet Silence Detector (Catches Half-Open TCP Stalls within 4.5s)
+    // Active Packet Silence Detector (Catches Half-Open TCP Stalls with 9.5s threshold)
     if (!this.silenceCheckInterval) {
       this.silenceCheckInterval = setInterval(() => {
         if (this.socket?.connected) {
           const elapsed = Date.now() - this.lastMessageTime;
-          if (elapsed > 4500 && this.status === 'connected') {
+          if (elapsed > 9500 && this.status === 'connected') {
             console.warn(`⚠️ [SocketService] Inbound traffic stalled for ${(elapsed / 1000).toFixed(1)}s. Degrading connection status.`);
             this.updateStatus('degraded');
           }
@@ -365,6 +365,23 @@ class SocketService {
   public acknowledgeOfflineWin(winId: string) {
     const sock = this.getSocket();
     sock.emit('acknowledge_offline_win', { winId });
+  }
+
+  // Lobby Ticket Cancellation / Stake Switch Refund
+  public cancelTicketLobby(roomId: string, userId: string): Promise<{ success: boolean; refunded?: number; error?: string }> {
+    return new Promise((resolve) => {
+      const sock = this.getSocket();
+      sock.emit('cancel_ticket_lobby', { roomId, userId }, (res: any) => {
+        resolve(res || { success: false, error: 'No response from server' });
+      });
+    });
+  }
+
+  // Stake Rooms Player Count Summary
+  public onStakeRoomsSummary(callback: (summary: Record<number, number>) => void): () => void {
+    const sock = this.getSocket();
+    sock.on('stake_rooms_summary', callback);
+    return () => sock.off('stake_rooms_summary', callback);
   }
 
   public forceReconnect() {

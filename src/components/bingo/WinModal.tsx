@@ -158,7 +158,7 @@ export const WinModal: React.FC = () => {
           </strong>
           <span className="victory-credited-tag">
             {isOpponentWin
-              ? `Winner played with ${stakeAmt} ETB stake (45x Base Multiplier)`
+              ? `Winner played in the ${stakeAmt} ETB Room`
               : '✓ Instantly credited to your wallet'}
           </span>
         </div>

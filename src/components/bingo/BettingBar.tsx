@@ -14,7 +14,8 @@ export const BettingBar: React.FC = () => {
     selectedCartelaIds,
     buyTicket,
     roundPhase,
-    hasTicket
+    hasTicket,
+    stakeRoomsSummary
   } = useBingo();
   const { balance, bonus, isBalanceVisible } = useWallet();
   const { buy2Get1Bonus } = useAdmin();
@@ -41,17 +42,23 @@ export const BettingBar: React.FC = () => {
 
       {/* Stake Chips: 10, 20, 50, 100 Birr */}
       <div className="betting-stake-chips-row">
-        {betChips.map(chip => (
-          <button
-            key={chip}
-            type="button"
-            className={`btn-stake-chip ${betAmount === chip ? 'active' : ''}`}
-            onClick={() => setBetAmount(chip)}
-            disabled={hasTicket}
-          >
-            {chip} ETB
-          </button>
-        ))}
+        {betChips.map(chip => {
+          const count = stakeRoomsSummary[chip] || 0;
+          return (
+            <button
+              key={chip}
+              type="button"
+              className={`btn-stake-chip ${betAmount === chip ? 'active' : ''}`}
+              onClick={() => setBetAmount(chip)}
+              disabled={roundPhase === 'playing' && hasTicket}
+            >
+              <span className="chip-stake-val">{chip} ETB</span>
+              <span className={`chip-player-count-badge ${count >= 2 ? 'ready' : 'empty'}`}>
+                {count >= 2 ? '🟢' : '🟡'} {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* System-Assigned Cartelas Info Row (No manual handpick per client rule) */}
@@ -130,7 +137,7 @@ export const BettingBar: React.FC = () => {
           <span>
             {hasTicket
               ? `PLAYING ${totalPlayableCards} CARDS`
-              : `${t('bingo.buyTicket')} • ${totalCost} ETB (Win ${betAmount * 45} ETB)`}
+              : `${t('bingo.buyTicket')} • ${totalCost} ETB`}
           </span>
         </button>
       </div>

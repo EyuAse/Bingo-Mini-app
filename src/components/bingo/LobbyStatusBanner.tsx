@@ -7,8 +7,16 @@ export const LobbyStatusBanner: React.FC = () => {
     lobbyCountdown,
     waitingForPlayers,
     realPlayerCount,
-    joinFeed
+    joinFeed,
+    betAmount,
+    setBetAmount,
+    stakeRoomsSummary
   } = useBingo();
+
+  const suggestedStake = Object.entries(stakeRoomsSummary)
+    .map(([stakeStr, count]) => ({ stake: Number(stakeStr), count }))
+    .filter(s => s.stake !== betAmount && s.count >= 2)
+    .sort((a, b) => b.count - a.count)[0];
 
   // Local active toasts that automatically fade out after 4 seconds
   const [visibleToasts, setVisibleToasts] = useState<Array<{ id: number; userName: string; countdownStarted: boolean }>>([]);
@@ -70,8 +78,18 @@ export const LobbyStatusBanner: React.FC = () => {
                 </span>
               </div>
               <p className="waiting-subtext">
-                Round begins as soon as 2 real players buy tickets • Countdown frozen at 45s
+                Round begins as soon as 2 real players buy tickets in {betAmount} ETB room • Countdown frozen at 45s
               </p>
+              {suggestedStake && (
+                <button
+                  type="button"
+                  className="btn-switch-active-room-helper"
+                  onClick={() => setBetAmount(suggestedStake.stake)}
+                >
+                  <i className="fa-solid fa-bolt"></i>
+                  <span>Switch to {suggestedStake.stake} ETB Room ({suggestedStake.count} Players Ready!)</span>
+                </button>
+              )}
             </div>
           </div>
         ) : (

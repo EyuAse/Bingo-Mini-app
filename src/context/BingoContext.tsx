@@ -68,6 +68,7 @@ interface BingoContextType {
   hasPreBoughtNext: boolean;
   buyTicket: () => void;
   preBuyNextRound: () => void;
+  stakeRoomsSummary: Record<number, number>;
 
   // 400 Cartelas Pool & Selection
   selectedCartelaIds: [number, number, number];
@@ -251,7 +252,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [joinFeed, setJoinFeed] = useState<Array<{ id: number; userName: string; countdownStarted: boolean }>>([]);
 
   // Betting state (Stakes: 10, 20, 50, 100 Birr)
-  const [betAmount, setBetAmount] = useState<number>(10);
+  const [betAmount, setBetAmountState] = useState<number>(10);
+  const [stakeRoomsSummary, setStakeRoomsSummary] = useState<Record<number, number>>({ 10: 0, 20: 0, 50: 0, 100: 0 });
   const [cardQuantity, setCardQuantityState] = useState<number>(1);
   const [hasTicket, setHasTicket] = useState<boolean>(false);
   const [hasPreBoughtNext, setHasPreBoughtNext] = useState<boolean>(false);
@@ -316,8 +318,41 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     shortfall: number;
   } | null>(null);
 
-  // Model A Unified Arena: All stakes play in the exact same room
-  const getActiveRoomId = useCallback(() => 'lomi-arena', []);
+  // Dedicated Stake Room Architecture: room-10, room-20, room-50, room-100
+  const getActiveRoomId = useCallback(() => `room-${betAmount}`, [betAmount]);
+
+  // Safe Stake Switcher: If player changes stake while waiting in lobby, refund previous room ticket
+  const setBetAmount = async (newStake: number) => {
+    if (newStake === betAmount) return;
+
+    if (roundPhase === 'playing' && hasTicket) {
+      showToast('⚠️ Active round in progress! Switch rooms when round ends.');
+      return;
+    }
+
+    if (roundPhase === 'lobby' && hasTicket) {
+      if (userRef.current?.id) {
+        try {
+          const oldRoomId = `room-${betAmount}`;
+          const res = await socketService.cancelTicketLobby(oldRoomId, userRef.current.id);
+          if (res.success) {
+            showToast(`💸 ${res.refunded || (betAmount * cardQuantity)} ETB refunded from ${betAmount} ETB lobby!`);
+          }
+        } catch (err) {
+          console.warn('Error refunding lobby ticket on stake switch:', err);
+        }
+      } else {
+        addBalanceRef.current(betAmount * cardQuantity);
+        showToast(`💸 ${betAmount * cardQuantity} ETB refunded to balance`);
+      }
+      setHasTicket(false);
+      setHasPreBoughtNext(false);
+      refreshBalanceRef.current();
+    }
+
+    setBetAmountState(newStake);
+    showToast(`🎯 Switched to ${newStake} ETB Room`);
+  };
 
   const toggleMute = () => {
     const next = !isMuted;
@@ -458,6 +493,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       if (typeof state.waitingForPlayers === 'boolean') setWaitingForPlayers(state.waitingForPlayers);
       if (typeof state.realPlayerCount === 'number') setRealPlayerCount(state.realPlayerCount);
+      if (state.stakeRoomsSummary) setStakeRoomsSummary(state.stakeRoomsSummary);
 
       if (state.currentCall) {
         setCurrentCall(state.currentCall);
@@ -642,6 +678,11 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
     });
 
+    // 9. Real-Time Stake Rooms Player Count Summary
+    const unsubStakeSummary = socketService.onStakeRoomsSummary((summary) => {
+      if (summary) setStakeRoomsSummary(summary);
+    });
+
     return () => {
       unsubRoomState();
       unsubBallCalled();
@@ -652,6 +693,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       unsubConn();
       unsubOfflineWins();
       unsubPlayerJoined();
+      unsubStakeSummary();
     };
   }, [getActiveRoomId, user?.id]);
 
@@ -682,6 +724,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (typeof data.winnerCountdown === 'number') setWinnerCountdown(data.winnerCountdown);
     if (typeof data.playersCount === 'number') setPlayersCount(data.playersCount);
     if (typeof data.winnerPayout === 'number') setPrizePool(data.winnerPayout);
+    if (data.stakeRoomsSummary) setStakeRoomsSummary(data.stakeRoomsSummary);
 
     if (Array.isArray(data.drawnNumbers) && data.drawnNumbers.length > 0) {
       fastForwardCatchUpRef.current(data.drawnNumbers);
@@ -1106,6 +1149,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         hasPreBoughtNext,
         buyTicket,
         preBuyNextRound,
+        stakeRoomsSummary,
         selectedCartelaIds,
         setSelectedCartelaIds,
         isCartelaPickerOpen,

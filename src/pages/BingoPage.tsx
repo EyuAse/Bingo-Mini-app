@@ -16,7 +16,7 @@ import { LobbyStatusBanner } from '../components/bingo/LobbyStatusBanner.tsx';
 import { OneToGoAlert } from '../components/bingo/OneToGoAlert.tsx';
 
 export const BingoPage: React.FC = () => {
-  const { hasTicket, showWinModal, showMasterBoard, toggleMasterBoard } = useBingo();
+  const { hasTicket, showWinModal, isMuted, toggleMute, triggerManualSync } = useBingo();
 
   return (
     <div className="page active fresh-bingo-page" id="page-bingo">
@@ -25,7 +25,7 @@ export const BingoPage: React.FC = () => {
 
       <div className="bingo-page-content-wrapper">
 
-        {/* 1. Top Bar: Engine V3 Badge + Network Latency Pill + 75-Ball Board Toggle Button */}
+        {/* 1. Top Bar: Engine V3 Badge + Network Latency Pill + Audio & Sync Controls */}
         <div className="bingo-engine-pill-row">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="engine-v3-pill">
@@ -34,14 +34,24 @@ export const BingoPage: React.FC = () => {
             </span>
             <NetworkLatencyPill />
           </div>
-          <button
-            type="button"
-            className="engine-board-toggle-btn"
-            onClick={toggleMasterBoard}
-          >
-            <i className="fa-solid fa-table-cells"></i>
-            <span>75-Ball Board</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              type="button"
+              className="engine-control-mini-btn"
+              onClick={toggleMute}
+              title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
+            >
+              <i className={`fa-solid ${isMuted ? 'fa-volume-xmark' : 'fa-volume-high'}`}></i>
+            </button>
+            <button
+              type="button"
+              className="engine-control-mini-btn"
+              onClick={triggerManualSync}
+              title="1-Tap State Sync"
+            >
+              <i className="fa-solid fa-arrows-rotate"></i>
+            </button>
+          </div>
         </div>
 
         {/* Real-Time Network Resilience Alerts & Offline Win Celebration Modal */}
@@ -56,15 +66,20 @@ export const BingoPage: React.FC = () => {
         {/* 3.5 Lobby Status Banner (Waiting for 2 Players / Active Countdown / Live Join Feed) */}
         <LobbyStatusBanner />
 
-        {/* 4. Full-Width Cartela (Master Board is in drawer only — see lines 85-99) */}
-        <div className="bingo-cartela-fullwidth">
-          {hasTicket ? (
-            <div className="active-playing-cartela-box">
-              <BingoGrid />
-            </div>
-          ) : (
-            <SpectatorCard />
-          )}
+        {/* 4. Side-by-Side Responsive Arena: Master Board (Left) + Active Cartela (Right) */}
+        <div className="bingo-side-by-side-arena">
+          <div className="arena-left-master-board">
+            <MasterBoard75 />
+          </div>
+          <div className="arena-right-cartela">
+            {hasTicket ? (
+              <div className="active-playing-cartela-box">
+                <BingoGrid />
+              </div>
+            ) : (
+              <SpectatorCard />
+            )}
+          </div>
         </div>
 
         {/* 4.2 In-Game "1 to Go" (1TG) Alert Banner */}
@@ -80,23 +95,6 @@ export const BingoPage: React.FC = () => {
         {/* 5. Stake Selector, System Cartelas & Buy Ticket Bar */}
         <BettingBar />
       </div>
-
-      {/* Master Board Drawer (Mobile Slide-up Sheet) */}
-      {showMasterBoard && (
-        <div className="master-board-drawer-overlay" onClick={toggleMasterBoard}>
-          <div
-            className="master-board-drawer-sheet"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="drawer-handle" />
-            <p className="drawer-title">
-              <i className="fa-solid fa-table-cells" style={{ color: '#eab308', marginRight: 6 }}></i>
-              75-Ball Master Board
-            </p>
-            <MasterBoard75 />
-          </div>
-        </div>
-      )}
 
       {/* Victory Celebration Modal */}
       <WinModal />
