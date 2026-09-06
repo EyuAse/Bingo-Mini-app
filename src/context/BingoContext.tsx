@@ -103,6 +103,11 @@ interface BingoContextType {
   isMuted: boolean;
   toggleMute: () => void;
 
+  // Lobby State & Join Feed
+  waitingForPlayers: boolean;
+  realPlayerCount: number;
+  joinFeed: Array<{ id: number; userName: string; countdownStarted: boolean }>;
+
   // Actions
   startLobbyCountdown: () => void;
   handleManualDaub: (cartelaIdx: number, cellIdx: number) => void;
@@ -241,6 +246,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [roundPhase, setRoundPhase] = useState<RoundPhase>('lobby');
   const [lobbyCountdown, setLobbyCountdown] = useState<number>(45);
   const [winnerCountdown, setWinnerCountdown] = useState<number>(8);
+  const [waitingForPlayers, setWaitingForPlayers] = useState<boolean>(true);
+  const [realPlayerCount, setRealPlayerCount] = useState<number>(0);
+  const [joinFeed, setJoinFeed] = useState<Array<{ id: number; userName: string; countdownStarted: boolean }>>([]);
 
   // Betting state (Stakes: 10, 20, 50, 100 Birr)
   const [betAmount, setBetAmount] = useState<number>(10);
@@ -448,6 +456,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (typeof state.winnerPayout === 'number') setPrizePool(state.winnerPayout);
       else if (typeof state.totalPot === 'number') setPrizePool(state.totalPot);
 
+      if (typeof state.waitingForPlayers === 'boolean') setWaitingForPlayers(state.waitingForPlayers);
+      if (typeof state.realPlayerCount === 'number') setRealPlayerCount(state.realPlayerCount);
+
       if (state.currentCall) {
         setCurrentCall(state.currentCall);
       }
@@ -619,6 +630,18 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
     });
 
+    // 8. Real-Time Lobby Player Joined Event
+    const unsubPlayerJoined = socketService.onPlayerJoined((data: any) => {
+      if (typeof data.realPlayerCount === 'number') setRealPlayerCount(data.realPlayerCount);
+      if (typeof data.waitingForPlayers === 'boolean') setWaitingForPlayers(data.waitingForPlayers);
+      if (data.userName) {
+        setJoinFeed(prev => [
+          { id: Date.now(), userName: data.userName, countdownStarted: Boolean(data.countdownStarted) },
+          ...prev
+        ].slice(0, 4));
+      }
+    });
+
     return () => {
       unsubRoomState();
       unsubBallCalled();
@@ -628,6 +651,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       unsubTicketsSynced();
       unsubConn();
       unsubOfflineWins();
+      unsubPlayerJoined();
     };
   }, [getActiveRoomId, user?.id]);
 
@@ -1112,6 +1136,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         toggleMasterBoard,
         isMuted,
         toggleMute,
+        waitingForPlayers,
+        realPlayerCount,
+        joinFeed,
         startLobbyCountdown,
         handleManualDaub,
         claimBingo,

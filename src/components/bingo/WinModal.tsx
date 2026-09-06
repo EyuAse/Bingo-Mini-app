@@ -48,7 +48,8 @@ export const WinModal: React.FC = () => {
     if (!name) return false;
     if (name === 'You') return false;
     if (user?.fullName && name.trim().toLowerCase() === user.fullName.trim().toLowerCase()) return false;
-    if (user?.username && name.toLowerCase().includes(user.username.toLowerCase())) return false;
+    const userUsername = (user as any)?.username || user?.telegramUsername;
+    if (userUsername && name.toLowerCase().includes(userUsername.toLowerCase())) return false;
     return true;
   });
 

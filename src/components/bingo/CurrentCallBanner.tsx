@@ -13,7 +13,7 @@ const getColClass = (num: number): string => {
 const getColLetter = (num: number): string => getColClass(num).toUpperCase();
 
 export const CurrentCallBanner: React.FC = () => {
-  const { currentCall, spherePop, calledNumbers, lobbyCountdown, roundPhase } = useBingo();
+  const { currentCall, spherePop, calledNumbers, lobbyCountdown, roundPhase, waitingForPlayers, realPlayerCount } = useBingo();
   const { t } = useLanguage();
 
   // Recent 6 drawn balls (newest first, skip current which is shown in hero)
@@ -69,9 +69,11 @@ export const CurrentCallBanner: React.FC = () => {
           ) : roundPhase === 'lobby' ? (
             <div className="waiting-call-row">
               <h2 className="waiting-call-heading" style={{ color: '#ca8a04' }}>
-                ⏳ STARTS IN {lobbyCountdown}s
+                {waitingForPlayers ? '⏳ WAITING FOR PLAYERS' : `⏳ STARTS IN ${lobbyCountdown}s`}
               </h2>
-              <p className="waiting-call-sub">50 Players • 45s Intermission</p>
+              <p className="waiting-call-sub">
+                {waitingForPlayers ? `${realPlayerCount}/2 Players Joined` : `${realPlayerCount} Players • ${lobbyCountdown}s`}
+              </p>
             </div>
           ) : (
             <div className="waiting-call-row">

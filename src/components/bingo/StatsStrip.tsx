@@ -3,8 +3,14 @@ import { useBingo } from '../../context/BingoContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 
 export const StatsStrip: React.FC = () => {
-  const { betAmount, prizePool, playersCount, calledNumbers } = useBingo();
+  const { betAmount, prizePool, playersCount, realPlayerCount, calledNumbers } = useBingo();
   const { t } = useLanguage();
+
+  const currentPlayers = realPlayerCount > 0 ? realPlayerCount : playersCount;
+  const currentPrize = prizePool > 0
+    ? prizePool
+    : (currentPlayers <= 5 ? currentPlayers * betAmount : Math.floor(currentPlayers * betAmount * 0.8));
+  const prizeDisplay = currentPrize >= 1000 ? `${(currentPrize / 1000).toFixed(1)}K` : `${currentPrize}`;
 
   const stats = [
     {
@@ -19,7 +25,7 @@ export const StatsStrip: React.FC = () => {
       icon: 'fa-trophy',
       iconColor: 'green',
       label: t('bingo.winningAmount'),
-      value: (betAmount * 45) >= 1000 ? `${((betAmount * 45) / 1000).toFixed(1)}K` : `${betAmount * 45}`,
+      value: prizeDisplay,
       unit: 'ETB',
       valColor: 'green'
     },
@@ -27,8 +33,8 @@ export const StatsStrip: React.FC = () => {
       icon: 'fa-users',
       iconColor: 'purple',
       label: t('bingo.players'),
-      value: `${playersCount}`,
-      unit: '/50',
+      value: `${currentPlayers}`,
+      unit: '',
       valColor: 'purple'
     },
     {

@@ -108,7 +108,9 @@ export const BingoGrid: React.FC = () => {
     autoPlay,
     openCartelaPicker,
     roundPhase,
-    lobbyCountdown
+    lobbyCountdown,
+    waitingForPlayers,
+    realPlayerCount
   } = useBingo();
 
   const c1Status = getCardStatus(cartela1Data);
@@ -187,7 +189,7 @@ export const BingoGrid: React.FC = () => {
         }}>
           <span className="pulse-green-dot"></span>
           <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#854d0e' }}>
-            ⏳ ROUND STARTS IN <strong style={{ color: '#b45309', fontSize: '0.875rem' }}>{lobbyCountdown}s</strong> (Waiting for 50 Players...)
+            ⏳ ROUND STARTS IN <strong style={{ color: '#b45309', fontSize: '0.875rem' }}>{lobbyCountdown}s</strong> ({waitingForPlayers ? `${realPlayerCount}/2 players` : `${realPlayerCount} Players`})
           </span>
         </div>
       )}

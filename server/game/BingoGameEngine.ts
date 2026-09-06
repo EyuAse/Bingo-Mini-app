@@ -66,6 +66,8 @@ export interface GameRoomState {
   opponentCards: OpponentCard[];
   targetWinnerType: 'owner' | 'bot' | 'real';
   targetFinishBall?: number;
+  waitingForPlayers: boolean;   // true when < 2 real users have tickets; countdown frozen
+  realPlayerCount: number;      // live count of distinct real users with tickets
 }
 
 interface BotProfile {
@@ -229,7 +231,9 @@ class BingoGameEngine {
       winResult: null,
       opponentCards: [],
       targetWinnerType: 'real',
-      targetFinishBall: 15
+      targetFinishBall: 15,
+      waitingForPlayers: true,
+      realPlayerCount: 0
     };
 
     // Store under primary arena ID
@@ -506,6 +510,16 @@ class BingoGameEngine {
         room.tickets.set(userId, playerTickets);
         this.recalculatePot(room);
         this.broadcastRoomState(room);
+
+        // Notify all clients a new real player joined (for lobby join feed UI)
+        for (const rid of ROOM_ALIASES) {
+          io.to(rid).emit('player_joined', {
+            userName,
+            realPlayerCount: room.tickets.size,
+            waitingForPlayers: room.tickets.size < 2,
+            countdownStarted: room.tickets.size >= 2
+          });
+        }
       }
 
       return {
@@ -519,10 +533,26 @@ class BingoGameEngine {
     }
   }
 
-  // Recalculates pot based on 50-player capacity
+  // Recalculates pot from actual bets placed + sliding commission tiers
   private recalculatePot(room: GameRoomState) {
-    room.totalPot = 50 * room.stakeAmount;
-    room.houseFee = room.commissionEnabled ? room.totalPot * (room.commissionPercent / 100) : 0;
+    const R = room.tickets.size; // distinct real users with tickets
+
+    // Commission tier based on real player count
+    if (R <= 5) {
+      room.commissionEnabled = false;
+      room.commissionPercent = 0;
+    } else {
+      room.commissionEnabled = true;
+      room.commissionPercent = 20;
+    }
+
+    // Sum all actual bets placed by real players + bots (if any)
+    let pot = 0;
+    room.tickets.forEach(list => list.forEach(t => { pot += t.betAmount; }));
+    room.opponentCards.forEach(o => { pot += o.stakeAmount; });
+
+    room.totalPot = pot > 0 ? pot : 0;
+    room.houseFee = room.commissionEnabled ? Math.floor(room.totalPot * 0.20) : 0;
     room.winnerPayout = room.totalPot - room.houseFee;
   }
 
@@ -566,6 +596,19 @@ class BingoGameEngine {
         return;
       }
 
+      // FREEZE countdown until at least 2 real players have tickets
+      const realUserCount = room.tickets.size;
+      room.realPlayerCount = realUserCount;
+
+      if (realUserCount < 2) {
+        room.waitingForPlayers = true;
+        room.lobbyCountdown = 45; // keep frozen at 45 — do not decrement
+        this.broadcastRoomState(room);
+        return;
+      }
+
+      // 2+ players joined — countdown runs normally
+      room.waitingForPlayers = false;
       room.lobbyCountdown -= 1;
       this.broadcastRoomState(room);
 
@@ -596,19 +639,16 @@ class BingoGameEngine {
       list.forEach(t => assignedIds.add(t.cartelaId));
     });
 
-    // 2. Dynamic Room Cap: B = max(0, roomCapacity - R)
-    // If 30 real players join, 20 bots backfill in a 50-player room.
-    // If 50 real players join, exactly 0 bots join (100% human multiplayer)!
-    const roomCap = this.roomCapacity || 50;
-    const botsNeeded = Math.max(0, roomCap - realTicketsCount);
+    // 2. New Rule: Inject exactly 3 bots ONLY when 11+ real players; otherwise no bots
+    const realUserCount = room.tickets.size; // distinct real users
     room.opponentCards = [];
 
-    if (botsNeeded > 0) {
+    if (realUserCount >= 11) {
       if (this.botAccounts.length === 0) {
         await this.loadBotAccounts();
       }
 
-      // Sample unique bots using Fisher-Yates shuffle
+      // Sample bot pool
       const botPool = this.botAccounts.length > 0
         ? shuffleArray(this.botAccounts)
         : shuffleArray(GLOBAL_BOT_POOL.map((name, i) => ({
@@ -617,7 +657,8 @@ class BingoGameEngine {
             phone: `09${10000000 + i}`
           })));
 
-      for (let i = 0; i < botsNeeded; i++) {
+      // Add exactly 3 bots — always, regardless of how many real players (11, 50, 100...)
+      for (let i = 0; i < 3; i++) {
         let botCartelaId = Math.floor(1 + Math.random() * 400);
         while (assignedIds.has(botCartelaId)) {
           botCartelaId = Math.floor(1 + Math.random() * 400);
@@ -625,33 +666,24 @@ class BingoGameEngine {
         assignedIds.add(botCartelaId);
 
         const botProfile = botPool[i % botPool.length];
-        const stake = getRandomBotStake(); // Dynamic stake: 10, 20, 50, or 100 ETB
-
         room.opponentCards.push({
           botUserId: botProfile.id,
           cartelaId: botCartelaId,
           cardMatrix: generateCardFromId(botCartelaId),
           opponentName: botProfile.name,
-          stakeAmount: stake,
+          stakeAmount: room.stakeAmount, // bots bet same as room stake
           isHouseBot: i === 0
         });
       }
     }
 
-    // 3. Tri-Tier Win Rate Routing (20% Owner / 30% Bot / 50% Real Player)
-    const roll = Math.random() * 100;
-    const hasRealPlayers = realTicketsCount > 0;
-
-    if (hasRealPlayers) {
-      if (roll < this.ownerWinRate) {
-        room.targetWinnerType = 'owner';
-      } else if (roll < this.ownerWinRate + this.botWinRate) {
-        room.targetWinnerType = 'bot';
-      } else {
-        room.targetWinnerType = 'real';
-      }
+    // 3. Win routing: bots win 20% only when 11+ real players; real player wins otherwise
+    if (room.opponentCards.length > 0) {
+      // 11+ players: 20% collective bot win probability
+      room.targetWinnerType = Math.random() < 0.20 ? 'bot' : 'real';
     } else {
-      room.targetWinnerType = roll < 40 ? 'owner' : 'bot';
+      // 2–10 players: real player always wins (no bots in the game)
+      room.targetWinnerType = 'real';
     }
 
     // 4. Save Round to Neon PostgreSQL
@@ -1202,7 +1234,9 @@ class BingoGameEngine {
       drawnNumbers: room.drawnNumbers,
       drawnNumbersCount: room.drawnNumbers.length,
       currentCall: room.currentCall,
-      winResult: room.winResult
+      winResult: room.winResult,
+      waitingForPlayers: room.waitingForPlayers || false,
+      realPlayerCount: room.tickets.size
     };
 
     for (const rid of ROOM_ALIASES) {

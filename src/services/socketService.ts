@@ -348,6 +348,13 @@ class SocketService {
     return () => sock.off('user_tickets_synced', callback);
   }
 
+  // Real-Time Lobby Player Joined Event
+  public onPlayerJoined(callback: (data: any) => void): () => void {
+    const sock = this.getSocket();
+    sock.on('player_joined', callback);
+    return () => sock.off('player_joined', callback);
+  }
+
   // Disconnect Protection Listeners
   public onOfflineWinNotification(callback: (wins: OfflineWinData[]) => void): () => void {
     const sock = this.getSocket();

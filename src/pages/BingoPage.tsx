@@ -12,6 +12,8 @@ import { InsufficientBalanceModal } from '../components/bingo/InsufficientBalanc
 import { ConfettiCanvas } from '../components/common/ConfettiCanvas.tsx';
 
 import { NetworkStatusBanner, NetworkLatencyPill } from '../components/bingo/NetworkStatusBanner.tsx';
+import { LobbyStatusBanner } from '../components/bingo/LobbyStatusBanner.tsx';
+import { OneToGoAlert } from '../components/bingo/OneToGoAlert.tsx';
 
 export const BingoPage: React.FC = () => {
   const { hasTicket, showWinModal, showMasterBoard, toggleMasterBoard } = useBingo();
@@ -51,24 +53,22 @@ export const BingoPage: React.FC = () => {
         {/* 3. Live Stats: Stake / Prize / Players / Called */}
         <StatsStrip />
 
-        {/* 4. Main Game Area — Side by Side: Master Board on Left, Cartela/Spectator on Right */}
-        <div className="bingo-main-game-area">
-          {/* Master Board column (1 to 75) */}
-          <div className="bingo-left-master-col">
-            <MasterBoard75 />
-          </div>
+        {/* 3.5 Lobby Status Banner (Waiting for 2 Players / Active Countdown / Live Join Feed) */}
+        <LobbyStatusBanner />
 
-          {/* Cartela Playing Card or Spectator Mode */}
-          <div className="bingo-right-cartela-col">
-            {hasTicket ? (
-              <div className="active-playing-cartela-box">
-                <BingoGrid />
-              </div>
-            ) : (
-              <SpectatorCard />
-            )}
-          </div>
+        {/* 4. Full-Width Cartela (Master Board is in drawer only — see lines 85-99) */}
+        <div className="bingo-cartela-fullwidth">
+          {hasTicket ? (
+            <div className="active-playing-cartela-box">
+              <BingoGrid />
+            </div>
+          ) : (
+            <SpectatorCard />
+          )}
         </div>
+
+        {/* 4.2 In-Game "1 to Go" (1TG) Alert Banner */}
+        <OneToGoAlert />
 
         {/* 4.5 Full-Width Action Bar (Auto Daub / Golden BINGO / Match) */}
         {hasTicket && (
