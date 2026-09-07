@@ -366,6 +366,11 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     showToast(next ? '🔇 Audio Muted' : '🔊 Audio Unmuted');
   };
 
+  // Pre-warm and cache Column B voice files into memory for 0ms instant playback
+  useEffect(() => {
+    soundEngine.preloadVoicePack('B', 15);
+  }, []);
+
   // Keep Cartelas synchronized when IDs change
   useEffect(() => {
     if (roundPhase === 'lobby' || !hasTicket) {

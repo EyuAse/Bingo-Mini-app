@@ -25,6 +25,7 @@ class AudioEngineService {
   private speechTimeoutRef: number | null = null;
   private audioBufferCache: Map<string, AudioBuffer | null> = new Map();
   private currentVoiceAudio: HTMLAudioElement | null = null;
+  private preloadedAudios: Map<number, HTMLAudioElement> = new Map();
 
   constructor() {
     this.initVoices();
@@ -173,16 +174,24 @@ class AudioEngineService {
   }
 
   /**
-   * Play decoded AudioBuffer through the studio broadcast chain
+   * Play decoded AudioBuffer.
+   * When isVoice is true, bypasses artificial radio filters for 100% natural, crisp voice clarity.
    */
-  playDecodedBuffer(buffer: AudioBuffer): boolean {
+  playDecodedBuffer(buffer: AudioBuffer, isVoice: boolean = true): boolean {
     if (this.isMuted) return false;
     try {
       this.initCtx();
-      if (!this.ctx || !this.vocalWarmFilter) return false;
+      if (!this.ctx || !this.masterGain) return false;
       const source = this.ctx.createBufferSource();
       source.buffer = buffer;
-      source.connect(this.vocalWarmFilter);
+      if (isVoice) {
+        // Direct high-fidelity clean routing (eliminates radio/megaphone effect)
+        source.connect(this.masterGain);
+      } else if (this.vocalWarmFilter) {
+        source.connect(this.vocalWarmFilter);
+      } else {
+        source.connect(this.masterGain);
+      }
       source.start();
       return true;
     } catch {
@@ -384,14 +393,50 @@ class AudioEngineService {
   }
 
   /**
+   * Pre-warms and caches voice files in memory for 0ms instant playback (eliminates audio lag)
+   */
+  preloadVoicePack(column: string = 'B', count: number = 15) {
+    if (typeof window === 'undefined' || typeof Audio === 'undefined') return;
+
+    for (let i = 1; i <= count; i++) {
+      if (this.preloadedAudios.has(i)) continue;
+      try {
+        const audio = new Audio(`/assets/audio/am/${i}.webm`);
+        audio.preload = 'auto';
+        audio.volume = 1.0;
+        this.preloadedAudios.set(i, audio);
+      } catch {}
+    }
+  }
+
+  /**
    * Universal Ball Speech Announcement:
    * 1. Voice-Only policy: No synthetic chimes, pops, or beeps.
-   * 2. Plays recorded human audio file (WebM / MP3 / M4A) with 0ms latency.
-   * 3. Prioritizes current language, falls back to Amharic and English.
+   * 2. Uses in-memory preloaded audio for 0ms instant latency (zero lag).
+   * 3. Clean high-fidelity playback with no artificial radio compression.
    */
   async speakBall(col: string, num: number) {
     telegramService.triggerHaptic('medium');
     if (this.isMuted) return;
+
+    // 0. Primary: Instant in-memory cache playback (0ms latency, zero network lag)
+    const preloaded = this.preloadedAudios.get(num);
+    if (preloaded) {
+      if (this.currentVoiceAudio && this.currentVoiceAudio !== preloaded) {
+        try {
+          this.currentVoiceAudio.pause();
+          this.currentVoiceAudio.currentTime = 0;
+        } catch {}
+      }
+      this.currentVoiceAudio = preloaded;
+      preloaded.currentTime = 0;
+      preloaded.volume = 1.0;
+      const playPromise = preloaded.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
+      return;
+    }
 
     // Candidate URLs across language folders and naming conventions
     const possibleUrls = [
@@ -411,7 +456,7 @@ class AudioEngineService {
 
     const uniqueUrls = Array.from(new Set(possibleUrls));
 
-    // 1. Primary: Direct HTML5 Audio playback
+    // 1. Direct HTML5 Audio playback
     for (const url of uniqueUrls) {
       const success = await this.playAudioDirect(url);
       if (success) {
@@ -419,11 +464,11 @@ class AudioEngineService {
       }
     }
 
-    // 2. Fallback: Web Audio API Buffer playback
+    // 2. Fallback: Web Audio API Buffer playback (bypasses radio filter for voice)
     for (const url of uniqueUrls) {
       const buffer = await this.loadAudioBuffer(url);
       if (buffer) {
-        this.playDecodedBuffer(buffer);
+        this.playDecodedBuffer(buffer, true);
         return;
       }
     }
