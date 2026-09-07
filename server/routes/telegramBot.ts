@@ -240,6 +240,36 @@ router.get('/bot-profile', async (_req, res) => {
 });
 
 /**
+ * 3e. Register Bot Commands Menu on Telegram (/start, /play, /bonus, /help)
+ * POST /api/admin/telegram/set-commands
+ */
+router.post('/set-commands', async (req, res) => {
+  try {
+    const { commands } = req.body;
+    const result = await telegramBotService.setMyCommands(commands);
+    if (result.success) {
+      return res.json({ success: true, message: result.message });
+    }
+    return res.status(400).json({ success: false, error: result.message });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to set commands' });
+  }
+});
+
+/**
+ * 3f. Fetch Bot Commands Menu
+ * GET /api/admin/telegram/commands
+ */
+router.get('/commands', async (_req, res) => {
+  try {
+    const result = await telegramBotService.getMyCommands();
+    return res.json({ success: result.ok, commands: result.commands || [] });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * 4. Dispatch Broadcast Campaign (Channels, Groups, Players, or Test Send)
  * POST /api/admin/telegram/broadcast
  */

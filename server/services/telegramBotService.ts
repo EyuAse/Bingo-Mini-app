@@ -170,12 +170,30 @@ export class TelegramBotService {
   }
 
   /**
-   * Get current Bot Short Description from Telegram
+   * Register official Bot Commands list (visible in Telegram's [/] menu)
    */
-  public async getMyShortDescription(): Promise<{ ok: boolean; shortDescription?: string; error?: string }> {
-    const res = await this.callApi('getMyShortDescription', {});
+  public async setMyCommands(customCommands?: Array<{ command: string; description: string }>): Promise<{ success: boolean; message: string }> {
+    const commands = customCommands || [
+      { command: 'play', description: '🎮 Launch Lomi Bingo Mini App' },
+      { command: 'start', description: '🍋 Welcome & 10 ETB Bonus Gift' },
+      { command: 'bonus', description: '🎁 Claim 10 ETB Welcome Bonus' },
+      { command: 'help', description: '📖 How to Play & Win' }
+    ];
+
+    const res = await this.callApi('setMyCommands', { commands });
     if (res.ok) {
-      return { ok: true, shortDescription: res.result?.short_description || '' };
+      return { success: true, message: 'Bot commands registered successfully in Telegram [/] menu!' };
+    }
+    return { success: false, message: res.description || 'Failed to set bot commands' };
+  }
+
+  /**
+   * Get current Bot Commands registered in Telegram
+   */
+  public async getMyCommands(): Promise<{ ok: boolean; commands?: any[]; error?: string }> {
+    const res = await this.callApi('getMyCommands', {});
+    if (res.ok) {
+      return { ok: true, commands: res.result || [] };
     }
     return { ok: false, error: res.description };
   }
@@ -629,6 +647,22 @@ Tap below to jump into the arena:`;
       await this.sendMessage(chatId, helpText, {
         inlineKeyboard: [
           [{ text: '🎮 Open Bingo Arena', web_app: { url: webAppUrl } }]
+        ]
+      });
+      return true;
+    }
+
+    if (text === '/bonus') {
+      const bonusText = 
+`🎁 <b>የአዲስ ደንበኛ 10 ETB ነፃ ቦነስ!</b> 🍋
+<b>10 ETB Welcome Bonus for New Players!</b>
+
+ካርቴላ ለመቁረጥ እና ለማሸነፍ አሁኑኑ ጨዋታውን ይክፈቱ!
+Open the game below to claim your free welcome bonus cartela! 👇`;
+
+      await this.sendMessage(chatId, bonusText, {
+        inlineKeyboard: [
+          [{ text: '🎁 Claim 10 ETB & Play Now', web_app: { url: webAppUrl } }]
         ]
       });
       return true;

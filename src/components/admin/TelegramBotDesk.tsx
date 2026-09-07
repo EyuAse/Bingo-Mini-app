@@ -101,6 +101,7 @@ export const TelegramBotDesk: React.FC = () => {
   const [botWelcomePhoto, setBotWelcomePhoto] = useState<string>('');
   const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
   const [isSavingWelcome, setIsSavingWelcome] = useState<boolean>(false);
+  const [isSettingCommands, setIsSettingCommands] = useState<boolean>(false);
 
   // Resilient API Fetch Helper with live backend fallback
   const apiFetch = async (endpoint: string, init?: RequestInit): Promise<Response> => {
@@ -225,6 +226,28 @@ export const TelegramBotDesk: React.FC = () => {
       showToast('❌ Error updating Telegram menu button');
     } finally {
       setIsSettingMenu(false);
+    }
+  };
+
+  // Sync Bot Commands Menu on Telegram (/play, /start, /bonus, /help)
+  const handleSetCommands = async () => {
+    setIsSettingCommands(true);
+    try {
+      const res = await apiFetch('/admin/telegram/set-commands', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('🎉 Telegram [/] Commands Menu updated (/play, /start, /bonus, /help)!');
+      } else {
+        showToast(`❌ ${data.error || 'Failed to update commands menu'}`);
+      }
+    } catch {
+      showToast('❌ Failed to update commands menu');
+    } finally {
+      setIsSettingCommands(false);
     }
   };
 
@@ -407,29 +430,54 @@ export const TelegramBotDesk: React.FC = () => {
             <div style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9, marginBottom: '6px' }}>Telegram Mini App Menu Button</div>
             <div style={{ fontSize: '15px', fontWeight: 700, marginBottom: '8px' }}>Persistent "🎮 Play Bingo" Button</div>
           </div>
-          <button
-            type="button"
-            onClick={handleSetMenuButton}
-            disabled={isSettingMenu || !status?.config?.hasToken}
-            style={{
-              background: '#ffffff',
-              color: '#0369a1',
-              border: 'none',
-              borderRadius: '10px',
-              padding: '10px 16px',
-              fontSize: '13px',
-              fontWeight: 700,
-              cursor: isSettingMenu || !status?.config?.hasToken ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-            }}
-          >
-            <i className={`fa-solid ${isSettingMenu ? 'fa-circle-notch fa-spin' : 'fa-link'}`}></i>
-            {isSettingMenu ? 'Updating Menu...' : 'Attach / Update Bot Menu Button'}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={handleSetMenuButton}
+              disabled={isSettingMenu || !status?.config?.hasToken}
+              style={{
+                background: '#ffffff',
+                color: '#0369a1',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '8px 14px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: isSettingMenu || !status?.config?.hasToken ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+              }}
+            >
+              <i className={`fa-solid ${isSettingMenu ? 'fa-circle-notch fa-spin' : 'fa-link'}`}></i>
+              {isSettingMenu ? 'Updating Menu...' : 'Attach / Update Bot Menu Button'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSetCommands}
+              disabled={isSettingCommands || !status?.config?.hasToken}
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '10px',
+                padding: '8px 14px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: isSettingCommands || !status?.config?.hasToken ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <i className={`fa-solid ${isSettingCommands ? 'fa-circle-notch fa-spin' : 'fa-bars'}`}></i>
+              {isSettingCommands ? 'Syncing...' : 'Sync [/] Commands Menu'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -913,26 +961,50 @@ export const TelegramBotDesk: React.FC = () => {
               Manage what users see before pressing Start ("What can this bot do?"), customize the in-chat welcome greeting, and broadcast directly to players.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleLoadWelcomeIntoComposer}
-            style={{
-              padding: '10px 16px',
-              borderRadius: '10px',
-              background: '#f5f3ff',
-              color: '#6d28d9',
-              border: '1.5px solid #ddd6fe',
-              fontSize: '13px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <i className="fa-solid fa-bullhorn"></i>
-            Broadcast Welcome to All Players
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={handleSetCommands}
+              disabled={isSettingCommands || !status?.config?.hasToken}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '10px',
+                background: '#f0fdf4',
+                color: '#15803d',
+                border: '1.5px solid #bbf7d0',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: isSettingCommands || !status?.config?.hasToken ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <i className={`fa-solid ${isSettingCommands ? 'fa-circle-notch fa-spin' : 'fa-list-check'}`}></i>
+              {isSettingCommands ? 'Syncing...' : 'Sync [/] Menu (/play, /start, /bonus)'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLoadWelcomeIntoComposer}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '10px',
+                background: '#f5f3ff',
+                color: '#6d28d9',
+                border: '1.5px solid #ddd6fe',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <i className="fa-solid fa-bullhorn"></i>
+              Broadcast Welcome to All Players
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '24px' }}>
