@@ -478,20 +478,14 @@ class AudioEngineService {
       this.ctx.resume().catch(() => {});
     }
 
-    // Tier 1: In-memory Web Audio AudioBuffer (0ms instant hardware playback, zero state bugs)
-    const cachedBuffer = this.voiceBufferMap.get(num);
-    if (cachedBuffer) {
-      const played = this.playDecodedBuffer(cachedBuffer, true);
-      if (played) return;
-    }
-
-    // Tier 2: Preloaded HTML5 Audio with error recovery
+    // Tier 1: Direct Native Hardware Audio (100% pure human voice, zero radio/filter coloration)
     const preloaded = this.preloadedAudios.get(num);
     if (preloaded) {
       try {
         if (this.currentVoiceAudio && this.currentVoiceAudio !== preloaded) {
           try {
             this.currentVoiceAudio.pause();
+            this.currentVoiceAudio.currentTime = 0;
           } catch {}
         }
         this.currentVoiceAudio = preloaded;
@@ -504,34 +498,28 @@ class AudioEngineService {
         }
         return;
       } catch {
-        // Fall through to Tier 3 on error
+        // Fall through to Tier 2 on browser restriction
       }
     }
 
-    // Tier 3: Direct verified audio path for Column B
-    const candidateUrls = [
-      `/assets/audio/am/${num}.mp3`,
-      `/assets/audio/am/${num}.wav`,
-      `/assets/audio/am/${num}.webm`
-    ];
+    // Tier 2: Direct fresh HTML5 Audio instance (guaranteed native hardware DAC playback)
+    const directPlayed = await this.playAudioDirect(`/assets/audio/am/${num}.mp3`);
+    if (directPlayed) return;
 
-    // Try Web Audio buffer load
-    for (const url of candidateUrls) {
-      const buffer = await this.loadAudioBuffer(url);
-      if (buffer) {
-        this.voiceBufferMap.set(num, buffer);
-        if (this.playDecodedBuffer(buffer, true)) {
+    // Tier 3: In-memory Web Audio Buffer directly connected to hardware destination (bypassing all filters)
+    const cachedBuffer = this.voiceBufferMap.get(num);
+    if (cachedBuffer) {
+      try {
+        this.initCtx();
+        if (this.ctx) {
+          const source = this.ctx.createBufferSource();
+          source.buffer = cachedBuffer;
+          // Direct bypass to destination: zero compression, zero EQ
+          source.connect(this.ctx.destination);
+          source.start();
           return;
         }
-      }
-    }
-
-    // Try HTML5 Audio direct play
-    for (const url of candidateUrls) {
-      const success = await this.playAudioDirect(url);
-      if (success) {
-        return;
-      }
+      } catch {}
     }
   }
 

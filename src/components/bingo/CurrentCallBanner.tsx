@@ -30,16 +30,16 @@ export const CurrentCallBanner: React.FC = () => {
 
       {/* LEFT — Glowing 3D Solar Hero Ball */}
       <div className="nb-ball-wrap">
-        <div className="nb-ball-solar-ring"></div>
+        <div className={`nb-ball-solar-ring ${mainColClass}`}></div>
         <span className="nb-solar-sparkle sparkle-top">✨</span>
         <span className="nb-solar-sparkle sparkle-bot">✨</span>
 
         <div className={`nb-ball-circle ${mainColClass}`}>
-          <div className="nb-ball-inner-sphere">
+          <div className={`nb-ball-inner-sphere ${mainColClass}`}>
             {currentCall ? (
               <>
-                <span className="nb-ball-letter">{currentCall.col}</span>
-                <span className="nb-ball-number">{currentCall.num}</span>
+                <span className={`nb-ball-letter ${mainColClass}`}>{currentCall.col}</span>
+                <span className={`nb-ball-number ${mainColClass}`}>{currentCall.num}</span>
               </>
             ) : (
               <span className="nb-ball-placeholder">

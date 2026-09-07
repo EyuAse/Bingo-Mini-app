@@ -76,16 +76,18 @@ export const App: React.FC = () => {
     currentPage === 'help' ||
     currentPage === 'about';
 
+  const isDedicatedGamePage = currentPage === 'bingo';
+
   return (
-    <div className="app-container">
+    <div className={`app-container${isDedicatedGamePage ? ' dedicated-game-view' : ''}`}>
       {/* Top Header for all main game & user views */}
-      {!isStandalonePage && !isSubpage && <TopHeader />}
+      {!isStandalonePage && !isSubpage && !isDedicatedGamePage && <TopHeader />}
 
       {/* Balance Bar for all main game & user views */}
-      {!isStandalonePage && !isSubpage && <BalanceBar />}
+      {!isStandalonePage && !isSubpage && !isDedicatedGamePage && <BalanceBar />}
 
       {/* Phase 3: Live Online Players & Winners Ticker */}
-      {!isStandalonePage && !isSubpage && (
+      {!isStandalonePage && !isSubpage && !isDedicatedGamePage && (
         <LiveSocialProofTicker />
       )}
 
@@ -106,7 +108,7 @@ export const App: React.FC = () => {
       {currentPage === 'about' && <AboutLomiPage />}
 
       {/* Bottom Navigation */}
-      {!isStandalonePage && <BottomNav />}
+      {!isStandalonePage && !isDedicatedGamePage && <BottomNav />}
 
       {/* Phase 1: First-time registration celebration modal */}
       <NewPlayerWelcomeModal
