@@ -176,6 +176,7 @@ export class TelegramBotService {
     const commands = customCommands || [
       { command: 'play', description: '🎮 Launch Lomi Bingo Mini App' },
       { command: 'start', description: '🍋 Welcome & 10 ETB Bonus Gift' },
+      { command: 'promo', description: '📢 View Active Promotions & Offers' },
       { command: 'bonus', description: '🎁 Claim 10 ETB Welcome Bonus' },
       { command: 'help', description: '📖 How to Play & Win' }
     ];
@@ -412,7 +413,9 @@ export class TelegramBotService {
     const usersRes = await query(
       `SELECT DISTINCT telegram_id 
        FROM users 
-       WHERE telegram_id IS NOT NULL AND telegram_id > 0
+       WHERE telegram_id IS NOT NULL 
+         AND telegram_id > 0
+         AND (bot_started = TRUE OR telegram_id < 8000000000)
        ORDER BY telegram_id ASC`
     );
 
@@ -421,6 +424,23 @@ export class TelegramBotService {
 
     if (totalRecipients === 0) {
       return { success: false, totalRecipients: 0, sentCount: 0, failedCount: 0, message: 'No registered players with Telegram IDs found' };
+    }
+
+    // Persist as active in-bot promotion for /promo
+    try {
+      await query(
+        `INSERT INTO admin_settings (key, value, updated_at)
+         VALUES 
+           ('telegram_active_promo_title', $1, NOW()),
+           ('telegram_active_promo_text', $2, NOW()),
+           ('telegram_active_promo_photo', $3, NOW()),
+           ('telegram_active_promo_button_text', $4, NOW()),
+           ('telegram_active_promo_button_url', $5, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [opts.title, opts.messageText, opts.photoUrl || '', opts.buttonText || '', opts.buttonUrl || '']
+      );
+    } catch (e) {
+      console.warn('Could not save active promo settings:', e);
     }
 
     // Insert broadcast entry in 'sending' state
@@ -665,6 +685,44 @@ Open the game below to claim your free welcome bonus cartela! 👇`;
           [{ text: '🎁 Claim 10 ETB & Play Now', web_app: { url: webAppUrl } }]
         ]
       });
+      return true;
+    }
+
+    if (text === '/promo' || text === '/promotion' || text === '/promotions') {
+      let promoText = 
+`🎁 <b>የሎሚ ቢንጎ ልዩ ማስተዋወቂያዎች!</b> 🍋✨
+<b>Active Lomi Bingo Promotions:</b>
+
+🎉 <b>1. 10 ETB የነፃ ቦነስ ስጦታ</b> ለሁሉም አዳዲስ ደንበኞች!
+💰 <b>2. 10,000 ETB የሳምንቱ መጨረሻ ውድድር!</b>
+⚡ <b>3. 200% ተቀማጭ ቦነስ</b> በቴሌብር እና በሲቢኢ ብር!
+
+👇 አሁኑኑ ጨዋታውን ይክፈቱ እና ያሸንፉ!`;
+      let promoPhoto = '';
+      let btnText = '🎮 Play Bingo & Claim Offer';
+      let btnUrl = `https://t.me/LomiBingobot/play`;
+
+      try {
+        const promoRes = await query(
+          `SELECT key, value FROM admin_settings WHERE key IN ('telegram_active_promo_text', 'telegram_active_promo_photo', 'telegram_active_promo_button_text', 'telegram_active_promo_button_url')`
+        );
+        for (const row of promoRes.rows) {
+          if (row.key === 'telegram_active_promo_text' && row.value?.trim()) promoText = row.value.trim();
+          if (row.key === 'telegram_active_promo_photo' && row.value?.trim()) promoPhoto = row.value.trim();
+          if (row.key === 'telegram_active_promo_button_text' && row.value?.trim()) btnText = row.value.trim();
+          if (row.key === 'telegram_active_promo_button_url' && row.value?.trim()) btnUrl = row.value.trim();
+        }
+      } catch {}
+
+      const inlineKeyboard = [
+        [{ text: btnText, url: btnUrl }]
+      ];
+
+      if (promoPhoto) {
+        await this.sendPhoto(chatId, promoPhoto, promoText, { inlineKeyboard });
+      } else {
+        await this.sendMessage(chatId, promoText, { inlineKeyboard });
+      }
       return true;
     }
 

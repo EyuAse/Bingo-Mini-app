@@ -270,6 +270,121 @@ router.get('/commands', async (_req, res) => {
 });
 
 /**
+ * 3g. Fetch Active In-Bot Promotional Ad (Displayed on /promo and inside bot)
+ * GET /api/admin/telegram/active-promo
+ */
+router.get('/active-promo', async (_req, res) => {
+  try {
+    const dbSettings = await query(
+      `SELECT key, value, updated_at FROM admin_settings WHERE key IN (
+        'telegram_active_promo_title',
+        'telegram_active_promo_text',
+        'telegram_active_promo_photo',
+        'telegram_active_promo_button_text',
+        'telegram_active_promo_button_url'
+      )`
+    );
+
+    const settingsMap = new Map(dbSettings.rows.map((r: any) => [r.key, r.value]));
+    let latestUpdate = null;
+    if (dbSettings.rows.length > 0) {
+      latestUpdate = dbSettings.rows[0].updated_at;
+    }
+
+    const cfg = await telegramBotService.getConfig();
+    const meRes = await telegramBotService.getMe();
+    const botUser = meRes.result?.username || 'LomiBingobot';
+
+    return res.json({
+      success: true,
+      promo: {
+        title: settingsMap.get('telegram_active_promo_title') || 'Weekend 10,000 ETB Mega Pot Tournament! 🍋🏆',
+        messageText: settingsMap.get('telegram_active_promo_text') || (
+          '🎉 <b>ታላቅ የሳምንቱ መጨረሻ የቢንጎ ውድድር!</b>\n\n' +
+          '💰 አጠቃላይ የሽልማት ፈንድ: <b>10,000 ETB!</b>\n' +
+          '⚡ ፈጣን ክፍያዎች በቴሌብር እና በሲቢኢ ብር\n' +
+          '🎁 አዲስ ለተመዘገቡ ተጫዋቾች <b>10 ETB ነፃ ቦነስ</b> ተዘጋጅቷል!\n\n' +
+          'ካርቴላዎን አሁኑኑ ይቁረጡ እና ያሸንፉ! 👇'
+        ),
+        photoUrl: settingsMap.get('telegram_active_promo_photo') || 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=800&auto=format&fit=crop&q=80',
+        buttonText: settingsMap.get('telegram_active_promo_button_text') || '🎮 Play Bingo Now & Get 10 ETB',
+        buttonUrl: settingsMap.get('telegram_active_promo_button_url') || `https://t.me/${botUser}/play`,
+        updatedAt: latestUpdate
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * 3h. Save or Update Active In-Bot Promotional Ad (Optionally broadcast immediately to bot players)
+ * POST /api/admin/telegram/active-promo
+ */
+router.post('/active-promo', async (req, res) => {
+  try {
+    const { title, messageText, photoUrl, buttonText, buttonUrl, broadcastNow, crossPostChannel } = req.body;
+
+    if (!title || !messageText) {
+      return res.status(400).json({ success: false, error: 'Promotion title and message text are required' });
+    }
+
+    await query(
+      `INSERT INTO admin_settings (key, value, updated_at)
+       VALUES 
+         ('telegram_active_promo_title', $1, NOW()),
+         ('telegram_active_promo_text', $2, NOW()),
+         ('telegram_active_promo_photo', $3, NOW()),
+         ('telegram_active_promo_button_text', $4, NOW()),
+         ('telegram_active_promo_button_url', $5, NOW())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [title.trim(), messageText.trim(), (photoUrl || '').trim(), (buttonText || '').trim(), (buttonUrl || '').trim()]
+    );
+
+    let broadcastResult = null;
+    let channelResult = null;
+
+    if (broadcastNow) {
+      broadcastResult = await telegramBotService.broadcast({
+        title: title.trim(),
+        messageText: messageText.trim(),
+        photoUrl: (photoUrl || '').trim() || undefined,
+        buttonText: (buttonText || '').trim() || undefined,
+        buttonUrl: (buttonUrl || '').trim() || undefined,
+        targetType: 'all_users'
+      });
+    }
+
+    if (crossPostChannel) {
+      const cfg = await telegramBotService.getConfig();
+      if (cfg.channelId) {
+        channelResult = await telegramBotService.broadcast({
+          title: title.trim(),
+          messageText: messageText.trim(),
+          photoUrl: (photoUrl || '').trim() || undefined,
+          buttonText: (buttonText || '').trim() || undefined,
+          buttonUrl: (buttonUrl || '').trim() || undefined,
+          targetType: 'channel',
+          targetId: cfg.channelId,
+          pinMessage: false
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: broadcastNow
+        ? `In-Bot Promotion saved and broadcast dispatched to ${broadcastResult?.totalRecipients || 0} players!`
+        : 'In-Bot Promotion saved! Players can now see this promo via /promo and inside the bot.',
+      broadcastResult,
+      channelResult
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * 4. Dispatch Broadcast Campaign (Channels, Groups, Players, or Test Send)
  * POST /api/admin/telegram/broadcast
  */

@@ -103,6 +103,94 @@ export const TelegramBotDesk: React.FC = () => {
   const [isSavingWelcome, setIsSavingWelcome] = useState<boolean>(false);
   const [isSettingCommands, setIsSettingCommands] = useState<boolean>(false);
 
+  // In-Bot Promotional Ads Engine State & Active Section
+  const [activeSection, setActiveSection] = useState<'in_bot_promo' | 'channel' | 'profile' | 'config' | 'history' | 'all'>('in_bot_promo');
+  const [activePromo, setActivePromo] = useState<{
+    title: string;
+    messageText: string;
+    photoUrl: string;
+    buttonText: string;
+    buttonUrl: string;
+    updatedAt?: string | null;
+  } | null>(null);
+  const [isSavingPromo, setIsSavingPromo] = useState<boolean>(false);
+  const [crossPostChannel, setCrossPostChannel] = useState<boolean>(false);
+
+  // Curated High-Converting In-Bot Promo Presets
+  const PROMO_PRESETS = [
+    {
+      id: 'welcome_10',
+      name: '10 ETB Welcome Bonus',
+      badge: 'Popular Gift',
+      badgeBg: '#dcfce7',
+      badgeColor: '#166534',
+      icon: 'fa-gift',
+      title: '🎁 10 ETB Welcome Bonus for New Players!',
+      text:
+        '👋 <b>እንኳን ወደ ሎሚ ቢንጎ በደህና መጡ!</b> 🍋🎁\n' +
+        '<b>10 ETB Free Welcome Bonus!</b>\n\n' +
+        '💰 አዲስ ለተመዘገቡ ተጫዋቾች <b>10 ETB ነፃ ቦነስ</b> ተዘጋጅቷል!\n' +
+        '⚡ ፈጣን ተቀማጭ እና ወጪ ክፍያዎች በቴሌብር እና በሲቢኢ ብር\n' +
+        '🎙️ የቀጥታ የድምፅ ጠሪ በአማርኛ እና በእንግሊዝኛ!\n' +
+        '🛡️ የኔትወርክ መቋረጥ ጥበቃ ዋስትና!\n\n' +
+        'ካርቴላዎን አሁኑኑ ቆርጠው ይሸለሙ! 👇',
+      photo: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=800&auto=format&fit=crop&q=80',
+      buttonText: '🎁 Claim 10 ETB & Play Now'
+    },
+    {
+      id: 'tournament_10k',
+      name: '10,000 ETB Tournament',
+      badge: 'Weekend Mega',
+      badgeBg: '#fef3c7',
+      badgeColor: '#b45309',
+      icon: 'fa-trophy',
+      title: '🏆 Weekend 10,000 ETB Mega Pot Tournament!',
+      text:
+        '🎉 <b>ታላቅ የሳምንቱ መጨረሻ የቢንጎ ውድድር!</b> 🍋🏆\n\n' +
+        '💰 አጠቃላይ የሽልማት ፈንድ: <b>10,000 ETB!</b>\n' +
+        '🏟️ ክፍሎች: 20 ETB, 50 ETB & 100 ETB ፕሪሚየም ክፍሎች\n' +
+        '⚡ ከፍተኛ አሸናፊዎች በቅጽበት ይከፈላቸዋል!\n' +
+        '🎁 ለእያንዳንዱ አዲስ ተጫዋች <b>10 ETB ቦነስ</b>!\n\n' +
+        'ቦታዎን አሁኑኑ ይያዙ እና ከፍተኛውን ጃክፖት ያሸንፉ! 👇',
+      photo: 'https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=800&auto=format&fit=crop&q=80',
+      buttonText: '🏆 Join Weekend Tournament Now'
+    },
+    {
+      id: 'deposit_match',
+      name: '200% Deposit Match',
+      badge: 'Cashier Boost',
+      badgeBg: '#e0f2fe',
+      badgeColor: '#0369a1',
+      icon: 'fa-bolt',
+      title: '⚡ 200% Instant Deposit Match Bonus!',
+      text:
+        '⚡ <b>ልዩ የ200% ተቀማጭ ቦነስ አቅርቦት!</b> 🍋💵\n\n' +
+        '💳 በቴሌብር ወይም በሲቢኢ ብር ተቀማጭ ሲያደርጉ <b>ተጨማሪ 200% ቦነስ</b> ያግኙ!\n' +
+        '🎯 ዝቅተኛ ተቀማጭ: 50 ETB ብቻ\n' +
+        '⚡ ቅጽበታዊ ራስ-ሰር የሂሳብ ማስተካከያ በካሽየር\n\n' +
+        'አሁኑኑ ተቀማጭ ያድርጉ እና የጨዋታ ሚዛንዎን ያሳድጉ! 👇',
+      photo: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop&q=80',
+      buttonText: '⚡ Deposit Now & Get 200% Bonus'
+    },
+    {
+      id: 'happy_hour',
+      name: 'Happy Hour 2x Win',
+      badge: 'Limited Time',
+      badgeBg: '#fce7f3',
+      badgeColor: '#be185d',
+      icon: 'fa-moon',
+      title: '🌙 Happy Hour 2x Double Win Multiplier!',
+      text:
+        '🌙 <b>የደስታ ሰዓት (Happy Hour) የ2 እጥፍ ክፍያ!</b> 🍋✨\n\n' +
+        '🔥 በሚቀጥሉት 2 ሰዓታት ውስጥ በሁሉም ክፍሎች የሚገኙ አሸናፊዎች <b>2 እጥፍ ድል</b> ያገኛሉ!\n' +
+        '🎲 400 ካርቴላዎች ዝግጁ ሆነዋል\n' +
+        '⚡ የቀጥታ ፈጣን ክፍያዎች\n\n' +
+        'እድልዎን አሁኑኑ ይሞክሩ! 👇',
+      photo: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=800&auto=format&fit=crop&q=80',
+      buttonText: '🔥 Play Happy Hour 2x Now'
+    }
+  ];
+
   // Resilient API Fetch Helper with live backend fallback
   const apiFetch = async (endpoint: string, init?: RequestInit): Promise<Response> => {
     try {
@@ -115,14 +203,15 @@ export const TelegramBotDesk: React.FC = () => {
     return fetch(`${LIVE_BACKEND_ORIGIN}/api${endpoint}`, init);
   };
 
-  // Load Status and Broadcast History
+  // Load Status, Broadcast History, and Active In-Bot Promotion
   const loadData = async () => {
     try {
       setLoading(true);
-      const [statusRes, historyRes, profileRes] = await Promise.all([
+      const [statusRes, historyRes, profileRes, promoRes] = await Promise.all([
         apiFetch('/admin/telegram/status'),
         apiFetch('/admin/telegram/broadcasts'),
-        apiFetch('/admin/telegram/bot-profile')
+        apiFetch('/admin/telegram/bot-profile'),
+        apiFetch('/admin/telegram/active-promo')
       ]);
 
       if (statusRes.ok) {
@@ -159,6 +248,13 @@ export const TelegramBotDesk: React.FC = () => {
           if (pData.welcomePhoto) setBotWelcomePhoto(pData.welcomePhoto);
         }
       }
+
+      if (promoRes.ok) {
+        const prData = await promoRes.json();
+        if (prData.success && prData.promo) {
+          setActivePromo(prData.promo);
+        }
+      }
     } catch (e) {
       console.error('Failed to load telegram status:', e);
       showToast('⚠️ Failed to load Telegram Bot metrics');
@@ -170,6 +266,74 @@ export const TelegramBotDesk: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Quick Apply In-Bot Promo Preset
+  const handleApplyPreset = (preset: typeof PROMO_PRESETS[0]) => {
+    setAdTitle(preset.title);
+    setAdText(preset.text);
+    setAdPhoto(preset.photo);
+    setAdButtonText(preset.buttonText);
+    const botUser = status?.bot?.username || 'LomiBingobot';
+    setAdButtonUrl(`https://t.me/${botUser}/play`);
+    setTargetType('all_users');
+    showToast(`✨ Loaded preset: ${preset.name}`);
+  };
+
+  // Save or Update Active In-Bot Promotion (Optionally broadcast immediately)
+  const handleSaveActivePromo = async (broadcastImmediately: boolean = false) => {
+    if (!adTitle || !adText) {
+      showToast('⚠️ Promotion title and message text are required');
+      return;
+    }
+
+    setIsSavingPromo(true);
+    try {
+      const res = await apiFetch('/admin/telegram/active-promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: adTitle,
+          messageText: adText,
+          photoUrl: adPhoto.trim(),
+          buttonText: adButtonText.trim(),
+          buttonUrl: adButtonUrl.trim() || `https://t.me/${status?.bot?.username || 'LomiBingobot'}/play`,
+          broadcastNow: broadcastImmediately,
+          crossPostChannel: crossPostChannel && targetType === 'all_users'
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast(`🎉 ${data.message}`);
+        const reloadPromo = await apiFetch('/admin/telegram/active-promo');
+        if (reloadPromo.ok) {
+          const rData = await reloadPromo.json();
+          if (rData.promo) setActivePromo(rData.promo);
+        }
+        if (broadcastImmediately) {
+          loadData();
+        }
+      } else {
+        showToast(`❌ ${data.error || 'Failed to save promotion'}`);
+      }
+    } catch {
+      showToast('❌ Network error saving promotion');
+    } finally {
+      setIsSavingPromo(false);
+    }
+  };
+
+  // Load Current Active Promo into Editor
+  const handleLoadActivePromoIntoComposer = () => {
+    if (!activePromo) return;
+    setAdTitle(activePromo.title);
+    setAdText(activePromo.messageText);
+    setAdPhoto(activePromo.photoUrl);
+    setAdButtonText(activePromo.buttonText);
+    setAdButtonUrl(activePromo.buttonUrl);
+    setTargetType('all_users');
+    showToast('📋 Active in-bot promotion loaded into editor!');
+  };
 
   // Save Configuration
   const handleSaveConfig = async (e: React.FormEvent) => {
@@ -481,137 +645,432 @@ export const TelegramBotDesk: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Main Grid: Composer + Live Simulator */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(360px, 1fr)', gap: '24px', marginBottom: '32px' }}>
-        
-        {/* Left Column: Ad / Campaign Composer Form */}
-        <div style={{ background: '#ffffff', borderRadius: '20px', padding: '24px', border: '1.5px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid #f1f5f9', paddingBottom: '16px', marginBottom: '20px' }}>
+      {/* 2. Section Navigation Tabs */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        background: '#ffffff',
+        padding: '8px',
+        borderRadius: '16px',
+        border: '1.5px solid #e2e8f0',
+        marginBottom: '24px',
+        overflowX: 'auto',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+      }}>
+        <button
+          type="button"
+          onClick={() => { setActiveSection('in_bot_promo'); setTargetType('all_users'); }}
+          style={{
+            padding: '10px 18px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeSection === 'in_bot_promo' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent',
+            color: activeSection === 'in_bot_promo' ? '#ffffff' : '#475569',
+            fontWeight: 700,
+            fontSize: '13px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            whiteSpace: 'nowrap',
+            boxShadow: activeSection === 'in_bot_promo' ? '0 4px 12px rgba(2, 132, 199, 0.25)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <i className="fa-solid fa-robot"></i>
+          <span>🤖 In-Bot Promotional Ads</span>
+          <span style={{
+            background: activeSection === 'in_bot_promo' ? 'rgba(255,255,255,0.25)' : '#e0f2fe',
+            color: activeSection === 'in_bot_promo' ? '#ffffff' : '#0369a1',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            fontSize: '11px',
+            fontWeight: 800
+          }}>
+            {status?.metrics?.activeBotSubscribers || status?.metrics?.totalTelegramUsers || 0}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setActiveSection('channel'); setTargetType('channel'); }}
+          style={{
+            padding: '10px 18px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeSection === 'channel' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent',
+            color: activeSection === 'channel' ? '#ffffff' : '#475569',
+            fontWeight: 700,
+            fontSize: '13px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            whiteSpace: 'nowrap',
+            boxShadow: activeSection === 'channel' ? '0 4px 12px rgba(2, 132, 199, 0.25)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <i className="fa-solid fa-bullhorn"></i>
+          <span>📢 Channel Broadcaster ({channelId || '@lomibingo_official'})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection('profile')}
+          style={{
+            padding: '10px 18px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeSection === 'profile' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent',
+            color: activeSection === 'profile' ? '#ffffff' : '#475569',
+            fontWeight: 700,
+            fontSize: '13px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            whiteSpace: 'nowrap',
+            boxShadow: activeSection === 'profile' ? '0 4px 12px rgba(2, 132, 199, 0.25)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <i className="fa-solid fa-hand-sparkles"></i>
+          <span>👋 Bot Greeting & /start</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection('config')}
+          style={{
+            padding: '10px 18px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeSection === 'config' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent',
+            color: activeSection === 'config' ? '#ffffff' : '#475569',
+            fontWeight: 700,
+            fontSize: '13px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            whiteSpace: 'nowrap',
+            boxShadow: activeSection === 'config' ? '0 4px 12px rgba(2, 132, 199, 0.25)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <i className="fa-solid fa-gear"></i>
+          <span>⚙️ Configuration</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection('history')}
+          style={{
+            padding: '10px 18px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeSection === 'history' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent',
+            color: activeSection === 'history' ? '#ffffff' : '#475569',
+            fontWeight: 700,
+            fontSize: '13px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            whiteSpace: 'nowrap',
+            boxShadow: activeSection === 'history' ? '0 4px 12px rgba(2, 132, 199, 0.25)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <i className="fa-solid fa-clock-rotate-left"></i>
+          <span>📊 History ({broadcasts.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection('all')}
+          style={{
+            padding: '10px 18px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeSection === 'all' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent',
+            color: activeSection === 'all' ? '#ffffff' : '#475569',
+            fontWeight: 700,
+            fontSize: '13px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            whiteSpace: 'nowrap',
+            boxShadow: activeSection === 'all' ? '0 4px 12px rgba(2, 132, 199, 0.25)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <i className="fa-solid fa-table-cells-large"></i>
+          <span>🌐 View All</span>
+        </button>
+      </div>
+
+      {/* 2.5. Active In-Bot Promotion Status Card (Visible when in In-Bot section) */}
+      {(activeSection === 'in_bot_promo' || activeSection === 'all') && (
+        <div style={{
+          background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)',
+          border: '1.5px solid #bbf7d0',
+          borderRadius: '16px',
+          padding: '16px 20px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          boxShadow: '0 4px 12px rgba(22, 163, 74, 0.05)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            {activePromo?.photoUrl ? (
+              <img
+                src={activePromo.photoUrl}
+                alt="Active In-Bot Promo"
+                style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover', border: '1.5px solid #86efac' }}
+                onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+              />
+            ) : (
+              <div style={{ width: '56px', height: '56px', borderRadius: '12px', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a', fontSize: '24px' }}>
+                🍋
+              </div>
+            )}
             <div>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="fa-solid fa-paper-plane" style={{ color: '#0284c7' }}></i>
-                Compose Ad & Broadcast Campaign
-              </h3>
-              <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
-                Create rich advertisements with banner images and direct "Play Now" Mini App buttons.
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', background: '#16a34a', color: '#ffffff' }}>
+                  ACTIVE IN BOT (/promo)
+                </span>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>
+                  {activePromo?.updatedAt ? `Updated ${new Date(activePromo.updatedAt).toLocaleDateString()}` : 'Live Default Offer'}
+                </span>
+              </div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
+                {activePromo?.title || 'Weekend 10,000 ETB Mega Pot Tournament! 🍋🏆'}
+              </div>
+              <div style={{ fontSize: '12px', color: '#0369a1', marginTop: '2px' }}>
+                CTA Button: <strong>{activePromo?.buttonText || '🎮 Play Bingo Now & Get 10 ETB'}</strong>
+              </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
-            {/* Target Audience Selector */}
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>
-                🎯 Target Audience Destination
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => setTargetType('channel')}
-                  style={{
-                    padding: '10px',
-                    borderRadius: '10px',
-                    border: targetType === 'channel' ? '2px solid #0284c7' : '1px solid #cbd5e1',
-                    background: targetType === 'channel' ? '#f0f9ff' : '#ffffff',
-                    color: targetType === 'channel' ? '#0369a1' : '#475569',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <i className="fa-solid fa-bullhorn"></i> Official Channel
-                </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={handleLoadActivePromoIntoComposer}
+              style={{
+                padding: '9px 16px',
+                borderRadius: '10px',
+                background: '#ffffff',
+                border: '1.5px solid #86efac',
+                color: '#166534',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
+              }}
+            >
+              <i className="fa-solid fa-pen-to-square"></i>
+              Load into Editor
+            </button>
+          </div>
+        </div>
+      )}
 
-                <button
-                  type="button"
-                  onClick={() => setTargetType('all_users')}
-                  style={{
-                    padding: '10px',
-                    borderRadius: '10px',
-                    border: targetType === 'all_users' ? '2px solid #0284c7' : '1px solid #cbd5e1',
-                    background: targetType === 'all_users' ? '#f0f9ff' : '#ffffff',
-                    color: targetType === 'all_users' ? '#0369a1' : '#475569',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <i className="fa-solid fa-users"></i> All Players (Direct)
-                </button>
+      {/* 2.6. Curated 1-Click High-Converting Promotional Presets */}
+      {(activeSection === 'in_bot_promo' || activeSection === 'all') && (
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <i className="fa-solid fa-wand-magic-sparkles" style={{ color: '#0284c7' }}></i>
+            Instant Promotional Templates (Click to Load Amharic & English Copy)
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+            {PROMO_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => handleApplyPreset(preset)}
+                style={{
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: '14px',
+                  padding: '14px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: '8px',
+                    background: preset.badgeBg,
+                    color: preset.badgeColor
+                  }}>
+                    {preset.badge}
+                  </span>
+                  <i className={`fa-solid ${preset.icon}`} style={{ color: '#0284c7', fontSize: '14px' }}></i>
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>
+                  {preset.name}
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.4 }}>
+                  Includes flyer banner, Amharic copy & TMA play button.
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-                <button
-                  type="button"
-                  onClick={() => setTargetType('test')}
-                  style={{
-                    padding: '10px',
-                    borderRadius: '10px',
-                    border: targetType === 'test' ? '2px solid #0284c7' : '1px solid #cbd5e1',
-                    background: targetType === 'test' ? '#f0f9ff' : '#ffffff',
-                    color: targetType === 'test' ? '#0369a1' : '#475569',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <i className="fa-solid fa-flask"></i> Personal Test
-                </button>
+      {/* 3. Main Grid: Composer + Live Simulator (Visible in In-Bot and Channel tabs) */}
+      {(activeSection === 'in_bot_promo' || activeSection === 'channel' || activeSection === 'all') && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(360px, 1fr)', gap: '24px', marginBottom: '32px' }}>
+          
+          {/* Left Column: Ad / Campaign Composer Form */}
+          <div style={{ background: '#ffffff', borderRadius: '20px', padding: '24px', border: '1.5px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid #f1f5f9', paddingBottom: '16px', marginBottom: '20px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <i className={`fa-solid ${activeSection === 'in_bot_promo' ? 'fa-robot' : 'fa-paper-plane'}`} style={{ color: '#0284c7' }}></i>
+                  {activeSection === 'in_bot_promo' ? 'In-Bot Promotional Ad Composer' : 'Compose Ad & Broadcast Campaign'}
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
+                  {activeSection === 'in_bot_promo'
+                    ? 'Create promotional offers delivered directly inside @LomiBingobot and registered on the /promo menu.'
+                    : 'Create rich advertisements with banner images and direct "Play Now" Mini App buttons.'}
+                </p>
               </div>
             </div>
 
-            {/* Target ID / Channel Username */}
-            {targetType === 'channel' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* Target Audience Selector */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Channel Username or Chat ID (e.g. @lomibingo or -100xxxxxxx)
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>
+                  🎯 Target Audience Destination
                 </label>
-                <input
-                  type="text"
-                  value={targetChatId}
-                  onChange={(e) => setTargetChatId(e.target.value)}
-                  placeholder="@your_channel_name"
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    border: '1.5px solid #cbd5e1',
-                    fontSize: '14px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-                <div style={{
-                  marginTop: '8px',
-                  padding: '12px 14px',
-                  background: '#f0f9ff',
-                  border: '1.5px solid #bae6fd',
-                  borderRadius: '10px',
-                  fontSize: '12px',
-                  color: '#0369a1',
-                  lineHeight: '1.6'
-                }}>
-                  <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <i className="fa-solid fa-circle-info"></i> How to post announcements to your Telegram Channel:
-                  </div>
-                  <div>1. Open your Channel in Telegram (e.g. your announcement channel).</div>
-                  <div>2. Tap Channel Title &rarr; <b>Administrators &rarr; Add Administrator</b>.</div>
-                  <div>3. Search for <b>@{status?.bot?.username || 'LomiBingobot'}</b> and add it with <b>"Post Messages"</b> turned <b>ON</b>.</div>
-                  <div>4. Enter your channel @username (e.g. <code>@lomibingo</code>) above and click <b>Publish</b>!</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setTargetType('all_users')}
+                    style={{
+                      padding: '10px',
+                      borderRadius: '10px',
+                      border: targetType === 'all_users' ? '2px solid #0284c7' : '1px solid #cbd5e1',
+                      background: targetType === 'all_users' ? '#f0f9ff' : '#ffffff',
+                      color: targetType === 'all_users' ? '#0369a1' : '#475569',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <i className="fa-solid fa-robot"></i> Inside Bot (All Players)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTargetType('channel')}
+                    style={{
+                      padding: '10px',
+                      borderRadius: '10px',
+                      border: targetType === 'channel' ? '2px solid #0284c7' : '1px solid #cbd5e1',
+                      background: targetType === 'channel' ? '#f0f9ff' : '#ffffff',
+                      color: targetType === 'channel' ? '#0369a1' : '#475569',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <i className="fa-solid fa-bullhorn"></i> Official Channel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTargetType('test')}
+                    style={{
+                      padding: '10px',
+                      borderRadius: '10px',
+                      border: targetType === 'test' ? '2px solid #0284c7' : '1px solid #cbd5e1',
+                      background: targetType === 'test' ? '#f0f9ff' : '#ffffff',
+                      color: targetType === 'test' ? '#0369a1' : '#475569',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <i className="fa-solid fa-flask"></i> Personal Test
+                  </button>
                 </div>
               </div>
-            )}
+
+              {/* Target ID / Channel Username */}
+              {targetType === 'channel' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                    Channel Username or Chat ID (e.g. @lomibingo or -100xxxxxxx)
+                  </label>
+                  <input
+                    type="text"
+                    value={targetChatId}
+                    onChange={(e) => setTargetChatId(e.target.value)}
+                    placeholder="@your_channel_name"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      border: '1.5px solid #cbd5e1',
+                      fontSize: '14px',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '12px 14px',
+                    background: '#f0f9ff',
+                    border: '1.5px solid #bae6fd',
+                    borderRadius: '10px',
+                    fontSize: '12px',
+                    color: '#0369a1',
+                    lineHeight: '1.6'
+                  }}>
+                    <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <i className="fa-solid fa-circle-info"></i> How to post announcements to your Telegram Channel:
+                    </div>
+                    <div>1. Open your Channel in Telegram (e.g. your announcement channel).</div>
+                    <div>2. Tap Channel Title &rarr; <b>Administrators &rarr; Add Administrator</b>.</div>
+                    <div>3. Search for <b>@{status?.bot?.username || 'LomiBingobot'}</b> and add it with <b>"Post Messages"</b> turned <b>ON</b>.</div>
+                    <div>4. Enter your channel @username (e.g. <code>@lomibingo</code>) above and click <b>Publish</b>!</div>
+                  </div>
+                </div>
+              )}
 
             {targetType === 'all_users' && (
               <div style={{
@@ -828,32 +1287,119 @@ export const TelegramBotDesk: React.FC = () => {
               </div>
             )}
 
-            {/* Dispatch Action Button */}
-            <div style={{ marginTop: '8px', display: 'flex', gap: '12px' }}>
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(true)}
-                disabled={isBroadcasting || !status?.config?.hasToken}
-                style={{
-                  flex: 1,
-                  padding: '14px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #0284c7, #0369a1)',
-                  color: '#ffffff',
-                  border: 'none',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  cursor: isBroadcasting || !status?.config?.hasToken ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)'
-                }}
-              >
-                <i className={`fa-solid ${isBroadcasting ? 'fa-circle-notch fa-spin' : 'fa-paper-plane'}`}></i>
-                {isBroadcasting ? 'Sending Broadcast...' : (targetType === 'test' ? 'Send Test Message' : 'Publish / Broadcast Ad Now')}
-              </button>
+            {/* In-Bot Delivery Options */}
+            {targetType === 'all_users' && (
+              <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={true}
+                    disabled
+                    style={{ width: '16px', height: '16px', accentColor: '#16a34a' }}
+                  />
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                    📌 Save as active in-bot promotion for <code>/promo</code> command & bot menu
+                  </span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={crossPostChannel}
+                    onChange={(e) => setCrossPostChannel(e.target.checked)}
+                    style={{ width: '16px', height: '16px', accentColor: '#0284c7' }}
+                  />
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                    📣 Also cross-post announcement to Telegram Channel ({channelId || '@lomibingo_official'})
+                  </span>
+                </label>
+              </div>
+            )}
+
+            {/* Dispatch Action Button Bar */}
+            <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmModal(true)}
+                  disabled={isBroadcasting || !status?.config?.hasToken}
+                  style={{
+                    flex: 1.2,
+                    minWidth: '220px',
+                    padding: '14px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    cursor: isBroadcasting || !status?.config?.hasToken ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)'
+                  }}
+                >
+                  <i className={`fa-solid ${isBroadcasting ? 'fa-circle-notch fa-spin' : 'fa-paper-plane'}`}></i>
+                  {isBroadcasting
+                    ? 'Sending Broadcast...'
+                    : (targetType === 'test'
+                        ? 'Send Test Message'
+                        : (targetType === 'all_users'
+                            ? '🚀 Broadcast Promotion Inside Bot (All Players)'
+                            : 'Publish Announcement to Channel'))}
+                </button>
+
+                {targetType === 'all_users' && (
+                  <button
+                    type="button"
+                    onClick={() => handleSaveActivePromo(false)}
+                    disabled={isSavingPromo}
+                    style={{
+                      padding: '14px 18px',
+                      borderRadius: '12px',
+                      background: '#f0fdf4',
+                      color: '#15803d',
+                      border: '1.5px solid #86efac',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      cursor: isSavingPromo ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <i className={`fa-solid ${isSavingPromo ? 'fa-circle-notch fa-spin' : 'fa-floppy-disk'}`}></i>
+                    {isSavingPromo ? 'Saving...' : '💾 Save as Active Promo (/promo Only)'}
+                  </button>
+                )}
+              </div>
+
+              {targetType !== 'test' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetType('test');
+                    showToast('🧪 Switched to Test Send. Enter your numeric Telegram Chat ID to preview!');
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#0284c7',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    padding: '4px'
+                  }}
+                >
+                  <i className="fa-solid fa-flask"></i> Want to test first? Send a preview to your personal Telegram ID
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -941,8 +1487,10 @@ export const TelegramBotDesk: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* 2.5. Bot Greeting & Profile Management */}
+      {(activeSection === 'profile' || activeSection === 'all') && (
       <div style={{
         background: '#ffffff',
         borderRadius: '20px',
@@ -1165,8 +1713,10 @@ export const TelegramBotDesk: React.FC = () => {
 
         </div>
       </div>
+      )}
 
       {/* 3. Bot Settings & Channel Automation Card */}
+      {(activeSection === 'config' || activeSection === 'all') && (
       <div style={{ background: '#ffffff', borderRadius: '20px', padding: '24px', border: '1.5px solid #e2e8f0', marginBottom: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
         <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <i className="fa-solid fa-gear" style={{ color: '#eab308' }}></i>
@@ -1293,8 +1843,10 @@ export const TelegramBotDesk: React.FC = () => {
           </div>
         </form>
       </div>
+      )}
 
       {/* 4. Broadcast History & Delivery Analytics Table */}
+      {(activeSection === 'history' || activeSection === 'all') && (
       <div style={{ background: '#ffffff', borderRadius: '20px', padding: '24px', border: '1.5px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1382,6 +1934,7 @@ export const TelegramBotDesk: React.FC = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
