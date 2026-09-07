@@ -396,6 +396,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setTimeout(() => setSpherePop(false), 300);
 
     soundEngine.playPop();
+    // Non-blocking real voice announcement: safely fired in background
+    soundEngine.speakBall(col, num).catch(() => {});
     setCalledNumbers(prev => (prev.includes(num) ? prev : [...prev, num]));
 
     const daubCard = (prev: BingoCell[]) => {
