@@ -221,14 +221,9 @@ export class TelegramBotService {
       const btnUrl = opts.buttonUrl || cfg.webAppUrl;
       if (btnUrl) {
         if (opts.targetType === 'channel' || opts.targetType === 'group') {
-          // In channels/groups, Telegram Bot API requires regular URL buttons (web_app is rejected by Telegram in channels)
-          // Using the bot's direct startapp deep link opens the Mini App seamlessly inside Telegram
-          let channelBtnUrl = btnUrl;
-          if (opts.buttonText.toLowerCase().includes('play') || opts.buttonText.toLowerCase().includes('bingo')) {
-            channelBtnUrl = `https://t.me/${botUser}?startapp=channel`;
-          }
+          // In channels/groups, use direct HTTPS URL to ensure seamless launching across all Telegram clients without requiring /newapp in BotFather
           inlineKeyboard.push([
-            { text: opts.buttonText, url: channelBtnUrl }
+            { text: opts.buttonText, url: btnUrl }
           ]);
         } else {
           // In direct 1-on-1 chats between user and bot, web_app is fully supported
@@ -465,9 +460,7 @@ export class TelegramBotService {
 
     const meRes = await this.getMe();
     const botUser = meRes.result?.username || 'LomiBingobot';
-    const channelPlayUrl = cfg.webAppUrl 
-      ? `https://t.me/${botUser}?startapp=channel_win` 
-      : `https://t.me/${botUser}`;
+    const channelPlayUrl = cfg.webAppUrl || `https://t.me/${botUser}`;
 
     const inlineKeyboard = [
       [{ text: '🎯 Play Bingo Now & Win!', url: channelPlayUrl }]
