@@ -137,6 +137,50 @@ export class TelegramBotService {
   }
 
   /**
+   * Set Bot Description (shown on empty chat before clicking Start)
+   */
+  public async setMyDescription(description: string): Promise<{ success: boolean; message: string }> {
+    const res = await this.callApi('setMyDescription', { description });
+    if (res.ok) {
+      return { success: true, message: 'Bot description updated successfully on Telegram!' };
+    }
+    return { success: false, message: res.description || 'Failed to update bot description' };
+  }
+
+  /**
+   * Set Bot Short Description (shown on bot profile & when sharing)
+   */
+  public async setMyShortDescription(shortDescription: string): Promise<{ success: boolean; message: string }> {
+    const res = await this.callApi('setMyShortDescription', { short_description: shortDescription });
+    if (res.ok) {
+      return { success: true, message: 'Bot short description updated successfully on Telegram!' };
+    }
+    return { success: false, message: res.description || 'Failed to update bot short description' };
+  }
+
+  /**
+   * Get current Bot Description from Telegram
+   */
+  public async getMyDescription(): Promise<{ ok: boolean; description?: string; error?: string }> {
+    const res = await this.callApi('getMyDescription', {});
+    if (res.ok) {
+      return { ok: true, description: res.result?.description || '' };
+    }
+    return { ok: false, error: res.description };
+  }
+
+  /**
+   * Get current Bot Short Description from Telegram
+   */
+  public async getMyShortDescription(): Promise<{ ok: boolean; shortDescription?: string; error?: string }> {
+    const res = await this.callApi('getMyShortDescription', {});
+    if (res.ok) {
+      return { ok: true, shortDescription: res.result?.short_description || '' };
+    }
+    return { ok: false, error: res.description };
+  }
+
+  /**
    * Send text message with HTML parsing and optional inline buttons
    */
   public async sendMessage(chatId: string | number, text: string, options: {
@@ -527,7 +571,7 @@ export class TelegramBotService {
     }
 
     if (text.startsWith('/start') || text === '/play') {
-      const welcomeText = 
+      let welcomeText = 
 `👋 <b>እንኳን ወደ ሎሚ ቢንጎ በደህና መጡ!</b> 🍋🎯
 <b>Welcome to Lomi / Betika Bingo!</b>
 
@@ -539,13 +583,35 @@ export class TelegramBotService {
 🛡️ <b>Disconnect Protection:</b> Never lose a win even on network drops!
 
 Tap the button below to launch the game and start winning! 👇`;
+      let welcomePhoto = '';
 
-      await this.sendMessage(chatId, welcomeText, {
-        inlineKeyboard: [
-          [{ text: '🎮 Play Bingo Now (10 ETB Gift)', web_app: { url: webAppUrl } }],
-          [{ text: '📢 Join Official Channel', url: cfg.channelId ? `https://t.me/${cfg.channelId.replace('@', '')}` : 'https://t.me' }]
-        ]
-      });
+      try {
+        const settingsRes = await query(
+          `SELECT key, value FROM admin_settings WHERE key IN ('telegram_bot_welcome_text', 'telegram_bot_welcome_photo')`
+        );
+        for (const row of settingsRes.rows) {
+          if (row.key === 'telegram_bot_welcome_text' && row.value && row.value.trim()) {
+            welcomeText = row.value.trim();
+          } else if (row.key === 'telegram_bot_welcome_photo' && row.value && row.value.trim()) {
+            welcomePhoto = row.value.trim();
+          }
+        }
+      } catch (e) {
+        console.warn('Could not read custom welcome greeting:', e);
+      }
+
+      const channelLink = cfg.channelId ? `https://t.me/${cfg.channelId.replace('@', '')}` : 'https://t.me/lomibingo_official';
+
+      const inlineKeyboard = [
+        [{ text: '🎮 Play Bingo Now (10 ETB Gift)', web_app: { url: webAppUrl } }],
+        [{ text: '📢 Join Official Channel', url: channelLink }]
+      ];
+
+      if (welcomePhoto) {
+        await this.sendPhoto(chatId, welcomePhoto, welcomeText, { inlineKeyboard });
+      } else {
+        await this.sendMessage(chatId, welcomeText, { inlineKeyboard });
+      }
       return true;
     }
 

@@ -81,6 +81,27 @@ export const TelegramBotDesk: React.FC = () => {
     message: string;
   } | null>(null);
 
+  // Bot Profile & Welcome Greeting State
+  const [botDescription, setBotDescription] = useState<string>(
+    "🍋 Welcome to Lomi Bingo! Ethiopia's #1 Live Real-Time Multiplayer Bingo in Telegram. 10 ETB Welcome Gift, 400 Cartelas, Instant Cashier Payouts!"
+  );
+  const [botShortDescription, setBotShortDescription] = useState<string>(
+    "🍋 Lomi Bingo: Live multiplayer bingo with instant payouts!"
+  );
+  const [botWelcomeText, setBotWelcomeText] = useState<string>(
+    '👋 <b>እንኳን ወደ ሎሚ ቢንጎ በደህና መጡ!</b> 🍋🎯\n' +
+    '<b>Welcome to Lomi / Betika Bingo!</b>\n\n' +
+    '🇪🇹 Ethiopia\'s #1 Real-Time Multiplayer Live Bingo in Telegram!\n\n' +
+    '🎁 <b>10 ETB Welcome Bonus</b> for new players\n' +
+    '⚡ <b>Instant Cashier Withdrawals & Deposits</b>\n' +
+    '🎙️ <b>Authentic Voice Caller</b> in Amharic and English!\n' +
+    '🛡️ <b>Disconnect Protection:</b> Never lose a win even on network drops!\n\n' +
+    'Tap the button below to launch the game and start winning! 👇'
+  );
+  const [botWelcomePhoto, setBotWelcomePhoto] = useState<string>('');
+  const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
+  const [isSavingWelcome, setIsSavingWelcome] = useState<boolean>(false);
+
   // Resilient API Fetch Helper with live backend fallback
   const apiFetch = async (endpoint: string, init?: RequestInit): Promise<Response> => {
     try {
@@ -97,9 +118,10 @@ export const TelegramBotDesk: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [statusRes, historyRes] = await Promise.all([
+      const [statusRes, historyRes, profileRes] = await Promise.all([
         apiFetch('/admin/telegram/status'),
-        apiFetch('/admin/telegram/broadcasts')
+        apiFetch('/admin/telegram/broadcasts'),
+        apiFetch('/admin/telegram/bot-profile')
       ]);
 
       if (statusRes.ok) {
@@ -124,6 +146,16 @@ export const TelegramBotDesk: React.FC = () => {
         const hData = await historyRes.json();
         if (hData.success && Array.isArray(hData.broadcasts)) {
           setBroadcasts(hData.broadcasts);
+        }
+      }
+
+      if (profileRes.ok) {
+        const pData = await profileRes.json();
+        if (pData.success) {
+          if (pData.description) setBotDescription(pData.description);
+          if (pData.shortDescription) setBotShortDescription(pData.shortDescription);
+          if (pData.welcomeText) setBotWelcomeText(pData.welcomeText);
+          if (pData.welcomePhoto) setBotWelcomePhoto(pData.welcomePhoto);
         }
       }
     } catch (e) {
@@ -194,6 +226,72 @@ export const TelegramBotDesk: React.FC = () => {
     } finally {
       setIsSettingMenu(false);
     }
+  };
+
+  // Save Bot Description and Bio on Telegram
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingProfile(true);
+    try {
+      const res = await apiFetch('/admin/telegram/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: botDescription,
+          shortDescription: botShortDescription
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('🎉 Bot description and bio updated on Telegram!');
+      } else {
+        showToast(`❌ ${data.error || 'Failed to update profile'}`);
+      }
+    } catch {
+      showToast('❌ Failed to update bot profile');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  // Save Bot /start Welcome Message
+  const handleSaveWelcome = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingWelcome(true);
+    try {
+      const res = await apiFetch('/admin/telegram/welcome-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          welcomeText: botWelcomeText,
+          welcomePhoto: botWelcomePhoto
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('🎉 Bot /start welcome greeting saved!');
+      } else {
+        showToast(`❌ ${data.error || 'Failed to save welcome message'}`);
+      }
+    } catch {
+      showToast('❌ Failed to save welcome message');
+    } finally {
+      setIsSavingWelcome(false);
+    }
+  };
+
+  // 1-Click Load Welcome Card into Campaign Composer
+  const handleLoadWelcomeIntoComposer = () => {
+    setTargetType('all_users');
+    setAdTitle('Welcome & 10 ETB Gift Announcement 🍋🎁');
+    setAdText(botWelcomeText);
+    if (botWelcomePhoto) setAdPhoto(botWelcomePhoto);
+    setAdButtonText('🎮 Play Bingo Now & Get 10 ETB');
+    if (status?.bot?.username) {
+      setAdButtonUrl(`https://t.me/${status.bot.username}/play`);
+    }
+    showToast('📋 Welcome card loaded into campaign composer!');
+    window.scrollTo({ top: 350, behavior: 'smooth' });
   };
 
   // Dispatch Broadcast Campaign
@@ -793,6 +891,206 @@ export const TelegramBotDesk: React.FC = () => {
               📱 Live Telegram Client Appearance
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 2.5. Bot Greeting & Profile Management */}
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '20px',
+        padding: '24px',
+        border: '1.5px solid #e2e8f0',
+        marginBottom: '32px',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid #f1f5f9', paddingBottom: '16px', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <i className="fa-solid fa-robot" style={{ color: '#8b5cf6' }}></i>
+              Telegram Bot Greeting & Profile Card Manager
+            </h3>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
+              Manage what users see before pressing Start ("What can this bot do?"), customize the in-chat welcome greeting, and broadcast directly to players.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleLoadWelcomeIntoComposer}
+            style={{
+              padding: '10px 16px',
+              borderRadius: '10px',
+              background: '#f5f3ff',
+              color: '#6d28d9',
+              border: '1.5px solid #ddd6fe',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <i className="fa-solid fa-bullhorn"></i>
+            Broadcast Welcome to All Players
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '24px' }}>
+          
+          {/* Card A: Official Bot Profile (setMyDescription & Short Bio) */}
+          <form onSubmit={handleSaveProfile} style={{ background: '#f8fafc', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
+              <i className="fa-solid fa-address-card" style={{ color: '#6366f1' }}></i>
+              Telegram Bot Profile & "What can this bot do?"
+            </div>
+            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>
+              Displayed on the empty chat screen before new users tap "Start", and on the bot's official profile page.
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                Bot Description ("What can this bot do?")
+              </label>
+              <textarea
+                rows={4}
+                value={botDescription}
+                onChange={(e) => setBotDescription(e.target.value)}
+                placeholder="What can this bot do?..."
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '13px',
+                  lineHeight: 1.5,
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                Short Bio / About (up to 120 chars)
+              </label>
+              <input
+                type="text"
+                maxLength={120}
+                value={botShortDescription}
+                onChange={(e) => setBotShortDescription(e.target.value)}
+                placeholder="e.g. 🍋 Lomi Bingo: Live multiplayer bingo with instant payouts!"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '13px',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+              <button
+                type="submit"
+                disabled={isSavingProfile || !status?.config?.hasToken}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '10px',
+                  background: '#4f46e5',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: isSavingProfile || !status?.config?.hasToken ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <i className={`fa-solid ${isSavingProfile ? 'fa-circle-notch fa-spin' : 'fa-cloud-arrow-up'}`}></i>
+                {isSavingProfile ? 'Updating Telegram...' : 'Sync Profile to Telegram'}
+              </button>
+            </div>
+          </form>
+
+          {/* Card B: In-Chat Welcome Message on /start */}
+          <form onSubmit={handleSaveWelcome} style={{ background: '#f8fafc', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
+              <i className="fa-solid fa-hand-sparkles" style={{ color: '#10b981' }}></i>
+              In-Chat Greeting Message (`/start` / `/play`)
+            </div>
+            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>
+              Sent automatically into the user's chat whenever they open the bot or click "Start".
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                Welcome Card Text (Supports HTML & Emojis)
+              </label>
+              <textarea
+                rows={5}
+                value={botWelcomeText}
+                onChange={(e) => setBotWelcomeText(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '13px',
+                  lineHeight: 1.5,
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                Welcome Banner Image URL (Optional)
+              </label>
+              <input
+                type="text"
+                value={botWelcomePhoto}
+                onChange={(e) => setBotWelcomePhoto(e.target.value)}
+                placeholder="https://... (Leave empty for text-only card)"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '13px',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+              <button
+                type="submit"
+                disabled={isSavingWelcome}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '10px',
+                  background: '#059669',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: isSavingWelcome ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <i className={`fa-solid ${isSavingWelcome ? 'fa-circle-notch fa-spin' : 'fa-check'}`}></i>
+                {isSavingWelcome ? 'Saving...' : 'Save Welcome Greeting'}
+              </button>
+            </div>
+          </form>
+
         </div>
       </div>
 

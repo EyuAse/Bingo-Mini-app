@@ -140,6 +140,106 @@ router.post('/set-menu-button', async (req, res) => {
 });
 
 /**
+ * 3b. Configure Bot Greeting & Welcome Message for /start
+ * POST /api/admin/telegram/welcome-message
+ */
+router.post('/welcome-message', async (req, res) => {
+  try {
+    const { welcomeText, welcomePhoto } = req.body;
+    if (typeof welcomeText === 'string') {
+      await query(
+        `INSERT INTO admin_settings (key, value, updated_at)
+         VALUES ('telegram_bot_welcome_text', $1, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [welcomeText.trim()]
+      );
+    }
+    if (typeof welcomePhoto === 'string') {
+      await query(
+        `INSERT INTO admin_settings (key, value, updated_at)
+         VALUES ('telegram_bot_welcome_photo', $1, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [welcomePhoto.trim()]
+      );
+    }
+    return res.json({ success: true, message: 'Bot /start welcome greeting saved successfully!' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to save welcome message' });
+  }
+});
+
+/**
+ * 3c. Update Official Bot Profile Description on Telegram
+ * POST /api/admin/telegram/update-profile
+ */
+router.post('/update-profile', async (req, res) => {
+  try {
+    const { description, shortDescription } = req.body;
+    const results: string[] = [];
+
+    if (typeof description === 'string' && description.trim()) {
+      const descRes = await telegramBotService.setMyDescription(description.trim());
+      if (descRes.success) {
+        await query(
+          `INSERT INTO admin_settings (key, value, updated_at)
+           VALUES ('telegram_bot_description', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+          [description.trim()]
+        );
+        results.push('Bot description updated on Telegram');
+      } else {
+        return res.status(400).json({ success: false, error: descRes.message });
+      }
+    }
+
+    if (typeof shortDescription === 'string' && shortDescription.trim()) {
+      const shortRes = await telegramBotService.setMyShortDescription(shortDescription.trim());
+      if (shortRes.success) {
+        await query(
+          `INSERT INTO admin_settings (key, value, updated_at)
+           VALUES ('telegram_bot_short_description', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+          [shortDescription.trim()]
+        );
+        results.push('Bot short bio updated on Telegram');
+      } else {
+        return res.status(400).json({ success: false, error: shortRes.message });
+      }
+    }
+
+    return res.json({ success: true, message: results.join(' & ') || 'Profile updated' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to update profile' });
+  }
+});
+
+/**
+ * 3d. Fetch Current Bot Profile & Welcome Settings
+ * GET /api/admin/telegram/bot-profile
+ */
+router.get('/bot-profile', async (_req, res) => {
+  try {
+    const [descRes, shortRes, dbSettings] = await Promise.all([
+      telegramBotService.getMyDescription(),
+      telegramBotService.getMyShortDescription(),
+      query(`SELECT key, value FROM admin_settings WHERE key IN ('telegram_bot_description', 'telegram_bot_short_description', 'telegram_bot_welcome_text', 'telegram_bot_welcome_photo')`)
+    ]);
+
+    const settingsMap = new Map(dbSettings.rows.map((r: any) => [r.key, r.value]));
+
+    return res.json({
+      success: true,
+      description: descRes.ok ? descRes.description : (settingsMap.get('telegram_bot_description') || ''),
+      shortDescription: shortRes.ok ? shortRes.shortDescription : (settingsMap.get('telegram_bot_short_description') || ''),
+      welcomeText: settingsMap.get('telegram_bot_welcome_text') || '',
+      welcomePhoto: settingsMap.get('telegram_bot_welcome_photo') || ''
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * 4. Dispatch Broadcast Campaign (Channels, Groups, Players, or Test Send)
  * POST /api/admin/telegram/broadcast
  */
