@@ -463,9 +463,15 @@ export class TelegramBotService {
 
 ⚡ <i>The next round is starting now! Tap below to join and claim your win!</i>`;
 
-    const inlineKeyboard = cfg.webAppUrl ? [
-      [{ text: '🎯 Play Bingo Now & Win!', web_app: { url: cfg.webAppUrl } }]
-    ] : [];
+    const meRes = await this.getMe();
+    const botUser = meRes.result?.username || 'LomiBingobot';
+    const channelPlayUrl = cfg.webAppUrl 
+      ? `https://t.me/${botUser}?startapp=channel_win` 
+      : `https://t.me/${botUser}`;
+
+    const inlineKeyboard = [
+      [{ text: '🎯 Play Bingo Now & Win!', url: channelPlayUrl }]
+    ];
 
     try {
       await this.sendMessage(cfg.channelId, text, {
