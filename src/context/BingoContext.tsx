@@ -428,9 +428,12 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return prev;
     };
 
-    setCartela1Data(prev => daubCard(prev));
-    setCartela2Data(prev => daubCard(prev));
-    setCartela3Data(prev => daubCard(prev));
+    // Auto-daub cards only when Auto-Play is active; in Manual mode, user taps their card
+    if (autoPlayRef.current) {
+      setCartela1Data(prev => daubCard(prev));
+      setCartela2Data(prev => daubCard(prev));
+      setCartela3Data(prev => daubCard(prev));
+    }
   }, []);
 
   // Instant State Catch-Up Protocol: Daub all drawn numbers within 100ms
@@ -451,9 +454,11 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       });
     };
 
-    setCartela1Data(prev => markMatching(prev));
-    setCartela2Data(prev => markMatching(prev));
-    setCartela3Data(prev => markMatching(prev));
+    if (autoPlayRef.current) {
+      setCartela1Data(prev => markMatching(prev));
+      setCartela2Data(prev => markMatching(prev));
+      setCartela3Data(prev => markMatching(prev));
+    }
   }, []);
 
   const hasPreBoughtNextRef = useRef<boolean>(false);
@@ -1034,6 +1039,15 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const toggleAutoPlay = () => {
+    if (roundPhase === 'playing') {
+      showToast(
+        autoPlay
+          ? '🔒 Auto-Play is locked during active game! You can change to Manual in the next game.'
+          : '🔒 Manual Mode is locked during active game! You can change to Auto-Play in the next game.'
+      );
+      return;
+    }
+
     const next = !autoPlay;
     setAutoPlay(next);
     autoPlayRef.current = next;
@@ -1041,9 +1055,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setCartela1Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
       setCartela2Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
       setCartela3Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
-      showToast('⚡ Auto-Play ON — Cards auto-daubed!');
+      showToast('⚡ Auto-Play Selected (Active for next game)');
     } else {
-      showToast('✋ Manual Daubing Active');
+      showToast('✋ Manual Mode Selected (Active for next game)');
     }
   };
 

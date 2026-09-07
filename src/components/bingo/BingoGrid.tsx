@@ -93,6 +93,7 @@ const NewCard5x5: React.FC<{
                   cell.marked ? 'daubed' : '',
                   cell.isFree ? 'free-cell' : '',
                   isWinningCell ? 'win-glow' : '',
+                  !autoPlay ? 'interactive-tap' : '',
                 ].filter(Boolean).join(' ')}
                 onClick={() => !autoPlay && onDaub(cardIndex, cell.index)}
               >
@@ -183,16 +184,28 @@ export const BingoGrid: React.FC = () => {
           <span className="your-cartelas-count-badge">{cardCountLabel}</span>
         </div>
 
-        {/* Sleek Dark Purple Auto Play Pill Toggle Button */}
-        <button
-          type="button"
-          className={`btn-autoplay-sleek ${autoPlay ? 'active' : ''}`}
-          onClick={toggleAutoPlay}
-          title={autoPlay ? 'Auto-Play ON — click for manual' : 'Turn on Auto-Play'}
-        >
-          <i className="fa-solid fa-bolt"></i>
-          <span>Auto Play</span>
-        </button>
+        {/* Sleek Auto Play / Manual Pill Toggle Button with Mid-Game Lock */}
+        {(() => {
+          const isLockedMidGame = roundPhase === 'playing';
+          return (
+            <button
+              type="button"
+              className={`btn-autoplay-sleek ${autoPlay ? 'active' : 'manual'} ${isLockedMidGame ? 'locked' : ''}`}
+              onClick={toggleAutoPlay}
+              title={
+                isLockedMidGame
+                  ? 'Mode is locked while game is in progress. Can be changed after game ends.'
+                  : autoPlay
+                  ? 'Auto-Play ON — click to switch to Manual'
+                  : 'Manual Mode — click to switch to Auto-Play'
+              }
+            >
+              <i className={`fa-solid ${isLockedMidGame ? 'fa-lock' : autoPlay ? 'fa-bolt' : 'fa-hand'}`}></i>
+              <span>{autoPlay ? 'Auto Play' : 'Manual'}</span>
+              {isLockedMidGame && <span className="autoplay-lock-pill">Lock</span>}
+            </button>
+          );
+        })()}
       </div>
 
       {/* ── Cards Grid (1 or 2 equal side-by-side) ── */}
