@@ -32,14 +32,35 @@ const COLUMN_B_BALLS: BallScriptItem[] = [
   { num: 15, col: 'B', amharic: 'ቢ... አስራ አምስት!', english: 'B... Fifteen!' }
 ];
 
+const COLUMN_I_BALLS: BallScriptItem[] = [
+  { num: 16, col: 'I', amharic: 'አይ... አስራ ስድስት!', english: 'I... Sixteen!' },
+  { num: 17, col: 'I', amharic: 'አይ... አስራ ሰባት!', english: 'I... Seventeen!' },
+  { num: 18, col: 'I', amharic: 'አይ... አስራ ስምንት!', english: 'I... Eighteen!' },
+  { num: 19, col: 'I', amharic: 'አይ... አስራ ዘጠኝ!', english: 'I... Nineteen!' },
+  { num: 20, col: 'I', amharic: 'አይ... ሃያ!', english: 'I... Twenty!' },
+  { num: 21, col: 'I', amharic: 'አይ... ሃያ አንድ!', english: 'I... Twenty-One!' },
+  { num: 22, col: 'I', amharic: 'አይ... ሃያ ሁለት!', english: 'I... Twenty-Two!' },
+  { num: 23, col: 'I', amharic: 'አይ... ሃያ ሶስት!', english: 'I... Twenty-Three!' },
+  { num: 24, col: 'I', amharic: 'አይ... ሃያ አራት!', english: 'I... Twenty-Four!' },
+  { num: 25, col: 'I', amharic: 'አይ... ሃያ አምስት!', english: 'I... Twenty-Five!' },
+  { num: 26, col: 'I', amharic: 'አይ... ሃያ ስድስት!', english: 'I... Twenty-Six!' },
+  { num: 27, col: 'I', amharic: 'አይ... ሃያ ሰባት!', english: 'I... Twenty-Seven!' },
+  { num: 28, col: 'I', amharic: 'አይ... ሃያ ስምንት!', english: 'I... Twenty-Eight!' },
+  { num: 29, col: 'I', amharic: 'አይ... ሃያ ዘጠኝ!', english: 'I... Twenty-Nine!' },
+  { num: 30, col: 'I', amharic: 'አይ... ሰላሳ!', english: 'I... Thirty!' }
+];
+
 export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onClose }) => {
   const { isMuted, toggleMute } = useBingo();
   const [activePlayingNum, setActivePlayingNum] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'B' | 'I'>('I');
 
   if (!isOpen) return null;
 
+  const currentBalls = activeTab === 'B' ? COLUMN_B_BALLS : COLUMN_I_BALLS;
+  const isColB = activeTab === 'B';
+
   const handleTestBall = async (b: BallScriptItem) => {
-    // If muted, automatically unmute so sound can be heard
     if (isMuted) {
       toggleMute();
     }
@@ -75,7 +96,7 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
       <div
         style={{
           background: 'linear-gradient(145deg, #111827, #0f172a)',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
+          border: isColB ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
           borderRadius: '20px',
           width: '100%',
           maxWidth: '520px',
@@ -88,12 +109,12 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '24px' }}>🎙️</span>
-              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#60a5fa' }}>
-                Column B Voice Studio (1–15)
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: isColB ? '#60a5fa' : '#34d399' }}>
+                Column {activeTab} Voice Studio ({isColB ? '1–15' : '16–30'})
               </h2>
             </div>
             <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
@@ -120,6 +141,55 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
           </button>
         </div>
 
+        {/* Column Tab Selector */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('B')}
+            style={{
+              padding: '10px',
+              borderRadius: '12px',
+              border: isColB ? '2px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.1)',
+              background: isColB ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+              color: isColB ? '#93c5fd' : '#94a3b8',
+              fontWeight: 800,
+              fontSize: '13px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span>🔵 Column B (1–15)</span>
+            <span style={{ fontSize: '10px', background: '#10b981', color: '#ffffff', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>15/15</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('I')}
+            style={{
+              padding: '10px',
+              borderRadius: '12px',
+              border: !isColB ? '2px solid #10b981' : '1px solid rgba(255, 255, 255, 0.1)',
+              background: !isColB ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+              color: !isColB ? '#6ee7b7' : '#94a3b8',
+              fontWeight: 800,
+              fontSize: '13px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span>🟢 Column I (16–30)</span>
+            <span style={{ fontSize: '10px', background: '#10b981', color: '#ffffff', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>15/15</span>
+          </button>
+        </div>
+
         {/* Status Pill & Audio State */}
         <div 
           style={{
@@ -130,13 +200,13 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
             border: '1px solid rgba(16, 185, 129, 0.3)',
             borderRadius: '12px',
             padding: '10px 14px',
-            marginBottom: '18px'
+            marginBottom: '16px'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span>
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#34d399' }}>
-              15 of 15 Balls Ready (100% Column B Complete)
+              15 of 15 Ready (100% Column {activeTab} Recorded)
             </span>
           </div>
 
@@ -168,8 +238,11 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
             marginBottom: '20px'
           }}
         >
-          {COLUMN_B_BALLS.map((b) => {
+          {currentBalls.map((b) => {
             const isPlaying = activePlayingNum === b.num;
+            const ballSphereGradient = isColB
+              ? 'radial-gradient(circle at 35% 35%, #60a5fa, #1e40af)'
+              : 'radial-gradient(circle at 35% 35%, #34d399, #047857)';
 
             return (
               <button
@@ -178,10 +251,10 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
                 onClick={() => handleTestBall(b)}
                 style={{
                   background: isPlaying
-                    ? 'linear-gradient(135deg, #2563eb, #1d4ed8)'
+                    ? (isColB ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'linear-gradient(135deg, #059669, #047857)')
                     : 'rgba(255, 255, 255, 0.05)',
                   border: isPlaying
-                    ? '1px solid #60a5fa'
+                    ? (isColB ? '1px solid #60a5fa' : '1px solid #34d399')
                     : '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '14px',
                   padding: '12px 8px',
@@ -190,7 +263,7 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
                   alignItems: 'center',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
-                  boxShadow: isPlaying ? '0 0 15px rgba(37, 99, 235, 0.5)' : 'none',
+                  boxShadow: isPlaying ? '0 0 15px rgba(16, 185, 129, 0.5)' : 'none',
                   transform: isPlaying ? 'scale(0.97)' : 'scale(1)'
                 }}
               >
@@ -200,7 +273,7 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
                     width: '38px',
                     height: '38px',
                     borderRadius: '50%',
-                    background: 'radial-gradient(circle at 35% 35%, #60a5fa, #1e40af)',
+                    background: ballSphereGradient,
                     color: '#ffffff',
                     display: 'flex',
                     flexDirection: 'column',
@@ -249,7 +322,7 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
           <button
             onClick={onClose}
             style={{
-              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+              background: 'linear-gradient(135deg, #10b981, #059669)',
               color: '#ffffff',
               border: 'none',
               borderRadius: '12px',
@@ -258,7 +331,7 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
               fontWeight: 800,
               cursor: 'pointer',
               width: '100%',
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
             }}
           >
             ✓ Done Previewing
