@@ -617,6 +617,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (state.phase) {
         setRoundPhase(prev => {
           if (prev !== 'lobby' && state.phase === 'lobby') {
+            winModalDismissedForRoundRef.current = null;
             setShowWinModal(false);
             setHasTicket(hasPreBoughtNextRef.current);
             setHasPreBoughtNext(false);
@@ -671,7 +672,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         lastBallTimeRef.current = Date.now();
       }
 
-      if (state.winResult) {
+      if (state.winResult && winModalDismissedForRoundRef.current !== (state.roundNumber || roundNumberRef.current)) {
         const currentUser = userRef.current;
         const isRealUserWin = 
           Boolean(currentUser?.id && Array.isArray(state.winResult.winnerUserIds) && state.winResult.winnerUserIds.includes(currentUser.id)) ||
@@ -1411,7 +1412,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const closeWinModalAndRestart = () => {
-    winModalDismissedForRoundRef.current = roundNumber;
+    winModalDismissedForRoundRef.current = roundNumberRef.current || roundNumber;
     setShowWinModal(false);
     setHasTicket(false);
     setSelectedCartelaIds([

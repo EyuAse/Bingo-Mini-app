@@ -4,6 +4,7 @@ import { TelegramUser } from '../types/telegram';
 import { authService } from '../services/authService';
 import { telegramService } from '../services/telegramService';
 import { apiClient } from '../services/apiClient';
+import { socketService } from '../services/socketService';
 import { useLanguage } from './LanguageContext';
 
 interface AuthContextType {
@@ -15,6 +16,8 @@ interface AuthContextType {
   telegramUser: TelegramUser | null;
   isFirstTimeTelegramUser: boolean;
   dismissFirstTimeModal: () => void;
+  concurrentSessionNotice: { reason: string; message: string } | null;
+  dismissConcurrentSessionNotice: () => void;
   sendOtp: (phone: string) => Promise<OtpChallengeResponse>;
   verifyOtp: (phone: string, code: string) => OtpVerificationResult;
   register: (payload: RegisterPayload) => Promise<User>;
@@ -35,6 +38,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isInsideTelegram, setIsInsideTelegram] = useState<boolean>(false);
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
   const [isFirstTimeTelegramUser, setIsFirstTimeTelegramUser] = useState<boolean>(false);
+  const [concurrentSessionNotice, setConcurrentSessionNotice] = useState<{ reason: string; message: string } | null>(null);
+
+  const dismissConcurrentSessionNotice = () => {
+    setConcurrentSessionNotice(null);
+  };
+
+  // Listen for Single-Device Enforcement events: if account logged in on another device, terminate session here
+  useEffect(() => {
+    const unsub = socketService.onSessionTerminated((data) => {
+      console.warn('⚠️ [AuthContext] Single Active Device Policy triggered: logged in elsewhere:', data);
+      setConcurrentSessionNotice(data);
+      authService.clearSession();
+      localStorage.removeItem('lomi_auth_token');
+      localStorage.removeItem('lomi_user');
+      localStorage.removeItem('lomi_live_balance');
+      localStorage.removeItem('lomi_live_bonus');
+      localStorage.setItem('lomi_explicit_logout', 'true');
+      setUser(null);
+      setToken(null);
+    });
+
+    return () => {
+      unsub();
+    };
+  }, []);
 
   // Initialize Telegram WebApp, Purge Legacy Test Data & Auto-Authenticate with Neon DB
   useEffect(() => {
@@ -340,6 +368,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         telegramUser,
         isFirstTimeTelegramUser,
         dismissFirstTimeModal,
+        concurrentSessionNotice,
+        dismissConcurrentSessionNotice,
         sendOtp,
         verifyOtp,
         register,

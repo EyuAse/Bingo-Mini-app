@@ -476,6 +476,11 @@ class SocketService {
     return this.subscribeEvent('stake_rooms_summary', callback);
   }
 
+  // Concurrent Session Termination (Single Active Device Policy)
+  public onSessionTerminated(callback: (data: { reason: string; message: string }) => void): () => void {
+    return this.subscribeEvent('session_terminated', callback);
+  }
+
   public forceReconnect() {
     this.forceHardReconnect();
   }

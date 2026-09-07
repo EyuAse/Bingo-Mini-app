@@ -1,6 +1,9 @@
 import { Server, Socket } from 'socket.io';
 import { gameEngine } from '../game/BingoGameEngine.ts';
 
+// Single Active Device Session Registry: userId -> { socketId, connectedAt }
+const activeUserSessions = new Map<string, { socketId: string; connectedAt: number }>();
+
 export function setupGameSockets(io: Server) {
   io.on('connection', (socket: Socket) => {
     let currentRoomId: string | null = null;
@@ -19,6 +22,22 @@ export function setupGameSockets(io: Server) {
 
       currentRoomId = roomId;
       if (userId) {
+        // Enforce Single Active Device Policy: Prohibit simultaneous logins on 2 or more devices
+        const existingSession = activeUserSessions.get(userId);
+        if (existingSession && existingSession.socketId !== socket.id) {
+          const oldSocket = io.sockets.sockets.get(existingSession.socketId);
+          if (oldSocket) {
+            console.log(`⚠️ [Single-Device Policy] User ${userId} connected from new socket ${socket.id}. Disconnecting previous socket ${existingSession.socketId}.`);
+            oldSocket.emit('session_terminated', {
+              reason: 'concurrent_device',
+              message: '⚠️ Your account was opened on another device. Simultaneous play on multiple devices is strictly prohibited.'
+            });
+            oldSocket.leave(`user_${userId}`);
+            oldSocket.disconnect(true);
+          }
+        }
+        activeUserSessions.set(userId, { socketId: socket.id, connectedAt: Date.now() });
+
         authUserId = userId;
         socket.join(`user_${userId}`);
         // Check for Disconnect Protection wins that occurred while offline
@@ -210,6 +229,9 @@ export function setupGameSockets(io: Server) {
 
     // 7. Disconnect
     socket.on('disconnect', () => {
+      if (authUserId && activeUserSessions.get(authUserId)?.socketId === socket.id) {
+        activeUserSessions.delete(authUserId);
+      }
       if (currentRoomId) {
         gameEngine.handleLeaveRoom(socket.id, currentRoomId);
       }

@@ -9,6 +9,7 @@ import { LiveSocialProofTicker } from './components/common/LiveSocialProofTicker
 import { BottomNav } from './components/common/BottomNav.tsx';
 import { Toast } from './components/common/Toast.tsx';
 import { NewPlayerWelcomeModal } from './components/auth/NewPlayerWelcomeModal.tsx';
+import { ConcurrentSessionModal } from './components/auth/ConcurrentSessionModal.tsx';
 
 // Pages
 import { LandingPage } from './pages/LandingPage.tsx';
@@ -117,6 +118,9 @@ export const App: React.FC = () => {
         bonusAmount={registerBonus}
         onClose={dismissFirstTimeModal}
       />
+
+      {/* Single-device enforcement notice */}
+      <ConcurrentSessionModal />
 
       {/* Global Toast */}
       <Toast />
