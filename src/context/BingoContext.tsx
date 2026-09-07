@@ -301,6 +301,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [winResult, setWinResult] = useState<WinResult | null>(null);
   const [showWinModal, setShowWinModal] = useState<boolean>(false);
   const winModalDismissedForRoundRef = useRef<number | null>(null);
+  const lastLiveWinRoundRef = useRef<number | null>(null);
   const [spherePop, setSpherePop] = useState<boolean>(false);
   const [isVerticalBoard, setIsVerticalBoard] = useState<boolean>(true);
   const [showMasterBoard, setShowMasterBoard] = useState<boolean>(false);
@@ -679,6 +680,10 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           Boolean(currentUser?.id && state.winResult.winnerId && state.winResult.winnerId.includes(currentUser.id)) || 
           Boolean(currentUser?.fullName && state.winResult.winnerNames && state.winResult.winnerNames.includes(currentUser.fullName));
 
+        if (isRealUserWin) {
+          lastLiveWinRoundRef.current = state.roundNumber || roundNumberRef.current;
+        }
+
         const winType = state.winResult.isSplit
           ? (isRealUserWin ? 'user_split' : 'opponent_win')
           : (isRealUserWin ? 'user_solo' : 'opponent_win');
@@ -843,9 +848,25 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const unsubOfflineWins = socketService.onOfflineWinNotification((wins) => {
       if (Array.isArray(wins) && wins.length > 0) {
-        setOfflineWinsNotice(wins);
-        soundEngine.playWinFanfare();
-        refreshBalanceRef.current();
+        const currentRnd = roundNumberRef.current;
+        const lastLiveRnd = lastLiveWinRoundRef.current;
+
+        const trulyOfflineWins: any[] = [];
+        wins.forEach((w: any) => {
+          // If the win belongs to the current round or a round played live, auto-acknowledge silently without modal
+          if (w.roundNumber === currentRnd || w.roundNumber === lastLiveRnd) {
+            console.log(`🛡️ [BingoContext] Suppressing offline modal for live-participated round #${w.roundNumber}`);
+            socketService.acknowledgeOfflineWin(w.id);
+          } else {
+            trulyOfflineWins.push(w);
+          }
+        });
+
+        if (trulyOfflineWins.length > 0) {
+          setOfflineWinsNotice(trulyOfflineWins);
+          soundEngine.playWinFanfare();
+          refreshBalanceRef.current();
+        }
       }
     });
 
@@ -954,6 +975,10 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         Boolean(currentUser?.id && Array.isArray(data.winResult.winnerUserIds) && data.winResult.winnerUserIds.includes(currentUser.id)) ||
         Boolean(currentUser?.id && data.winResult.winnerId && data.winResult.winnerId.includes(currentUser.id)) || 
         Boolean(currentUser?.fullName && data.winResult.winnerNames && data.winResult.winnerNames.includes(currentUser.fullName));
+
+      if (isRealUserWin) {
+        lastLiveWinRoundRef.current = data.roundNumber || roundNumberRef.current;
+      }
 
       const winType = data.winResult.isSplit
         ? (isRealUserWin ? 'user_split' : 'opponent_win')
@@ -1372,6 +1397,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
 
         const winData = res.winResult;
+        lastLiveWinRoundRef.current = winData?.roundNumber || roundNumberRef.current;
         const totalPot = winData?.totalPot || prizePool;
         const winnerPayout = winData?.winnerPayout || totalPot;
         const userShare = winData?.sharePerWinner || winData?.userShare || winnerPayout;

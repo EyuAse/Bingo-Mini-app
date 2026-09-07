@@ -63,6 +63,8 @@ export interface GameRoomState {
   tickets: Map<string, PlayerTicket[]>; // userId -> active tickets in current round
   nextRoundTickets: Map<string, PlayerTicket[]>; // userId -> queued tickets for Round N+1 (Anytime Pre-Betting)
   activeSockets: Set<string>;
+  activeUsers: Set<string>;
+  activeUserSockets: Map<string, string>; // userId -> socketId
   winResult: any | null;
   opponentCards: OpponentCard[];
   targetWinnerType: 'owner' | 'bot' | 'real';
@@ -202,6 +204,8 @@ class BingoGameEngine {
       tickets: new Map(),
       nextRoundTickets: new Map(),
       activeSockets: new Set(),
+      activeUsers: new Set(),
+      activeUserSockets: new Map(),
       winResult: null,
       opponentCards: [],
       targetWinnerType: 'real',
@@ -336,15 +340,25 @@ class BingoGameEngine {
     this.realPlayerWinRate = realRate;
   }
 
-  public handleJoinRoom(socketId: string, roomId: string, _userId?: string) {
+  public handleJoinRoom(socketId: string, roomId: string, userId?: string) {
     const room = this.getRoom(roomId);
     room.activeSockets.add(socketId);
+    if (userId) {
+      room.activeUsers.add(userId);
+      room.activeUserSockets.set(userId, socketId);
+    }
     this.broadcastRoomState(room);
   }
 
   public handleLeaveRoom(socketId: string, roomId: string) {
     const room = this.getRoom(roomId);
     room.activeSockets.delete(socketId);
+    for (const [uid, sid] of room.activeUserSockets.entries()) {
+      if (sid === socketId) {
+        room.activeUserSockets.delete(uid);
+        room.activeUsers.delete(uid);
+      }
+    }
     this.broadcastRoomState(room);
   }
 
@@ -1230,15 +1244,16 @@ class BingoGameEngine {
                 [newBal, userId]
               );
 
-              const isSocketConnected = userTickets.some(t => room.activeSockets.has(t.socketId));
+              const isSocketConnected = room.activeUsers.has(userId) || userTickets.some(t => room.activeSockets.has(t.socketId));
+              const isOffline = !isSocketConnected;
               const winRef = `WIN-ARENA-${Date.now().toString().slice(-6)}`;
               const winningCardIds = userWinningCards.map(w => `#${w.cartelaId}`).join(', ');
               const firstTicket = userTickets.find(t => t.cartelaId === userWinningCards[0].cartelaId);
               const ticketStake = firstTicket?.betAmount || room.stakeAmount;
 
               const description = isSplit
-                ? `Split Pot Winner (${userWinningCards.length} of ${totalWinningCards} cards, ${ticketStake} ETB Stake) in ${room.name} (Cartela ${winningCardIds})${!isSocketConnected ? ' [Protected Offline Auto-Claim]' : ''}`
-                : `Bingo Solo Winner (${ticketStake} ETB Stake) in ${room.name} (Cartela ${winningCardIds})${!isSocketConnected ? ' [Protected Offline Auto-Claim]' : ''}`;
+                ? `Split Pot Winner (${userWinningCards.length} of ${totalWinningCards} cards, ${ticketStake} ETB Stake) in ${room.name} (Cartela ${winningCardIds})${isOffline ? ' [Protected Offline Auto-Claim]' : ''}`
+                : `Bingo Solo Winner (${ticketStake} ETB Stake) in ${room.name} (Cartela ${winningCardIds})${isOffline ? ' [Protected Offline Auto-Claim]' : ''}`;
 
               await client.query(
                 `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, payment_method, description)
@@ -1257,8 +1272,8 @@ class BingoGameEngine {
                 amount: userTotalWin,
                 referenceCode: winRef,
                 timestamp: new Date().toISOString(),
-                isOffline: !isSocketConnected,
-                acknowledged: false,
+                isOffline,
+                acknowledged: !isOffline, // Connected winners celebrate live inside the app; offline winners get the modal upon return
                 winningPattern: userWinningCards[0].winningPattern
               };
               this.offlineWins.unshift(winRecord);
@@ -1504,7 +1519,7 @@ class BingoGameEngine {
 
   // Authoritative Disconnect Protection Helpers
   public getUnacknowledgedWins(userId: string): OfflineWinRecord[] {
-    return this.offlineWins.filter(w => w.userId === userId && !w.acknowledged);
+    return this.offlineWins.filter(w => w.userId === userId && !w.acknowledged && w.isOffline === true);
   }
 
   public acknowledgeOfflineWin(winId: string): boolean {
