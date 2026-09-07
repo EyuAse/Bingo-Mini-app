@@ -1,5 +1,6 @@
 import { io } from '../server.ts';
 import { query, withTransaction } from '../db.ts';
+import { telegramBotService } from '../services/telegramBotService.ts';
 import {
   BingoCell,
   generateCardFromId,
@@ -1280,6 +1281,15 @@ class BingoGameEngine {
               if (this.offlineWins.length > 200) this.offlineWins.pop();
 
               io.emit('offline_win_recorded', winRecord);
+
+              // Automated Big Winner Channel Broadcast (if enabled & threshold met)
+              telegramBotService.announceBigWinner(
+                userWinningCards[0].userName,
+                userTotalWin,
+                room.name,
+                userWinningCards[0].cartelaId
+              ).catch(() => {});
+
               io.emit(`user_${userId}_balance`, {
                 type: 'bingo_win',
                 amount: userTotalWin,

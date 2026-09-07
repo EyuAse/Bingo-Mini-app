@@ -13,8 +13,8 @@ for (const folder of folders) {
 
   console.log(`\n=== Processing folder: ${folder} ===`);
 
-  for (let i = 1; i <= 30; i++) {
-    const colPrefix = i <= 15 ? 'B' : 'I';
+  for (let i = 1; i <= 75; i++) {
+    const colPrefix = i <= 15 ? 'B' : i <= 30 ? 'I' : i <= 45 ? 'N' : i <= 60 ? 'G' : 'O';
     const webmFile = path.join(dir, `${i}.webm`);
     const mp3File = path.join(dir, `${i}.mp3`);
     const wavFile = path.join(dir, `${i}.wav`);

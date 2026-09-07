@@ -10,6 +10,7 @@ export type AdminTab =
   | 'bots'
   | 'cartelas'
   | 'network'
+  | 'telegram-bot'
   | 'settings';
 
 interface AdminSidebarProps {
@@ -219,7 +220,25 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             )}
           </button>
 
-          {/* 8. Settings */}
+          {/* 8. Telegram Bot & Ads Broadcast Center */}
+          <button
+            type="button"
+            className={`light-nav-item ${activeTab === 'telegram-bot' ? 'active' : ''}`}
+            onClick={() => handleSelectTab('telegram-bot')}
+            title="Telegram Bot & Ads Broadcast Center"
+          >
+            <div className="light-nav-icon">
+              <i className="fa-brands fa-telegram" style={{ color: '#0284c7' }}></i>
+            </div>
+            {!isSidebarCollapsed && (
+              <>
+                <span className="light-nav-text">Telegram Bot & Ads</span>
+                <span className="light-nav-badge" style={{ background: '#e0f2fe', color: '#0369a1' }}>📢 Ads</span>
+              </>
+            )}
+          </button>
+
+          {/* 9. Settings */}
           <button
             type="button"
             className={`light-nav-item ${activeTab === 'settings' ? 'active' : ''}`}

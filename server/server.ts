@@ -12,6 +12,7 @@ import { checkDbConnection } from './db.ts';
 import authRouter from './routes/auth.ts';
 import walletRouter from './routes/wallet.ts';
 import adminRouter from './routes/admin.ts';
+import telegramBotRouter from './routes/telegramBot.ts';
 import { setupGameSockets } from './sockets/gameSocket.ts';
 import { gameEngine } from './game/BingoGameEngine.ts';
 
@@ -156,6 +157,8 @@ const walletLimiter = rateLimit({
 app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/wallet', walletLimiter, walletRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/admin/telegram', telegramBotRouter);
+app.use('/api/telegram', telegramBotRouter);
 
 // Serve Static Frontend Bundle in Production (Single-port hosting) with Optimized Caching
 const distPath = path.join(__dirname, '..', 'dist');

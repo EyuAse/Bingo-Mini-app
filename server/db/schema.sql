@@ -163,3 +163,32 @@ ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     stake_amount = EXCLUDED.stake_amount,
     house_commission_percent = EXCLUDED.house_commission_percent;
+
+-- 10. Admin Dynamic System Settings (Bot Token, Channel ID, WebApp URL)
+CREATE TABLE IF NOT EXISTS admin_settings (
+    key VARCHAR(100) PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 11. Telegram Marketing & Ads Broadcast Campaigns
+CREATE TABLE IF NOT EXISTS telegram_broadcasts (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    message_text TEXT NOT NULL,
+    photo_url TEXT,
+    button_text VARCHAR(100),
+    button_url TEXT,
+    target_type VARCHAR(50) DEFAULT 'all_users',
+    target_id VARCHAR(100),
+    pin_message BOOLEAN DEFAULT FALSE,
+    total_recipients INT DEFAULT 0,
+    sent_count INT DEFAULT 0,
+    failed_count INT DEFAULT 0,
+    status VARCHAR(50) DEFAULT 'completed',
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bot_started BOOLEAN DEFAULT FALSE;
+CREATE INDEX IF NOT EXISTS idx_broadcasts_created ON telegram_broadcasts(created_at DESC);
+
