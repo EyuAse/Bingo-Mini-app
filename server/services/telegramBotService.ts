@@ -212,28 +212,55 @@ export class TelegramBotService {
       return { success: false, totalRecipients: 0, sentCount: 0, failedCount: 0, message: 'Telegram Bot Token is not configured' };
     }
 
+    const meRes = await this.getMe();
+    const botUser = meRes.result?.username || 'LomiBingobot';
+
     // Build inline keyboard if button details provided
     const inlineKeyboard: any[][] = [];
     if (opts.buttonText) {
       const btnUrl = opts.buttonUrl || cfg.webAppUrl;
       if (btnUrl) {
-        if (opts.buttonText.toLowerCase().includes('play') || opts.buttonText.toLowerCase().includes('bingo')) {
+        if (opts.targetType === 'channel' || opts.targetType === 'group') {
+          // In channels/groups, Telegram Bot API requires regular URL buttons (web_app is rejected by Telegram in channels)
+          // Using the bot's direct startapp deep link opens the Mini App seamlessly inside Telegram
+          let channelBtnUrl = btnUrl;
+          if (opts.buttonText.toLowerCase().includes('play') || opts.buttonText.toLowerCase().includes('bingo')) {
+            channelBtnUrl = `https://t.me/${botUser}?startapp=channel`;
+          }
           inlineKeyboard.push([
-            { text: opts.buttonText, web_app: { url: btnUrl } }
+            { text: opts.buttonText, url: channelBtnUrl }
           ]);
         } else {
-          inlineKeyboard.push([
-            { text: opts.buttonText, url: btnUrl }
-          ]);
+          // In direct 1-on-1 chats between user and bot, web_app is fully supported
+          if (opts.buttonText.toLowerCase().includes('play') || opts.buttonText.toLowerCase().includes('bingo')) {
+            inlineKeyboard.push([
+              { text: opts.buttonText, web_app: { url: btnUrl } }
+            ]);
+          } else {
+            inlineKeyboard.push([
+              { text: opts.buttonText, url: btnUrl }
+            ]);
+          }
         }
       }
     }
 
     // 1. Single Channel or Group Broadcast
     if (opts.targetType === 'channel' || opts.targetType === 'group') {
-      const targetChat = opts.targetId || cfg.channelId;
+      const targetChat = (opts.targetId || cfg.channelId || '').trim();
       if (!targetChat) {
         return { success: false, totalRecipients: 0, sentCount: 0, failedCount: 0, message: 'Target channel or group username/ID is missing' };
+      }
+
+      // Check if user accidentally entered the bot's own username as the channel
+      if (targetChat.toLowerCase() === `@${botUser.toLowerCase()}` || targetChat.toLowerCase() === botUser.toLowerCase()) {
+        return {
+          success: false,
+          totalRecipients: 0,
+          sentCount: 0,
+          failedCount: 1,
+          message: `Cannot post to @${botUser}. In Telegram, a bot is an interactive chat, not a channel with a public feed. To post an announcement, add @${botUser} as an Administrator to your Telegram Channel (e.g. @YourChannel), or select 'All Players (Direct)' to message registered users.`
+        };
       }
 
       let res;
@@ -251,6 +278,19 @@ export class TelegramBotService {
 
       const sent = res.ok ? 1 : 0;
       const failed = res.ok ? 0 : 1;
+
+      // Friendly diagnostic description for common Telegram API issues
+      let friendlyError = res.description;
+      if (!res.ok) {
+        const desc = (res.description || '').toLowerCase();
+        if (desc.includes('chat not found')) {
+          friendlyError = `Channel '${targetChat}' not found. Please verify the channel @username exists, and make sure @${botUser} has been added as an Administrator to that channel with 'Post Messages' permission.`;
+        } else if (desc.includes('not a member') || desc.includes('not an administrator') || desc.includes('need administrator rights')) {
+          friendlyError = `@${botUser} is not an Administrator of ${targetChat}. Open Channel Info -> Administrators -> Add Admin -> search @${botUser} and enable 'Post Messages'.`;
+        } else if (desc.includes("can't send messages to the bot")) {
+          friendlyError = `A bot cannot post messages to itself. Please specify a Telegram Channel (e.g. @YourChannel) where @${botUser} is an Administrator, or select 'All Players (Direct)'.`;
+        }
+      }
 
       // Save record in database
       const insertRes = await query(
@@ -280,7 +320,7 @@ export class TelegramBotService {
         totalRecipients: 1,
         sentCount: sent,
         failedCount: failed,
-        message: res.ok ? `Successfully posted announcement to ${targetChat}` : (res.description || 'Failed to post to Telegram')
+        message: res.ok ? `Successfully published announcement to ${targetChat}!` : (friendlyError || 'Failed to post to Telegram')
       };
     }
 

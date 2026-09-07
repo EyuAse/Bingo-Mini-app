@@ -76,6 +76,10 @@ export const TelegramBotDesk: React.FC = () => {
   const [pinMessage, setPinMessage] = useState<boolean>(true);
   const [isBroadcasting, setIsBroadcasting] = useState<boolean>(false);
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
+  const [broadcastFeedback, setBroadcastFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   // Resilient API Fetch Helper with live backend fallback
   const apiFetch = async (endpoint: string, init?: RequestInit): Promise<Response> => {
@@ -192,6 +196,7 @@ export const TelegramBotDesk: React.FC = () => {
   const handleDispatchBroadcast = async () => {
     setShowConfirmModal(false);
     setIsBroadcasting(true);
+    setBroadcastFeedback(null);
 
     try {
       const res = await apiFetch('/admin/telegram/broadcast', {
@@ -212,12 +217,17 @@ export const TelegramBotDesk: React.FC = () => {
       const data = await res.json();
       if (data.success) {
         showToast(`🚀 ${data.message}`);
+        setBroadcastFeedback({ type: 'success', message: data.message });
         loadData();
       } else {
-        showToast(`❌ ${data.error || data.message || 'Broadcast failed'}`);
+        const errorMsg = data.error || data.message || 'Broadcast failed';
+        showToast(`❌ ${errorMsg}`);
+        setBroadcastFeedback({ type: 'error', message: errorMsg });
       }
-    } catch (e) {
-      showToast('❌ Broadcast request failed');
+    } catch (e: any) {
+      const netErr = 'Broadcast network request failed. Please verify connection.';
+      showToast(`❌ ${netErr}`);
+      setBroadcastFeedback({ type: 'error', message: netErr });
     } finally {
       setIsBroadcasting(false);
     }
@@ -241,18 +251,23 @@ export const TelegramBotDesk: React.FC = () => {
               borderRadius: '20px',
               fontSize: '12px',
               fontWeight: 700,
-              background: status?.isConnected ? '#dcfce7' : '#fee2e2',
-              color: status?.isConnected ? '#166534' : '#991b1b'
+              background: loading ? '#fef3c7' : (status?.isConnected ? '#dcfce7' : '#fee2e2'),
+              color: loading ? '#b45309' : (status?.isConnected ? '#166534' : '#991b1b')
             }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: status?.isConnected ? '#22c55e' : '#ef4444' }}></span>
-              {status?.isConnected ? 'ONLINE & LINKED' : 'NOT CONNECTED'}
+              <span style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: loading ? '#f59e0b' : (status?.isConnected ? '#22c55e' : '#ef4444')
+              }}></span>
+              {loading ? 'CHECKING BOT...' : (status?.isConnected ? 'ONLINE & LINKED' : 'NOT CONNECTED')}
             </span>
           </div>
           <div style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
-            {status?.bot?.first_name || 'Betika / Lomi Bingo Bot'}
+            {status?.bot?.first_name || (loading ? 'Loading Bot...' : 'Betika / Lomi Bingo Bot')}
           </div>
           <div style={{ fontSize: '13px', color: '#0284c7', fontWeight: 600 }}>
-            {status?.bot?.username ? `@${status.bot.username}` : 'Configure bot token below'}
+            {status?.bot?.username ? `@${status.bot.username}` : (loading ? 'Connecting to Telegram...' : 'Configure bot token below')}
           </div>
         </div>
 
@@ -416,7 +431,7 @@ export const TelegramBotDesk: React.FC = () => {
                   type="text"
                   value={targetChatId}
                   onChange={(e) => setTargetChatId(e.target.value)}
-                  placeholder="@lomibingo"
+                  placeholder="@your_channel_name"
                   style={{
                     width: '100%',
                     padding: '10px 14px',
@@ -427,6 +442,43 @@ export const TelegramBotDesk: React.FC = () => {
                     boxSizing: 'border-box'
                   }}
                 />
+                <div style={{
+                  marginTop: '8px',
+                  padding: '12px 14px',
+                  background: '#f0f9ff',
+                  border: '1.5px solid #bae6fd',
+                  borderRadius: '10px',
+                  fontSize: '12px',
+                  color: '#0369a1',
+                  lineHeight: '1.6'
+                }}>
+                  <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <i className="fa-solid fa-circle-info"></i> How to post announcements to your Telegram Channel:
+                  </div>
+                  <div>1. Open your Channel in Telegram (e.g. your announcement channel).</div>
+                  <div>2. Tap Channel Title &rarr; <b>Administrators &rarr; Add Administrator</b>.</div>
+                  <div>3. Search for <b>@{status?.bot?.username || 'LomiBingobot'}</b> and add it with <b>"Post Messages"</b> turned <b>ON</b>.</div>
+                  <div>4. Enter your channel @username (e.g. <code>@lomibingo</code>) above and click <b>Publish</b>!</div>
+                </div>
+              </div>
+            )}
+
+            {targetType === 'all_users' && (
+              <div style={{
+                padding: '14px',
+                background: '#f0fdf4',
+                border: '1.5px solid #bbf7d0',
+                borderRadius: '10px',
+                fontSize: '13px',
+                color: '#166534',
+                lineHeight: '1.6'
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <i className="fa-solid fa-users"></i> Direct 1-on-1 Broadcast to Registered Players
+                </div>
+                <div>
+                  This sends the promotional card directly into the private Telegram chat of all <b>{status?.metrics?.totalTelegramUsers || 0} registered players</b> with Mini App CTA buttons.
+                </div>
               </div>
             )}
 
@@ -450,6 +502,17 @@ export const TelegramBotDesk: React.FC = () => {
                     boxSizing: 'border-box'
                   }}
                 />
+                <div style={{
+                  marginTop: '8px',
+                  padding: '10px 12px',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  color: '#64748b'
+                }}>
+                  💡 <b>Instant Test:</b> Message <b>@userinfobot</b> on Telegram to see your numeric ID, paste it here, and verify the message layout before public posting!
+                </div>
               </div>
             )}
 
@@ -579,6 +642,40 @@ export const TelegramBotDesk: React.FC = () => {
                   📌 Pin post in Telegram channel after publishing
                 </span>
               </label>
+            )}
+
+            {/* Broadcast Feedback Alert Banner */}
+            {broadcastFeedback && (
+              <div style={{
+                padding: '14px 16px',
+                borderRadius: '12px',
+                background: broadcastFeedback.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                border: `1.5px solid ${broadcastFeedback.type === 'success' ? '#86efac' : '#fca5a5'}`,
+                color: broadcastFeedback.type === 'success' ? '#166534' : '#991b1b',
+                fontSize: '13px',
+                lineHeight: '1.5',
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <i className={`fa-solid ${broadcastFeedback.type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}`} style={{ marginTop: '2px', fontSize: '16px' }}></i>
+                  <div>
+                    <div style={{ fontWeight: 700, marginBottom: '2px' }}>
+                      {broadcastFeedback.type === 'success' ? 'Campaign Published Successfully!' : 'Campaign Broadcast Issue'}
+                    </div>
+                    <div>{broadcastFeedback.message}</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setBroadcastFeedback(null)}
+                  style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', opacity: 0.7, padding: '2px' }}
+                >
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+              </div>
             )}
 
             {/* Dispatch Action Button */}
