@@ -15,51 +15,50 @@ export const StatsStrip: React.FC = () => {
   const stats = [
     {
       icon: 'fa-coins',
-      iconColor: 'yellow',
+      iconColor: 'gold-ic',
       label: t('bingo.stake'),
       value: `${betAmount}`,
       unit: 'ETB',
-      valColor: 'gold'
+      valColor: 'gold-val'
     },
     {
       icon: 'fa-trophy',
-      iconColor: 'green',
+      iconColor: 'green-ic',
       label: t('bingo.winningAmount'),
       value: prizeDisplay,
       unit: 'ETB',
-      valColor: 'green'
+      valColor: 'green-val'
     },
     {
       icon: 'fa-users',
-      iconColor: 'purple',
+      iconColor: 'purple-ic',
       label: t('bingo.players'),
       value: `${currentPlayers}`,
       unit: '',
-      valColor: 'purple'
+      valColor: 'purple-val'
     },
     {
       icon: 'fa-dice',
-      iconColor: 'slate',
+      iconColor: 'blue-ic',
       label: t('bingo.calledBalls'),
       value: calledNumbers.length > 0 ? `${calledNumbers.length}` : '--',
       unit: calledNumbers.length > 0 ? '/75' : '',
-      valColor: 'slate'
+      valColor: 'slate-val'
     }
   ];
 
+
   return (
-    <div className="fresh-bingo-stats-grid">
+    <div className="new-stats-strip">
       {stats.map((s, i) => (
-        <div key={i} className="bingo-stat-card">
-          <div className={`stat-icon-wrap ${s.iconColor}`}>
+        <div key={i} className="new-stat-item">
+          <div className={`new-stat-icon-circle ${s.iconColor}`}>
             <i className={`fa-solid ${s.icon}`}></i>
           </div>
-          <div className="stat-text-group">
-            <span className="stat-label">{s.label}</span>
-            <strong className={`stat-val ${s.valColor}`}>
-              {s.value}{s.unit && <span style={{ fontSize: '0.5rem', fontWeight: 700 }}>{s.unit}</span>}
-            </strong>
-          </div>
+          <span className="new-stat-label">{s.label}</span>
+          <strong className={`new-stat-value ${s.valColor}`}>
+            {s.value}{s.unit && <span style={{ fontSize: '0.45rem', fontWeight: 700 }}>{s.unit}</span>}
+          </strong>
         </div>
       ))}
     </div>

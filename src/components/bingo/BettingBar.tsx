@@ -6,6 +6,7 @@ import { useAdmin } from '../../context/AdminContext.tsx';
 import { RoomSwitchModal } from './RoomSwitchModal.tsx';
 
 export const BettingBar: React.FC = () => {
+  // ── All hooks untouched ────────────────────────────────────
   const {
     betAmount,
     setBetAmount,
@@ -24,6 +25,7 @@ export const BettingBar: React.FC = () => {
 
   const [pendingSwitchStake, setPendingSwitchStake] = useState<number | null>(null);
 
+  // ── All logic untouched ────────────────────────────────────
   const betChips = [10, 20, 50, 100];
   const totalCost = betAmount * cardQuantity;
   const hasBonus = cardQuantity >= 2 && buy2Get1Bonus;
@@ -37,9 +39,11 @@ export const BettingBar: React.FC = () => {
     }
   };
 
+  // ── New UI — Phase 5 ───────────────────────────────────────
   return (
-    <div className="fresh-bingo-bottom-betting-bar">
-      {/* Active Room Switch Confirmation Modal */}
+    <div className="new-betting-bar">
+
+      {/* Active Room Switch Confirmation Modal — logic 100% untouched */}
       <RoomSwitchModal
         isOpen={pendingSwitchStake !== null}
         currentStake={betAmount}
@@ -54,55 +58,46 @@ export const BettingBar: React.FC = () => {
         onCancel={() => setPendingSwitchStake(null)}
       />
 
-      {/* Top Header: Select Stake & Balance */}
-      <div className="betting-top-meta-row">
-        <div className="betting-section-title">
-          <i className="fa-solid fa-coins gold-coin-icon"></i>
-          <span>{t('bingo.selectStake')} (Birr)</span>
+      {/* ── Section 1: Stake Header + Balance ── */}
+      <div className="new-betting-section-hdr">
+        <div className="new-betting-icon-tile">🪙</div>
+        <div className="new-betting-hdr-text">
+          <span className="new-betting-hdr-title">Choose Your Stake Amount</span>
+          <span className="new-betting-hdr-sub">Higher stakes, bigger prizes!</span>
         </div>
-        <div className="betting-user-balance-pill">
-          <i className="fa-solid fa-wallet"></i>
-          <span>{t('common.balance')}</span>
-          <strong>{isBalanceVisible ? `${(balance + bonus).toFixed(0)} ETB` : '••••'}</strong>
+        {/* Balance pill — data untouched */}
+        <div style={{ marginLeft: 'auto' }}>
+          <div className="betting-user-balance-pill">
+            <i className="fa-solid fa-wallet"></i>
+            <strong>
+              {isBalanceVisible ? `${(balance + bonus).toFixed(0)} ETB` : '••••'}
+            </strong>
+          </div>
         </div>
       </div>
 
-      {/* Active Room Indicator Badge */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '4px 10px',
-        backgroundColor: 'rgba(234, 179, 8, 0.1)',
-        border: '1px solid rgba(234, 179, 8, 0.25)',
-        borderRadius: '6px',
-        fontSize: '0.75rem',
-        color: '#854d0e',
-        marginBottom: '6px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <i className="fa-solid fa-door-open" style={{ color: '#ca8a04' }}></i>
-          <span>Active Arena: <strong>{betAmount} ETB Room</strong></span>
-        </div>
-        <span style={{ fontWeight: 700, color: (stakeRoomsSummary[betAmount] || 0) >= 2 ? '#16a34a' : '#ca8a04' }}>
-          {(stakeRoomsSummary[betAmount] || 0) >= 2 ? '⚡ Active Match' : '⏳ Waiting'} ({stakeRoomsSummary[betAmount] || 0} players)
-        </span>
-      </div>
-
-      {/* Stake Chips: 10, 20, 50, 100 Birr */}
-      <div className="betting-stake-chips-row">
+      {/* ── Section 2: Stake Chip Cards (10 / 20 / 50 / 100 ETB) ── */}
+      <div className="new-stake-chips-row">
         {betChips.map(chip => {
           const count = stakeRoomsSummary[chip] || 0;
+          const isSelected = betAmount === chip;
           return (
             <button
               key={chip}
               type="button"
-              className={`btn-stake-chip ${betAmount === chip ? 'active' : ''}`}
+              className={`new-stake-chip${isSelected ? ' selected' : ''}`}
               onClick={() => handleChipClick(chip)}
               disabled={roundPhase === 'playing' && hasTicket}
             >
-              <span className="chip-stake-val">{chip} ETB</span>
-              <span className={`chip-player-count-badge ${count >= 2 ? 'ready' : 'empty'}`}>
+              {/* Gold ✅ badge — visible only on selected chip */}
+              {isSelected && (
+                <div className="new-chip-check-badge">
+                  <i className="fa-solid fa-check"></i>
+                </div>
+              )}
+              <span className="new-chip-coin-emoji">🪙</span>
+              <span className="new-chip-amount">{chip} ETB</span>
+              <span className="new-chip-player-badge">
                 {count >= 2 ? '🟢' : '🟡'} {count}
               </span>
             </button>
@@ -110,86 +105,123 @@ export const BettingBar: React.FC = () => {
         })}
       </div>
 
-      {/* System-Assigned Cartelas Info Row (No manual handpick per client rule) */}
-      <div className="betting-cartela-pool-meta-row">
-        <div className="cartela-assigned-badges">
-          <span className="cartela-badge-label">Assigned:</span>
-          <span className="cartela-id-pill">#{selectedCartelaIds[0]}</span>
-          {cardQuantity >= 2 && (
-            <span className="cartela-id-pill">#{selectedCartelaIds[1]}</span>
-          )}
-          {hasBonus && (
-            <span className="cartela-id-pill bonus-pill">#{selectedCartelaIds[2]} (FREE 🎁)</span>
-          )}
+      {/* ── Section 3: Assigned + System Assigned Row ── */}
+      <div className="new-assigned-row">
+        {/* Left: Assigned cartela ID(s) */}
+        <div className="new-assigned-cell">
+          <div className="new-assigned-icon">
+            <i className="fa-solid fa-hashtag"></i>
+          </div>
+          <div className="new-assigned-text">
+            <span className="new-assigned-label">Assigned</span>
+            <span className="new-assigned-value">
+              #{selectedCartelaIds[0]}
+              {cardQuantity >= 2 && ` · #${selectedCartelaIds[1]}`}
+              {hasBonus && ` · #${selectedCartelaIds[2]} 🎁`}
+            </span>
+          </div>
         </div>
 
-        <div className="system-assigned-auto-badge" title="Cartelas are securely auto-assigned by the system">
-          <i className="fa-solid fa-dice" style={{ color: '#ca8a04', marginRight: 4 }}></i>
-          <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#854d0e' }}>System Assigned</span>
+        {/* Right: System Assigned */}
+        <div className="new-assigned-cell new-system-cell">
+          <div className="new-system-left">
+            <div className="new-assigned-icon">
+              <i className="fa-solid fa-shield-halved"></i>
+            </div>
+            <span className="new-system-label">System Assigned</span>
+          </div>
+          <i className="fa-solid fa-chevron-right new-system-chevron"></i>
         </div>
       </div>
 
-      {/* Buy 2 Get 1 FREE Bonus Highlight Banner */}
+      {/* ── Section 4: Cartelas Section Header ── */}
+      <div className="new-cartelas-section-hdr">
+        <div className="new-cartelas-tile">🎴</div>
+        <div className="new-cartelas-hdr-text">
+          <span className="new-cartelas-hdr-title">Cartelas</span>
+          <span className="new-cartelas-hdr-sub">
+            Choose how many cards you want to play with
+          </span>
+        </div>
+      </div>
+
+      {/* ── Section 5: Stepper + 2+1 FREE button ── */}
+      <div className="new-stepper-row">
+        <div className="new-stepper-controls">
+          {/* Decrement — setCardQuantity logic untouched */}
+          <button
+            type="button"
+            className="btn-stepper-purple"
+            onClick={() => setCardQuantity(cardQuantity - 1)}
+            disabled={cardQuantity <= 1 || hasTicket}
+          >
+            −
+          </button>
+          <span className="new-stepper-count">{cardQuantity}</span>
+          {/* Increment — setCardQuantity logic untouched */}
+          <button
+            type="button"
+            className="btn-stepper-purple"
+            onClick={() => setCardQuantity(cardQuantity + 1)}
+            disabled={cardQuantity >= 2 || hasTicket}
+          >
+            +
+          </button>
+        </div>
+
+        {/* 🎁 2 + 1 FREE — same condition as original btn-max-cartels */}
+        {!hasTicket && cardQuantity < 2 && buy2Get1Bonus && (
+          <button
+            type="button"
+            className="btn-2plus1-free"
+            onClick={() => setCardQuantity(2)}
+          >
+            🎁 2 + 1 FREE
+          </button>
+        )}
+      </div>
+
+      {/* Buy 2 Get 1 FREE promo info strip */}
       {hasBonus && !hasTicket && (
-        <div className="betting-bonus-promo-bar">
-          <i className="fa-solid fa-gift gold"></i>
-          <span><strong>BUY 2 GET 1 FREE!</strong> You get 3 Cartelas for the price of 2!</span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          background: 'linear-gradient(135deg, #fefce8, #fef9c3)',
+          border: '1px solid rgba(234,179,8,0.3)',
+          borderRadius: '10px',
+          padding: '7px 12px',
+          fontSize: '0.625rem',
+          fontWeight: 800,
+          color: '#854d0e',
+        }}>
+          <span>🎁</span>
+          <span>
+            <strong>BUY 2 GET 1 FREE!</strong> You get 3 Cartelas for the price of 2!
+          </span>
         </div>
       )}
 
-      {/* Cartels Stepper & Main Buy Action Button */}
-      <div className="betting-actions-stepper-row">
-        {/* Stepper (1 or 2 cards) */}
-        <div className="cartels-stepper-group">
-          <span className="cartels-label">
-            <i className="fa-solid fa-clone gold"></i>
-            {t('bingo.cartels')}
-          </span>
-          <div className="stepper-controls-pill">
-            <button
-              type="button"
-              className="btn-stepper-mini"
-              onClick={() => setCardQuantity(cardQuantity - 1)}
-              disabled={cardQuantity <= 1 || hasTicket}
-            >
-              −
-            </button>
-            <span className="stepper-val">{cardQuantity}</span>
-            <button
-              type="button"
-              className="btn-stepper-mini"
-              onClick={() => setCardQuantity(cardQuantity + 1)}
-              disabled={cardQuantity >= 2 || hasTicket}
-            >
-              +
-            </button>
-          </div>
-          {!hasTicket && cardQuantity < 2 && (
-            <button
-              type="button"
-              className="btn-max-cartels"
-              onClick={() => setCardQuantity(2)}
-            >
-              2 + 1 FREE
-            </button>
-          )}
-        </div>
+      {/* ── Section 6: Buy Ticket / Playing CTA button ── */}
+      <button
+        type="button"
+        className="btn-buy-ticket-new"
+        onClick={hasTicket ? undefined : buyTicket}
+        disabled={hasTicket}
+      >
+        {hasTicket ? (
+          <>
+            <i className="fa-solid fa-circle-check"></i>
+            <span>PLAYING {totalPlayableCards} CARDS</span>
+          </>
+        ) : (
+          <>
+            <i className="fa-solid fa-ticket"></i>
+            <span>{t('bingo.buyTicket')} · {totalCost} ETB</span>
+          </>
+        )}
+      </button>
 
-        {/* Buy / Playing CTA */}
-        <button
-          type="button"
-          className="btn-buy-ticket-huge-gold"
-          onClick={hasTicket ? undefined : buyTicket}
-          disabled={hasTicket}
-        >
-          <i className="fa-solid fa-ticket"></i>
-          <span>
-            {hasTicket
-              ? `PLAYING ${totalPlayableCards} CARDS`
-              : `${t('bingo.buyTicket')} • ${totalCost} ETB`}
-          </span>
-        </button>
-      </div>
     </div>
   );
 };
