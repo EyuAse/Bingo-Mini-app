@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
+import { getApiBase, LIVE_BACKEND_ORIGIN } from '../../config/env.ts';
 
 interface BotStatus {
   isConnected: boolean;
@@ -76,13 +77,25 @@ export const TelegramBotDesk: React.FC = () => {
   const [isBroadcasting, setIsBroadcasting] = useState<boolean>(false);
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
 
+  // Resilient API Fetch Helper with live backend fallback
+  const apiFetch = async (endpoint: string, init?: RequestInit): Promise<Response> => {
+    try {
+      const res = await fetch(`${getApiBase()}${endpoint}`, init);
+      if (res.ok || res.status !== 404) {
+        return res;
+      }
+    } catch (e) {}
+
+    return fetch(`${LIVE_BACKEND_ORIGIN}/api${endpoint}`, init);
+  };
+
   // Load Status and Broadcast History
   const loadData = async () => {
     try {
       setLoading(true);
       const [statusRes, historyRes] = await Promise.all([
-        fetch('/api/admin/telegram/status'),
-        fetch('/api/admin/telegram/broadcasts')
+        apiFetch('/admin/telegram/status'),
+        apiFetch('/admin/telegram/broadcasts')
       ]);
 
       if (statusRes.ok) {
@@ -122,7 +135,7 @@ export const TelegramBotDesk: React.FC = () => {
     e.preventDefault();
     setIsSavingConfig(true);
     try {
-      const res = await fetch('/api/admin/telegram/configure', {
+      const res = await apiFetch('/admin/telegram/configure', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -157,7 +170,7 @@ export const TelegramBotDesk: React.FC = () => {
     }
     setIsSettingMenu(true);
     try {
-      const res = await fetch('/api/admin/telegram/set-menu-button', {
+      const res = await apiFetch('/admin/telegram/set-menu-button', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ webAppUrl: webAppUrl.trim() })
@@ -181,7 +194,7 @@ export const TelegramBotDesk: React.FC = () => {
     setIsBroadcasting(true);
 
     try {
-      const res = await fetch('/api/admin/telegram/broadcast', {
+      const res = await apiFetch('/admin/telegram/broadcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
