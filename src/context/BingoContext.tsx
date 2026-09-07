@@ -327,7 +327,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Dedicated Stake Room Architecture: room-10, room-20, room-50, room-100
   const getActiveRoomId = useCallback(() => `room-${betAmount}`, [betAmount]);
 
-  // Safe Stake Switcher: If player changes stake while waiting in lobby, refund previous room ticket
+  // Safe Stake Switcher: If player changes stake while waiting in lobby, seamlessly transfer ticket with net difference adjusted
   const setBetAmount = async (newStake: number) => {
     if (newStake === betAmount) return;
 
@@ -340,23 +340,66 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (userRef.current?.id) {
         try {
           const oldRoomId = `room-${betAmount}`;
-          const res = await socketService.cancelTicketLobby(oldRoomId, userRef.current.id);
-          if (res.success) {
-            showToast(`💸 ${res.refunded || (betAmount * cardQuantity)} ETB refunded from ${betAmount} ETB lobby!`);
+          const newRoomId = `room-${newStake}`;
+          // Attempt seamless ticket transfer between stake rooms
+          const transferRes = await socketService.transferTicketLobby(oldRoomId, newRoomId, userRef.current.id);
+          if (transferRes.success) {
+            setHasTicket(true);
+            if (transferRes.tickets && transferRes.tickets.length > 0) {
+              const newIds = transferRes.tickets.map((t: any) => t.cartelaId);
+              setSelectedCartelaIds([
+                newIds[0] || selectedCartelaIdsRef.current[0],
+                newIds[1] || selectedCartelaIdsRef.current[1],
+                newIds[2] || selectedCartelaIdsRef.current[2]
+              ]);
+            }
+            const diff = transferRes.refundedOrCharged || 0;
+            if (diff > 0) {
+              showToast(`💸 Switched to ${newStake} ETB Room (+${diff.toFixed(0)} ETB refunded)`);
+            } else if (diff < 0) {
+              showToast(`🎯 Switched to ${newStake} ETB Room (${Math.abs(diff).toFixed(0)} ETB stake adjusted)`);
+            } else {
+              showToast(`🎯 Switched to ${newStake} ETB Room`);
+            }
+            setBetAmountState(newStake);
+            refreshBalanceRef.current();
+            return;
+          } else {
+            console.warn('Ticket transfer failed, falling back to cancel & refund:', transferRes.error);
+            const cancelRes = await socketService.cancelTicketLobby(oldRoomId, userRef.current.id);
+            if (cancelRes.success) {
+              showToast(`💸 ${cancelRes.refunded || (betAmount * cardQuantity)} ETB refunded from ${betAmount} ETB lobby!`);
+            }
+            setHasTicket(false);
+            setHasPreBoughtNext(false);
+            try {
+              localStorage.removeItem('betika_bingo_active_ticket');
+            } catch {}
+            refreshBalanceRef.current();
           }
         } catch (err) {
-          console.warn('Error refunding lobby ticket on stake switch:', err);
+          console.warn('Error transferring lobby ticket on stake switch:', err);
+          setHasTicket(false);
         }
       } else {
-        addBalanceRef.current(betAmount * cardQuantity);
-        showToast(`💸 ${betAmount * cardQuantity} ETB refunded to balance`);
+        const oldCost = betAmount * cardQuantity;
+        const newCost = newStake * cardQuantity;
+        const diff = oldCost - newCost;
+        if (diff > 0) {
+          addBalanceRef.current(diff);
+          showToast(`💸 Switched to ${newStake} ETB Room (+${diff} ETB refunded)`);
+          setHasTicket(true);
+        } else if (balance + bonus >= Math.abs(diff)) {
+          deductBalance(Math.abs(diff));
+          showToast(`🎯 Switched to ${newStake} ETB Room (${Math.abs(diff)} ETB stake adjusted)`);
+          setHasTicket(true);
+        } else {
+          addBalanceRef.current(oldCost);
+          setHasTicket(false);
+          showToast(`⚠️ Insufficient balance for ${newStake} ETB. ${oldCost} ETB refunded.`);
+        }
+        refreshBalanceRef.current();
       }
-      setHasTicket(false);
-      setHasPreBoughtNext(false);
-      try {
-        localStorage.removeItem('betika_bingo_active_ticket');
-      } catch {}
-      refreshBalanceRef.current();
     }
 
     setBetAmountState(newStake);
@@ -483,6 +526,28 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const fastForwardCatchUpRef = useRef(fastForwardCatchUp);
   fastForwardCatchUpRef.current = fastForwardCatchUp;
 
+  const calledNumbersRef = useRef<number[]>([]);
+  calledNumbersRef.current = calledNumbers;
+
+  // Helper to rehydrate card checkmarks with drawn numbers (prevents raw server matrix from wiping user ticks upon resume)
+  const hydrateCardWithDrawn = (
+    cardMatrix: BingoCell[],
+    drawnNums?: number[],
+    isAuto: boolean = true
+  ): BingoCell[] => {
+    if (!cardMatrix || !Array.isArray(cardMatrix)) return cardMatrix;
+    if (!drawnNums || !Array.isArray(drawnNums) || drawnNums.length === 0 || !isAuto) {
+      return cardMatrix;
+    }
+    const drawnSet = new Set(drawnNums);
+    return cardMatrix.map(c => {
+      if (c.isFree || drawnSet.has(c.val as number)) {
+        return { ...c, marked: true };
+      }
+      return c;
+    });
+  };
+
   // Authoritative Round Number & Ball Liveness Watchdog Tracking
   const [roundNumber, setRoundNumber] = useState<number>(1);
   const roundNumberRef = useRef<number>(1);
@@ -587,8 +652,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           newIds[2] || selectedCartelaIdsRef.current[2]
         ];
         setSelectedCartelaIds(updatedIds);
-        if (tickets[0]?.cardMatrix) setCartela1Data(tickets[0].cardMatrix);
-        if (tickets[1]?.cardMatrix) setCartela2Data(tickets[1].cardMatrix);
+        const drawn = (state.drawnNumbers && state.drawnNumbers.length > 0) ? state.drawnNumbers : calledNumbersRef.current;
+        if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current));
+        if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current));
 
         if (state.isPreBuy) {
           setHasPreBoughtNext(true);
@@ -657,6 +723,13 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
       setRoundPhase('playing');
       setGameActive(true);
+      setWaitingForPlayers(false);
+      if (typeof data.realPlayerCount === 'number') {
+        setRealPlayerCount(data.realPlayerCount);
+      }
+      if (typeof data.playersCount === 'number') {
+        setPlayersCount(data.playersCount);
+      }
       setCalledNumbers([]);
       setCurrentCall(null);
       setWinResult(null);
@@ -745,9 +818,10 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           newIds[2] || selectedCartelaIdsRef.current[2]
         ];
         setSelectedCartelaIds(updatedIds);
-        if (tickets[0]?.cardMatrix) setCartela1Data(tickets[0].cardMatrix);
-        if (tickets[1]?.cardMatrix) setCartela2Data(tickets[1].cardMatrix);
-        if (tickets[2]?.cardMatrix) setCartela3Data(tickets[2].cardMatrix);
+        const drawn = calledNumbersRef.current;
+        if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current));
+        if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current));
+        if (tickets[2]?.cardMatrix) setCartela3Data(hydrateCardWithDrawn(tickets[2].cardMatrix, drawn, autoPlayRef.current));
 
         if (data.isPreBuy) {
           setHasPreBoughtNext(true);
@@ -858,9 +932,10 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         newIds[2] || selectedCartelaIdsRef.current[2]
       ];
       setSelectedCartelaIds(updatedIds);
-      if (tickets[0]?.cardMatrix) setCartela1Data(tickets[0].cardMatrix);
-      if (tickets[1]?.cardMatrix) setCartela2Data(tickets[1].cardMatrix);
-      if (tickets[2]?.cardMatrix) setCartela3Data(tickets[2].cardMatrix);
+      const drawn = (data.drawnNumbers && data.drawnNumbers.length > 0) ? data.drawnNumbers : calledNumbersRef.current;
+      if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current));
+      if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current));
+      if (tickets[2]?.cardMatrix) setCartela3Data(hydrateCardWithDrawn(tickets[2].cardMatrix, drawn, autoPlayRef.current));
 
       if (data.isPreBuy) {
         setHasPreBoughtNext(true);

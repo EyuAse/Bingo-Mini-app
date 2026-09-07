@@ -408,6 +408,150 @@ class BingoGameEngine {
   }
 
   /**
+   * Seamless Lobby Stake Transfer
+   * Moves a player's active cartelas from oldRoom lobby to newRoom lobby.
+   * Adjusts net difference: refunds if moving down (e.g. 20 -> 10), or deducts if moving up (e.g. 10 -> 20).
+   * Automatically keeps the player active in the new room so player count updates and countdown starts!
+   */
+  public async handleTransferTicketLobby(
+    userId: string,
+    oldRoomId: string,
+    newRoomId: string,
+    socketId: string
+  ): Promise<{
+    success: boolean;
+    error?: string;
+    tickets?: PlayerTicket[];
+    refundedOrCharged?: number;
+  }> {
+    const oldRoom = this.getRoom(oldRoomId);
+    const newRoom = this.getRoom(newRoomId);
+
+    if (!oldRoom || !newRoom) {
+      return { success: false, error: 'Target room not found' };
+    }
+
+    if (oldRoom.phase !== 'lobby' || newRoom.phase !== 'lobby') {
+      return { success: false, error: 'Can only transfer tickets while both rooms are in lobby phase' };
+    }
+
+    const userTickets = oldRoom.tickets.get(userId);
+    if (!userTickets || userTickets.length === 0) {
+      return { success: false, error: 'No active tickets in previous room to transfer' };
+    }
+
+    const cardCount = userTickets.length;
+    const oldTotalCost = cardCount * oldRoom.stakeAmount;
+    const newTotalCost = cardCount * newRoom.stakeAmount;
+    const netDifference = oldTotalCost - newTotalCost; // >0 means refund to user, <0 means user owes extra
+
+    try {
+      await withTransaction(async (client) => {
+        if (netDifference > 0) {
+          // Refund difference (e.g. 20 -> 10 ETB: refund 10 ETB per card)
+          await client.query(
+            'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
+            [netDifference, userId]
+          );
+          const refCode = `TRF-REF-${Date.now().toString().slice(-6)}`;
+          await client.query(
+            `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, description)
+             VALUES ($1, 'refund', $2, (SELECT balance FROM wallets WHERE user_id = $1), $3, 'completed', $4)`,
+            [userId, netDifference, refCode, `Stake room transfer difference refunded: ${oldRoom.name} -> ${newRoom.name}`]
+          );
+        } else if (netDifference < 0) {
+          // Deduct difference (e.g. 10 -> 20 ETB: need 10 ETB extra per card)
+          const extraCost = Math.abs(netDifference);
+          const walletRes = await client.query(
+            'SELECT balance, bonus FROM wallets WHERE user_id = $1 FOR UPDATE',
+            [userId]
+          );
+          if (walletRes.rows.length === 0) throw new Error('Wallet not found');
+
+          const realBal = parseFloat(walletRes.rows[0].balance || '0');
+          const bonusBal = parseFloat(walletRes.rows[0].bonus || '0');
+          const totalFunds = realBal + bonusBal;
+
+          if (totalFunds < extraCost) {
+            throw new Error(`Insufficient funds for stake upgrade. Need ${extraCost.toFixed(2)} ETB extra.`);
+          }
+
+          const deductFromBonus = Math.min(bonusBal, extraCost);
+          const deductFromReal = extraCost - deductFromBonus;
+          const newReal = realBal - deductFromReal;
+          const newBonus = bonusBal - deductFromBonus;
+
+          await client.query(
+            'UPDATE wallets SET balance = $1, bonus = $2, updated_at = NOW() WHERE user_id = $3',
+            [newReal, newBonus, userId]
+          );
+          const refCode = `TRF-BET-${Date.now().toString().slice(-6)}`;
+          await client.query(
+            `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, description)
+             VALUES ($1, 'bet', $2, $3, $4, 'completed', $5)`,
+            [userId, extraCost, newReal + newBonus, refCode, `Stake room transfer upgrade: ${oldRoom.name} -> ${newRoom.name}`]
+          );
+        }
+      });
+
+      // 1. Remove from old room
+      oldRoom.tickets.delete(userId);
+      oldRoom.realPlayerCount = oldRoom.tickets.size;
+      oldRoom.waitingForPlayers = oldRoom.tickets.size < 2;
+      this.recalculatePot(oldRoom);
+      this.broadcastRoomState(oldRoom);
+
+      // 2. Prepare transferred tickets in new room
+      const transferredTickets: PlayerTicket[] = userTickets.map(t => ({
+        ...t,
+        betAmount: newRoom.stakeAmount,
+        socketId: socketId || t.socketId
+      }));
+
+      // 3. Register in new room
+      newRoom.tickets.set(userId, transferredTickets);
+      newRoom.realPlayerCount = newRoom.tickets.size;
+      newRoom.waitingForPlayers = newRoom.tickets.size < 2;
+      this.recalculatePot(newRoom);
+      this.broadcastRoomState(newRoom);
+
+      // 4. Notify new room of player joined (for lobby feed)
+      const userName = userTickets[0]?.userName || 'Player';
+      io.to(newRoom.id).emit('player_joined', {
+        userName,
+        realPlayerCount: newRoom.tickets.size,
+        waitingForPlayers: newRoom.tickets.size < 2,
+        countdownStarted: newRoom.tickets.size >= 2,
+        roomId: newRoom.id
+      });
+      if (newRoom.id === 'room-10') {
+        io.to(ARENA_ROOM_ID).emit('player_joined', {
+          userName,
+          realPlayerCount: newRoom.tickets.size,
+          waitingForPlayers: newRoom.tickets.size < 2,
+          countdownStarted: newRoom.tickets.size >= 2,
+          roomId: ARENA_ROOM_ID
+        });
+      }
+
+      // 5. Broadcast wallet and stake summaries
+      io.emit('user_balance_updated', { userId });
+      io.emit('stake_rooms_summary', this.getStakeRoomsSummary());
+
+      console.log(`🔄 [Lobby Transfer] Transferred ${cardCount} tickets for user ${userId} from ${oldRoom.name} to ${newRoom.name} (Net difference: ${netDifference} ETB)`);
+
+      return {
+        success: true,
+        tickets: transferredTickets,
+        refundedOrCharged: netDifference
+      };
+    } catch (err: any) {
+      console.error('❌ [GameEngine] Error in handleTransferTicketLobby:', err);
+      return { success: false, error: err.message || 'Transfer failed' };
+    }
+  }
+
+  /**
    * 100% System-Assigned Ticket Purchase with Anytime Pre-Betting
    * Players can choose 1 or 2 cartelas. If 2 cartelas, 3rd is FREE!
    * Routes to the dedicated stake room matching customStake or requestedRoomId.
@@ -807,6 +951,8 @@ class BingoGameEngine {
         totalPot: room.totalPot,
         winnerPayout: room.winnerPayout,
         playersCount: realTicketsCount + room.opponentCards.length,
+        realPlayerCount: room.tickets.size,
+        waitingForPlayers: false,
         roomId: room.id
       };
 

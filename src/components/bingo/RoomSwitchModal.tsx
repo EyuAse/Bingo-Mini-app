@@ -19,6 +19,10 @@ export const RoomSwitchModal: React.FC<RoomSwitchModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const cardQuantity = Math.max(1, Math.round(totalRefundAmount / (currentStake || 10)));
+  const isDowngrade = targetStake < currentStake;
+  const stakeDiff = Math.abs(currentStake - targetStake) * cardQuantity;
+
   return (
     <div className="fresh-victory-modal-backdrop" onClick={onCancel} style={{ zIndex: 9999 }}>
       <div
@@ -36,7 +40,7 @@ export const RoomSwitchModal: React.FC<RoomSwitchModalProps> = ({
 
         <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.5, marginBottom: '16px' }}>
           You have an active ticket in the <strong>{currentStake} ETB Room</strong>.
-          Switching rooms will refund <strong>{totalRefundAmount.toFixed(2)} ETB</strong> back to your wallet instantly.
+          Your ticket will seamlessly transfer to the <strong>{targetStake} ETB Room</strong> so you stay ready for the game!
         </p>
 
         <div style={{
@@ -49,8 +53,12 @@ export const RoomSwitchModal: React.FC<RoomSwitchModalProps> = ({
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <span style={{ color: '#64748b' }}>Wallet Refund:</span>
-          <strong style={{ color: '#16a34a', fontSize: '1rem' }}>+{totalRefundAmount.toFixed(2)} ETB</strong>
+          <span style={{ color: '#64748b' }}>
+            {isDowngrade ? 'Wallet Refund (Difference):' : 'Stake Difference:'}
+          </span>
+          <strong style={{ color: isDowngrade ? '#16a34a' : '#2563eb', fontSize: '1rem' }}>
+            {isDowngrade ? `+${stakeDiff.toFixed(2)} ETB` : `-${stakeDiff.toFixed(2)} ETB`}
+          </strong>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -61,7 +69,7 @@ export const RoomSwitchModal: React.FC<RoomSwitchModalProps> = ({
             style={{ width: '100%', padding: '12px' }}
           >
             <i className="fa-solid fa-arrow-right-arrow-left"></i>
-            <span>Confirm & Switch to {targetStake} ETB</span>
+            <span>Confirm & Transfer to {targetStake} ETB</span>
           </button>
 
           <button

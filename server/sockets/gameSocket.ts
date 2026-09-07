@@ -87,6 +87,20 @@ export function setupGameSockets(io: Server) {
       }
     });
 
+    // Seamless Stake Transfer in Lobby (Room switch with automatic ticket transfer)
+    socket.on(
+      'transfer_ticket_lobby',
+      async (data: { oldRoomId: string; newRoomId: string; userId: string }, callback?: (res: any) => void) => {
+        const { oldRoomId, newRoomId, userId } = data;
+        const result = await gameEngine.handleTransferTicketLobby(userId, oldRoomId, newRoomId, socket.id);
+        if (callback) {
+          callback(result);
+        } else {
+          socket.emit('transfer_ticket_lobby_response', result);
+        }
+      }
+    );
+
     // Admin Socket Config Controls
     socket.on('admin_set_commission', (data: { enabled: boolean; rate?: number }) => {
       gameEngine.setHouseCommission(data.enabled, data.rate);

@@ -457,6 +457,20 @@ class SocketService {
     });
   }
 
+  // Lobby Stake Transfer (Room switch with seamless ticket transfer)
+  public transferTicketLobby(
+    oldRoomId: string,
+    newRoomId: string,
+    userId: string
+  ): Promise<{ success: boolean; tickets?: any[]; refundedOrCharged?: number; error?: string }> {
+    return new Promise((resolve) => {
+      const sock = this.getSocket();
+      sock.emit('transfer_ticket_lobby', { oldRoomId, newRoomId, userId }, (res: any) => {
+        resolve(res || { success: false, error: 'No response from server' });
+      });
+    });
+  }
+
   // Stake Rooms Player Count Summary
   public onStakeRoomsSummary(callback: (summary: Record<number, number>) => void): () => void {
     return this.subscribeEvent('stake_rooms_summary', callback);
