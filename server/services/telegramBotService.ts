@@ -221,9 +221,13 @@ export class TelegramBotService {
       const btnUrl = opts.buttonUrl || cfg.webAppUrl;
       if (btnUrl) {
         if (opts.targetType === 'channel' || opts.targetType === 'group') {
-          // In channels/groups, use direct HTTPS URL to ensure seamless launching across all Telegram clients without requiring /newapp in BotFather
+          // In channels/groups, use native Telegram Mini App direct link https://t.me/<bot>/play
+          let channelBtnUrl = opts.buttonUrl;
+          if (!channelBtnUrl) {
+            channelBtnUrl = `https://t.me/${botUser}/play`;
+          }
           inlineKeyboard.push([
-            { text: opts.buttonText, url: btnUrl }
+            { text: opts.buttonText, url: channelBtnUrl }
           ]);
         } else {
           // In direct 1-on-1 chats between user and bot, web_app is fully supported
@@ -460,7 +464,7 @@ export class TelegramBotService {
 
     const meRes = await this.getMe();
     const botUser = meRes.result?.username || 'LomiBingobot';
-    const channelPlayUrl = cfg.webAppUrl || `https://t.me/${botUser}`;
+    const channelPlayUrl = `https://t.me/${botUser}/play`;
 
     const inlineKeyboard = [
       [{ text: '🎯 Play Bingo Now & Win!', url: channelPlayUrl }]

@@ -113,6 +113,10 @@ export const TelegramBotDesk: React.FC = () => {
           if (!targetChatId && sData.config?.channelId) {
             setTargetChatId(sData.config.channelId);
           }
+          const botUsername = sData.bot?.username || 'LomiBingobot';
+          if (!adButtonUrl) {
+            setAdButtonUrl(`https://t.me/${botUsername}/play`);
+          }
         }
       }
 
