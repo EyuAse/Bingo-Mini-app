@@ -36,8 +36,17 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
   React.useEffect(() => {
     fetchTransactions();
-    const interval = setInterval(fetchTransactions, 3000);
-    return () => clearInterval(interval);
+
+    const handleUpdate = () => {
+      fetchTransactions();
+    };
+
+    window.addEventListener('lb_wallet_updated', handleUpdate);
+    window.addEventListener('lb_deposit_approved', handleUpdate);
+    return () => {
+      window.removeEventListener('lb_wallet_updated', handleUpdate);
+      window.removeEventListener('lb_deposit_approved', handleUpdate);
+    };
   }, [fetchTransactions]);
 
   const deposits = liveTransactions.filter(tx => tx.type === 'deposit');

@@ -383,14 +383,8 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     socket.on('deposit_status_updated', handleAdminEvent);
     socket.on('withdrawal_status_updated', handleAdminEvent);
 
-    // 2. Active 3-Second Background Polling Engine
-    // Guarantees immediate zero-refresh detection across multi-device / multi-server sessions
-    const pollInterval = setInterval(() => {
-      refreshAdminData();
-    }, 3000);
-
+    // Real-time Event-Driven Architecture: Rely on WebSocket push events.
     return () => {
-      clearInterval(pollInterval);
       socket.off('admin_new_user', handleAdminEvent);
       socket.off('admin_new_deposit', handleAdminEvent);
       socket.off('admin_new_withdrawal', handleAdminEvent);

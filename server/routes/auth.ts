@@ -216,6 +216,92 @@ router.post('/telegram', async (req, res) => {
 });
 
 /**
+ * Standard Phone & PIN Registration
+ */
+router.post('/register', async (req, res) => {
+  try {
+    const { phone, pin, fullName } = req.body;
+    if (!phone || !pin) {
+      return res.status(400).json({ success: false, error: 'Phone and PIN are required' });
+    }
+
+    const cleanPhone = phone.trim();
+    const existingUser = await query('SELECT id FROM users WHERE phone = $1 LIMIT 1', [cleanPhone]);
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ success: false, error: 'An account with this phone number already exists. Please log in.' });
+    }
+
+    const hashedPin = await bcrypt.hash(pin.trim(), 10);
+    const name = (fullName || 'Lomi Player').trim();
+
+    const result = await withTransaction(async (client) => {
+      const newUserRes = await client.query(
+        `INSERT INTO users (phone, full_name, pin_hash, role, status)
+         VALUES ($1, $2, $3, 'player', 'active')
+         RETURNING *`,
+        [cleanPhone, name, hashedPin]
+      );
+      const newUser = newUserRes.rows[0];
+
+      const newWalletRes = await client.query(
+        `INSERT INTO wallets (user_id, balance, bonus, locked_balance)
+         VALUES ($1, 0.00, 10.00, 0.00)
+         RETURNING *`,
+        [newUser.id]
+      );
+      const newWallet = newWalletRes.rows[0];
+
+      await client.query(
+        `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, payment_method, description)
+         VALUES ($1, 'bonus', 10.00, 10.00, $2, 'completed', 'welcome_reward', 'Web 10 ETB Registration Bonus')`,
+        [newUser.id, `BONUS-WEB-${Date.now().toString().slice(-6)}`]
+      );
+
+      return { user: newUser, wallet: newWallet };
+    });
+
+    const authUser = {
+      id: result.user.id,
+      phone: result.user.phone,
+      fullName: result.user.full_name,
+      role: result.user.role as 'player' | 'cashier' | 'admin'
+    };
+
+    const token = generateToken(authUser);
+
+    io.emit('admin_new_user', {
+      id: result.user.id,
+      name: result.user.full_name,
+      phone: result.user.phone,
+      role: result.user.role,
+      balance: 0,
+      bonus: 10,
+      createdAt: result.user.created_at
+    });
+
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: result.user.id,
+        phone: result.user.phone,
+        fullName: result.user.full_name,
+        role: result.user.role,
+        createdAt: result.user.created_at
+      },
+      wallet: {
+        balance: parseFloat(result.wallet.balance || '0'),
+        bonus: parseFloat(result.wallet.bonus || '10.00'),
+        lockedBalance: parseFloat(result.wallet.locked_balance || '0')
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ [Auth Register Error]:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Registration failed' });
+  }
+});
+
+/**
  * Standard Phone & PIN Login (e.g. for Cashier/Admin Portal or Web)
  */
 router.post('/login', async (req, res) => {

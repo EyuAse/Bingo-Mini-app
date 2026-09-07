@@ -50,8 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             'lomi_registered_users',
             'lomi_registered_users_v2',
             'lomi_registered_users_v3',
-            'lomi_registered_users_v4',
-            'lomi_registered_users_v5'
+            'lomi_registered_users_v4'
           ];
           legacyKeys.forEach(k => localStorage.removeItem(k));
         }
@@ -181,11 +180,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const register = async (payload: RegisterPayload): Promise<User> => {
     setIsLoading(true);
     try {
-      const result = await authService.register(payload);
-      localStorage.removeItem('lomi_explicit_logout');
-      setUser(result.user);
-      setToken(result.token);
-      return result.user;
+      try {
+        const apiRes = await apiClient.auth.register({
+          phone: payload.phone,
+          pin: payload.pin,
+          fullName: payload.fullName
+        });
+        localStorage.removeItem('lomi_explicit_logout');
+        const u = apiRes.user;
+        const mappedUser: User = {
+          id: u.id,
+          phone: u.phone || payload.phone,
+          nationalPhone: payload.phone,
+          formattedPhone: payload.phone,
+          carrier: 'ethiotelecom',
+          fullName: u.fullName,
+          isPhoneVerified: true,
+          role: u.role || 'player',
+          pin: payload.pin,
+          createdAt: u.createdAt || new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        };
+        setUser(mappedUser);
+        setToken(apiRes.token);
+        if (apiRes.wallet) {
+          localStorage.setItem('lomi_live_balance', apiRes.wallet.balance.toFixed(2));
+          localStorage.setItem('lomi_live_bonus', apiRes.wallet.bonus.toFixed(2));
+          window.dispatchEvent(new CustomEvent('lb_wallet_updated', { detail: apiRes.wallet }));
+        }
+        return mappedUser;
+      } catch (backendErr) {
+        console.warn('Backend register notice, using local service:', backendErr);
+        const result = await authService.register(payload);
+        localStorage.removeItem('lomi_explicit_logout');
+        setUser(result.user);
+        setToken(result.token);
+        return result.user;
+      }
     } finally {
       setIsLoading(false);
     }
