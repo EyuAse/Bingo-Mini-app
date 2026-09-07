@@ -339,10 +339,13 @@ class AudioEngineService {
 
     // 2. Check for custom recorded audio file (Addis AI / Studio Human clip)
     const possibleUrls = [
+      `/assets/audio/${this.voiceLang}/${num}.webm`,
       `/assets/audio/${this.voiceLang}/${num}.mp3`,
+      `/assets/audio/${this.voiceLang}/${col}-${num}.webm`,
       `/assets/audio/${this.voiceLang}/${col}-${num}.mp3`,
-      `/assets/audio/${this.voiceLang}/${num}.wav`,
-      `/assets/audio/${this.voiceLang}/${num}.webm`
+      `/assets/audio/${this.voiceLang}/${num}.m4a`,
+      `/assets/audio/${this.voiceLang}/${col}-${num}.m4a`,
+      `/assets/audio/${this.voiceLang}/${num}.wav`
     ];
 
     for (const url of possibleUrls) {
@@ -359,7 +362,7 @@ class AudioEngineService {
 
   /**
    * Energetic Live Game Event Shouts:
-   * 1. Checks for /assets/audio/{lang}/{phraseKey}.mp3/.webm/.wav
+   * 1. Checks for /assets/audio/{lang}/{phraseKey}.mp3/.webm/.wav/.m4a
    * 2. If recorded file exists: Plays audio buffer
    * 3. If not recorded yet: Stays silent (zero synthetic voice)
    */
@@ -367,8 +370,9 @@ class AudioEngineService {
     if (this.isMuted) return;
 
     const possibleUrls = [
-      `/assets/audio/${this.voiceLang}/${phraseKey}.mp3`,
       `/assets/audio/${this.voiceLang}/${phraseKey}.webm`,
+      `/assets/audio/${this.voiceLang}/${phraseKey}.mp3`,
+      `/assets/audio/${this.voiceLang}/${phraseKey}.m4a`,
       `/assets/audio/${this.voiceLang}/${phraseKey}.wav`
     ];
 
