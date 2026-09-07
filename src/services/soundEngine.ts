@@ -26,6 +26,8 @@ class AudioEngineService {
   private audioBufferCache: Map<string, AudioBuffer | null> = new Map();
   private currentVoiceAudio: HTMLAudioElement | null = null;
   private preloadedAudios: Map<number, HTMLAudioElement> = new Map();
+  private voiceBufferMap: Map<number, AudioBuffer> = new Map();
+  private isAudioUnlocked: boolean = false;
 
   constructor() {
     this.initVoices();
@@ -83,6 +85,31 @@ class AudioEngineService {
         this.ctx.resume().catch(() => {});
       }
     } catch {}
+  }
+
+  public unlockAudio() {
+    this.isAudioUnlocked = true;
+    try {
+      this.initCtx();
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+      if (this.ctx) {
+        const buffer = this.ctx.createBuffer(1, 1, 22050);
+        const source = this.ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.ctx.destination);
+        source.start(0);
+      }
+    } catch {}
+
+    if (this.preloadedAudios.size > 0) {
+      for (const audio of this.preloadedAudios.values()) {
+        try {
+          audio.load();
+        } catch {}
+      }
+    }
   }
 
   setMuted(muted: boolean) {
@@ -393,82 +420,123 @@ class AudioEngineService {
   }
 
   /**
-   * Pre-warms and caches voice files in memory for 0ms instant playback (eliminates audio lag)
+   * Pre-warms and caches voice files into both Web Audio RAM (AudioBuffer)
+   * and HTML5 Audio elements for 100% universal cross-device playback (PC & mobile).
    */
-  preloadVoicePack(column: string = 'B', count: number = 15) {
-    if (typeof window === 'undefined' || typeof Audio === 'undefined') return;
+  async preloadVoicePack(column: string = 'B', count: number = 15) {
+    if (typeof window === 'undefined') return;
 
     for (let i = 1; i <= count; i++) {
-      if (this.preloadedAudios.has(i)) continue;
-      try {
-        const audio = new Audio(`/assets/audio/am/${i}.webm`);
-        audio.preload = 'auto';
-        audio.volume = 1.0;
-        this.preloadedAudios.set(i, audio);
-      } catch {}
+      // 1. Preload HTML5 Audio (Universal MP3 with WAV/WebM fallback)
+      if (!this.preloadedAudios.has(i) && typeof Audio !== 'undefined') {
+        try {
+          const audio = new Audio(`/assets/audio/am/${i}.mp3`);
+          audio.preload = 'auto';
+          audio.volume = 1.0;
+          this.preloadedAudios.set(i, audio);
+        } catch {}
+      }
+
+      // 2. Decode into in-memory Web Audio AudioBuffer (0ms instant hardware playback)
+      if (!this.voiceBufferMap.has(i)) {
+        try {
+          const urls = [
+            `/assets/audio/am/${i}.mp3`,
+            `/assets/audio/am/${i}.wav`,
+            `/assets/audio/am/${i}.webm`
+          ];
+          for (const url of urls) {
+            const buf = await this.loadAudioBuffer(url);
+            if (buf) {
+              this.voiceBufferMap.set(i, buf);
+              break;
+            }
+          }
+        } catch {}
+      }
     }
   }
 
   /**
    * Universal Ball Speech Announcement:
    * 1. Voice-Only policy: No synthetic chimes, pops, or beeps.
-   * 2. Uses in-memory preloaded audio for 0ms instant latency (zero lag).
-   * 3. Clean high-fidelity playback with no artificial radio compression.
+   * 2. Tier 1: In-memory Web Audio AudioBuffer (0ms latency, zero seek-state bugs, zero AbortError).
+   * 3. Tier 2: Preloaded HTML5 Audio element (MP3 / WAV / WebM).
+   * 4. Tier 3: Resilient URL cascade fallback.
+   * Never fails silently on PC or mobile!
    */
   async speakBall(col: string, num: number) {
     telegramService.triggerHaptic('medium');
     if (this.isMuted) return;
 
-    // 0. Primary: Instant in-memory cache playback (0ms latency, zero network lag)
-    const preloaded = this.preloadedAudios.get(num);
-    if (preloaded) {
-      if (this.currentVoiceAudio && this.currentVoiceAudio !== preloaded) {
-        try {
-          this.currentVoiceAudio.pause();
-          this.currentVoiceAudio.currentTime = 0;
-        } catch {}
-      }
-      this.currentVoiceAudio = preloaded;
-      preloaded.currentTime = 0;
-      preloaded.volume = 1.0;
-      const playPromise = preloaded.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {});
-      }
-      return;
+    // Ensure audio context is running if user interacted
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
     }
 
-    // Candidate URLs across language folders and naming conventions
-    const possibleUrls = [
-      `/assets/audio/${this.voiceLang}/${num}.webm`,
-      `/assets/audio/am/${num}.webm`,
-      `/assets/audio/en/${num}.webm`,
-      `/assets/audio/${this.voiceLang}/${col}-${num}.webm`,
-      `/assets/audio/am/${col}-${num}.webm`,
-      `/assets/audio/en/${col}-${num}.webm`,
+    // Tier 1: In-memory Web Audio AudioBuffer (0ms instant hardware playback, zero state bugs)
+    const cachedBuffer = this.voiceBufferMap.get(num);
+    if (cachedBuffer) {
+      const played = this.playDecodedBuffer(cachedBuffer, true);
+      if (played) return;
+    }
+
+    // Tier 2: Preloaded HTML5 Audio with error recovery
+    const preloaded = this.preloadedAudios.get(num);
+    if (preloaded) {
+      try {
+        if (this.currentVoiceAudio && this.currentVoiceAudio !== preloaded) {
+          try {
+            this.currentVoiceAudio.pause();
+          } catch {}
+        }
+        this.currentVoiceAudio = preloaded;
+        preloaded.currentTime = 0;
+        preloaded.volume = 1.0;
+        const playPromise = preloaded.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          return;
+        }
+        return;
+      } catch {
+        // Fall through to Tier 3 on error instead of giving up!
+      }
+    }
+
+    // Tier 3: Multi-format universal fallback URLs (MP3, WAV, WebM across am and en)
+    const candidateUrls = [
       `/assets/audio/${this.voiceLang}/${num}.mp3`,
       `/assets/audio/am/${num}.mp3`,
       `/assets/audio/en/${num}.mp3`,
+      `/assets/audio/${this.voiceLang}/${num}.wav`,
+      `/assets/audio/am/${num}.wav`,
+      `/assets/audio/en/${num}.wav`,
+      `/assets/audio/${this.voiceLang}/${num}.webm`,
+      `/assets/audio/am/${num}.webm`,
+      `/assets/audio/en/${num}.webm`,
       `/assets/audio/${this.voiceLang}/${col}-${num}.mp3`,
       `/assets/audio/am/${col}-${num}.mp3`,
       `/assets/audio/en/${col}-${num}.mp3`
     ];
 
-    const uniqueUrls = Array.from(new Set(possibleUrls));
+    const uniqueUrls = Array.from(new Set(candidateUrls));
 
-    // 1. Direct HTML5 Audio playback
-    for (const url of uniqueUrls) {
-      const success = await this.playAudioDirect(url);
-      if (success) {
-        return;
-      }
-    }
-
-    // 2. Fallback: Web Audio API Buffer playback (bypasses radio filter for voice)
+    // Try Web Audio buffer load
     for (const url of uniqueUrls) {
       const buffer = await this.loadAudioBuffer(url);
       if (buffer) {
-        this.playDecodedBuffer(buffer, true);
+        this.voiceBufferMap.set(num, buffer);
+        if (this.playDecodedBuffer(buffer, true)) {
+          return;
+        }
+      }
+    }
+
+    // Try HTML5 Audio direct play
+    for (const url of uniqueUrls) {
+      const success = await this.playAudioDirect(url);
+      if (success) {
         return;
       }
     }

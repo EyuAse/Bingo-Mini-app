@@ -43,6 +43,7 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
     if (isMuted) {
       toggleMute();
     }
+    soundEngine.unlockAudio();
     soundEngine.resumeAudioContext();
     setActivePlayingNum(b.num);
 

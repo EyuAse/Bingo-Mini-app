@@ -366,9 +366,20 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     showToast(next ? '🔇 Audio Muted' : '🔊 Audio Unmuted');
   };
 
-  // Pre-warm and cache Column B voice files into memory for 0ms instant playback
+  // Pre-warm and cache Column B voice files into memory & bind universal unlock listener
   useEffect(() => {
     soundEngine.preloadVoicePack('B', 15);
+
+    const handleInteractionUnlock = () => {
+      soundEngine.unlockAudio();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('touchstart', handleInteractionUnlock, { once: true, passive: true });
+      window.addEventListener('touchend', handleInteractionUnlock, { once: true, passive: true });
+      window.addEventListener('click', handleInteractionUnlock, { once: true, passive: true });
+      window.addEventListener('keydown', handleInteractionUnlock, { once: true, passive: true });
+    }
   }, []);
 
   // Keep Cartelas synchronized when IDs change
