@@ -300,6 +300,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [canWin, setCanWin] = useState<boolean>(false);
   const [winResult, setWinResult] = useState<WinResult | null>(null);
   const [showWinModal, setShowWinModal] = useState<boolean>(false);
+  const winModalDismissedForRoundRef = useRef<number | null>(null);
   const [spherePop, setSpherePop] = useState<boolean>(false);
   const [isVerticalBoard, setIsVerticalBoard] = useState<boolean>(true);
   const [showMasterBoard, setShowMasterBoard] = useState<boolean>(false);
@@ -659,6 +660,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setCalledNumbers([]);
       setCurrentCall(null);
       setWinResult(null);
+      winModalDismissedForRoundRef.current = null;
       setShowWinModal(false);
       if (data.winnerPayout) setPrizePool(data.winnerPayout);
 
@@ -815,6 +817,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (data.phase) {
       setRoundPhase(prev => {
         if (prev !== 'lobby' && data.phase === 'lobby') {
+          winModalDismissedForRoundRef.current = null;
           setShowWinModal(false);
           setHasTicket(hasPreBoughtNextRef.current);
           setHasPreBoughtNext(false);
@@ -869,7 +872,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
     }
 
-    if (data.winResult && !showWinModal) {
+    if (data.winResult && !showWinModal && winModalDismissedForRoundRef.current !== data.roundNumber) {
       const currentUser = userRef.current;
       const isRealUserWin = 
         Boolean(currentUser?.id && Array.isArray(data.winResult.winnerUserIds) && data.winResult.winnerUserIds.includes(currentUser.id)) ||
@@ -1059,6 +1062,10 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } else {
       showToast('✋ Manual Mode Selected (Active for next game)');
     }
+
+    if (user?.id) {
+      socketService.updatePlayerMode(getActiveRoomId(), user.id, next);
+    }
   };
 
   // Buy Ticket via Live Socket Engine & Neon DB with Anytime Pre-Betting
@@ -1079,9 +1086,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return;
     }
 
-    // Send to live server
+    // Send to live server with chosen isAutoPlay mode
     if (user?.id) {
-      const res = await socketService.buyTicket(roomId, user.id, user.fullName, activeIds, betAmount);
+      const res = await socketService.buyTicket(roomId, user.id, user.fullName, activeIds, betAmount, autoPlayRef.current);
       if (!res.success) {
         showToast(`❌ ${res.error || 'Ticket purchase failed'}`);
         return;
@@ -1253,17 +1260,28 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         newCells[cellIdx] = { ...cell, marked: true };
         setTargetData(newCells);
         soundEngine.playDaub();
+
+        // INSTANT WIN CHECK: If this tap completes a 5-in-a-row line, claim BINGO immediately with no extra button!
+        const winLine = checkWinningPatterns(newCells);
+        if (winLine && winLine.length > 0) {
+          console.log(`🎉 [ManualDaub] Winning line completed on Cartela #${selectedCartelaIds[cartelaIdx]}! Triggering instant claim...`);
+          claimBingo(cartelaIdx, newCells);
+        }
       } else {
         showToast(`⚠️ ${cell.colLetter}-${cell.val} has not been called yet!`);
       }
     }
   };
 
-  // Claim BINGO to Server Engine
-  const claimBingo = async () => {
-    const win1 = checkWinningPatterns(cartela1Data);
-    const win2 = totalPlayableCards >= 2 ? checkWinningPatterns(cartela2Data) : null;
-    const win3 = totalPlayableCards >= 3 ? checkWinningPatterns(cartela3Data) : null;
+  // Claim BINGO to Server Engine (supports direct override with current cell state)
+  const claimBingo = async (overrideCardIdx?: number, overrideCells?: BingoCell[]) => {
+    const c1 = overrideCardIdx === 0 && overrideCells ? overrideCells : cartela1Data;
+    const c2 = overrideCardIdx === 1 && overrideCells ? overrideCells : cartela2Data;
+    const c3 = overrideCardIdx === 2 && overrideCells ? overrideCells : cartela3Data;
+
+    const win1 = checkWinningPatterns(c1);
+    const win2 = totalPlayableCards >= 2 ? checkWinningPatterns(c2) : null;
+    const win3 = totalPlayableCards >= 3 ? checkWinningPatterns(c3) : null;
 
     if (win1 || win2 || win3) {
       const activeWinCardIdx = win1 ? 0 : win2 ? 1 : 2;
@@ -1318,6 +1336,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const closeWinModalAndRestart = () => {
+    winModalDismissedForRoundRef.current = roundNumber;
     setShowWinModal(false);
     setHasTicket(false);
     setSelectedCartelaIds([

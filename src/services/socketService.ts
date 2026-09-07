@@ -360,18 +360,26 @@ class SocketService {
     userId: string,
     userName: string,
     cartelaIds: number[],
-    stakeAmount?: number
+    stakeAmount?: number,
+    isAutoPlay: boolean = true
   ): Promise<{ success: boolean; error?: string; tickets?: any[]; remainingBalance?: number; preBoughtForNextRound?: boolean }> {
     return new Promise((resolve) => {
       const sock = this.getSocket();
       sock.emit(
         'buy_ticket',
-        { roomId, userId, userName, cartelaIds, stakeAmount },
+        { roomId, userId, userName, cartelaIds, stakeAmount, isAutoPlay },
         (response: any) => {
           resolve(response || { success: false, error: 'No response from game server' });
         }
       );
     });
+  }
+
+  public updatePlayerMode(roomId: string, userId: string, isAutoPlay: boolean) {
+    const sock = this.getSocket();
+    if (sock.connected) {
+      sock.emit('update_player_mode', { roomId, userId, isAutoPlay });
+    }
   }
 
   public claimBingo(

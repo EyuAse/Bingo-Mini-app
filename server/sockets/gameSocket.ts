@@ -100,17 +100,18 @@ export function setupGameSockets(io: Server) {
     socket.on(
       'buy_ticket',
       async (
-        data: { roomId: string; userId: string; userName: string; cartelaIds: number[]; stakeAmount?: number },
+        data: { roomId: string; userId: string; userName: string; cartelaIds: number[]; stakeAmount?: number; isAutoPlay?: boolean },
         callback?: (res: any) => void
       ) => {
-        const { roomId, userId, userName, cartelaIds, stakeAmount } = data;
+        const { roomId, userId, userName, cartelaIds, stakeAmount, isAutoPlay } = data;
         const result = await gameEngine.handleBuyTicket(
           userId,
           userName || authUserName,
           roomId,
           cartelaIds,
           socket.id,
-          stakeAmount
+          stakeAmount,
+          isAutoPlay
         );
 
         if (callback) {
@@ -133,6 +134,13 @@ export function setupGameSockets(io: Server) {
         }
       }
     );
+
+    // 2.2 Update Player Auto/Manual Mode Event
+    socket.on('update_player_mode', (data: { roomId: string; userId: string; isAutoPlay: boolean }) => {
+      if (data?.roomId && data?.userId) {
+        gameEngine.updatePlayerMode(data.roomId, data.userId, data.isAutoPlay);
+      }
+    });
 
     // 3. Claim Bingo Event
     socket.on(

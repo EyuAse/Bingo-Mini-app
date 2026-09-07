@@ -16,6 +16,7 @@ export interface PlayerTicket {
   betAmount: number;
   socketId: string;
   isBonus?: boolean;
+  isAutoPlay?: boolean;
 }
 
 export interface OpponentCard {
@@ -417,7 +418,8 @@ class BingoGameEngine {
     requestedRoomId: string,
     requestedCartelaIds: number[] | number,
     socketId: string,
-    customStake?: number
+    customStake?: number,
+    isAutoPlay: boolean = true
   ): Promise<{
     success: boolean;
     error?: string;
@@ -549,7 +551,8 @@ class BingoGameEngine {
         cardMatrix: generateCardFromId(id),
         betAmount: stakePerCard,
         socketId,
-        isBonus: false
+        isBonus: false,
+        isAutoPlay: isAutoPlay !== false
       }));
 
       const isPreBuy = room.phase !== 'lobby';
@@ -596,6 +599,22 @@ class BingoGameEngine {
       };
     } catch (error: any) {
       return { success: false, error: error.message || 'Ticket purchase failed' };
+    }
+  }
+
+  /**
+   * Updates player's Auto/Manual mode for their active & queued tickets
+   */
+  public updatePlayerMode(roomId: string, userId: string, isAutoPlay: boolean) {
+    const room = this.getRoom(roomId);
+    if (!room) return;
+    const userTickets = room.tickets.get(userId);
+    if (userTickets) {
+      userTickets.forEach(t => { t.isAutoPlay = isAutoPlay; });
+    }
+    const nextTickets = room.nextRoundTickets?.get(userId);
+    if (nextTickets) {
+      nextTickets.forEach(t => { t.isAutoPlay = isAutoPlay; });
     }
   }
 
@@ -950,19 +969,21 @@ class BingoGameEngine {
           winningIndices: number[];
         }> = [];
 
-        // Check all Real Player tickets
+        // Check all Real Player tickets (Only auto-win for Auto-Play tickets; manual players must claim)
         for (const [uid, tList] of room.tickets.entries()) {
           for (const t of tList) {
-            const winCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
-            if (winCheck.isWin) {
-              winningCards.push({
-                userId: uid,
-                userName: t.userName,
-                cartelaId: t.cartelaId,
-                isReal: true,
-                winningPattern: winCheck.winningPattern || 'Bingo Line',
-                winningIndices: winCheck.winningIndices || []
-              });
+            if (t.isAutoPlay !== false) {
+              const winCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
+              if (winCheck.isWin) {
+                winningCards.push({
+                  userId: uid,
+                  userName: t.userName,
+                  cartelaId: t.cartelaId,
+                  isReal: true,
+                  winningPattern: winCheck.winningPattern || 'Bingo Line',
+                  winningIndices: winCheck.winningIndices || []
+                });
+              }
             }
           }
         }
