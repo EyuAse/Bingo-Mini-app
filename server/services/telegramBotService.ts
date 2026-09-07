@@ -488,7 +488,28 @@ export class TelegramBotService {
    * Inbound Telegram Webhook update handler (/start, /play, /help)
    */
   public async handleWebhookUpdate(update: any): Promise<boolean> {
-    if (!update || !update.message) return false;
+    if (!update) return false;
+
+    // Auto-detect when bot is added as Administrator to a Channel or Group
+    if (update.my_chat_member?.chat) {
+      const chat = update.my_chat_member.chat;
+      const targetIdentifier = chat.username ? `@${chat.username}` : String(chat.id);
+      console.log(`📢 [Telegram Bot added to Chat/Channel]:`, chat.title, targetIdentifier);
+      try {
+        await query(
+          `INSERT INTO admin_settings (key, value, updated_at)
+           VALUES ('telegram_channel_id', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+          [targetIdentifier]
+        );
+        this.clearConfigCache();
+      } catch (e) {
+        console.warn('Failed to auto-save channel id from my_chat_member:', e);
+      }
+      return true;
+    }
+
+    if (!update.message) return false;
     const msg = update.message;
     const chatId = msg.chat?.id;
     const text = (msg.text || '').trim();
