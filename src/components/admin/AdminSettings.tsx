@@ -13,8 +13,6 @@ export const AdminSettings: React.FC = () => {
     commissionRate,
     setCommissionRate,
     stakes,
-    buy2Get1Bonus,
-    setBuy2Get1Bonus,
     verticalBoardMode,
     setVerticalBoardMode,
     registerBonus,
@@ -303,31 +301,6 @@ export const AdminSettings: React.FC = () => {
           </div>
 
           <div className="settings-controls-stack">
-            {/* Control 1: 2+1 Cartela Bonus Promo */}
-            <div className="settings-control-row">
-              <div className="control-left-meta">
-                <div className="control-title-row">
-                  <strong className="control-title">2+1 Cartela Bonus Promotion</strong>
-                  <span className={`control-status-pill ${buy2Get1Bonus ? 'active' : 'inactive'}`}>
-                    {buy2Get1Bonus ? 'ACTIVE' : 'OFF'}
-                  </span>
-                </div>
-                <p className="control-desc">
-                  When a player selects 2 or more cards (cartelas), automatically grant 1 bonus card free.
-                </p>
-              </div>
-              <label className="dash-toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={buy2Get1Bonus}
-                  onChange={e => {
-                    setBuy2Get1Bonus(e.target.checked);
-                    showToast(`2+1 Cartela Bonus ${e.target.checked ? 'Enabled' : 'Disabled'}`);
-                  }}
-                />
-                <span className="dash-toggle-slider"></span>
-              </label>
-            </div>
 
             {/* Control 2: Vertical Board Mode */}
             <div className="settings-control-row">

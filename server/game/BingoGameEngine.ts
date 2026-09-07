@@ -480,10 +480,9 @@ class BingoGameEngine {
     // Card 1
     drawnIds.push(getNextUniqueCartelaId());
 
-    // If quantity is 2: draw Card 2 + 1 FREE Bonus Card (Buy 2 Get 1 Free Promo)
+    // If quantity is 2: draw Card 2 (strictly max 2 cartelas, zero free bonus card)
     if (quantity === 2) {
       drawnIds.push(getNextUniqueCartelaId());
-      drawnIds.push(getNextUniqueCartelaId()); // Card 3 (Bonus)
     }
 
     try {
@@ -542,15 +541,15 @@ class BingoGameEngine {
         bonus: result.newBonus
       });
 
-      // Register tickets in memory
-      const playerTickets: PlayerTicket[] = drawnIds.map((id, idx) => ({
+      // Register tickets in memory (strictly max 2 cartelas, all paid stake)
+      const playerTickets: PlayerTicket[] = drawnIds.map(id => ({
         userId,
         userName,
         cartelaId: id,
         cardMatrix: generateCardFromId(id),
-        betAmount: idx === 2 ? 0 : stakePerCard, // 3rd card is FREE bonus
+        betAmount: stakePerCard,
         socketId,
-        isBonus: idx === 2
+        isBonus: false
       }));
 
       const isPreBuy = room.phase !== 'lobby';
@@ -1310,6 +1309,7 @@ class BingoGameEngine {
 
   public broadcastRoomState(room: GameRoomState) {
     const payload = {
+      success: true,
       roomId: room.id,
       phase: room.phase,
       roundNumber: room.roundNumber,

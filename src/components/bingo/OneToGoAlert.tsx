@@ -42,8 +42,7 @@ export const OneToGoAlert: React.FC = () => {
 
   const cardsToCheck = [
     { data: cartela1Data, id: selectedCartelaIds[0], label: 'Card 1' },
-    ...(totalPlayableCards >= 2 ? [{ data: cartela2Data, id: selectedCartelaIds[1], label: 'Card 2' }] : []),
-    ...(totalPlayableCards >= 3 ? [{ data: cartela3Data, id: selectedCartelaIds[2], label: 'Card 3 (Bonus)' }] : [])
+    ...(totalPlayableCards >= 2 ? [{ data: cartela2Data, id: selectedCartelaIds[1], label: 'Card 2' }] : [])
   ];
 
   // Scan for any card that has 4/5 marked in any pattern (and not yet 5/5 bingo)

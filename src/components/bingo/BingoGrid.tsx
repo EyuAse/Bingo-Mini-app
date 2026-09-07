@@ -44,20 +44,18 @@ const getCardStatus = (cells: BingoCell[]) => {
 // ── Card themes ────────────────────────────────────────────
 const CARD_THEMES = ['theme-blue', 'theme-purple', 'theme-green'];
 
-// ── Single Card 5x5 Matrix Component ──────────────────────
 const NewCard5x5: React.FC<{
   cells: BingoCell[];
   cardIndex: number;
   cartelaId: number;
   theme: string;
   label: string;
-  isBonus: boolean;
   isWinningCard: boolean;
   winningLine: number[];
   autoPlay: boolean;
   onDaub: (cardIdx: number, cellIdx: number) => void;
 }> = ({
-  cells, cardIndex, cartelaId, theme, label, isBonus,
+  cells, cardIndex, cartelaId, theme, label,
   isWinningCard, winningLine, autoPlay, onDaub
 }) => {
   const status = getCardStatus(cells);
@@ -67,10 +65,7 @@ const NewCard5x5: React.FC<{
 
       {/* ── Card Header Bar ── */}
       <div className="new-card-header">
-        <span className="new-card-header-label">
-          {label}
-          {isBonus && <span className="card-bonus-tag"> 🎁</span>}
-        </span>
+        <span className="new-card-header-label">{label}</span>
         <span className="new-card-id-pill">#{cartelaId}</span>
       </div>
 
@@ -162,7 +157,6 @@ export const BingoGrid: React.FC = () => {
       cardIndex: 0,
       theme: CARD_THEMES[0],
       label: 'Card 1',
-      isBonus: false,
     },
     {
       data: cartela2Data,
@@ -170,15 +164,6 @@ export const BingoGrid: React.FC = () => {
       cardIndex: 1,
       theme: CARD_THEMES[1],
       label: 'Card 2',
-      isBonus: false,
-    },
-    {
-      data: cartela3Data,
-      id: selectedCartelaIds[2],
-      cardIndex: 2,
-      theme: CARD_THEMES[2],
-      label: 'Card 3',
-      isBonus: true,
     },
   ].slice(0, totalPlayableCards);
 
@@ -210,7 +195,7 @@ export const BingoGrid: React.FC = () => {
         </button>
       </div>
 
-      {/* ── Cards Grid (1, 2, or 3 side-by-side) ── */}
+      {/* ── Cards Grid (1 or 2 equal side-by-side) ── */}
       <div className={gridClass}>
         {currentCards.map(card => (
           <NewCard5x5
@@ -220,7 +205,6 @@ export const BingoGrid: React.FC = () => {
             cartelaId={card.id}
             theme={card.theme}
             label={card.label}
-            isBonus={card.isBonus}
             isWinningCard={winResult !== null && winResult.winningCartelaNumber === card.id}
             winningLine={winResult?.winningLine || []}
             autoPlay={autoPlay}
@@ -228,17 +212,6 @@ export const BingoGrid: React.FC = () => {
           />
         ))}
       </div>
-
-      {/* ── Pagination Indicator Dots • • • matching Image 2 ── */}
-      <div className="cartelas-pagination-dots">
-        {Array.from({ length: totalPlayableCards }).map((_, idx) => (
-          <span
-            key={idx}
-            className={`cartela-dot ${idx === 0 ? 'active' : ''}`}
-          />
-        ))}
-      </div>
-
     </div>
   );
 };

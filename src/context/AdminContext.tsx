@@ -79,8 +79,6 @@ interface AdminContextType {
   // Game Rules & Staking
   stakes: number[];
   setStakes: (stakes: number[]) => void;
-  buy2Get1Bonus: boolean;
-  setBuy2Get1Bonus: (enabled: boolean) => void;
   verticalBoardMode: boolean;
   setVerticalBoardMode: (enabled: boolean) => void;
 
@@ -234,7 +232,6 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Stakes: 10, 20, 50, 100 ETB
   const [stakes, setStakes] = useState<number[]>([10, 20, 50, 100]);
-  const [buy2Get1Bonus, setBuy2Get1Bonus] = useState<boolean>(true);
   const [verticalBoardMode, setVerticalBoardMode] = useState<boolean>(false);
 
   const [registerBonus, setRegisterBonus] = useState<number>(10);
@@ -611,8 +608,6 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setCommissionRate,
         stakes,
         setStakes,
-        buy2Get1Bonus,
-        setBuy2Get1Bonus,
         verticalBoardMode,
         setVerticalBoardMode,
         registerBonus,

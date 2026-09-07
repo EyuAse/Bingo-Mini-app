@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
 import { useWallet } from '../../context/WalletContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
-import { useAdmin } from '../../context/AdminContext.tsx';
 import { RoomSwitchModal } from './RoomSwitchModal.tsx';
 
 export const BettingBar: React.FC = () => {
@@ -20,7 +19,6 @@ export const BettingBar: React.FC = () => {
     stakeRoomsSummary
   } = useBingo();
   const { balance, bonus, isBalanceVisible } = useWallet();
-  const { buy2Get1Bonus } = useAdmin();
   const { t } = useLanguage();
 
   const [pendingSwitchStake, setPendingSwitchStake] = useState<number | null>(null);
@@ -28,7 +26,6 @@ export const BettingBar: React.FC = () => {
   // ── All logic untouched ────────────────────────────────────
   const betChips = [10, 20, 50, 100];
   const totalCost = betAmount * cardQuantity;
-  const hasBonus = cardQuantity >= 2 && buy2Get1Bonus;
 
   const handleChipClick = (chip: number) => {
     if (chip === betAmount) return;
@@ -110,7 +107,6 @@ export const BettingBar: React.FC = () => {
           <span className="compact-assigned-val">
             #{selectedCartelaIds[0]}
             {cardQuantity >= 2 && ` · #${selectedCartelaIds[1]}`}
-            {hasBonus && ` · #${selectedCartelaIds[2]} 🎁`}
           </span>
         </div>
 
@@ -147,23 +143,6 @@ export const BettingBar: React.FC = () => {
             </button>
           </div>
         </div>
-
-        {/* 🎁 2 + 1 FREE button */}
-        {!hasTicket && cardQuantity < 2 && buy2Get1Bonus && (
-          <button
-            type="button"
-            className="btn-compact-promo"
-            onClick={() => setCardQuantity(2)}
-          >
-            🎁 2 + 1 FREE
-          </button>
-        )}
-
-        {hasBonus && !hasTicket && (
-          <span className="compact-bonus-active-badge">
-            🎁 3 Cartelas for price of 2!
-          </span>
-        )}
       </div>
 
       {/* ── Row 5: Sleek Full-Width Buy Ticket Button ── */}
@@ -176,7 +155,7 @@ export const BettingBar: React.FC = () => {
         {hasTicket ? (
           <>
             <i className="fa-solid fa-circle-check"></i>
-            <span>PLAYING {totalPlayableCards} CARDS</span>
+            <span>PLAYING {cardQuantity} {cardQuantity === 1 ? 'CARD' : 'CARDS'}</span>
           </>
         ) : (
           <>

@@ -16,11 +16,19 @@ import { OneToGoAlert } from '../components/bingo/OneToGoAlert.tsx';
 export const BingoPage: React.FC = () => {
   const {
     hasTicket, showWinModal, isMuted, toggleMute, triggerManualSync, isSyncing,
-    roundPhase, waitingForPlayers, realPlayerCount, lobbyCountdown
+    roundPhase, waitingForPlayers, realPlayerCount, lobbyCountdown, cancelLobbyTicket
   } = useBingo();
   const { switchPage } = useApp();
   const [showVoiceTester, setShowVoiceTester] = useState<boolean>(false);
   const [showMenuDrawer, setShowMenuDrawer] = useState<boolean>(false);
+
+  // Safe Back Handler: If player is waiting in lobby with bought ticket, auto-refund on exit
+  const handleBackClick = async () => {
+    if (hasTicket && (roundPhase === 'lobby' || waitingForPlayers)) {
+      await cancelLobbyTicket();
+    }
+    switchPage('games');
+  };
 
   // Derive hero title text based on game phase
   const heroTitle = roundPhase === 'playing'
@@ -49,7 +57,7 @@ export const BingoPage: React.FC = () => {
             <button
               type="button"
               className="btn-bingo-hero-back"
-              onClick={() => switchPage('games')}
+              onClick={handleBackClick}
               title="Back to Games"
             >
               <i className="fa-solid fa-chevron-left"></i>

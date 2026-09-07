@@ -34,8 +34,15 @@ export function setupGameSockets(io: Server) {
 
       const room = gameEngine.getRoom(roomId);
       if (room) {
-        // Send immediate room snapshot to joining player
+        // Find any existing active or queued pre-bought tickets for this user
+        const existingTickets = userId
+          ? (room.tickets.get(userId) || room.nextRoundTickets.get(userId) || [])
+          : [];
+        const isPreBuy = Boolean(userId && room.nextRoundTickets.has(userId));
+
+        // Send immediate authoritative room snapshot to joining player
         socket.emit('room_sync', {
+          success: true,
           roomId: roomId,
           phase: room.phase,
           roundNumber: room.roundNumber,
@@ -50,8 +57,21 @@ export function setupGameSockets(io: Server) {
           drawnNumbers: room.drawnNumbers,
           currentCall: room.currentCall,
           winResult: room.winResult,
-          stakeRoomsSummary: gameEngine.getStakeRoomsSummary()
+          stakeRoomsSummary: gameEngine.getStakeRoomsSummary(),
+          userTickets: existingTickets,
+          isPreBuy
         });
+
+        // If user already had bought tickets for this round/room, sync them directly to the reconnecting socket
+        if (existingTickets.length > 0) {
+          socket.emit('user_tickets_synced', {
+            roomId,
+            userId,
+            roundNumber: room.roundNumber,
+            isPreBuy,
+            tickets: existingTickets
+          });
+        }
       }
       socket.emit('stake_rooms_summary', gameEngine.getStakeRoomsSummary());
     });

@@ -19,8 +19,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     botWinRate,
     users,
     transactions,
-    buy2Get1Bonus,
-    setBuy2Get1Bonus,
     approveAndReleaseTransaction,
     rejectTransaction
   } = useAdmin();
@@ -273,34 +271,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
               </label>
             </div>
           </div>
-
-          {/* Control 3: Buy 2 Get 1 FREE Promo */}
-          <div className="dash-control-cell">
-            <div className="cell-info-stack">
-              <div className="cell-label-row">
-                <strong className="cell-title">2+1 Cartela Bonus Promo</strong>
-                <span className="cell-pill-val green">{buy2Get1Bonus ? 'Promo Active 🎁' : 'Promo Off'}</span>
-              </div>
-              <p className="cell-desc">Players purchasing 2 or more cards (cartelas) automatically receive 1 bonus card free</p>
-            </div>
-
-            <div className="switch-interactive-row">
-              <span className="switch-status-text">
-                Status: <strong>{buy2Get1Bonus ? 'Active (Buy 2 Get 1 FREE)' : 'Disabled'}</strong>
-              </span>
-              <label className="dash-toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={buy2Get1Bonus}
-                  onChange={e => {
-                    setBuy2Get1Bonus(e.target.checked);
-                    showToast(`2+1 Bonus Promo ${e.target.checked ? 'Enabled' : 'Disabled'}`);
-                  }}
-                />
-                <span className="dash-toggle-slider"></span>
-              </label>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -335,8 +305,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
               <strong className="spec-value green">Split Pot Shared</strong>
             </div>
             <div className="arena-spec-tile">
-              <span className="spec-label">Bonus Cartela Slot</span>
-              <strong className="spec-value purple">{buy2Get1Bonus ? 'Card 3 (FREE 🎁)' : 'Disabled'}</strong>
+              <span className="spec-label">Max Cartelas</span>
+              <strong className="spec-value purple">2 Cards Max</strong>
             </div>
           </div>
         </div>

@@ -125,6 +125,7 @@ interface BingoContextType {
   dismissOfflineWin: (winId: string) => void;
   triggerManualSync: () => Promise<void>;
   isSyncing: boolean;
+  cancelLobbyTicket: () => Promise<boolean>;
 
   // Insufficient Balance Modal
   showInsufficientBalanceModal: boolean;
@@ -243,8 +244,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const {
     commissionRate,
     simulatedPlayerCount,
-    botPool,
-    buy2Get1Bonus
+    botPool
   } = useAdmin();
 
   // Round Lifecycle Phase
@@ -275,7 +275,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setCardQuantityState(Math.max(1, Math.min(2, qty)));
   };
 
-  const totalPlayableCards = (cardQuantity >= 2 && buy2Get1Bonus) ? 3 : cardQuantity;
+  const totalPlayableCards = cardQuantity;
 
   // Active Cartelas
   const [cartela1Data, setCartela1Data] = useState<BingoCell[]>(() => generateCardFromId(selectedCartelaIds[0]));
@@ -352,6 +352,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
       setHasTicket(false);
       setHasPreBoughtNext(false);
+      try {
+        localStorage.removeItem('betika_bingo_active_ticket');
+      } catch {}
       refreshBalanceRef.current();
     }
 
@@ -481,6 +484,50 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const lastBallTimeRef = useRef<number>(Date.now());
 
+  // Storage key for persistent active ticket across app reloads / disconnects
+  const ACTIVE_TICKET_STORAGE_KEY = 'betika_bingo_active_ticket';
+
+  // ── Persistent Active Ticket & Disconnect Protection Rehydration ──
+  useEffect(() => {
+    try {
+      const savedRaw = localStorage.getItem(ACTIVE_TICKET_STORAGE_KEY);
+      if (savedRaw) {
+        const saved = JSON.parse(savedRaw);
+        const ageMs = Date.now() - (saved.timestamp || 0);
+        // Valid within 15 minutes (active lobby or game in progress)
+        if (ageMs < 15 * 60 * 1000) {
+          if (typeof saved.betAmount === 'number') setBetAmountState(saved.betAmount);
+          if (typeof saved.cardQuantity === 'number') setCardQuantityState(Math.max(1, Math.min(2, saved.cardQuantity)));
+          if (Array.isArray(saved.selectedCartelaIds) && saved.selectedCartelaIds.length > 0) {
+            setSelectedCartelaIds([
+              saved.selectedCartelaIds[0] || selectedCartelaIds[0],
+              saved.selectedCartelaIds[1] || selectedCartelaIds[1],
+              saved.selectedCartelaIds[2] || selectedCartelaIds[2]
+            ]);
+            setCartela1Data(generateCardFromId(saved.selectedCartelaIds[0]));
+            if (saved.selectedCartelaIds[1]) {
+              setCartela2Data(generateCardFromId(saved.selectedCartelaIds[1]));
+            }
+          }
+          setHasTicket(true);
+          setGameActive(true);
+          console.log('🔄 [BingoContext] Restored active waiting ticket from persistent session');
+        } else {
+          // Stale unplayed ticket that was abandoned while waiting in lobby: reconcile and refund stake
+          const unplayedRefund = (saved.betAmount || 10) * (saved.cardQuantity || 1);
+          if (unplayedRefund > 0) {
+            addBalanceRef.current(unplayedRefund);
+            refreshBalanceRef.current();
+            showToast(`💸 ${unplayedRefund} ETB refunded from unplayed lobby round!`);
+          }
+          localStorage.removeItem(ACTIVE_TICKET_STORAGE_KEY);
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading active ticket storage:', e);
+    }
+  }, []);
+
   // Socket.IO Multiplayer Room Listener (Stable: Never reconnects on stake change)
   useEffect(() => {
     const roomId = getActiveRoomId();
@@ -522,6 +569,29 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       if (state.currentCall) {
         setCurrentCall(state.currentCall);
+      }
+
+      // Multi-Device & Disconnect Hydration: If server reports active tickets for this user
+      if (state.userTickets && Array.isArray(state.userTickets) && state.userTickets.length > 0) {
+        const tickets = state.userTickets;
+        const newIds = tickets.map((t: any) => t.cartelaId);
+        const updatedIds: [number, number, number] = [
+          newIds[0] || selectedCartelaIdsRef.current[0],
+          newIds[1] || selectedCartelaIdsRef.current[1],
+          newIds[2] || selectedCartelaIdsRef.current[2]
+        ];
+        setSelectedCartelaIds(updatedIds);
+        if (tickets[0]?.cardMatrix) setCartela1Data(tickets[0].cardMatrix);
+        if (tickets[1]?.cardMatrix) setCartela2Data(tickets[1].cardMatrix);
+
+        if (state.isPreBuy) {
+          setHasPreBoughtNext(true);
+        } else {
+          setHasTicket(true);
+          if (state.phase === 'playing') {
+            setGameActive(true);
+          }
+        }
       }
 
       if (state.drawnNumbers && Array.isArray(state.drawnNumbers) && state.drawnNumbers.length > 0) {
@@ -642,6 +712,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       } else {
         soundEngine.playPop();
       }
+      try {
+        localStorage.removeItem(ACTIVE_TICKET_STORAGE_KEY);
+      } catch {}
       refreshBalanceRef.current();
     });
 
@@ -1009,7 +1082,6 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setSelectedCartelaIds(updatedIds);
         if (res.tickets[0]) setCartela1Data(res.tickets[0].cardMatrix);
         if (res.tickets[1]) setCartela2Data(res.tickets[1].cardMatrix);
-        if (res.tickets[2]) setCartela3Data(res.tickets[2].cardMatrix);
       }
 
       if (res.preBoughtForNextRound) {
@@ -1042,6 +1114,18 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setGameActive(true);
     refreshBalance();
 
+    // Persist active ticket session so app reload / close does not lose ticket or money
+    try {
+      localStorage.setItem(ACTIVE_TICKET_STORAGE_KEY, JSON.stringify({
+        roomId,
+        betAmount,
+        cardQuantity,
+        selectedCartelaIds: activeIds,
+        timestamp: Date.now(),
+        roundNumber: roundNumberRef.current
+      }));
+    } catch {}
+
     // If joining during playing phase, auto-daub any numbers already drawn
     if (calledNumbers.length > 0) {
       setCartela1Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
@@ -1050,8 +1134,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     soundEngine.playLuckyPick();
-    const bonusText = (cardQuantity >= 2 && buy2Get1Bonus) ? ' + 1 FREE BONUS CARD 🎁' : '';
-    showToast(`🎟️ Playing ${totalPlayableCards} Cartelas (${totalCost} ETB)${bonusText}!`);
+    showToast(`🎟️ Playing ${totalPlayableCards} Cartela${totalPlayableCards > 1 ? 's' : ''} (${totalCost} ETB)!`);
   };
 
   const preBuyNextRound = async () => {
@@ -1104,6 +1187,38 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     soundEngine.playLuckyPick();
     refreshBalance();
     showToast(`🎟️ Pre-Bought ${totalPlayableCards} Cartelas for next round! ✓`);
+  };
+
+  // Safe Voluntary Lobby Exit / Disconnect Refund
+  const cancelLobbyTicket = async (): Promise<boolean> => {
+    if (!hasTicket && !hasPreBoughtNext) return false;
+    const refundAmount = betAmount * cardQuantity;
+    let refunded = false;
+
+    if (userRef.current?.id) {
+      try {
+        const roomId = getActiveRoomId();
+        const res = await socketService.cancelTicketLobby(roomId, userRef.current.id);
+        if (res.success) {
+          refunded = true;
+        }
+      } catch (err) {
+        console.warn('Error cancelling lobby ticket:', err);
+      }
+    }
+
+    if (!refunded) {
+      addBalanceRef.current(refundAmount);
+    }
+
+    setHasTicket(false);
+    setHasPreBoughtNext(false);
+    try {
+      localStorage.removeItem(ACTIVE_TICKET_STORAGE_KEY);
+    } catch {}
+    refreshBalanceRef.current();
+    showToast(`💸 ${refundAmount} ETB refunded to your wallet!`);
+    return true;
   };
 
   // Manual Daubing
@@ -1261,6 +1376,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         dismissOfflineWin,
         triggerManualSync,
         isSyncing,
+        cancelLobbyTicket,
         showInsufficientBalanceModal,
         setShowInsufficientBalanceModal,
         insufficientBalanceDetails
