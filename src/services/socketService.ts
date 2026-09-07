@@ -53,6 +53,9 @@ class SocketService {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
     const handleForeground = () => {
+      // If user session has been terminated or no active user/room, do not auto-reconnect
+      if (!this.currentUserId && !this.currentRoomId) return;
+
       console.log('📱 [SocketService] Foreground / Resume triggered. Re-verifying socket connection & state.');
       if (!this.socket || !this.socket.connected) {
         this.connect();
@@ -479,6 +482,35 @@ class SocketService {
   // Concurrent Session Termination (Single Active Device Policy)
   public onSessionTerminated(callback: (data: { reason: string; message: string }) => void): () => void {
     return this.subscribeEvent('session_terminated', callback);
+  }
+
+  /**
+   * Authoritatively tears down socket connection, cancels intervals, and clears session credentials.
+   * Prevents Socket.IO from automatically reconnecting when session has been displaced by another device.
+   */
+  public terminateSession() {
+    console.warn('🛑 [SocketService] Terminating session. Disconnecting socket and purging credentials.');
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+    if (this.silenceCheckInterval) {
+      clearInterval(this.silenceCheckInterval);
+      this.silenceCheckInterval = null;
+    }
+    if (this.socket) {
+      try {
+        this.socket.disconnect();
+      } catch (e) {
+        console.warn('Socket disconnect error on terminate:', e);
+      }
+      this.socket = null;
+    }
+    this.attachedSocketEvents.clear();
+    this.currentRoomId = null;
+    this.currentUserId = null;
+    this.currentUserName = null;
+    this.updateStatus('disconnected');
   }
 
   public forceReconnect() {

@@ -4,6 +4,12 @@ import { gameEngine } from '../game/BingoGameEngine.ts';
 // Single Active Device Session Registry: userId -> { socketId, connectedAt }
 const activeUserSessions = new Map<string, { socketId: string; connectedAt: number }>();
 
+function isAuthorizedSession(socketId: string, userId?: string): boolean {
+  if (!userId) return true;
+  const session = activeUserSessions.get(userId);
+  return !session || session.socketId === socketId;
+}
+
 export function setupGameSockets(io: Server) {
   io.on('connection', (socket: Socket) => {
     let currentRoomId: string | null = null;
@@ -33,6 +39,9 @@ export function setupGameSockets(io: Server) {
               message: '⚠️ Your account was opened on another device. Simultaneous play on multiple devices is strictly prohibited.'
             });
             oldSocket.leave(`user_${userId}`);
+            if (currentRoomId) {
+              oldSocket.leave(currentRoomId);
+            }
             oldSocket.disconnect(true);
           }
         }
@@ -98,6 +107,12 @@ export function setupGameSockets(io: Server) {
     // Cancel Ticket in Lobby (Room switch refund)
     socket.on('cancel_ticket_lobby', async (data: { roomId: string; userId: string }, callback?: (res: any) => void) => {
       const { roomId, userId } = data;
+      if (!isAuthorizedSession(socket.id, userId)) {
+        const errRes = { success: false, error: 'Session expired or active on another device.' };
+        if (callback) callback(errRes);
+        socket.disconnect(true);
+        return;
+      }
       const result = await gameEngine.handleCancelTicketLobby(userId, roomId);
       if (callback) {
         callback(result);
@@ -111,6 +126,12 @@ export function setupGameSockets(io: Server) {
       'transfer_ticket_lobby',
       async (data: { oldRoomId: string; newRoomId: string; userId: string }, callback?: (res: any) => void) => {
         const { oldRoomId, newRoomId, userId } = data;
+        if (!isAuthorizedSession(socket.id, userId)) {
+          const errRes = { success: false, error: 'Session expired or active on another device.' };
+          if (callback) callback(errRes);
+          socket.disconnect(true);
+          return;
+        }
         const result = await gameEngine.handleTransferTicketLobby(userId, oldRoomId, newRoomId, socket.id);
         if (callback) {
           callback(result);
@@ -137,6 +158,17 @@ export function setupGameSockets(io: Server) {
         callback?: (res: any) => void
       ) => {
         const { roomId, userId, userName, cartelaIds, stakeAmount, isAutoPlay } = data;
+        if (!isAuthorizedSession(socket.id, userId)) {
+          const errRes = { success: false, error: 'Session active on another device. Simultaneous play is prohibited.' };
+          if (callback) callback(errRes);
+          else socket.emit('buy_ticket_response', errRes);
+          socket.emit('session_terminated', {
+            reason: 'concurrent_device',
+            message: '⚠️ Your account was opened on another device. Simultaneous play on multiple devices is strictly prohibited.'
+          });
+          socket.disconnect(true);
+          return;
+        }
         const result = await gameEngine.handleBuyTicket(
           userId,
           userName || authUserName,
@@ -170,7 +202,7 @@ export function setupGameSockets(io: Server) {
 
     // 2.2 Update Player Auto/Manual Mode Event
     socket.on('update_player_mode', (data: { roomId: string; userId: string; isAutoPlay: boolean }) => {
-      if (data?.roomId && data?.userId) {
+      if (data?.roomId && data?.userId && isAuthorizedSession(socket.id, data.userId)) {
         gameEngine.updatePlayerMode(data.roomId, data.userId, data.isAutoPlay);
       }
     });
@@ -183,6 +215,13 @@ export function setupGameSockets(io: Server) {
         callback?: (res: any) => void
       ) => {
         const { roomId, userId, userName, cartelaId } = data;
+        if (!isAuthorizedSession(socket.id, userId)) {
+          const errRes = { success: false, message: 'Session active on another device.' };
+          if (callback) callback(errRes);
+          else socket.emit('claim_bingo_response', errRes);
+          socket.disconnect(true);
+          return;
+        }
         const result = await gameEngine.handleClaimBingo(
           userId,
           userName || authUserName,

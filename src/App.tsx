@@ -30,7 +30,7 @@ import { AdminPage } from './pages/AdminPage.tsx';
 
 export const App: React.FC = () => {
   const { currentPage, switchPage } = useApp();
-  const { user, isAuthenticated, isFirstTimeTelegramUser, dismissFirstTimeModal } = useAuth();
+  const { user, isAuthenticated, isFirstTimeTelegramUser, dismissFirstTimeModal, concurrentSessionNotice } = useAuth();
   const { addUser, registerBonus } = useAdmin();
   const { addBonus } = useWallet();
 
@@ -40,6 +40,15 @@ export const App: React.FC = () => {
       switchPage('games');
     }
   }, [isAuthenticated, currentPage, switchPage]);
+
+  // Evict to landing page immediately if concurrent session alert is triggered or unauthenticated on protected page
+  useEffect(() => {
+    if (concurrentSessionNotice && currentPage !== 'landing' && currentPage !== 'login') {
+      switchPage('landing');
+    } else if (!isAuthenticated && (currentPage === 'bingo' || currentPage === 'wallet' || currentPage === 'deposit' || currentPage === 'withdraw')) {
+      switchPage('landing');
+    }
+  }, [concurrentSessionNotice, isAuthenticated, currentPage, switchPage]);
 
   // Handle first-time Telegram registration notification
   useEffect(() => {

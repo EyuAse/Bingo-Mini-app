@@ -18,6 +18,7 @@ interface AuthContextType {
   dismissFirstTimeModal: () => void;
   concurrentSessionNotice: { reason: string; message: string } | null;
   dismissConcurrentSessionNotice: () => void;
+  reclaimSessionOnThisDevice: () => Promise<void>;
   sendOtp: (phone: string) => Promise<OtpChallengeResponse>;
   verifyOtp: (phone: string, code: string) => OtpVerificationResult;
   register: (payload: RegisterPayload) => Promise<User>;
@@ -44,16 +45,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setConcurrentSessionNotice(null);
   };
 
+  const reclaimSessionOnThisDevice = async () => {
+    setConcurrentSessionNotice(null);
+    const tgUser = telegramUser || telegramService.getTelegramUser();
+    if (tgUser && tgUser.id) {
+      localStorage.removeItem(`lomi_explicit_logout_${tgUser.id}`);
+      localStorage.removeItem('lomi_explicit_logout');
+      try {
+        await loginWithTelegram(tgUser);
+      } catch (e) {
+        console.warn('Reclaim session via Telegram failed:', e);
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
+      }
+    } else {
+      localStorage.removeItem('lomi_explicit_logout');
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    }
+  };
+
   // Listen for Single-Device Enforcement events: if account logged in on another device, terminate session here
   useEffect(() => {
     const unsub = socketService.onSessionTerminated((data) => {
       console.warn('⚠️ [AuthContext] Single Active Device Policy triggered: logged in elsewhere:', data);
+      socketService.terminateSession();
       setConcurrentSessionNotice(data);
       authService.clearSession();
       localStorage.removeItem('lomi_auth_token');
       localStorage.removeItem('lomi_user');
       localStorage.removeItem('lomi_live_balance');
       localStorage.removeItem('lomi_live_bonus');
+      const tgId = telegramUser?.id || telegramService.getTelegramUser()?.id;
+      if (tgId) {
+        localStorage.setItem(`lomi_explicit_logout_${tgId}`, 'true');
+      }
       localStorage.setItem('lomi_explicit_logout', 'true');
       setUser(null);
       setToken(null);
@@ -62,7 +90,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       unsub();
     };
-  }, []);
+  }, [telegramUser]);
 
   // Initialize Telegram WebApp, Purge Legacy Test Data & Auto-Authenticate with Neon DB
   useEffect(() => {
@@ -370,6 +398,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         dismissFirstTimeModal,
         concurrentSessionNotice,
         dismissConcurrentSessionNotice,
+        reclaimSessionOnThisDevice,
         sendOtp,
         verifyOtp,
         register,

@@ -1,17 +1,26 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useApp } from '../../context/AppContext';
 
 export const ConcurrentSessionModal: React.FC = () => {
-  const { concurrentSessionNotice, dismissConcurrentSessionNotice } = useAuth();
+  const {
+    concurrentSessionNotice,
+    dismissConcurrentSessionNotice,
+    reclaimSessionOnThisDevice,
+    logout
+  } = useAuth();
+  const { switchPage } = useApp();
 
   if (!concurrentSessionNotice) return null;
 
-  const handleUseOnThisDevice = () => {
-    // Dismiss notice and reload window so this device reconnects as the authoritative device
+  const handleUseOnThisDevice = async () => {
+    await reclaimSessionOnThisDevice();
+  };
+
+  const handleCloseAndLogOut = () => {
     dismissConcurrentSessionNotice();
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
+    logout();
+    switchPage('landing');
   };
 
   return (
@@ -80,10 +89,10 @@ export const ConcurrentSessionModal: React.FC = () => {
             marginBottom: '20px'
           }}
         >
-          You have been logged out because your account was accessed from another phone or browser.
+          You have been logged out because your account was opened on another phone or browser.
           <br /><br />
           <strong style={{ color: '#0f172a' }}>
-            Lomi Bingo strictly prohibits simultaneous logins on multiple devices for game fairness and wallet security.
+            Simultaneous play on multiple devices is strictly prohibited to guarantee game fairness and wallet security.
           </strong>
         </p>
 
@@ -109,7 +118,7 @@ export const ConcurrentSessionModal: React.FC = () => {
 
           <button
             type="button"
-            onClick={dismissConcurrentSessionNotice}
+            onClick={handleCloseAndLogOut}
             style={{
               width: '100%',
               padding: '10px',
