@@ -45,8 +45,6 @@ const getCardStatus = (cells: BingoCell[]) => {
 const CARD_THEMES = ['theme-blue', 'theme-purple', 'theme-green'];
 
 // ── Single Card 5x5 Matrix Component ──────────────────────
-// IMPORTANT: cardIndex must be 0, 1, or 2 — passed directly to
-// handleManualDaub(cardIndex, cellIndex) so the right card is daubed.
 const NewCard5x5: React.FC<{
   cells: BingoCell[];
   cardIndex: number;
@@ -104,7 +102,7 @@ const NewCard5x5: React.FC<{
                 onClick={() => !autoPlay && onDaub(cardIndex, cell.index)}
               >
                 {cell.isFree ? (
-                  /* FREE centre cell */
+                  /* FREE center cell with purple star */
                   <div className="new-free-content">
                     <span className="new-free-star">★</span>
                   </div>
@@ -122,7 +120,7 @@ const NewCard5x5: React.FC<{
           })}
         </div>
 
-        {/* Status badge — only show when 1 card (space constraint) */}
+        {/* Status badge */}
         {status.hot && (
           <div style={{
             textAlign: 'center',
@@ -147,22 +145,21 @@ export const BingoGrid: React.FC = () => {
     cartela3Data,
     totalPlayableCards,
     selectedCartelaIds,
-    handleManualDaub,   // ← untouched: (cardIdx, cellIdx) => void
-    winResult,          // ← untouched: null | { winningCartelaNumber, winningLine }
-    autoPlay,           // ← untouched: boolean
-    toggleAutoPlay,     // ← untouched: () => void
+    handleManualDaub,
+    winResult,
+    autoPlay,
+    toggleAutoPlay,
     roundPhase,
     lobbyCountdown,
     waitingForPlayers,
     realPlayerCount,
   } = useBingo();
 
-  // Build card list — slice to how many cards player has
   const currentCards = [
     {
       data: cartela1Data,
       id: selectedCartelaIds[0],
-      cardIndex: 0,                   // MUST be 0 for handleManualDaub
+      cardIndex: 0,
       theme: CARD_THEMES[0],
       label: 'Card 1',
       isBonus: false,
@@ -170,7 +167,7 @@ export const BingoGrid: React.FC = () => {
     {
       data: cartela2Data,
       id: selectedCartelaIds[1],
-      cardIndex: 1,                   // MUST be 1 for handleManualDaub
+      cardIndex: 1,
       theme: CARD_THEMES[1],
       label: 'Card 2',
       isBonus: false,
@@ -178,60 +175,42 @@ export const BingoGrid: React.FC = () => {
     {
       data: cartela3Data,
       id: selectedCartelaIds[2],
-      cardIndex: 2,                   // MUST be 2 for handleManualDaub
+      cardIndex: 2,
       theme: CARD_THEMES[2],
       label: 'Card 3',
       isBonus: true,
     },
   ].slice(0, totalPlayableCards);
 
-  const isLobby = roundPhase === 'lobby';
   const cardCountLabel = `${totalPlayableCards} ${totalPlayableCards === 1 ? 'Card' : 'Cards'}`;
   const gridClass = `cartelas-grid grid-${totalPlayableCards}`;
 
   return (
     <div className="your-cartelas-section">
 
-      {/* ── Section Header ── */}
+      {/* ── Section Header matching Image 2 ── */}
       <div className="your-cartelas-header">
-        <div className="your-cartelas-icon">🎴</div>
-        <span className="your-cartelas-title">YOUR CARTELAS</span>
-        <span className="your-cartelas-count-badge">{cardCountLabel}</span>
-        <div className="your-cartelas-spacer" />
+        <div className="your-cartelas-left-group">
+          <div className="your-cartelas-icon-box">
+            <i className="fa-solid fa-layer-group"></i>
+          </div>
+          <span className="your-cartelas-title">YOUR CARTELAS</span>
+          <span className="your-cartelas-count-badge">{cardCountLabel}</span>
+        </div>
 
-        {/* Auto Play toggle — toggleAutoPlay logic 100% untouched */}
+        {/* Sleek Dark Purple Auto Play Pill Toggle Button */}
         <button
           type="button"
-          className={`btn-autoplay-new ${autoPlay ? 'autoplay-on' : ''}`}
+          className={`btn-autoplay-sleek ${autoPlay ? 'active' : ''}`}
           onClick={toggleAutoPlay}
-          title={autoPlay ? 'Auto-Play ON — click to switch to Manual' : 'Turn on Auto-Play'}
+          title={autoPlay ? 'Auto-Play ON — click for manual' : 'Turn on Auto-Play'}
         >
           <i className="fa-solid fa-bolt"></i>
-          <span>{autoPlay ? 'Auto ON' : 'Auto Play'}</span>
+          <span>Auto Play</span>
         </button>
       </div>
 
-      {/* ── Lobby countdown strip ── */}
-      {isLobby && (
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(250,204,21,0.12), rgba(250,204,21,0.06))',
-          border: '1px solid rgba(250,204,21,0.25)',
-          borderRadius: '10px',
-          padding: '7px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}>
-          <span style={{ fontSize: '0.875rem' }}>⏳</span>
-          <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#fde68a', lineHeight: 1.3 }}>
-            {waitingForPlayers
-              ? `WAITING FOR PLAYERS — ${realPlayerCount}/2 Joined`
-              : `ROUND STARTS IN ${lobbyCountdown}s · ${realPlayerCount} Players Ready`}
-          </span>
-        </div>
-      )}
-
-      {/* ── All Cards — simultaneous side-by-side grid ── */}
+      {/* ── Cards Grid (1, 2, or 3 side-by-side) ── */}
       <div className={gridClass}>
         {currentCards.map(card => (
           <NewCard5x5
@@ -250,13 +229,15 @@ export const BingoGrid: React.FC = () => {
         ))}
       </div>
 
-      {/* ── Auto-Play active indicator ── */}
-      {autoPlay && (
-        <div className="new-autoplay-active-tag">
-          <i className="fa-solid fa-bolt"></i>
-          <span>Auto-Play Active — All {totalPlayableCards} Cartelas daubed instantly</span>
-        </div>
-      )}
+      {/* ── Pagination Indicator Dots • • • matching Image 2 ── */}
+      <div className="cartelas-pagination-dots">
+        {Array.from({ length: totalPlayableCards }).map((_, idx) => (
+          <span
+            key={idx}
+            className={`cartela-dot ${idx === 0 ? 'active' : ''}`}
+          />
+        ))}
+      </div>
 
     </div>
   );

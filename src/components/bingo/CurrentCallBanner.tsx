@@ -28,33 +28,38 @@ export const CurrentCallBanner: React.FC = () => {
   return (
     <div className={`nb-call-section${spherePop ? ' nb-call-pop' : ''}`}>
 
-      {/* LEFT — Glowing Hero Ball */}
+      {/* LEFT — Glowing 3D Solar Hero Ball */}
       <div className="nb-ball-wrap">
-        <div className="nb-ball-glow-ring" />
+        <div className="nb-ball-solar-ring"></div>
+        <span className="nb-solar-sparkle sparkle-top">✨</span>
+        <span className="nb-solar-sparkle sparkle-bot">✨</span>
+
         <div className={`nb-ball-circle ${mainColClass}`}>
-          {currentCall ? (
-            <>
-              <span className="nb-ball-letter">{currentCall.col}</span>
-              <span className="nb-ball-number">{currentCall.num}</span>
-            </>
-          ) : (
-            <span className="nb-ball-letter" style={{ fontSize: '1.5rem' }}>
-              {roundPhase === 'lobby' ? '⏳' : '🎱'}
-            </span>
-          )}
+          <div className="nb-ball-inner-sphere">
+            {currentCall ? (
+              <>
+                <span className="nb-ball-letter">{currentCall.col}</span>
+                <span className="nb-ball-number">{currentCall.num}</span>
+              </>
+            ) : (
+              <span className="nb-ball-placeholder">
+                {roundPhase === 'lobby' ? '⏳' : '🎱'}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* CENTER — Label + Number */}
+      {/* CENTER — Label + Large Number (strictly single line, no wrapping) */}
       <div className="nb-call-center">
-        <div className="nb-current-ball-label">CURRENT BALL</div>
+        <div className="nb-current-ball-pill">CURRENT BALL</div>
 
         {currentCall ? (
           <div className="nb-call-number-text">
             <span className="nb-col-letter">{currentCall.col}</span>-{currentCall.num}
           </div>
         ) : roundPhase === 'lobby' ? (
-          <>
+          <div className="nb-waiting-block">
             <div className="nb-waiting-text">
               {waitingForPlayers
                 ? 'WAITING FOR PLAYERS'
@@ -65,39 +70,38 @@ export const CurrentCallBanner: React.FC = () => {
                 ? `${realPlayerCount}/2 Players Joined`
                 : `${realPlayerCount} Players Ready`}
             </div>
-          </>
+          </div>
         ) : (
-          <>
+          <div className="nb-waiting-block">
             <div className="nb-waiting-text">{t('bingo.waitingCall')}</div>
             <div className="nb-waiting-sub">{t('bingo.goodLuckSub')}</div>
-          </>
+          </div>
         )}
       </div>
 
-      {/* RIGHT — Previous Balls */}
+      {/* RIGHT — Previous Balls inside bordered pill */}
       <div className="nb-prev-balls-col">
-        <span className="nb-prev-label">PREVIOUS BALLS</span>
-        <div className="nb-prev-balls-row">
-          {prevTrail.length > 0 ? (
-            prevTrail.map((num, idx) => {
-              const colClass = getColClass(num);
-              const colLetter = getColLetter(num);
-              return (
-                <div key={`${num}-${idx}`} className={`nb-prev-ball-pill col-${colClass}`}>
-                  <span className="prev-letter">{colLetter}</span>
-                  <span className="prev-num">{num}</span>
-                </div>
-              );
-            })
-          ) : (
-            <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>
-              —
-            </span>
-          )}
+        <div className="nb-prev-balls-frame">
+          <span className="nb-prev-label">PREVIOUS BALLS</span>
+          <div className="nb-prev-balls-row">
+            {prevTrail.length > 0 ? (
+              prevTrail.map((num, idx) => {
+                const colClass = getColClass(num);
+                const colLetter = getColLetter(num);
+                return (
+                  <div key={`${num}-${idx}`} className={`nb-prev-ball-pill col-${colClass}`}>
+                    <span className="prev-letter">{colLetter}</span>
+                    <span className="prev-num">{num}</span>
+                  </div>
+                );
+              })
+            ) : (
+              <span className="nb-prev-empty">—</span>
+            )}
+          </div>
         </div>
       </div>
 
     </div>
   );
 };
-

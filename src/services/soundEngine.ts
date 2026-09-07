@@ -49,24 +49,24 @@ class AudioEngineService {
       if (AudioCtx) {
         this.ctx = new AudioCtx();
 
-        // 1. Studio Broadcast Compressor (-24dB threshold, 4:1 ratio for loud broadcast punch)
+        // 1. Gentle Transparent Limiter (clean dynamics without harsh radio pumping)
         this.compressor = this.ctx.createDynamicsCompressor();
-        this.compressor.threshold.setValueAtTime(-24, this.ctx.currentTime);
-        this.compressor.knee.setValueAtTime(30, this.ctx.currentTime);
-        this.compressor.ratio.setValueAtTime(4, this.ctx.currentTime);
-        this.compressor.attack.setValueAtTime(0.003, this.ctx.currentTime);
-        this.compressor.release.setValueAtTime(0.25, this.ctx.currentTime);
+        this.compressor.threshold.setValueAtTime(-12, this.ctx.currentTime);
+        this.compressor.knee.setValueAtTime(40, this.ctx.currentTime);
+        this.compressor.ratio.setValueAtTime(2.5, this.ctx.currentTime);
+        this.compressor.attack.setValueAtTime(0.01, this.ctx.currentTime);
+        this.compressor.release.setValueAtTime(0.15, this.ctx.currentTime);
 
-        // 2. Warm Broadcast Vocal Peaking Filter (250Hz warmth + slight high presence)
+        // 2. Pure Natural Filter (flat 0dB gain for 100% natural, uncolored audio clarity)
         this.vocalWarmFilter = this.ctx.createBiquadFilter();
         this.vocalWarmFilter.type = 'peaking';
-        this.vocalWarmFilter.frequency.setValueAtTime(250, this.ctx.currentTime);
-        this.vocalWarmFilter.Q.setValueAtTime(1.2, this.ctx.currentTime);
-        this.vocalWarmFilter.gain.setValueAtTime(2.5, this.ctx.currentTime);
+        this.vocalWarmFilter.frequency.setValueAtTime(1000, this.ctx.currentTime);
+        this.vocalWarmFilter.Q.setValueAtTime(1.0, this.ctx.currentTime);
+        this.vocalWarmFilter.gain.setValueAtTime(0.0, this.ctx.currentTime);
 
         // 3. Master Gain
         this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.setValueAtTime(0.9, this.ctx.currentTime);
+        this.masterGain.gain.setValueAtTime(1.0, this.ctx.currentTime);
 
         // Connect Chain: Source -> Filter -> Compressor -> MasterGain -> Destination
         this.vocalWarmFilter.connect(this.compressor);
@@ -458,16 +458,20 @@ class AudioEngineService {
   }
 
   /**
-   * Universal Ball Speech Announcement:
-   * 1. Voice-Only policy: No synthetic chimes, pops, or beeps.
-   * 2. Tier 1: In-memory Web Audio AudioBuffer (0ms latency, zero seek-state bugs, zero AbortError).
-   * 3. Tier 2: Preloaded HTML5 Audio element (MP3 / WAV / WebM).
-   * 4. Tier 3: Resilient URL cascade fallback.
-   * Never fails silently on PC or mobile!
+   * Column B-Only Human Voice Announcement (1–15):
+   * - Column B (1–15): Plays real human voice directly with crystal-clear studio audio.
+   * - Columns I, N, G, O (16–75): Strictly silent as per design specification.
    */
   async speakBall(col: string, num: number) {
     telegramService.triggerHaptic('medium');
     if (this.isMuted) return;
+
+    // Strict Voice Policy: Real human recordings exist ONLY for Column B (1–15).
+    // For all other columns (16–75), remain completely silent with 0 network calls.
+    const isColumnB = col?.toUpperCase() === 'B' || (num >= 1 && num <= 15);
+    if (!isColumnB || num < 1 || num > 15) {
+      return;
+    }
 
     // Ensure audio context is running if user interacted
     if (this.ctx && this.ctx.state === 'suspended') {
@@ -500,30 +504,19 @@ class AudioEngineService {
         }
         return;
       } catch {
-        // Fall through to Tier 3 on error instead of giving up!
+        // Fall through to Tier 3 on error
       }
     }
 
-    // Tier 3: Multi-format universal fallback URLs (MP3, WAV, WebM across am and en)
+    // Tier 3: Direct verified audio path for Column B
     const candidateUrls = [
-      `/assets/audio/${this.voiceLang}/${num}.mp3`,
       `/assets/audio/am/${num}.mp3`,
-      `/assets/audio/en/${num}.mp3`,
-      `/assets/audio/${this.voiceLang}/${num}.wav`,
       `/assets/audio/am/${num}.wav`,
-      `/assets/audio/en/${num}.wav`,
-      `/assets/audio/${this.voiceLang}/${num}.webm`,
-      `/assets/audio/am/${num}.webm`,
-      `/assets/audio/en/${num}.webm`,
-      `/assets/audio/${this.voiceLang}/${col}-${num}.mp3`,
-      `/assets/audio/am/${col}-${num}.mp3`,
-      `/assets/audio/en/${col}-${num}.mp3`
+      `/assets/audio/am/${num}.webm`
     ];
 
-    const uniqueUrls = Array.from(new Set(candidateUrls));
-
     // Try Web Audio buffer load
-    for (const url of uniqueUrls) {
+    for (const url of candidateUrls) {
       const buffer = await this.loadAudioBuffer(url);
       if (buffer) {
         this.voiceBufferMap.set(num, buffer);
@@ -534,7 +527,7 @@ class AudioEngineService {
     }
 
     // Try HTML5 Audio direct play
-    for (const url of uniqueUrls) {
+    for (const url of candidateUrls) {
       const success = await this.playAudioDirect(url);
       if (success) {
         return;
