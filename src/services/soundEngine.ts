@@ -19,11 +19,12 @@ class AudioEngineService {
   private compressor: DynamicsCompressorNode | null = null;
   private vocalWarmFilter: BiquadFilterNode | null = null;
   private masterGain: GainNode | null = null;
-  private isMuted: boolean = true;
+  private isMuted: boolean = false;
   private voiceLang: 'en' | 'am' = 'am';
   private cachedVoices: SpeechSynthesisVoice[] = [];
   private speechTimeoutRef: number | null = null;
   private audioBufferCache: Map<string, AudioBuffer | null> = new Map();
+  private currentVoiceAudio: HTMLAudioElement | null = null;
 
   constructor() {
     this.initVoices();
@@ -85,10 +86,17 @@ class AudioEngineService {
 
   setMuted(muted: boolean) {
     this.isMuted = muted;
-    if (muted && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      if (this.speechTimeoutRef) {
-        clearTimeout(this.speechTimeoutRef);
+    if (muted) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        if (this.speechTimeoutRef) {
+          clearTimeout(this.speechTimeoutRef);
+        }
+      }
+      if (this.currentVoiceAudio) {
+        try {
+          this.currentVoiceAudio.pause();
+        } catch {}
       }
     }
   }
@@ -325,39 +333,100 @@ class AudioEngineService {
   }
 
   /**
+   * High-reliability HTML5 Audio playback for mobile and desktop
+   */
+  async playAudioDirect(url: string): Promise<boolean> {
+    if (this.isMuted) return false;
+
+    return new Promise<boolean>((resolve) => {
+      try {
+        if (typeof window === 'undefined' || typeof Audio === 'undefined') {
+          return resolve(false);
+        }
+
+        if (this.currentVoiceAudio) {
+          try {
+            this.currentVoiceAudio.pause();
+            this.currentVoiceAudio.currentTime = 0;
+          } catch {}
+        }
+
+        const audio = new Audio(url);
+        audio.volume = 1.0;
+        audio.preload = 'auto';
+        this.currentVoiceAudio = audio;
+
+        let handled = false;
+        const finish = (success: boolean) => {
+          if (!handled) {
+            handled = true;
+            resolve(success);
+          }
+        };
+
+        audio.onended = () => finish(true);
+        audio.onerror = () => finish(false);
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              finish(true);
+            })
+            .catch(() => {
+              finish(false);
+            });
+        }
+      } catch {
+        resolve(false);
+      }
+    });
+  }
+
+  /**
    * Universal Ball Speech Announcement:
-   * 1. Checks if custom Addis AI / Human MP3 recording exists in /assets/audio/{lang}/{num}.mp3
-   * 2. If found: Plays studio audio buffer with 0ms latency.
-   * 3. If not found: Executes live two-stage human caller engine.
+   * 1. Voice-Only policy: No synthetic chimes, pops, or beeps.
+   * 2. Plays recorded human audio file (WebM / MP3 / M4A) with 0ms latency.
+   * 3. Prioritizes current language, falls back to Amharic and English.
    */
   async speakBall(col: string, num: number) {
     telegramService.triggerHaptic('medium');
     if (this.isMuted) return;
 
-    // 1. Play presence cue
-    this.playPresenceChime();
-
-    // 2. Check for custom recorded audio file (Addis AI / Studio Human clip)
+    // Candidate URLs across language folders and naming conventions
     const possibleUrls = [
       `/assets/audio/${this.voiceLang}/${num}.webm`,
-      `/assets/audio/${this.voiceLang}/${num}.mp3`,
+      `/assets/audio/am/${num}.webm`,
+      `/assets/audio/en/${num}.webm`,
       `/assets/audio/${this.voiceLang}/${col}-${num}.webm`,
+      `/assets/audio/am/${col}-${num}.webm`,
+      `/assets/audio/en/${col}-${num}.webm`,
+      `/assets/audio/${this.voiceLang}/${num}.mp3`,
+      `/assets/audio/am/${num}.mp3`,
+      `/assets/audio/en/${num}.mp3`,
       `/assets/audio/${this.voiceLang}/${col}-${num}.mp3`,
-      `/assets/audio/${this.voiceLang}/${num}.m4a`,
-      `/assets/audio/${this.voiceLang}/${col}-${num}.m4a`,
-      `/assets/audio/${this.voiceLang}/${num}.wav`
+      `/assets/audio/am/${col}-${num}.mp3`,
+      `/assets/audio/en/${col}-${num}.mp3`
     ];
 
-    for (const url of possibleUrls) {
+    const uniqueUrls = Array.from(new Set(possibleUrls));
+
+    // 1. Primary: Direct HTML5 Audio playback
+    for (const url of uniqueUrls) {
+      const success = await this.playAudioDirect(url);
+      if (success) {
+        return;
+      }
+    }
+
+    // 2. Fallback: Web Audio API Buffer playback
+    for (const url of uniqueUrls) {
       const buffer = await this.loadAudioBuffer(url);
       if (buffer) {
         this.playDecodedBuffer(buffer);
         return;
       }
     }
-
-    // 3. Fallback: If custom audio file has not been recorded yet, stay silent (zero synthetic computer speech)
-    // The engine waits until real voice recordings are provided.
   }
 
   /**

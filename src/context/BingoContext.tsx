@@ -395,8 +395,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setSpherePop(true);
     setTimeout(() => setSpherePop(false), 300);
 
-    soundEngine.playPop();
-    // Non-blocking real voice announcement: safely fired in background
+    // Voice-Only: Real human recorded voice announcement (zero synthetic pops/chimes)
     soundEngine.speakBall(col, num).catch(() => {});
     setCalledNumbers(prev => (prev.includes(num) ? prev : [...prev, num]));
 

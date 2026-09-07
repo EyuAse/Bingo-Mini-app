@@ -40,8 +40,8 @@ export const BingoPage: React.FC = () => {
             <button
               type="button"
               className="engine-control-mini-btn"
-              onClick={() => setShowVoiceTester(true)}
-              title="Test Column B Voice Recordings"
+              onClick={() => setShowVoiceTester(prev => !prev)}
+              title="Toggle Column B Voice Studio"
               style={{ color: '#60a5fa', borderColor: 'rgba(96, 165, 250, 0.4)' }}
             >
               <i className="fa-solid fa-microphone"></i>
