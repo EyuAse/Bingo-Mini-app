@@ -78,8 +78,10 @@ export const CurrentCallBanner: React.FC = () => {
               );
             })
           ) : (
-            <div className="compact-recent-empty">
-              <span>{roundPhase === 'playing' ? 'Drawing first ball...' : 'Recent calls will appear here'}</span>
+            <div className="compact-recent-empty-dots">
+              <span className="recent-empty-ball">--</span>
+              <span className="recent-empty-ball">--</span>
+              <span className="recent-empty-ball">--</span>
             </div>
           )}
         </div>

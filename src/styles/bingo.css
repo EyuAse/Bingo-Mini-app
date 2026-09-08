@@ -14,10 +14,10 @@
 }
 
 .bingo-page-content-wrapper {
-  padding: 6px 8px calc(115px + env(safe-area-inset-bottom, 20px));
+  padding: 4px 6px 4px 6px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   max-width: 600px;
   margin: 0 auto;
   width: 100%;
@@ -1418,12 +1418,12 @@
 /* ── Mobile Responsiveness (≤ 600px) ────────────────────── */
 @media (max-width: 600px) {
   .fresh-bingo-page {
-    padding-bottom: calc(85px + env(safe-area-inset-bottom, 16px));
+    padding-bottom: 0;
   }
 
   .bingo-page-content-wrapper {
-    padding: 4px 6px calc(115px + env(safe-area-inset-bottom, 20px));
-    gap: 5px;
+    padding: 3px 4px;
+    gap: 4px;
     max-width: 100%;
   }
 
@@ -1578,8 +1578,8 @@
 /* ── Mobile Responsiveness (≤ 360px) ────────────────────── */
 @media (max-width: 360px) {
   .bingo-page-content-wrapper {
-    padding: 3px 5px calc(110px + env(safe-area-inset-bottom, 20px));
-    gap: 5px;
+    padding: 2px 3px;
+    gap: 3px;
   }
 
   .fresh-bingo-stats-grid {
@@ -3649,16 +3649,46 @@
   gap: 10px;
 }
 
-/* ── Dedicated Full-Screen Game View (Zero-Distraction) ────── */
+/* ── Dedicated Full-Screen Game View (Zero-Distraction & Zero Scroll) ────── */
 .app-container.dedicated-game-view {
   padding: 0 !important;
+  margin: 0 auto !important;
   max-width: 100% !important;
-  background: #0b0b1e;
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  background: #08071e;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
 }
+
 .app-container.dedicated-game-view .fresh-bingo-page {
-  min-height: 100vh;
-  padding-bottom: 8px;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  background: #0b0b1e;
+}
+
+.app-container.dedicated-game-view .bingo-page-content-wrapper {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0 !important;
+  padding: 2px 4px calc(2px + env(safe-area-inset-bottom, 0px)) 4px !important;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 600px;
+  box-sizing: border-box;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  gap: 2px !important;
 }
 
 /* ── Dynamic Column Color System (Image 2 Match) ─────────── */
@@ -4256,112 +4286,214 @@
    CLIENT REFERENCE 2-COLUMN LAYOUT: MASTER BOARD (LEFT) + PLAY AREA (RIGHT)
    ══════════════════════════════════════════════════════════════════════════ */
 
-.bingo-split-layout-grid {
-  display: grid;
-  grid-template-columns: minmax(118px, 142px) 1fr;
-  gap: 10px;
+/* Top Action Bar (Back button, 5-Pill Status Strip, Menu) */
+.bingo-top-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 1px 2px;
   width: 100%;
-  align-items: start;
-  margin-top: 8px;
-  margin-bottom: 24px;
+  height: 30px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.btn-bingo-mini-back,
+.btn-bingo-mini-menu {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.12s ease;
+}
+
+.btn-bingo-mini-back:hover,
+.btn-bingo-mini-menu:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.bingo-top-status-strip {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  height: 28px;
+}
+
+.status-strip-box {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 1px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  height: 28px;
+  text-align: center;
+}
+
+.status-strip-lbl {
+  font-size: 6.5px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  line-height: 1;
+  letter-spacing: 0.1px;
+}
+
+.status-strip-val {
+  font-size: 10px;
+  font-weight: 950;
+  color: #0f172a;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.status-strip-val.text-purple {
+  color: #7c3aed;
+}
+.status-strip-val.text-green {
+  color: #16a34a;
+}
+.status-strip-val.text-gold {
+  color: #ca8a04;
+}
+
+/* ── 2-Column Split Grid Container (Strict Zero-Scroll Fit) ── */
+.bingo-split-layout-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(105px, 126px) 1fr;
+  gap: 5px;
+  width: 100%;
+  height: calc(100% - 32px);
+  max-height: calc(100% - 32px);
+  align-items: stretch;
+  overflow: hidden;
+  margin: 0;
+  padding: 0 2px;
+  box-sizing: border-box;
 }
 
 /* ── LEFT COLUMN: Full 1-75 Main Master Board (Flashboard) ── */
 .bingo-left-flashboard-col {
-  position: sticky;
-  top: 10px;
-  z-index: 5;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .fresh-master-board-card {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  padding: 8px 6px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  padding: 2px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .master-board-table-grid {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
   width: 100%;
+  gap: 1.5px;
 }
 
 /* Column Header Row: B I N G O */
 .mb-header-cols-row {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 3px;
-  margin-bottom: 2px;
+  gap: 1.5px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .mb-header-cell {
-  height: 25px;
-  border-radius: 6px;
+  height: 100%;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 950;
-  font-size: 0.82rem;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: 0.7rem;
+  letter-spacing: 0.2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .mb-header-cell.col-b {
   background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
   color: #713f12;
 }
-
 .mb-header-cell.col-i {
   background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
   color: #ffffff;
 }
-
 .mb-header-cell.col-n {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: #ffffff;
 }
-
 .mb-header-cell.col-g {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   color: #ffffff;
 }
-
 .mb-header-cell.col-o {
   background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
   color: #ffffff;
 }
 
-/* 15 Number Rows */
+/* 15 Number Rows (Fit 100% height) */
 .mb-body-numbers {
-  display: flex;
-  flex-direction: column;
-  gap: 2.5px;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: repeat(15, 1fr);
+  gap: 1.5px;
+  height: calc(100% - 20px);
 }
 
 .mb-number-row {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 3px;
+  gap: 1.5px;
+  height: 100%;
+  min-height: 0;
 }
 
 .mb-num-box {
-  height: 22px;
-  border-radius: 6px;
+  height: 100%;
+  min-height: 0;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: clamp(0.55rem, 1.8vw, 0.68rem);
+  font-weight: 850;
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.15s ease;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.12s ease;
   user-select: none;
 }
 
@@ -4371,7 +4503,7 @@
   color: #ffffff;
   font-weight: 950;
   border: 1px solid #c2410c;
-  box-shadow: 0 0 8px rgba(249, 115, 22, 0.55);
+  box-shadow: 0 0 4px rgba(249, 115, 22, 0.55);
 }
 
 /* Latest drawn ball: bright green active highlight (matching ball 66 in screenshot!) */
@@ -4380,7 +4512,7 @@
   color: #ffffff !important;
   font-weight: 950 !important;
   border: 1.5px solid #86efac !important;
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.8) !important;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.8) !important;
   animation: pulseLatestBall 1s infinite alternate;
 }
 
@@ -4391,58 +4523,59 @@
 
 /* ── RIGHT COLUMN: Current Call, Controls, Stacked Cartelas ── */
 .bingo-right-playarea-col {
+  position: relative;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 3px;
   width: 100%;
   min-width: 0;
+  overflow: hidden;
+  justify-content: space-between;
 }
 
 /* Compact Current Call Block */
 .compact-current-call-block {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
   width: 100%;
+  flex-shrink: 0;
 }
 
 /* 1. Header Bar with "Current Call" and Ball Pill */
 .compact-call-header {
-  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #1e293b 100%);
-  border: 1.5px solid rgba(168, 85, 247, 0.4);
-  border-radius: 18px;
-  padding: 8px 14px;
+  background: linear-gradient(135deg, #4a044e 0%, #701a75 50%, #4a044e 100%);
+  border: 1px solid rgba(216, 74, 237, 0.4);
+  border-radius: 8px;
+  padding: 1px 8px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
-  transition: transform 0.2s ease;
-}
-
-.compact-call-header.call-pop {
-  transform: scale(1.02);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .compact-call-title {
-  font-size: 0.92rem;
+  font-size: 0.72rem;
   font-weight: 900;
   color: #ffffff;
-  letter-spacing: 0.3px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.2px;
 }
 
 .compact-current-ball-pill {
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   color: #ffffff;
-  padding: 4px 12px;
+  padding: 1px 6px;
   border-radius: 999px;
   font-weight: 950;
-  font-size: 0.95rem;
+  font-size: 0.78rem;
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  box-shadow: 0 0 14px rgba(249, 115, 22, 0.55);
-  letter-spacing: 0.5px;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.55);
 }
 
 .compact-current-ball-pill.col-b {
@@ -4474,31 +4607,32 @@
 .compact-recent-balls-tray {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 5px 10px;
+  border-radius: 7px;
+  padding: 1px 4px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .compact-recent-balls-inner {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
 }
 
 .compact-recent-ball {
-  width: 32px;
-  height: 32px;
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
+  font-size: 0.52rem;
   font-weight: 950;
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  letter-spacing: -0.2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .compact-recent-ball.col-b {
@@ -4518,11 +4652,22 @@
   background: linear-gradient(135deg, #a855f7 0%, #6b21a8 100%);
 }
 
-.compact-recent-empty {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  font-style: italic;
-  padding: 2px 0;
+.compact-recent-empty-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.recent-empty-ball {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.48rem;
 }
 
 /* 3. Controls Row (Sound & Auto Pill) */
@@ -4530,27 +4675,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 0 4px;
+  gap: 4px;
+  height: 16px;
+  padding: 0 2px;
+  flex-shrink: 0;
 }
 
 .btn-compact-sound {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  padding: 4px 12px;
+  padding: 1px 6px;
   color: #ffffff;
-  font-size: 0.78rem;
+  font-size: 0.65rem;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   cursor: pointer;
-  transition: all 0.12s ease;
-}
-
-.btn-compact-sound:hover {
-  background: rgba(255, 255, 255, 0.15);
 }
 
 .btn-compact-sound.muted {
@@ -4563,78 +4705,85 @@
   border: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   cursor: pointer;
   padding: 0;
 }
 
 .btn-compact-auto .auto-lbl {
-  font-size: 0.78rem;
+  font-size: 0.65rem;
   font-weight: 800;
   color: #ffffff;
 }
 
 .auto-switch-pill {
-  padding: 3px 10px;
+  padding: 1px 5px;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   font-weight: 950;
-  transition: all 0.15s ease;
 }
 
 .auto-switch-pill.on {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: #ffffff;
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
 }
 
 .auto-switch-pill.off {
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   color: #ffffff;
-  box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 0 4px rgba(249, 115, 22, 0.4);
 }
 
-/* ── STACKED CARTELA CARDS (Matching Screenshot Card Style) ── */
+/* ── STACKED CARTELA CARDS (Matching Screenshot Card Style, Fits 100% Without Scroll) ── */
 .compact-cartelas-stack {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 3px;
   width: 100%;
+  overflow: hidden;
+  justify-content: space-between;
 }
 
 .new-cartela-card {
+  flex: 1;
+  min-height: 0;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 16px;
-  padding: 8px 8px 10px 8px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 2px 3px 3px 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 1px;
   width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .new-card-header {
+  height: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 4px;
   position: relative;
-  padding-bottom: 2px;
+  flex-shrink: 0;
 }
 
 .new-card-header-label {
-  font-size: 0.88rem;
+  font-size: 0.72rem;
   font-weight: 950;
   color: #22c55e;
-  letter-spacing: 0.3px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.2px;
 }
 
 .new-card-status-pill {
-  padding: 2px 8px;
+  padding: 1px 4px;
   border-radius: 999px;
-  font-size: 0.65rem;
+  font-size: 0.55rem;
   font-weight: 950;
 }
 .new-card-status-pill.hot {
@@ -4647,27 +4796,32 @@
 }
 
 .new-card-body {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1px;
+  height: calc(100% - 15px);
 }
 
-/* Column Header Row: B I N G O (Yellow, Green, Blue, Red, Purple) */
+/* Column Header Row: B I N G O */
 .new-bingo-col-headers {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
+  gap: 1.5px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 .new-bingo-col-hdr {
-  height: 26px;
-  border-radius: 6px;
+  height: 100%;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 950;
-  font-size: 0.85rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: 0.65rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .new-bingo-col-hdr.col-b {
@@ -4693,25 +4847,61 @@
 
 /* 5x5 Matrix: Crisp white rounded cells, green daubs, golden star free center */
 .new-cartela-5x5 {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 4.5px;
+  grid-template-rows: repeat(5, 1fr);
+  gap: 1.5px;
+  height: 100%;
 }
 
 .new-cartela-cell {
-  aspect-ratio: 1;
-  border-radius: 8px;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  min-width: 0;
+  border-radius: 3.5px;
   background: #ffffff;
   color: #0f172a;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
+  font-size: clamp(0.68rem, 2.3vw, 0.85rem);
   font-weight: 950;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   cursor: default;
   transition: all 0.12s ease;
   user-select: none;
+  box-sizing: border-box;
+}
+
+.new-cartela-cell.interactive-tap {
+  cursor: pointer;
+}
+.new-cartela-cell.interactive-tap:active {
+  transform: scale(0.92);
+}
+
+/* In-game 1TG Alert overlay (non-disruptive, floats over cartela without shifting flow) */
+.one-to-go-alert-banner {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 12px);
+  max-width: 280px;
+  z-index: 50;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1.5px solid #facc15;
+  border-radius: 8px;
+  padding: 4px 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 10px rgba(250, 204, 21, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: pulseOneToGo 1.5s infinite alternate ease-in-out;
 }
 
 .new-cartela-cell.interactive-tap {
@@ -4725,7 +4915,7 @@
 .new-cartela-cell.daubed {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.6) !important;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6) !important;
 }
 
 .daubed-number {
@@ -4739,7 +4929,7 @@
 }
 
 .new-free-star {
-  font-size: 1.15rem;
+  font-size: 1rem;
   filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.6));
 }
 
@@ -4761,46 +4951,29 @@
 @media (min-width: 768px) {
   .bingo-split-layout-grid {
     grid-template-columns: 240px 1fr;
-    gap: 20px;
+    gap: 16px;
     max-width: 860px;
     margin-left: auto;
     margin-right: auto;
   }
 
   .mb-num-box {
-    height: 28px;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
   }
 
   .mb-header-cell {
-    height: 32px;
-    font-size: 0.95rem;
+    height: 28px;
+    font-size: 0.9rem;
   }
 
   .new-cartela-cell {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
+    max-height: 44px;
   }
 
   .new-bingo-col-hdr {
-    height: 32px;
-    font-size: 0.95rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .bingo-split-layout-grid {
-    grid-template-columns: 280px 1fr;
-    gap: 24px;
-    max-width: 960px;
-  }
-
-  .mb-num-box {
-    height: 32px;
-    font-size: 0.92rem;
-  }
-
-  .new-cartela-cell {
-    font-size: 1.25rem;
+    height: 26px;
+    font-size: 0.88rem;
   }
 }
 

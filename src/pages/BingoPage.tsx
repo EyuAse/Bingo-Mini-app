@@ -50,81 +50,32 @@ export const BingoPage: React.FC = () => {
 
       <div className="bingo-page-content-wrapper">
 
-        {/* 1. Dark Hero Header — Pristine layout matching reference Image 2 */}
-        <div className="bingo-hero-header">
-          <div className="bingo-hero-top-row">
+        {/* 1. Ultra-Slim Top Action Bar matching Image 2 */}
+        <div className="bingo-top-action-bar">
+          <button
+            type="button"
+            className="btn-bingo-mini-back"
+            onClick={handleBackClick}
+            title="Back to Games"
+          >
+            <i className="fa-solid fa-chevron-left"></i>
+          </button>
 
-            {/* Left: Circular Back Button */}
-            <button
-              type="button"
-              className="btn-bingo-hero-back"
-              onClick={handleBackClick}
-              title="Back to Games"
-            >
-              <i className="fa-solid fa-chevron-left"></i>
-            </button>
+          {/* 5-Box Game Status Strip from Image 2 */}
+          <StatsStrip />
 
-            {/* Center: Title + Sub-row */}
-            <div className="bingo-hero-center-group">
-              <div className="bingo-hero-title-wrap">
-                <span className="bingo-hero-trophy">🏆</span>
-                <div className="bingo-hero-title">
-                  {heroTitleBase}<span className="title-highlight">{heroTitleHighlight}</span>
-                </div>
-              </div>
-
-              {/* Sub-row: player count + status */}
-              <div className="bingo-hero-sub-row">
-                <div className="hero-sub-item">
-                  <i className="fa-solid fa-users"></i>
-                  <strong>{realPlayerCount}/2</strong>
-                  <span>Players Joined</span>
-                </div>
-                <div className="hero-sub-item">
-                  <i className="fa-regular fa-clock"></i>
-                  <span>
-                    {roundPhase === 'playing'
-                      ? 'Game is live!'
-                      : 'Waiting for first ball...'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: 3D Balls with Crown + Circular Menu Button */}
-            <div className="bingo-hero-right-cluster">
-              <div className="bingo-hero-3d-balls" title="Betika Lucky Bingo">
-                <div className="hero-3d-ball purple-b">
-                  <span className="ball-shine"></span>
-                  <span className="ball-letter">B</span>
-                  <span className="ball-crown-crown">👑</span>
-                </div>
-                <div className="hero-3d-ball cyan-g">
-                  <span className="ball-shine"></span>
-                  <span className="ball-letter">G</span>
-                  <span className="ball-crown-sparkle">✨</span>
-                </div>
-              </div>
-
-              {/* Circular Menu Button */}
-              <button
-                type="button"
-                className="btn-bingo-hero-menu"
-                onClick={() => setShowMenuDrawer(true)}
-                title="Settings & Tools"
-              >
-                <i className="fa-solid fa-bars"></i>
-              </button>
-            </div>
-
-          </div>
+          <button
+            type="button"
+            className="btn-bingo-mini-menu"
+            onClick={() => setShowMenuDrawer(true)}
+            title="Settings & Tools"
+          >
+            <i className="fa-solid fa-bars"></i>
+          </button>
         </div>
 
         {/* Real-Time Network Resilience Alerts */}
         <NetworkStatusBanner />
-
-        {/* Live Stats: Stake / Prize / Players / Called (Floating slim strip) */}
-        <StatsStrip />
 
         {/* ── Main Split 2-Column Board & Cartela Layout ── */}
         <div className="bingo-split-layout-grid">
@@ -137,7 +88,7 @@ export const BingoPage: React.FC = () => {
           <div className="bingo-right-playarea-col">
             <CurrentCallBanner />
 
-            {hasTicket ? (
+            {hasTicket || roundPhase === 'lobby' ? (
               <BingoGrid />
             ) : (
               <SpectatorCard />
@@ -145,7 +96,10 @@ export const BingoPage: React.FC = () => {
 
             <OneToGoAlert />
 
-            <BettingBar />
+            {/* Stake Bar: COMPLETELY HIDDEN during active game! Visible only in lobby/spectating */}
+            {roundPhase !== 'playing' && (
+              <BettingBar />
+            )}
           </div>
         </div>
       </div>

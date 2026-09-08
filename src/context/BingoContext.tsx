@@ -259,7 +259,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Betting state (Stakes: 10, 20, 50, 100 Birr)
   const [betAmount, setBetAmountState] = useState<number>(10);
   const [stakeRoomsSummary, setStakeRoomsSummary] = useState<Record<number, number>>({ 10: 0, 20: 0, 50: 0, 100: 0 });
-  const [cardQuantity, setCardQuantityState] = useState<number>(1);
+  const [cardQuantity, setCardQuantityState] = useState<number>(2);
   const [hasTicket, setHasTicket] = useState<boolean>(false);
   const [hasPreBoughtNext, setHasPreBoughtNext] = useState<boolean>(false);
 
