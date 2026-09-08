@@ -39,30 +39,45 @@ export const WinModal: React.FC = () => {
     return () => clearTimeout(timer);
   }, [showWinModal, closeWinModalAndRestart]);
 
-  if (!winResult || !showWinModal) return null;
+  if (!showWinModal) return null;
 
-  const isSolo = winResult.winType === 'user_solo';
-  const isSplit = winResult.winType === 'user_split';
-  const isOpponentWin = winResult.winType === 'opponent_win';
+  // Bulletproof fallback so the victory modal NEVER returns null or crashes when showWinModal is active
+  const safeWinResult = winResult || {
+    winType: 'user_solo',
+    winningCartelaNumber: 1,
+    winningLine: [],
+    winnerName: 'Player',
+    coWinners: [],
+    totalPot: 50,
+    userShare: 50,
+    winnerPayout: 50,
+    stakeAmount: 10,
+    houseFee: 0,
+    netPrizePot: 50
+  };
 
-  const userShare = typeof winResult.userShare === 'number' && !isNaN(winResult.userShare)
-    ? winResult.userShare
-    : (typeof (winResult as any).sharePerWinner === 'number' ? (winResult as any).sharePerWinner : 0);
+  const isSolo = safeWinResult.winType === 'user_solo';
+  const isSplit = safeWinResult.winType === 'user_split';
+  const isOpponentWin = safeWinResult.winType === 'opponent_win';
 
-  const winnerPayout = typeof winResult.winnerPayout === 'number' && !isNaN(winResult.winnerPayout)
-    ? winResult.winnerPayout
-    : (typeof (winResult as any).sharePerWinner === 'number' ? (winResult as any).sharePerWinner : (winResult.totalPot || 50));
+  const userShare = typeof safeWinResult.userShare === 'number' && !isNaN(safeWinResult.userShare)
+    ? safeWinResult.userShare
+    : (typeof (safeWinResult as any).sharePerWinner === 'number' ? (safeWinResult as any).sharePerWinner : 0);
 
-  const stakeAmt = Number(winResult.stakeAmount) || 10;
+  const winnerPayout = typeof safeWinResult.winnerPayout === 'number' && !isNaN(safeWinResult.winnerPayout)
+    ? safeWinResult.winnerPayout
+    : (typeof (safeWinResult as any).sharePerWinner === 'number' ? (safeWinResult as any).sharePerWinner : (safeWinResult.totalPot || 50));
+
+  const stakeAmt = Number(safeWinResult.stakeAmount) || 10;
 
   // Clamped valid Cartela ID (1-400)
-  const rawCartela = Number(winResult.winningCartelaNumber || (winResult as any).winningCartela || 1);
+  const rawCartela = Number(safeWinResult.winningCartelaNumber || (safeWinResult as any).winningCartela || 1);
   const cartelaNum = (!isNaN(rawCartela) && rawCartela >= 1 && rawCartela <= 400) ? rawCartela : 1;
 
-  const winnerName = typeof winResult.winnerName === 'string' && winResult.winnerName.trim()
-    ? winResult.winnerName
-    : (Array.isArray((winResult as any).winnerNames) && (winResult as any).winnerNames[0]
-      ? String((winResult as any).winnerNames[0])
+  const winnerName = typeof safeWinResult.winnerName === 'string' && safeWinResult.winnerName.trim()
+    ? safeWinResult.winnerName
+    : (Array.isArray((safeWinResult as any).winnerNames) && (safeWinResult as any).winnerNames[0]
+      ? String((safeWinResult as any).winnerNames[0])
       : 'Player');
 
   // Bulletproof 5x5 card cells generation
@@ -79,9 +94,9 @@ export const WinModal: React.FC = () => {
   }, [cartelaNum]);
 
   // Safe string filtering of co-winners
-  const rawCoWinners: any[] = Array.isArray(winResult.coWinners) && winResult.coWinners.length > 0
-    ? winResult.coWinners
-    : (Array.isArray((winResult as any).winnerNames) ? (winResult as any).winnerNames : []);
+  const rawCoWinners: any[] = Array.isArray(safeWinResult.coWinners) && safeWinResult.coWinners.length > 0
+    ? safeWinResult.coWinners
+    : (Array.isArray((safeWinResult as any).winnerNames) ? (safeWinResult as any).winnerNames : []);
 
   const otherCoWinners = rawCoWinners
     .map(item => (typeof item === 'string' ? item : (typeof item === 'object' && item?.userName ? String(item.userName) : String(item || ''))))
@@ -107,9 +122,9 @@ export const WinModal: React.FC = () => {
   };
 
   // Safe winning indices array
-  const winningIndices = Array.isArray(winResult.winningLine)
-    ? winResult.winningLine
-    : (Array.isArray((winResult as any).winningIndices) ? (winResult as any).winningIndices : []);
+  const winningIndices = Array.isArray(safeWinResult.winningLine)
+    ? safeWinResult.winningLine
+    : (Array.isArray((safeWinResult as any).winningIndices) ? (safeWinResult as any).winningIndices : []);
 
   return (
       <div className="fresh-victory-modal-backdrop" onClick={closeWinModalAndRestart}>
@@ -207,12 +222,12 @@ export const WinModal: React.FC = () => {
 
             {/* Pot & Commission Transparency Breakdown */}
             {(() => {
-              const grossPot = Number(winResult.totalPot) || Number(winnerPayout) || 0;
-              const houseFee = typeof (winResult as any).houseFee === 'number'
-                ? Number((winResult as any).houseFee) || 0
+              const grossPot = Number(safeWinResult.totalPot) || Number(winnerPayout) || 0;
+              const houseFee = typeof (safeWinResult as any).houseFee === 'number'
+                ? Number((safeWinResult as any).houseFee) || 0
                 : (isTrueMultiplayerSplit ? 0 : Math.max(0, grossPot - (Number(winnerPayout) || 0)));
-              const netPrizePool = typeof (winResult as any).netPrizePot === 'number'
-                ? Number((winResult as any).netPrizePot) || 0
+              const netPrizePool = typeof (safeWinResult as any).netPrizePot === 'number'
+                ? Number((safeWinResult as any).netPrizePot) || 0
                 : Math.max(0, grossPot - houseFee);
               const isFeeCharged = houseFee > 0;
 

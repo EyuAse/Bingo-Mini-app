@@ -221,8 +221,8 @@ export const BingoPage: React.FC = () => {
       {/* 400 Cartela Selection Modal */}
       <CartelaPickerModal />
 
-      {/* Victory Celebration Modal — silent boundary prevents root-level crash */}
-      <ErrorBoundary componentName="WinModal" fallback={null}>
+      {/* Victory Celebration Modal */}
+      <ErrorBoundary componentName="WinModal">
         <WinModal />
       </ErrorBoundary>
 

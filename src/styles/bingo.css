@@ -1183,12 +1183,12 @@
 .fresh-victory-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 100000 !important;
   padding: 16px;
   animation: fadeInModal 0.25s ease-out;
 }
@@ -4402,7 +4402,7 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 2px;
+  padding: 2px 2px 4px 2px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
@@ -4410,6 +4410,7 @@
   max-height: 100%;
   min-height: 0;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .master-board-table-grid {
@@ -4464,14 +4465,16 @@
   color: #ffffff;
 }
 
-/* 15 Number Rows (Fit 100% height) */
+/* 15 Number Rows (Fit 100% height with bottom breathing room) */
 .mb-body-numbers {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
   display: grid;
   grid-template-rows: repeat(15, 1fr);
   gap: 1.5px;
-  height: calc(100% - 20px);
+  height: auto;
+  padding-bottom: 2px;
+  box-sizing: border-box;
 }
 
 .mb-number-row {
@@ -4898,19 +4901,19 @@
   color: #ffffff;
 }
 
-/* 5x5 Matrix: Dynamic row height adapts to container, prevents overlapping */
+/* 5x5 Matrix: Proportional 5-row grid preventing stretched gaps or void space */
 .new-cartela-5x5 {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(5, minmax(22px, 1fr));
+  grid-template-rows: repeat(5, 1fr);
   gap: 2px;
   width: 100%;
 }
 
 .new-cartela-cell {
-  min-height: 22px;
   width: 100%;
-  min-width: 0;
+  height: 100%;
+  min-height: 0;
   border-radius: 4px;
   background: #ffffff;
   color: #0f172a;
@@ -4957,13 +4960,6 @@
   animation: pulseOneToGo 1.5s infinite alternate ease-in-out;
 }
 
-.new-cartela-cell.interactive-tap {
-  cursor: pointer;
-}
-.new-cartela-cell.interactive-tap:active {
-  transform: scale(0.92);
-}
-
 /* Daubed cell: vibrant green background, bold white number */
 .new-cartela-cell.daubed {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
@@ -4976,14 +4972,30 @@
   font-weight: 950;
 }
 
-/* Free cell: vibrant green background with center star */
+/* Free cell: vibrant green background with center star (perfect alignment) */
 .new-cartela-cell.free-cell {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+.new-free-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .new-free-star {
-  font-size: 1rem;
-  filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.6));
+  font-size: clamp(0.72rem, 2.2vw, 0.92rem);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 3px rgba(250, 204, 21, 0.7));
 }
 
 /* Win glow cell */
@@ -5002,12 +5014,43 @@
    ══════════════════════════════════════════════════════════════════════════ */
 
 @media (min-width: 768px) {
+  .app-container.dedicated-game-view .bingo-page-content-wrapper {
+    max-width: 980px !important;
+    padding: 4px 16px calc(4px + env(safe-area-inset-bottom, 0px)) 16px !important;
+  }
+
   .bingo-split-layout-grid {
-    grid-template-columns: 240px 1fr;
-    gap: 16px;
-    max-width: 860px;
-    margin-left: auto;
-    margin-right: auto;
+    grid-template-columns: 210px 1fr !important;
+    gap: 14px !important;
+    max-width: 100% !important;
+    height: 100% !important;
+  }
+
+  .compact-cartelas-stack.dual-cartela {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+
+  .compact-cartelas-stack.dual-cartela .new-cartela-card {
+    flex: none !important;
+    max-height: none !important;
+    width: 100% !important;
+  }
+
+  .compact-cartelas-stack.dual-cartela .new-cartela-5x5 {
+    aspect-ratio: 1 / 1 !important;
+    max-height: 280px !important;
+    flex: none !important;
+    height: auto !important;
+  }
+
+  .compact-cartelas-stack.single-cartela .new-cartela-card {
+    max-width: 380px !important;
+    margin: 0 auto !important;
   }
 
   .mb-num-box {
@@ -5076,32 +5119,37 @@
   font-size: clamp(0.78rem, 2.8vw, 0.95rem);
 }
 
-/* ── DUAL CARTELA COMPACT PROPORTIONAL STACK ── */
+/* ── DUAL CARTELA COMPACT PROPORTIONAL STACK (Zero-Squish, Anti-Stretch) ── */
 .compact-cartelas-stack.dual-cartela {
-  flex: 1;
-  min-height: 0;
+  flex: 0 1 auto;
+  min-height: min-content;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
   justify-content: flex-start;
 }
 
 .compact-cartelas-stack.dual-cartela .new-cartela-card {
-  flex: 1 1 0;
-  min-height: 0;
-  max-height: calc(50% - 2px);
+  flex: 0 0 auto;
+  min-height: min-content;
+  max-height: none;
+  width: 100%;
 }
 
 .compact-cartelas-stack.dual-cartela .new-cartela-5x5 {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-height: 0;
-  height: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  max-height: 230px;
+  margin: 0 auto;
+  gap: 2px;
 }
 
 .compact-cartelas-stack.dual-cartela .new-cartela-cell {
-  font-size: clamp(0.62rem, 2.1vw, 0.82rem);
+  font-size: clamp(0.68rem, 2.2vw, 0.86rem);
 }
 
 /* ── PREVIEW & SHUFFLE CONTROLS ── */
