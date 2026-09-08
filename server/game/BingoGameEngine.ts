@@ -1540,6 +1540,9 @@ class BingoGameEngine {
       winningPattern: firstWinner.winningPattern,
       winningIndices: firstWinner.winningIndices,
       totalPot: room.totalPot,
+      houseFee: room.houseFee || 0,
+      netPrizePot: room.winnerPayout > 0 ? room.winnerPayout : room.totalPot,
+      commissionPercent: room.commissionEnabled ? (room.commissionPercent || 20) : 0,
       winnerPayout: displayWinnerPayout, // Exact payout won
       stakeAmount: winnerStake,
       sharePerWinner: isSplit ? perCardPayout : displayWinnerPayout,

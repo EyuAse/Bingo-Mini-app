@@ -162,35 +162,54 @@ export const WinModal: React.FC = () => {
           </strong>
 
           {/* Pot & Commission Transparency Breakdown */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '4px',
-            marginTop: '8px',
-            padding: '8px 12px',
-            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-            borderRadius: '8px',
-            fontSize: '0.75rem',
-            color: '#475569',
-            width: '100%'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Total Room Pot:</span>
-              <strong style={{ color: '#0f172a' }}>{(winResult.totalPot || winnerPayout).toLocaleString()} ETB</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>House Commission:</span>
-              <span style={{ color: ((winResult.totalPot || winnerPayout) - winnerPayout) > 0 ? '#b91c1c' : '#16a34a', fontWeight: 600 }}>
-                {((winResult.totalPot || winnerPayout) - winnerPayout) > 0
-                  ? `20% (-${((winResult.totalPot || winnerPayout) - winnerPayout).toLocaleString()} ETB)`
-                  : '0% (0.00 ETB • ≤5 Players)'}
-              </span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #cbd5e1', paddingTop: '4px' }}>
-              <span>Net Winner Payout:</span>
-              <strong style={{ color: '#16a34a' }}>{winnerPayout.toLocaleString()} ETB</strong>
-            </div>
-          </div>
+          {(() => {
+            const grossPot = winResult.totalPot || winnerPayout;
+            const houseFee = typeof (winResult as any).houseFee === 'number'
+              ? (winResult as any).houseFee
+              : (isTrueMultiplayerSplit ? 0 : Math.max(0, grossPot - winnerPayout));
+            const netPrizePool = typeof (winResult as any).netPrizePot === 'number'
+              ? (winResult as any).netPrizePot
+              : (grossPot - houseFee);
+            const isFeeCharged = houseFee > 0;
+
+            return (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                marginTop: '8px',
+                padding: '8px 12px',
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                color: '#475569',
+                width: '100%'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Total Room Pot:</span>
+                  <strong style={{ color: '#0f172a' }}>{grossPot.toLocaleString()} ETB</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Platform Commission:</span>
+                  <span style={{ color: isFeeCharged ? '#b91c1c' : '#16a34a', fontWeight: 600 }}>
+                    {isFeeCharged
+                      ? `20% (-${houseFee.toLocaleString()} ETB)`
+                      : '0% (0.00 ETB • ≤5 Players)'}
+                  </span>
+                </div>
+                {isTrueMultiplayerSplit && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Net Prize Pot:</span>
+                    <strong style={{ color: '#0f172a' }}>{netPrizePool.toLocaleString()} ETB</strong>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #cbd5e1', paddingTop: '4px' }}>
+                  <span>{isTrueMultiplayerSplit ? 'Your Split Share (50/50):' : 'Net Winner Payout:'}</span>
+                  <strong style={{ color: '#16a34a' }}>{winnerPayout.toLocaleString()} ETB</strong>
+                </div>
+              </div>
+            );
+          })()}
 
           <span className="victory-credited-tag" style={{ marginTop: '8px' }}>
             {isOpponentWin
