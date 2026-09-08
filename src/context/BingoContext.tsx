@@ -5,7 +5,8 @@ import React, {
   useEffect,
   useRef,
   ReactNode,
-  useCallback
+  useCallback,
+  useMemo
 } from 'react';
 import { soundEngine } from '../services/soundEngine.ts';
 import { socketService } from '../services/socketService.ts';

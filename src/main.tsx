@@ -7,6 +7,7 @@ import { WalletProvider } from './context/WalletContext.tsx';
 import { BingoProvider } from './context/BingoContext.tsx';
 import { AdminProvider } from './context/AdminContext.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
+import { ErrorBoundary } from './components/common/ErrorBoundary.tsx';
 
 // FontAwesome Local Bundle
 import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -24,18 +25,20 @@ import './styles/auth.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <LanguageProvider>
-      <AdminProvider>
-        <AuthProvider>
-          <AppProvider>
-            <WalletProvider>
-              <BingoProvider>
-                <App />
-              </BingoProvider>
-            </WalletProvider>
-          </AppProvider>
-        </AuthProvider>
-      </AdminProvider>
-    </LanguageProvider>
+    <ErrorBoundary componentName="ApplicationRoot">
+      <LanguageProvider>
+        <AdminProvider>
+          <AuthProvider>
+            <AppProvider>
+              <WalletProvider>
+                <BingoProvider>
+                  <App />
+                </BingoProvider>
+              </WalletProvider>
+            </AppProvider>
+          </AuthProvider>
+        </AdminProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

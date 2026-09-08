@@ -18,8 +18,7 @@ export const CartelaPickerModal: React.FC = () => {
     toggleCartelaSelection,
     occupiedCartelaIds,
     cardQuantity,
-    betAmount,
-    roundNumber
+    betAmount
   } = useBingo();
   const { lang } = useLanguage();
 
@@ -51,7 +50,7 @@ export const CartelaPickerModal: React.FC = () => {
   });
 
   const boardsText = `${activeSelected.length}/${cardQuantity}`;
-  const roundDisplay = `${betAmount} №${roundNumber || 1}`;
+  const roundDisplay = `${betAmount} ETB`;
 
   return (
     <div className="cartela-picker-overlay" onClick={closeCartelaPicker}>

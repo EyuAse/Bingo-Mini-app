@@ -22,6 +22,7 @@ interface AuthContextType {
   sendOtp: (phone: string) => Promise<OtpChallengeResponse>;
   verifyOtp: (phone: string, code: string) => OtpVerificationResult;
   register: (payload: RegisterPayload) => Promise<User>;
+  login: (payload: LoginPayload) => Promise<User>;
   loginWithPhone: (phone: string, pin: string) => Promise<User>;
   loginWithTelegram: (tgUser?: TelegramUser, customPhone?: string, referralCode?: string) => Promise<{ user: User; isNewUser: boolean }>;
   logout: () => void;
@@ -414,6 +415,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         verifyOtp,
         register,
         login,
+        loginWithPhone: (phone: string, pin: string) => login({ phone, pin }),
         loginWithTelegram,
         logout,
         resetPin,
