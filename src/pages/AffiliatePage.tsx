@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { telegramService } from '../services/telegramService.ts';
+import { apiClient } from '../services/apiClient.ts';
 
 interface ReferredFriend {
   id: string;
@@ -20,56 +21,63 @@ export const AffiliatePage: React.FC = () => {
   const { user } = useAuth();
   const { lang } = useLanguage();
 
-  const referralCode = user?.id ? user.id.replace(/^UID-TG-/, 'LOMI-') : 'LOMI-7842';
-  const referralLink = `https://t.me/LomiBingobot/play?startapp=ref_${referralCode}`;
-
+  const [referralData, setReferralData] = useState<{
+    referralCode: string;
+    referralLink: string;
+    totalInvited: number;
+    totalEarned: number;
+    friends: ReferredFriend[];
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const friendsList: ReferredFriend[] = [
-    {
-      id: 'f-1',
-      name: 'Sami_Lucky',
-      avatar: '👑',
-      isPremium: true,
-      joinedAt: '2 hours ago',
-      depositAmount: 500,
-      bonusEarned: 75, // 15% of 500
-      status: 'paid'
-    },
-    {
-      id: 'f-2',
-      name: 'Eden_Rose',
-      avatar: '💎',
-      isPremium: false,
-      joinedAt: 'Yesterday',
-      depositAmount: 300,
-      bonusEarned: 30, // 10% of 300
-      status: 'paid'
-    },
-    {
-      id: 'f-3',
-      name: 'Nati_Boss',
-      avatar: '⚡',
-      isPremium: false,
-      joinedAt: '2 days ago',
-      depositAmount: 200,
-      bonusEarned: 20, // 10% of 200
-      status: 'paid'
-    },
-    {
-      id: 'f-4',
-      name: 'Dani_Addis',
-      avatar: '🎯',
-      isPremium: true,
-      joinedAt: '3 days ago',
-      depositAmount: 1000,
-      bonusEarned: 150, // 15% of 1000
-      status: 'paid'
-    }
-  ];
+  useEffect(() => {
+    let isMounted = true;
+    const fetchReferralStats = async () => {
+      if (!user) return;
+      try {
+        setLoading(true);
+        const res = await apiClient.wallet.getReferrals();
+        if (isMounted && res.success) {
+          setReferralData({
+            referralCode: res.referralCode,
+            referralLink: res.referralLink,
+            totalInvited: res.totalInvited,
+            totalEarned: res.totalEarned,
+            friends: res.friends.map(f => ({
+              id: f.id,
+              name: f.name,
+              avatar: f.avatar,
+              isPremium: f.isPremium,
+              joinedAt: f.joinedAt,
+              depositAmount: f.depositAmount,
+              bonusEarned: f.bonusEarned,
+              status: f.status
+            }))
+          });
+        }
+      } catch (err) {
+        console.warn('Could not load live referral stats:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
 
-  const totalInvited = friendsList.length;
-  const totalEarned = friendsList.reduce((acc, f) => acc + f.bonusEarned, 0);
+    fetchReferralStats();
+    return () => { isMounted = false; };
+  }, [user]);
+
+  const referralCode =
+    referralData?.referralCode ||
+    user?.referralCode ||
+    (user?.id ? user.id.replace(/^UID-TG-/, 'LOMI-') : 'LOMI-7842');
+  const referralLink =
+    referralData?.referralLink ||
+    `https://t.me/LomiBingobot/play?startapp=ref_${referralCode}`;
+
+  const totalInvited = referralData ? referralData.totalInvited : 0;
+  const totalEarned = referralData ? referralData.totalEarned : 0;
+  const friendsList = referralData ? referralData.friends : [];
 
   const handleCopyLink = () => {
     telegramService.triggerHaptic('light');
@@ -185,17 +193,17 @@ export const AffiliatePage: React.FC = () => {
                 }}
               >
                 {lang === 'am' ? 'ጓደኞችን ይጋብዙና ' : 'Invite Friends & '}
-                <span style={{ color: '#16a34a' }}>{lang === 'am' ? 'እስከ 15% ቦነስ ያግኙ!' : 'Earn Up to 15%!'}</span>
+                <span style={{ color: '#16a34a' }}>{lang === 'am' ? '10% ቦነስ ያግኙ!' : 'Earn 10% Bonus!'}</span>
               </h1>
 
               <p style={{ fontSize: '12px', color: '#475569', margin: 0, lineHeight: '1.4', fontWeight: '500' }}>
                 {lang === 'am'
-                  ? 'የሚጋብዙት ሰው ለመጀመሪያ ጊዜ ካስገባው ገንዘብ 10% ቦነስ ያግኙ (ለቴሌግራም ፕሪሚየም 15%)! ቦነሱ ለቢንጎ ጨዋታ የሚውል ነው።'
-                  : "Earn 10% bonus on your friend's first deposit (15% for Telegram Premium)! Bonus is added to play live 75-Ball Bingo."}
+                  ? 'የሚጋብዙት ሰው ለመጀመሪያ ጊዜ ካስገባው ገንዘብ 10% የአንድ ጊዜ ቦነስ ያግኙ! ቦነሱ ለቢንጎ ጨዋታ የሚውል ሲሆን ያሸነፉትን ማውጣት ይችላሉ።'
+                  : "Earn a 10% bonus on your friend's first deposit! Credited strictly for gameplay — all winnings are 100% withdrawable cash."}
               </p>
             </div>
 
-            {/* Right: 3D Royal Treasure Chest Graphic (Transparent PNG) */}
+            {/* Right: 3D Royal Treasure Chest Graphic */}
             <div
               style={{
                 width: '100px',
@@ -273,7 +281,7 @@ export const AffiliatePage: React.FC = () => {
               flexShrink: 0
             }}
           >
-            10%-15%
+            10% BONUS
           </span>
         </button>
 
@@ -354,9 +362,9 @@ export const AffiliatePage: React.FC = () => {
           </div>
         </div>
 
-        {/* 5. Exact Tiered Cards (10% Regular Friend vs 15% Telegram Premium) */}
+        {/* 5. Bonus Policy Cards (10% 1st Deposit Bonus & Gameplay Wallet rules) */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          {/* Card 1: Regular Friend (10% First Deposit Bonus) */}
+          {/* Card 1: 10% 1st Deposit Bonus */}
           <div
             style={{
               background: '#ffffff',
@@ -371,26 +379,25 @@ export const AffiliatePage: React.FC = () => {
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)'
             }}
           >
-            {/* Purple Avatar Circle */}
             <div
               style={{
                 width: '42px',
                 height: '42px',
                 borderRadius: '50%',
-                background: '#f1f5f9',
+                background: '#ecfdf5',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#6366f1',
+                color: '#16a34a',
                 fontSize: '18px',
                 marginBottom: '2px'
               }}
             >
-              <i className="fa-solid fa-user"></i>
+              <i className="fa-solid fa-coins"></i>
             </div>
 
             <strong style={{ fontSize: '13px', color: '#0f172a', fontWeight: '800' }}>
-              {lang === 'am' ? 'መደበኛ ተጠቃሚ' : 'Regular Friend'}
+              {lang === 'am' ? '1ኛ ተቀማጭ ቦነስ' : '1st Deposit Bonus'}
             </strong>
 
             <div style={{ fontSize: '22px', fontWeight: '900', color: '#16a34a', letterSpacing: '-0.3px' }}>
@@ -398,15 +405,15 @@ export const AffiliatePage: React.FC = () => {
             </div>
 
             <span style={{ fontSize: '11px', color: '#64748b' }}>
-              {lang === 'am' ? 'ከተጠቃሚው 1ኛ ገቢ' : "Of friend's 1st deposit"}
+              {lang === 'am' ? 'ከተጋባዡ 1ኛ ገቢ ብቻ' : "1-Time on friend's 1st deposit"}
             </span>
 
             <span style={{ fontSize: '10px', color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '999px', fontWeight: '700' }}>
-              {lang === 'am' ? 'የጨዋታ ቦነስ' : 'Game Play Bonus'}
+              {lang === 'am' ? 'የአንድ ጊዜ ቦነስ' : '1-Time Reward'}
             </span>
           </div>
 
-          {/* Card 2: Telegram Premium (15% First Deposit Bonus With BEST VALUE Ribbon) */}
+          {/* Card 2: Gameplay Only Rule (Withdrawable Winnings) */}
           <div
             style={{
               background: 'linear-gradient(180deg, #fefce8 0%, #fef9c3 100%)',
@@ -423,26 +430,6 @@ export const AffiliatePage: React.FC = () => {
               boxShadow: '0 4px 12px rgba(234, 179, 8, 0.15)'
             }}
           >
-            {/* BEST VALUE Ribbon Tag */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '12px',
-                right: '-24px',
-                transform: 'rotate(45deg)',
-                background: '#ca8a04',
-                color: '#ffffff',
-                fontSize: '8px',
-                fontWeight: '900',
-                padding: '2px 24px',
-                letterSpacing: '0.6px',
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.15)'
-              }}
-            >
-              BEST VALUE
-            </div>
-
-            {/* Glowing Golden Star Circle */}
             <div
               style={{
                 width: '42px',
@@ -453,33 +440,33 @@ export const AffiliatePage: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#713f12',
-                fontSize: '20px',
+                fontSize: '18px',
                 marginBottom: '2px',
                 boxShadow: '0 2px 8px rgba(234, 179, 8, 0.35)'
               }}
             >
-              ★
+              <i className="fa-solid fa-gamepad"></i>
             </div>
 
             <strong style={{ fontSize: '13px', color: '#713f12', fontWeight: '800' }}>
-              {lang === 'am' ? 'ቴሌግራም ፕሪሚየም' : 'Telegram Premium'}
+              {lang === 'am' ? 'ጨዋታ ብቻ' : 'Game Play Only'}
             </strong>
 
-            <div style={{ fontSize: '22px', fontWeight: '900', color: '#ca8a04', letterSpacing: '-0.3px' }}>
-              15% BONUS
+            <div style={{ fontSize: '20px', fontWeight: '900', color: '#ca8a04', letterSpacing: '-0.3px' }}>
+              PLAY & WIN
             </div>
 
             <span style={{ fontSize: '11px', color: '#854d0e', fontWeight: '600' }}>
-              {lang === 'am' ? 'ከተጠቃሚው 1ኛ ገቢ' : "Of friend's 1st deposit"}
+              {lang === 'am' ? 'ለቢንጎ ጨዋታ የሚውል' : 'Used directly to play'}
             </span>
 
             <span style={{ fontSize: '10px', color: '#854d0e', background: 'rgba(250, 204, 21, 0.3)', padding: '2px 8px', borderRadius: '999px', fontWeight: '700' }}>
-              {lang === 'am' ? 'ፕሪሚየም ቦነስ' : 'Premium Play Bonus'}
+              {lang === 'am' ? 'አሸናፊው ይወጣል' : 'Winnings 100% Cash'}
             </span>
           </div>
         </div>
 
-        {/* 6. Exact Analytics KPI Cards (Clean White Cards) */}
+        {/* 6. Analytics KPI Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           {/* Friends Invited */}
           <div
@@ -551,7 +538,7 @@ export const AffiliatePage: React.FC = () => {
             </div>
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontSize: '18px', fontWeight: '900', color: '#16a34a' }}>
-                {totalEarned}.00 ETB
+                {totalEarned.toFixed(2)} ETB
               </div>
               <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>
                 {lang === 'am' ? 'የተገኘ የጨዋታ ቦነስ' : 'Game Bonus Earned'}
@@ -565,26 +552,140 @@ export const AffiliatePage: React.FC = () => {
           style={{
             background: '#ffffff',
             border: '1px solid #e2e8f0',
-            borderRadius: '999px',
-            padding: '8px 14px',
+            borderRadius: '14px',
+            padding: '10px 14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            fontSize: '11px',
-            color: '#64748b',
+            fontSize: '11.5px',
+            color: '#475569',
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
-            textAlign: 'center'
+            textAlign: 'center',
+            lineHeight: '1.4'
           }}
         >
-          <span style={{ color: '#16a34a' }}>
+          <span style={{ color: '#16a34a', fontSize: '14px' }}>
             <i className="fa-solid fa-circle-info"></i>
           </span>
           <span>
             {lang === 'am'
-              ? 'ቦነሱ ለጨዋታ የሚውል ሲሆን ያሸነፉትን ሙሉ በሙሉ ወጪ ማድረግ ይችላሉ!'
-              : 'Bonus is credited for gameplay • Winnings are 100% withdrawable!'}
+              ? 'ቦነሱ ለጨዋታ መጫወቻ የሚውል ሲሆን (ወዲያውኑ አይወጣም)፣ በጨዋታ ያሸነፉትን ግን 100% ሙሉ በሙሉ ማውጣት ይችላሉ!'
+              : "Referral bonus (10%) is strictly for gameplay and cannot be withdrawn directly. All winnings from playing are 100% withdrawable cash!"}
           </span>
+        </div>
+
+        {/* 8. Live Referred Friends List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 2px'
+            }}
+          >
+            <span style={{ fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+              {lang === 'am' ? `የተጋበዙ ጓደኞች (${friendsList.length})` : `Referred Friends (${friendsList.length})`}
+            </span>
+            {loading && (
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                <i className="fa-solid fa-spinner fa-spin"></i>
+              </span>
+            )}
+          </div>
+
+          {friendsList.length === 0 ? (
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1.5px dashed #cbd5e1',
+                borderRadius: '16px',
+                padding: '24px 16px',
+                textAlign: 'center',
+                color: '#64748b'
+              }}
+            >
+              <div style={{ fontSize: '28px', marginBottom: '8px' }}>🎁</div>
+              <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '4px' }}>
+                {lang === 'am' ? 'እስካሁን ምንም ጓደኛ አልተጋበዘም' : 'No Friends Invited Yet'}
+              </div>
+              <div style={{ fontSize: '11.5px', color: '#64748b', maxWidth: '280px', margin: '0 auto' }}>
+                {lang === 'am'
+                  ? 'የእርስዎን ሊንክ ለጓደኞችዎ ያጋሩ፤ ለመጀመሪያ ጊዜ ሲያስገቡ 10% ቦነስ ያግኙ!'
+                  : 'Share your invite link above. When friends register and make their first deposit, you instantly receive 10% in your game bonus!'}
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {friendsList.map((friend) => (
+                <div
+                  key={friend.id}
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '14px',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        background: '#f1f5f9',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        flexShrink: 0
+                      }}
+                    >
+                      {friend.avatar || '👤'}
+                    </div>
+                    <div style={{ textAlign: 'left' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {friend.name}
+                        {friend.isPremium && (
+                          <span style={{ fontSize: '11px', color: '#ca8a04' }}>★</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+                        {new Date(friend.joinedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    {friend.status === 'paid' ? (
+                      <>
+                        <div style={{ fontSize: '13.5px', fontWeight: '900', color: '#16a34a' }}>
+                          +{friend.bonusEarned.toFixed(2)} ETB
+                        </div>
+                        <span style={{ fontSize: '10px', color: '#15803d', background: '#dcfce7', padding: '2px 8px', borderRadius: '999px', fontWeight: '700' }}>
+                          {lang === 'am' ? 'ተከፍሏል (10%)' : 'Rewarded (10%)'}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>
+                          {lang === 'am' ? 'ተቀማጭ ይጠበቃል' : 'Waiting 1st Deposit'}
+                        </div>
+                        <span style={{ fontSize: '10px', color: '#b45309', background: '#fef3c7', padding: '2px 8px', borderRadius: '999px', fontWeight: '700' }}>
+                          {lang === 'am' ? '10% ቦነስ' : '10% Pending'}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

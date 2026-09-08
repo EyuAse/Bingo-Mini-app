@@ -32,6 +32,19 @@ export class TelegramService {
     return null;
   }
 
+  public getStartParam(): string | null {
+    const tg = this.webApp;
+    if (tg?.initDataUnsafe?.start_param) {
+      return tg.initDataUnsafe.start_param;
+    }
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const param = urlParams.get('startapp') || urlParams.get('ref') || urlParams.get('tgWebAppStartParam');
+      if (param) return param;
+    }
+    return null;
+  }
+
   public initWebApp() {
     const tg = this.webApp;
     if (!tg) return;

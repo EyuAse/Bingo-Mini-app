@@ -14,7 +14,9 @@ export const BettingBar: React.FC = () => {
     totalPlayableCards,
     selectedCartelaIds,
     buyTicket,
+    cancelLobbyTicket,
     roundPhase,
+    waitingForPlayers,
     hasTicket,
     stakeRoomsSummary
   } = useBingo();
@@ -22,6 +24,18 @@ export const BettingBar: React.FC = () => {
   const { t } = useLanguage();
 
   const [pendingSwitchStake, setPendingSwitchStake] = useState<number | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
+  const [isCancelling, setIsCancelling] = useState<boolean>(false);
+
+  const handleConfirmCancel = async () => {
+    setIsCancelling(true);
+    try {
+      await cancelLobbyTicket();
+    } finally {
+      setIsCancelling(false);
+      setShowCancelModal(false);
+    }
+  };
 
   // ── All logic untouched ────────────────────────────────────
   const betChips = [10, 20, 50, 100];
@@ -145,25 +159,88 @@ export const BettingBar: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Row 5: Sleek Full-Width Buy Ticket Button ── */}
-      <button
-        type="button"
-        className="btn-buy-ticket-compact"
-        onClick={hasTicket ? undefined : buyTicket}
-        disabled={hasTicket}
-      >
-        {hasTicket ? (
-          <>
+      {/* ── Row 5: Sleek Full-Width Buy Ticket or In-Lobby Cancel Action ── */}
+      {hasTicket && (roundPhase === 'lobby' || waitingForPlayers) ? (
+        <div className="lobby-placed-bet-container">
+          <div className="lobby-placed-status-pill">
             <i className="fa-solid fa-circle-check"></i>
-            <span>PLAYING {cardQuantity} {cardQuantity === 1 ? 'CARD' : 'CARDS'}</span>
-          </>
-        ) : (
-          <>
-            <i className="fa-solid fa-ticket"></i>
-            <span>{t('bingo.buyTicket')} · {totalCost} ETB</span>
-          </>
-        )}
-      </button>
+            <span className="lobby-placed-text">
+              BET PLACED · {cardQuantity} {cardQuantity === 1 ? 'CARD' : 'CARDS'} ({totalCost} ETB)
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="btn-lobby-cancel-action"
+            onClick={() => setShowCancelModal(true)}
+            title="Cancel your bet and get an immediate refund"
+          >
+            <i className="fa-solid fa-ban"></i>
+            <span>CANCEL BET</span>
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="btn-buy-ticket-compact"
+          onClick={hasTicket ? undefined : buyTicket}
+          disabled={hasTicket}
+        >
+          {hasTicket ? (
+            <>
+              <i className="fa-solid fa-circle-check"></i>
+              <span>PLAYING {cardQuantity} {cardQuantity === 1 ? 'CARD' : 'CARDS'}</span>
+            </>
+          ) : (
+            <>
+              <i className="fa-solid fa-ticket"></i>
+              <span>{t('bingo.buyTicket')} · {totalCost} ETB</span>
+            </>
+          )}
+        </button>
+      )}
+
+      {/* ── Safe In-Lobby Cancel Bet Confirmation Modal ── */}
+      {showCancelModal && (
+        <div className="bingo-cancel-modal-overlay" onClick={() => !isCancelling && setShowCancelModal(false)}>
+          <div className="bingo-cancel-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="cancel-modal-icon-wrap">
+              <div className="cancel-modal-icon">
+                <i className="fa-solid fa-arrow-rotate-left"></i>
+              </div>
+            </div>
+
+            <h3 className="cancel-modal-title">Cancel Bet & Refund?</h3>
+            <p className="cancel-modal-desc">
+              Would you like to cancel your bet and immediately refund <strong>{totalCost} ETB</strong> back to your wallet?
+            </p>
+
+            <div className="cancel-modal-cartelas-preview">
+              <span className="preview-lbl">Cartelas to release:</span>
+              <span className="preview-val">#{selectedCartelaIds.slice(0, cardQuantity).join(' · #')}</span>
+            </div>
+
+            <div className="cancel-modal-actions">
+              <button
+                type="button"
+                className="btn-cancel-modal-keep"
+                onClick={() => setShowCancelModal(false)}
+                disabled={isCancelling}
+              >
+                Keep Bet
+              </button>
+              <button
+                type="button"
+                className="btn-cancel-modal-confirm"
+                onClick={handleConfirmCancel}
+                disabled={isCancelling}
+              >
+                {isCancelling ? 'Refunding...' : `Yes, Cancel & Refund (${totalCost} ETB)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

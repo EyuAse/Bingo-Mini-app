@@ -83,7 +83,7 @@ router.get('/check-telegram/:telegramId', async (req, res) => {
  */
 router.post('/telegram', async (req, res) => {
   try {
-    const { telegramId, username, firstName, lastName, photoUrl, phone } = req.body;
+    const { telegramId, username, firstName, lastName, photoUrl, phone, referralCode } = req.body;
 
     if (!telegramId) {
       return res.status(400).json({ success: false, error: 'telegramId is required' });
@@ -111,6 +111,14 @@ router.post('/telegram', async (req, res) => {
     if (existingUserRes.rows.length > 0) {
       // Existing User: Update latest profile info and login time
       userRow = existingUserRes.rows[0];
+
+      // Backfill referral_code if missing
+      if (!userRow.referral_code) {
+        const genCode = 'LOMI-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        await query('UPDATE users SET referral_code = $1 WHERE id = $2', [genCode, userRow.id]);
+        userRow.referral_code = genCode;
+      }
+
       await query(
         `UPDATE users 
          SET last_login_at = NOW(),
@@ -129,16 +137,49 @@ router.post('/telegram', async (req, res) => {
         lockedBalance: parseFloat(userRow.locked_balance || '0')
       };
     } else {
-      // New User: Create atomically with initial 10 ETB Welcome Bonus
+      // New User: Create atomically with initial 10 ETB Welcome Bonus & Referral Attribution
       isNewUser = true;
+      const myReferralCode = 'LOMI-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
       const result = await withTransaction(async (client) => {
+        // Resolve referrer if valid code passed
+        let referrerId: string | null = null;
+        if (referralCode && typeof referralCode === 'string') {
+          const cleanRef = referralCode.replace(/^ref_/, '').trim().toUpperCase();
+          if (cleanRef) {
+            const refLookup = await client.query(
+              `SELECT id FROM users 
+               WHERE referral_code = $1 
+                  OR UPPER(referral_code) = $1 
+                  OR id::text = $1 
+                  OR telegram_id::text = $1 
+               LIMIT 1`,
+              [cleanRef]
+            );
+            if (refLookup.rows.length > 0) {
+              referrerId = refLookup.rows[0].id;
+            }
+          }
+        }
+
         const newUserRes = await client.query(
-          `INSERT INTO users (telegram_id, telegram_username, first_name, last_name, full_name, photo_url, phone, role, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 'player', 'active')
+          `INSERT INTO users (telegram_id, telegram_username, first_name, last_name, full_name, photo_url, phone, role, status, referral_code, referred_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'player', 'active', $8, $9)
            RETURNING *`,
-          [tgIdNum, cleanUsername, firstName || null, lastName || null, fullName, photoUrl || null, phone || null]
+          [tgIdNum, cleanUsername, firstName || null, lastName || null, fullName, photoUrl || null, phone || null, myReferralCode, referrerId]
         );
         const newUser = newUserRes.rows[0];
+
+        // Link into referrals table with status 'pending_deposit'
+        if (referrerId && referrerId !== newUser.id) {
+          await client.query(
+            `INSERT INTO referrals (referrer_id, referred_user_id, status, is_telegram_premium)
+             VALUES ($1, $2, 'pending_deposit', false)
+             ON CONFLICT (referred_user_id) DO NOTHING`,
+            [referrerId, newUser.id]
+          );
+          console.log(`🎁 [Referral Link] User ${newUser.id} attributed to referrer ${referrerId}`);
+        }
 
         // Create Wallet with 10 ETB Welcome Bonus
         const newWalletRes = await client.query(
@@ -205,6 +246,7 @@ router.post('/telegram', async (req, res) => {
         avatar: userRow.avatar || '👤',
         photoUrl: userRow.photo_url,
         role: userRow.role,
+        referralCode: userRow.referral_code,
         createdAt: userRow.created_at
       },
       wallet: walletRow
@@ -220,7 +262,7 @@ router.post('/telegram', async (req, res) => {
  */
 router.post('/register', async (req, res) => {
   try {
-    const { phone, pin, fullName } = req.body;
+    const { phone, pin, fullName, referralCode } = req.body;
     if (!phone || !pin) {
       return res.status(400).json({ success: false, error: 'Phone and PIN are required' });
     }
@@ -233,15 +275,47 @@ router.post('/register', async (req, res) => {
 
     const hashedPin = await bcrypt.hash(pin.trim(), 10);
     const name = (fullName || 'Lomi Player').trim();
+    const myReferralCode = 'LOMI-' + Math.random().toString(36).substring(2, 8).toUpperCase();
 
     const result = await withTransaction(async (client) => {
+      // Resolve referrer if code passed
+      let referrerId: string | null = null;
+      if (referralCode && typeof referralCode === 'string') {
+        const cleanRef = referralCode.replace(/^ref_/, '').trim().toUpperCase();
+        if (cleanRef) {
+          const refLookup = await client.query(
+            `SELECT id FROM users 
+             WHERE referral_code = $1 
+                OR UPPER(referral_code) = $1 
+                OR id::text = $1 
+                OR phone = $1 
+             LIMIT 1`,
+            [cleanRef]
+          );
+          if (refLookup.rows.length > 0) {
+            referrerId = refLookup.rows[0].id;
+          }
+        }
+      }
+
       const newUserRes = await client.query(
-        `INSERT INTO users (phone, full_name, pin_hash, role, status)
-         VALUES ($1, $2, $3, 'player', 'active')
+        `INSERT INTO users (phone, full_name, pin_hash, role, status, referral_code, referred_by)
+         VALUES ($1, $2, $3, 'player', 'active', $4, $5)
          RETURNING *`,
-        [cleanPhone, name, hashedPin]
+        [cleanPhone, name, hashedPin, myReferralCode, referrerId]
       );
       const newUser = newUserRes.rows[0];
+
+      // Link in referrals table
+      if (referrerId && referrerId !== newUser.id) {
+        await client.query(
+          `INSERT INTO referrals (referrer_id, referred_user_id, status, is_telegram_premium)
+           VALUES ($1, $2, 'pending_deposit', false)
+           ON CONFLICT (referred_user_id) DO NOTHING`,
+          [referrerId, newUser.id]
+        );
+        console.log(`🎁 [Referral Link Web] User ${newUser.id} attributed to referrer ${referrerId}`);
+      }
 
       const newWalletRes = await client.query(
         `INSERT INTO wallets (user_id, balance, bonus, locked_balance)

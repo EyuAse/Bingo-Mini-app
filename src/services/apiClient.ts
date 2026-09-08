@@ -85,14 +85,15 @@ export const apiClient = {
       return data;
     },
 
-    async loginWithTelegram(tgUser: any, customPhone?: string) {
+    async loginWithTelegram(tgUser: any, customPhone?: string, referralCode?: string) {
       const payload = {
         telegramId: tgUser.id,
         username: tgUser.username,
         firstName: tgUser.first_name,
         lastName: tgUser.last_name,
         photoUrl: tgUser.photo_url,
-        phone: customPhone
+        phone: customPhone,
+        referralCode
       };
 
       const res = await fetchWithRetry(`${API_BASE}/auth/telegram`, {
@@ -116,7 +117,7 @@ export const apiClient = {
       return data;
     },
 
-    async register(payload: { phone: string; pin: string; fullName?: string; carrier?: string }) {
+    async register(payload: { phone: string; pin: string; fullName?: string; carrier?: string; referralCode?: string }) {
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -246,6 +247,29 @@ export const apiClient = {
       return handleResponse<{
         success: boolean;
         transactions: any[];
+      }>(res);
+    },
+
+    async getReferrals() {
+      const res = await fetch(`${API_BASE}/wallet/referrals`, {
+        headers: { ...getAuthHeader() }
+      });
+      return handleResponse<{
+        success: boolean;
+        referralCode: string;
+        referralLink: string;
+        totalInvited: number;
+        totalEarned: number;
+        friends: Array<{
+          id: string;
+          name: string;
+          avatar: string;
+          isPremium: boolean;
+          joinedAt: string;
+          depositAmount: number;
+          bonusEarned: number;
+          status: 'paid' | 'pending_deposit';
+        }>;
       }>(res);
     }
   },

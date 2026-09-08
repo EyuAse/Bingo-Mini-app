@@ -4071,6 +4071,188 @@
   box-shadow: none;
 }
 
+/* ── In-Lobby Placed Bet with Cancel & Refund Action ── */
+.lobby-placed-bet-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lobby-placed-status-pill {
+  flex: 1;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1.5px solid #86efac;
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #166534;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lobby-placed-status-pill i {
+  color: #16a34a;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.btn-lobby-cancel-action {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border: 1.5px solid #f87171;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #b91c1c;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+}
+.btn-lobby-cancel-action:hover {
+  background: #fca5a5;
+  color: #7f1d1d;
+  transform: translateY(-1px);
+}
+.btn-lobby-cancel-action:active {
+  transform: scale(0.96);
+}
+
+/* ── Cancel Bet Confirmation Modal ── */
+.bingo-cancel-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 16px;
+  animation: fadeIn 0.18s ease;
+}
+
+.bingo-cancel-modal-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 22px 18px 18px;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid #f1f5f9;
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cancel-modal-icon-wrap {
+  display: flex;
+  justify-content: center;
+}
+.cancel-modal-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cancel-modal-title {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+}
+
+.cancel-modal-desc {
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.4;
+  margin: 0;
+}
+.cancel-modal-desc strong {
+  color: #ca8a04;
+}
+
+.cancel-modal-cartelas-preview {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+.cancel-modal-cartelas-preview .preview-lbl {
+  color: #64748b;
+  font-weight: 700;
+}
+.cancel-modal-cartelas-preview .preview-val {
+  color: #7c3aed;
+  font-weight: 900;
+}
+
+.cancel-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-cancel-modal-keep {
+  background: #f1f5f9;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.btn-cancel-modal-keep:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.btn-cancel-modal-confirm {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+  transition: all 0.12s ease;
+}
+.btn-cancel-modal-confirm:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+.btn-cancel-modal-confirm:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+
 
 
 

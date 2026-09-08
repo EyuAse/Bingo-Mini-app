@@ -14,6 +14,7 @@ export interface User {
   pin?: string;
   isPhoneVerified: boolean;
   role: 'player' | 'admin';
+  referralCode?: string;
   createdAt: string;
   lastLogin: string;
 }

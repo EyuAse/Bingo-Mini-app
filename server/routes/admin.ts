@@ -24,7 +24,8 @@ router.get('/users', requireAdmin, async (_req, res) => {
         u.role,
         u.created_at as "createdAt",
         COALESCE((SELECT SUM(amount) FROM deposit_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalDeposited",
-        COALESCE((SELECT SUM(amount) FROM withdrawal_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalWithdrawn"
+        COALESCE((SELECT SUM(amount) FROM withdrawal_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalWithdrawn",
+        COALESCE((SELECT COUNT(*) FROM referrals WHERE referrer_id = u.id), 0) as "referralCount"
       FROM users u
       LEFT JOIN wallets w ON u.id = w.user_id
       WHERE u.role = 'player' 
@@ -42,7 +43,7 @@ router.get('/users', requireAdmin, async (_req, res) => {
       telegramId: u.telegram_id,
       balance: parseFloat(u.balance),
       bonus: parseFloat(u.bonus),
-      referralCount: 0,
+      referralCount: parseInt(u.referralCount, 10) || 0,
       totalDeposited: parseFloat(u.totalDeposited),
       totalWithdrawn: parseFloat(u.totalWithdrawn),
       status: u.status,
@@ -160,15 +161,82 @@ router.post('/deposits/:id/approve', requireAdmin, async (req: AuthenticatedRequ
         ]
       );
 
+      // 5. One-Time 10% Referral Bonus (Friend's 1st Approved Deposit)
+      let referralBonusPaid = false;
+      let referrerId: string | null = null;
+      let referralBonusAmount = 0;
+
+      // Verify this is the user's first approved deposit ever
+      const prevDepCheck = await client.query(
+        `SELECT COUNT(*) as count FROM deposit_requests WHERE user_id = $1 AND status = 'approved' AND id != $2`,
+        [deposit.user_id, depositId]
+      );
+      const isFirstApprovedDeposit = parseInt(prevDepCheck.rows[0]?.count || '0', 10) === 0;
+
+      if (isFirstApprovedDeposit) {
+        // Look up pending referral record
+        const refRes = await client.query(
+          `SELECT id, referrer_id 
+           FROM referrals 
+           WHERE referred_user_id = $1 AND status = 'pending_deposit'
+           LIMIT 1`,
+          [deposit.user_id]
+        );
+
+        if (refRes.rows.length > 0) {
+          const refRecord = refRes.rows[0];
+          referrerId = refRecord.referrer_id;
+          // Calculate 10% flat bonus
+          referralBonusAmount = Math.round(amount * 0.10 * 100) / 100;
+
+          if (referralBonusAmount > 0 && referrerId) {
+            // Credit referrer's BONUS wallet (for gameplay only, non-withdrawable directly)
+            await client.query(
+              `UPDATE wallets 
+               SET bonus = bonus + $1, updated_at = NOW() 
+               WHERE user_id = $2`,
+              [referralBonusAmount, referrerId]
+            );
+
+            // Record transaction in ledger
+            const refBonusRef = `REF-BONUS-${Date.now().toString().slice(-6)}`;
+            await client.query(
+              `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, payment_method, description)
+               VALUES ($1, 'bonus', $2, (SELECT bonus FROM wallets WHERE user_id = $1), $3, 'completed', 'referral_reward', $4)`,
+              [
+                referrerId,
+                referralBonusAmount,
+                refBonusRef,
+                `Referral Bonus (10% of friend's 1st deposit of ${amount.toFixed(2)} ETB) - Game Play Bonus`
+              ]
+            );
+
+            // Mark referral as rewarded (ensures one-time bonus guarantee)
+            await client.query(
+              `UPDATE referrals 
+               SET status = 'rewarded', deposit_amount = $1, reward_amount = $2, rewarded_at = NOW() 
+               WHERE id = $3`,
+              [amount, referralBonusAmount, refRecord.id]
+            );
+
+            referralBonusPaid = true;
+            console.log(`🎁 [Referral Bonus] Credited 10% (${referralBonusAmount} ETB) bonus to referrer ${referrerId}`);
+          }
+        }
+      }
+
       return {
         userId: deposit.user_id,
         amount,
         newBalance,
-        ref: deposit.transaction_ref
+        ref: deposit.transaction_ref,
+        referralBonusPaid,
+        referrerId,
+        referralBonusAmount
       };
     });
 
-    // Notify the user in real-time over WebSocket
+    // Notify the depositing user in real-time over WebSocket
     io.emit(`user_${result.userId}_balance`, {
       type: 'deposit_approved',
       amount: result.amount,
@@ -182,12 +250,23 @@ router.post('/deposits/:id/approve', requireAdmin, async (req: AuthenticatedRequ
       newBalance: result.newBalance
     });
 
+    // If a referral bonus was awarded, notify the referrer in real-time!
+    if (result.referralBonusPaid && result.referrerId) {
+      io.emit(`user_${result.referrerId}_balance`, {
+        type: 'referral_bonus_credited',
+        bonusAmount: result.referralBonusAmount
+      });
+      io.emit('user_balance_updated', {
+        userId: result.referrerId
+      });
+    }
+
     // Broadcast generic update for admin dashboard
     io.emit('deposit_status_updated', { id: depositId, status: 'approved' });
 
     return res.json({
       success: true,
-      message: `Deposit of ${result.amount} ETB successfully approved.`,
+      message: `Deposit of ${result.amount} ETB successfully approved.${result.referralBonusPaid ? ` (10% Referral bonus of ${result.referralBonusAmount} ETB credited to referrer)` : ''}`,
       newBalance: result.newBalance
     });
   } catch (error: any) {

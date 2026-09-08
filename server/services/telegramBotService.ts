@@ -609,6 +609,15 @@ export class TelegramBotService {
     }
 
     if (text.startsWith('/start') || text === '/play') {
+      const parts = text.split(' ');
+      const startParam = parts.length > 1 ? parts[1].trim() : '';
+      let playAppUrl = webAppUrl;
+      if (startParam) {
+        playAppUrl = webAppUrl.includes('?')
+          ? `${webAppUrl}&startapp=${encodeURIComponent(startParam)}`
+          : `${webAppUrl}?startapp=${encodeURIComponent(startParam)}`;
+      }
+
       let welcomeText = 
 `👋 <b>እንኳን ወደ ሎሚ ቢንጎ በደህና መጡ!</b> 🍋🎯
 <b>Welcome to Lomi / Betika Bingo!</b>
@@ -641,7 +650,7 @@ Tap the button below to launch the game and start winning! 👇`;
       const channelLink = cfg.channelId ? `https://t.me/${cfg.channelId.replace('@', '')}` : 'https://t.me/lomibingo_official';
 
       const inlineKeyboard = [
-        [{ text: '🎮 Play Bingo Now (10 ETB Gift)', web_app: { url: webAppUrl } }],
+        [{ text: '🎮 Play Bingo Now (10 ETB Gift)', web_app: { url: playAppUrl } }],
         [{ text: '📢 Join Official Channel', url: channelLink }]
       ];
 

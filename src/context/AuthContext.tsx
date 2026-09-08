@@ -22,8 +22,8 @@ interface AuthContextType {
   sendOtp: (phone: string) => Promise<OtpChallengeResponse>;
   verifyOtp: (phone: string, code: string) => OtpVerificationResult;
   register: (payload: RegisterPayload) => Promise<User>;
-  login: (payload: LoginPayload) => Promise<User>;
-  loginWithTelegram: (tgUser?: TelegramUser, customPhone?: string) => Promise<{ user: User; isNewUser: boolean }>;
+  loginWithPhone: (phone: string, pin: string) => Promise<User>;
+  loginWithTelegram: (tgUser?: TelegramUser, customPhone?: string, referralCode?: string) => Promise<{ user: User; isNewUser: boolean }>;
   logout: () => void;
   resetPin: (phone: string, otpCode: string, newPin: string) => Promise<boolean>;
   updateProfile: (data: Partial<User>) => void;
@@ -113,6 +113,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // 1. Initialize Telegram WebApp SDK
         telegramService.initWebApp();
+        const startParam = telegramService.getStartParam();
+        if (startParam && typeof window !== 'undefined') {
+          sessionStorage.setItem('lomi_pending_referral', startParam);
+        }
         const tgUser = telegramService.getTelegramUser();
         const isTg = telegramService.isTelegram() && !!tgUser;
         setIsInsideTelegram(isTg);
@@ -154,6 +158,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 carrier: 'ethiotelecom',
                 isPhoneVerified: true,
                 role: apiResult.user.role || 'player',
+                referralCode: apiResult.user.referralCode,
                 pin: '1234',
                 createdAt: apiResult.user.createdAt || new Date().toISOString(),
                 lastLogin: new Date().toISOString()
@@ -195,6 +200,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 carrier: 'ethiotelecom',
                 isPhoneVerified: true,
                 role: u.role || 'player',
+                referralCode: u.referralCode,
                 pin: '1234',
                 createdAt: u.createdAt || new Date().toISOString(),
                 lastLogin: new Date().toISOString()
@@ -240,7 +246,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const apiRes = await apiClient.auth.register({
           phone: payload.phone,
           pin: payload.pin,
-          fullName: payload.fullName
+          fullName: payload.fullName,
+          referralCode: payload.referralCode || (typeof window !== 'undefined' ? sessionStorage.getItem('lomi_pending_referral') || undefined : undefined)
         });
         localStorage.removeItem('lomi_explicit_logout');
         const u = apiRes.user;
@@ -253,6 +260,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           fullName: u.fullName,
           isPhoneVerified: true,
           role: u.role || 'player',
+          referralCode: u.referralCode,
           pin: payload.pin,
           createdAt: u.createdAt || new Date().toISOString(),
           lastLogin: new Date().toISOString()
@@ -315,7 +323,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loginWithTelegram = async (
     customTgUser?: TelegramUser,
-    customPhone?: string
+    customPhone?: string,
+    referralCode?: string
   ): Promise<{ user: User; isNewUser: boolean }> => {
     const tgUser = customTgUser || telegramUser;
     if (!tgUser) {
@@ -324,7 +333,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setIsLoading(true);
     try {
-      const apiResult = await apiClient.auth.loginWithTelegram(tgUser, customPhone);
+      const refCode = referralCode || (typeof window !== 'undefined' ? sessionStorage.getItem('lomi_pending_referral') || undefined : undefined);
+      const apiResult = await apiClient.auth.loginWithTelegram(tgUser, customPhone, refCode);
       localStorage.removeItem('lomi_explicit_logout');
 
       const mappedUser: User = {
@@ -338,6 +348,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         carrier: 'ethiotelecom',
         isPhoneVerified: true,
         role: apiResult.user.role || 'player',
+        referralCode: apiResult.user.referralCode,
         pin: '1234',
         createdAt: apiResult.user.createdAt || new Date().toISOString(),
         lastLogin: new Date().toISOString()

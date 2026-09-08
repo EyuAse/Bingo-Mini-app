@@ -298,4 +298,71 @@ router.get('/transactions', requireAuth, async (req: AuthenticatedRequest, res) 
   }
 });
 
+/**
+ * GET /api/wallet/referrals
+ * Returns live real referral stats, unique referral link, and friends list
+ */
+router.get('/referrals', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const userId = req.user!.id;
+
+    // 1. Get or generate user's referral code
+    const userRes = await query('SELECT referral_code FROM users WHERE id = $1', [userId]);
+    let referralCode = userRes.rows[0]?.referral_code;
+
+    if (!referralCode) {
+      referralCode = 'LOMI-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      await query('UPDATE users SET referral_code = $1 WHERE id = $2', [referralCode, userId]);
+    }
+
+    const referralLink = `https://t.me/LomiBingobot/play?startapp=ref_${referralCode}`;
+
+    // 2. Fetch real referrals data from Neon DB
+    const friendsRes = await query(
+      `SELECT 
+         r.id,
+         u.full_name as name,
+         COALESCE(u.avatar, '👤') as avatar,
+         COALESCE(r.is_telegram_premium, false) as "isPremium",
+         r.created_at as "joinedAt",
+         COALESCE(r.deposit_amount, 0) as "depositAmount",
+         COALESCE(r.reward_amount, 0) as "bonusEarned",
+         r.status
+       FROM referrals r
+       JOIN users u ON r.referred_user_id = u.id
+       WHERE r.referrer_id = $1
+       ORDER BY r.created_at DESC
+       LIMIT 100`,
+      [userId]
+    );
+
+    const friends = friendsRes.rows.map(f => ({
+      id: f.id,
+      name: f.name,
+      avatar: f.avatar,
+      isPremium: f.isPremium,
+      joinedAt: f.joinedAt,
+      depositAmount: parseFloat(f.depositAmount),
+      bonusEarned: parseFloat(f.bonusEarned),
+      status: f.status === 'rewarded' ? 'paid' : 'pending_deposit'
+    }));
+
+    const totalInvited = friends.length;
+    const totalEarned = friends.reduce((acc, f) => acc + f.bonusEarned, 0);
+
+    return res.json({
+      success: true,
+      referralCode,
+      referralLink,
+      totalInvited,
+      totalEarned,
+      friends
+    });
+  } catch (error: any) {
+    console.error('❌ [Wallet Referrals Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to retrieve referral data' });
+  }
+});
+
 export default router;
+
