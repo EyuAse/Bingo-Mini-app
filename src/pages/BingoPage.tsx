@@ -6,7 +6,7 @@ import { StatsStrip } from '../components/bingo/StatsStrip.tsx';
 import { SpectatorCard } from '../components/bingo/SpectatorCard.tsx';
 import { BingoGrid } from '../components/bingo/BingoGrid.tsx';
 import { BettingBar } from '../components/bingo/BettingBar.tsx';
-import { WinModal } from '../components/bingo/WinModal.tsx';
+import { WinModal, WinModalEmergencyFallback } from '../components/bingo/WinModal.tsx';
 import { InsufficientBalanceModal } from '../components/bingo/InsufficientBalanceModal.tsx';
 import { VoiceTesterModal } from '../components/bingo/VoiceTesterModal.tsx';
 import { ConfettiCanvas } from '../components/common/ConfettiCanvas.tsx';
@@ -221,8 +221,8 @@ export const BingoPage: React.FC = () => {
       {/* 400 Cartela Selection Modal */}
       <CartelaPickerModal />
 
-      {/* Victory Celebration Modal */}
-      <ErrorBoundary componentName="WinModal">
+      {/* Victory Celebration Modal — Guaranteed zero-error display */}
+      <ErrorBoundary componentName="WinModal" fallback={<WinModalEmergencyFallback />}>
         <WinModal />
       </ErrorBoundary>
 
