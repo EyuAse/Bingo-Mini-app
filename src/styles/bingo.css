@@ -4798,13 +4798,24 @@
 }
 
 .new-card-header {
-  height: 14px;
+  height: 20px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
+  justify-content: space-between;
+  padding: 0 4px;
   position: relative;
   flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.new-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .new-card-header-label {
@@ -4812,6 +4823,19 @@
   font-weight: 950;
   color: #22c55e;
   letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.new-card-preview-badge {
+  font-size: 0.54rem;
+  font-weight: 850;
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .new-card-status-pill {
@@ -5058,6 +5082,34 @@
   font-size: clamp(0.78rem, 2.8vw, 0.95rem);
 }
 
+/* ── DUAL CARTELA COMPACT PROPORTIONAL STACK ── */
+.compact-cartelas-stack.dual-cartela {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  overflow: hidden;
+  justify-content: flex-start;
+}
+
+.compact-cartelas-stack.dual-cartela .new-cartela-card {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: calc(50% - 2px);
+}
+
+.compact-cartelas-stack.dual-cartela .new-cartela-5x5 {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.compact-cartelas-stack.dual-cartela .new-cartela-cell {
+  font-size: clamp(0.62rem, 2.1vw, 0.82rem);
+}
+
 /* ── PREVIEW & SHUFFLE CONTROLS ── */
 .btn-card-preview-shuffle {
   background: #eff6ff;
@@ -5137,6 +5189,167 @@
 .btn-in-game-leave:active {
   transform: scale(0.98);
 }
+
+/* ── MATCHMAKING WAITING & LOBBY STATUS STYLES ── */
+.waiting-pulse-icon {
+  color: #eab308;
+  animation: spinHourglass 3s infinite ease-in-out;
+}
+
+@keyframes spinHourglass {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(180deg); }
+}
+
+.lobby-placed-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+}
+
+.lobby-matchmaking-hint {
+  font-size: 0.65rem;
+  font-weight: 750;
+  color: #475569;
+  letter-spacing: 0.1px;
+}
+
+.compact-current-ball-pill.lobby-timer.waiting-match {
+  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  color: #0f172a;
+}
+
+.compact-current-ball-pill.lobby-timer.countdown-active {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #ffffff;
+  animation: countdownGlow 1s infinite alternate ease-in-out;
+}
+
+@keyframes countdownGlow {
+  0% { box-shadow: 0 2px 6px rgba(34, 197, 94, 0.4); }
+  100% { box-shadow: 0 2px 14px rgba(34, 197, 94, 0.85); }
+}
+
+.lobby-status-text {
+  font-size: 0.74rem !important;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+}
+
+/* ── WIN MODAL 5x5 CARTELA SHOWCASE ── */
+.victory-winning-cartela-box {
+  margin: 10px 0;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.winning-cartela-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.winning-cartela-title {
+  font-size: 0.76rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.winning-cartela-badge {
+  font-size: 0.58rem;
+  font-weight: 950;
+  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  color: #713f12;
+  padding: 1px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.3px;
+}
+
+.winning-cartela-grid-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 220px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.winning-cartela-col-headers {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  height: 14px;
+}
+
+.win-col-hdr {
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 950;
+  font-size: 0.58rem;
+}
+.win-col-hdr.col-b { background: #facc15; color: #713f12; }
+.win-col-hdr.col-i { background: #16a34a; color: #ffffff; }
+.win-col-hdr.col-n { background: #2563eb; color: #ffffff; }
+.win-col-hdr.col-g { background: #dc2626; color: #ffffff; }
+.win-col-hdr.col-o { background: #9333ea; color: #ffffff; }
+
+.winning-cartela-5x5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 2px;
+}
+
+.win-modal-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 3px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #1e293b;
+}
+
+.win-modal-cell.win-highlight {
+  background: linear-gradient(135deg, #facc15 0%, #eab308 100%) !important;
+  color: #713f12 !important;
+  font-weight: 950 !important;
+  border: 1.5px solid #ca8a04 !important;
+  box-shadow: 0 0 6px rgba(250, 204, 21, 0.7);
+  animation: winCellPulse 1s infinite alternate ease-in-out;
+}
+
+.win-modal-cell.free-cell {
+  background: #eff6ff;
+  font-size: 0.65rem;
+}
+
+@keyframes winCellPulse {
+  0% { transform: scale(0.96); }
+  100% { transform: scale(1.04); }
+}
+
+.winning-cartela-footnote {
+  font-size: 0.62rem;
+  color: #64748b;
+  font-weight: 700;
+  text-align: center;
+}
+
 
 
 

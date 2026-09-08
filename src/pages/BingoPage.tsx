@@ -11,7 +11,6 @@ import { InsufficientBalanceModal } from '../components/bingo/InsufficientBalanc
 import { VoiceTesterModal } from '../components/bingo/VoiceTesterModal.tsx';
 import { ConfettiCanvas } from '../components/common/ConfettiCanvas.tsx';
 import { NetworkStatusBanner, NetworkLatencyPill } from '../components/bingo/NetworkStatusBanner.tsx';
-import { OneToGoAlert } from '../components/bingo/OneToGoAlert.tsx';
 import { MasterBoard75 } from '../components/bingo/MasterBoard75.tsx';
 import { LeaveConfirmModal } from '../components/bingo/LeaveConfirmModal.tsx';
 
@@ -95,8 +94,6 @@ export const BingoPage: React.FC = () => {
             ) : (
               <SpectatorCard />
             )}
-
-            <OneToGoAlert />
 
             {/* Stake Bar: COMPLETELY HIDDEN during active game! Visible only in lobby/spectating */}
             {roundPhase !== 'playing' && (

@@ -62,9 +62,12 @@ const NewCard5x5: React.FC<{
 
   return (
     <div className={`new-cartela-card ${isSingleCard ? 'single-card' : ''}`}>
-      {/* ── Card Header Bar: Cartela #202 (matches screenshot) ── */}
+      {/* ── Card Header Bar: Cartela #202 (Single-line, no overlap) ── */}
       <div className="new-card-header">
-        <span className="new-card-header-label">{label}</span>
+        <div className="new-card-header-left">
+          <span className="new-card-header-label">{label}</span>
+          {isPreview && <span className="new-card-preview-badge">PREVIEW</span>}
+        </div>
         {isPreview && onShuffle && (
           <button
             type="button"
@@ -154,13 +157,13 @@ export const BingoGrid: React.FC = () => {
       data: cartela1Data,
       id: selectedCartelaIds[0],
       cardIndex: 0,
-      label: hasTicket ? `Cartela #${selectedCartelaIds[0]}` : `Cartela #${selectedCartelaIds[0]} (Preview)`,
+      label: `Cartela #${selectedCartelaIds[0]}`,
     },
     {
       data: cartela2Data,
       id: selectedCartelaIds[1],
       cardIndex: 1,
-      label: hasTicket ? `Cartela #${selectedCartelaIds[1]}` : `Cartela #${selectedCartelaIds[1]} (Preview)`,
+      label: `Cartela #${selectedCartelaIds[1]}`,
     },
   ].slice(0, totalPlayableCards);
 

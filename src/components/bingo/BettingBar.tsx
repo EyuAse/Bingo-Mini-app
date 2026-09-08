@@ -17,9 +17,12 @@ export const BettingBar: React.FC = () => {
     cancelLobbyTicket,
     roundPhase,
     waitingForPlayers,
+    realPlayerCount,
+    lobbyCountdown,
     hasTicket,
     stakeRoomsSummary,
-    shuffleCartela
+    shuffleCartela,
+    shuffleAllCartelas
   } = useBingo();
   const { balance, bonus, isBalanceVisible } = useWallet();
   const { t } = useLanguage();
@@ -73,10 +76,17 @@ export const BettingBar: React.FC = () => {
       {hasTicket && (roundPhase === 'lobby' || waitingForPlayers) ? (
         <div className="lobby-placed-bet-container">
           <div className="lobby-placed-status-pill">
-            <i className="fa-solid fa-circle-check"></i>
-            <span className="lobby-placed-text">
-              BET PLACED · {cardQuantity} {cardQuantity === 1 ? 'CARD' : 'CARDS'} ({totalCost} ETB)
-            </span>
+            <i className={waitingForPlayers ? 'fa-solid fa-hourglass-half waiting-pulse-icon' : 'fa-solid fa-circle-check'}></i>
+            <div className="lobby-placed-text-group">
+              <span className="lobby-placed-text">
+                BET PLACED · {cardQuantity} {cardQuantity === 1 ? 'CARD' : 'CARDS'} ({totalCost} ETB)
+              </span>
+              <span className="lobby-matchmaking-hint">
+                {waitingForPlayers
+                  ? '🟡 Waiting for 1 more player to join (1/2) · Starts at 2 players'
+                  : `🟢 Ready! Game starts in ${lobbyCountdown}s (${realPlayerCount || 2} Players)`}
+              </span>
+            </div>
           </div>
 
           <button
@@ -151,8 +161,7 @@ export const BettingBar: React.FC = () => {
               type="button"
               className="compact-change-cartela-btn"
               onClick={() => {
-                shuffleCartela(0);
-                if (cardQuantity >= 2) shuffleCartela(1);
+                shuffleAllCartelas(cardQuantity);
               }}
               title="Pick different cartela numbers"
             >

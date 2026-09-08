@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useBingo } from '../../context/BingoContext.tsx';
+import React, { useEffect, useMemo } from 'react';
+import { useBingo, generateCardFromId } from '../../context/BingoContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useAuth } from '../../context/AuthContext.tsx';
@@ -38,6 +38,10 @@ export const WinModal: React.FC = () => {
   const stakeAmt = winResult.stakeAmount || 10;
   const cartelaNum = winResult.winningCartelaNumber || (winResult as any).winningCartela || 1;
   const winnerName = winResult.winnerName || (winResult as any).winnerNames?.[0] || 'Player';
+
+  const winningCardCells = useMemo(() => {
+    return generateCardFromId(cartelaNum);
+  }, [cartelaNum]);
 
   // Filter out current user's own name, 'You', and username from co-winners to eliminate the self-split bug
   const rawCoWinners: string[] = Array.isArray(winResult.coWinners) && winResult.coWinners.length > 0
@@ -193,6 +197,44 @@ export const WinModal: React.FC = () => {
               ? `Winner played in the ${stakeAmt} ETB Room`
               : '✓ Instantly credited to your wallet'}
           </span>
+        </div>
+
+        {/* ── Winning Cartela 5x5 Matrix Showcase: Shows the exact winning numbers & pattern ── */}
+        <div className="victory-winning-cartela-box">
+          <div className="winning-cartela-header">
+            <span className="winning-cartela-title">
+              🏆 Cartela #{cartelaNum} (Winning Card)
+            </span>
+            <span className="winning-cartela-badge">
+              {winResult.winningLine && winResult.winningLine.length >= 4 ? '5-IN-A-ROW' : 'BINGO'}
+            </span>
+          </div>
+
+          <div className="winning-cartela-grid-wrap">
+            <div className="winning-cartela-col-headers">
+              <span className="win-col-hdr col-b">B</span>
+              <span className="win-col-hdr col-i">I</span>
+              <span className="win-col-hdr col-n">N</span>
+              <span className="win-col-hdr col-g">G</span>
+              <span className="win-col-hdr col-o">O</span>
+            </div>
+            <div className="winning-cartela-5x5">
+              {winningCardCells.map(cell => {
+                const isWinningCell = Array.isArray(winResult.winningLine) && winResult.winningLine.includes(cell.index);
+                return (
+                  <div
+                    key={cell.index}
+                    className={`win-modal-cell ${isWinningCell ? 'win-highlight' : ''} ${cell.isFree ? 'free-cell' : ''}`}
+                  >
+                    {cell.isFree ? '⭐' : cell.val}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="winning-cartela-footnote">
+            ⭐ Gold glowing cells show the verified winning pattern
+          </div>
         </div>
 
         {/* Action Buttons */}

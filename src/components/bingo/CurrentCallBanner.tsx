@@ -21,6 +21,8 @@ export const CurrentCallBanner: React.FC = () => {
     lobbyCountdown,
     roundPhase,
     waitingForPlayers,
+    realPlayerCount,
+    hasTicket,
     isMuted,
     toggleMute,
     autoPlay,
@@ -51,9 +53,13 @@ export const CurrentCallBanner: React.FC = () => {
               <span className="call-ball-num">{currentCall.num}</span>
             </div>
           ) : roundPhase === 'lobby' ? (
-            <div className="compact-current-ball-pill lobby-timer">
+            <div className={`compact-current-ball-pill lobby-timer ${waitingForPlayers ? 'waiting-match' : 'countdown-active'}`}>
               <span className="call-ball-col">⏳</span>
-              <span className="call-ball-num">{waitingForPlayers ? 'WAIT' : `${lobbyCountdown}s`}</span>
+              <span className="call-ball-num lobby-status-text">
+                {waitingForPlayers
+                  ? (realPlayerCount === 1 || hasTicket ? 'Need 1 More' : 'Open (0/2)')
+                  : `${lobbyCountdown}s`}
+              </span>
             </div>
           ) : (
             <div className="compact-current-ball-pill waiting">

@@ -118,6 +118,7 @@ interface BingoContextType {
   closeWinModalAndRestart: () => void;
   stopGame: () => void;
   shuffleCartela: (cardIdx?: number) => void;
+  shuffleAllCartelas: (count?: number) => void;
   selectSpecificCartela: (cardIdx: number, cartelaId: number) => void;
 
   // Network Resilience & Disconnect Protection
@@ -138,7 +139,7 @@ interface BingoContextType {
 const BingoContext = createContext<BingoContextType | undefined>(undefined);
 
 // Generate 75-Ball 5x5 Matrix from Cartela ID (deterministic)
-const generateCardFromId = (cartelaId: number): BingoCell[] => {
+export const generateCardFromId = (cartelaId: number): BingoCell[] => {
   let seed = cartelaId * 7919 + 1013;
   const pseudoRandom = () => {
     seed = (seed * 9301 + 49297) % 233280;
@@ -1149,20 +1150,59 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const shuffleCartela = (cardIdx: number = 0) => {
     if (hasTicket && roundPhase === 'playing') return;
-    const newId = Math.floor(1 + Math.random() * 400);
-    const updated: [number, number, number] = [...selectedCartelaIds];
-    updated[cardIdx] = newId;
-    setSelectedCartelaIds(updated);
+    setSelectedCartelaIds(prev => {
+      const next: [number, number, number] = [prev[0], prev[1], prev[2]];
+      let newId = Math.floor(1 + Math.random() * 400);
+      while (next.includes(newId)) {
+        newId = Math.floor(1 + Math.random() * 400);
+      }
+      next[cardIdx] = newId;
+
+      if (cardIdx === 0) setCartela1Data(generateCardFromId(newId));
+      else if (cardIdx === 1) setCartela2Data(generateCardFromId(newId));
+      else if (cardIdx === 2) setCartela3Data(generateCardFromId(newId));
+
+      return next;
+    });
     soundEngine.playPop();
-    showToast(`🎲 Previewing Cartela #${newId}`);
+  };
+
+  const shuffleAllCartelas = (count: number = cardQuantity) => {
+    if (hasTicket && roundPhase === 'playing') return;
+    const used = new Set<number>();
+    const getRandomUnique = () => {
+      let id = Math.floor(1 + Math.random() * 400);
+      while (used.has(id)) {
+        id = Math.floor(1 + Math.random() * 400);
+      }
+      used.add(id);
+      return id;
+    };
+
+    const id1 = getRandomUnique();
+    const id2 = getRandomUnique();
+    const id3 = getRandomUnique();
+
+    setSelectedCartelaIds([id1, id2, id3]);
+    setCartela1Data(generateCardFromId(id1));
+    setCartela2Data(generateCardFromId(id2));
+    setCartela3Data(generateCardFromId(id3));
+
+    soundEngine.playPop();
+    showToast(count >= 2 ? `🎲 Shuffled Cartelas (#${id1}, #${id2})` : `🎲 Shuffled to Cartela #${id1}`);
   };
 
   const selectSpecificCartela = (cardIdx: number, cartelaId: number) => {
     if (hasTicket && roundPhase === 'playing') return;
     const clamped = Math.max(1, Math.min(400, cartelaId));
-    const updated: [number, number, number] = [...selectedCartelaIds];
-    updated[cardIdx] = clamped;
-    setSelectedCartelaIds(updated);
+    setSelectedCartelaIds(prev => {
+      const next: [number, number, number] = [prev[0], prev[1], prev[2]];
+      next[cardIdx] = clamped;
+      if (cardIdx === 0) setCartela1Data(generateCardFromId(clamped));
+      else if (cardIdx === 1) setCartela2Data(generateCardFromId(clamped));
+      else if (cardIdx === 2) setCartela3Data(generateCardFromId(clamped));
+      return next;
+    });
     showToast(`🎟️ Selected Cartela #${clamped}`);
   };
 
@@ -1539,6 +1579,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         closeWinModalAndRestart,
         stopGame,
         shuffleCartela,
+        shuffleAllCartelas,
         selectSpecificCartela,
         networkStatus,
         networkLatency,
