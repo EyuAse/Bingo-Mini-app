@@ -58,7 +58,7 @@ export function setupGameSockets(io: Server) {
       if (userName) authUserName = userName;
 
       socket.join(roomId);
-      gameEngine.handleJoinRoom(socket.id, roomId, userId);
+      gameEngine.handleJoinRoom(socket.id, roomId, userId, authUserName);
 
       const room = gameEngine.getRoom(roomId);
       if (room) {
@@ -81,6 +81,7 @@ export function setupGameSockets(io: Server) {
           winnerPayout: room.winnerPayout,
           playersCount: gameEngine.getRoomPlayersCount(room),
           realPlayerCount: room.realPlayerCount,
+          activeUsersCount: Math.max(room.activeUsers.size, room.activeSockets.size),
           waitingForPlayers: room.waitingForPlayers,
           drawnNumbers: room.drawnNumbers,
           currentCall: room.currentCall,

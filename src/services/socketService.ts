@@ -435,9 +435,14 @@ class SocketService {
     return this.subscribeEvent('user_tickets_synced', callback);
   }
 
-  // Real-Time Lobby Player Joined Event
+  // Real-Time Lobby Player Joined Event (Bet placed)
   public onPlayerJoined(callback: (data: any) => void): () => void {
     return this.subscribeEvent('player_joined', callback);
+  }
+
+  // Real-Time Room User Joined Event (Room entry presence)
+  public onRoomUserJoined(callback: (data: any) => void): () => void {
+    return this.subscribeEvent('room_user_joined', callback);
   }
 
   // Disconnect Protection Listeners

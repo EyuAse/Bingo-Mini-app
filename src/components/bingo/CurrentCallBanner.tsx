@@ -22,13 +22,14 @@ export const CurrentCallBanner: React.FC = () => {
     roundPhase,
     waitingForPlayers,
     realPlayerCount,
+    activeUsersCount,
     hasTicket,
     isMuted,
     toggleMute,
     autoPlay,
     toggleAutoPlay
   } = useBingo();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   // Last 3-4 previous balls (skip the active one)
   const prevTrail = [...calledNumbers].reverse().slice(currentCall ? 1 : 0, 4);
@@ -37,12 +38,20 @@ export const CurrentCallBanner: React.FC = () => {
     ? `col-${currentCall.col.toLowerCase()}`
     : 'col-none';
 
+  // Determine matchmaking status in lobby
+  const isCountdown = roundPhase === 'lobby' && !waitingForPlayers;
+  const is1Ready = roundPhase === 'lobby' && waitingForPlayers && (realPlayerCount === 1 || hasTicket);
+  const isMultipleInRoom = roundPhase === 'lobby' && waitingForPlayers && !is1Ready && activeUsersCount >= 2;
+  const isWaitingAlone = roundPhase === 'lobby' && waitingForPlayers && !is1Ready && !isMultipleInRoom;
+
   return (
     <div className="compact-current-call-block">
       {/* 1. Main Current Call Header Bar */}
       <div className={`compact-call-header ${spherePop ? 'call-pop' : ''}`}>
         <div className="compact-call-title">
-          {roundPhase === 'playing' ? 'Current Call' : 'Current Call'}
+          {roundPhase === 'playing'
+            ? (lang === 'am' ? 'የተጠራ ቁጥር' : 'Current Call')
+            : (lang === 'am' ? 'የተጫዋች ጥሪ' : 'Matchmaking')}
         </div>
 
         <div className="compact-call-badge-wrap">
@@ -53,12 +62,28 @@ export const CurrentCallBanner: React.FC = () => {
               <span className="call-ball-num">{currentCall.num}</span>
             </div>
           ) : roundPhase === 'lobby' ? (
-            <div className={`compact-current-ball-pill lobby-timer ${waitingForPlayers ? 'waiting-match' : 'countdown-active'}`}>
-              <span className="call-ball-col">⏳</span>
+            <div
+              className={`compact-current-ball-pill lobby-timer ${
+                isCountdown
+                  ? 'countdown-active'
+                  : is1Ready
+                  ? 'ready-waiting'
+                  : isMultipleInRoom
+                  ? 'players-in-room'
+                  : 'waiting-match'
+              }`}
+            >
+              <span className="call-ball-col">
+                {isCountdown ? '⏱️' : is1Ready ? '🟡' : isMultipleInRoom ? '👥' : '⏳'}
+              </span>
               <span className="call-ball-num lobby-status-text">
-                {waitingForPlayers
-                  ? (realPlayerCount === 1 || hasTicket ? 'Need 1 More' : 'Open (0/2)')
-                  : `${lobbyCountdown}s`}
+                {isCountdown
+                  ? `${lobbyCountdown}s`
+                  : is1Ready
+                  ? (lang === 'am' ? '1/2 ዝግጁ' : '1/2 Ready')
+                  : isMultipleInRoom
+                  ? (lang === 'am' ? `${activeUsersCount} ተጫዋች` : `${activeUsersCount} in Room`)
+                  : (lang === 'am' ? 'በመጠበቅ...' : 'Waiting...')}
               </span>
             </div>
           ) : (
@@ -70,7 +95,7 @@ export const CurrentCallBanner: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Recent Balls Tray */}
+      {/* 2. Recent Balls Tray / Lobby Matchmaking Guide */}
       <div className="compact-recent-balls-tray">
         <div className="compact-recent-balls-inner">
           {prevTrail.length > 0 ? (
@@ -84,6 +109,26 @@ export const CurrentCallBanner: React.FC = () => {
                 </div>
               );
             })
+          ) : roundPhase === 'lobby' ? (
+            <div className="compact-recent-matchmaking-note">
+              {isCountdown ? (
+                <span className="matchmaking-guide text-green">
+                  🟢 {lang === 'am' ? `ጨዋታ በ ${lobbyCountdown} ሰከንድ ይጀምራል!` : `Game starts in ${lobbyCountdown}s!`}
+                </span>
+              ) : is1Ready ? (
+                <span className="matchmaking-guide text-amber">
+                  🟡 {lang === 'am' ? '1 ተጫዋች ዝግጁ ነው! ካርቴላ ይግዙ' : '1/2 ready · Buy ticket to start match!'}
+                </span>
+              ) : isMultipleInRoom ? (
+                <span className="matchmaking-guide text-blue">
+                  👥 {lang === 'am' ? `${activeUsersCount} ተጫዋቾች አሉ! ካርቴላ ይግዙ` : `${activeUsersCount} players in room! Buy ticket to play!`}
+                </span>
+              ) : (
+                <span className="matchmaking-guide text-muted">
+                  ⏳ {lang === 'am' ? 'ተጫዋች በመጠበቅ ላይ...' : 'Waiting for players to come...'}
+                </span>
+              )}
+            </div>
           ) : (
             <div className="compact-recent-empty-dots">
               <span className="recent-empty-ball">--</span>

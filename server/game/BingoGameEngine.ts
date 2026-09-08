@@ -248,11 +248,16 @@ class BingoGameEngine {
   }
 
   public getStakeRoomsSummary(): Record<number, number> {
+    const getCount = (roomId: string) => {
+      const r = this.rooms.get(roomId);
+      if (!r) return 0;
+      return Math.max(r.activeUsers.size, r.tickets.size);
+    };
     return {
-      10: this.rooms.get('room-10')?.tickets.size || 0,
-      20: this.rooms.get('room-20')?.tickets.size || 0,
-      50: this.rooms.get('room-50')?.tickets.size || 0,
-      100: this.rooms.get('room-100')?.tickets.size || 0
+      10: getCount('room-10'),
+      20: getCount('room-20'),
+      50: getCount('room-50'),
+      100: getCount('room-100')
     };
   }
 
@@ -341,14 +346,35 @@ class BingoGameEngine {
     this.realPlayerWinRate = realRate;
   }
 
-  public handleJoinRoom(socketId: string, roomId: string, userId?: string) {
+  public handleJoinRoom(socketId: string, roomId: string, userId?: string, userName?: string) {
     const room = this.getRoom(roomId);
     room.activeSockets.add(socketId);
     if (userId) {
       room.activeUsers.add(userId);
       room.activeUserSockets.set(userId, socketId);
     }
+    const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
     this.broadcastRoomState(room);
+
+    // Notify other players in the room that a player entered the room
+    io.to(room.id).emit('room_user_joined', {
+      userId,
+      userName: userName || 'A player',
+      activeUsersCount: activeInRoom,
+      realPlayerCount: room.tickets.size,
+      waitingForPlayers: room.tickets.size < 2,
+      roomId: room.id
+    });
+    if (room.id === 'room-10') {
+      io.to(ARENA_ROOM_ID).emit('room_user_joined', {
+        userId,
+        userName: userName || 'A player',
+        activeUsersCount: activeInRoom,
+        realPlayerCount: room.tickets.size,
+        waitingForPlayers: room.tickets.size < 2,
+        roomId: ARENA_ROOM_ID
+      });
+    }
   }
 
   public handleLeaveRoom(socketId: string, roomId: string) {
@@ -1761,6 +1787,7 @@ class BingoGameEngine {
       winResult: room.winResult,
       waitingForPlayers: room.waitingForPlayers || false,
       realPlayerCount: room.tickets.size,
+      activeUsersCount: Math.max(room.activeUsers.size, room.activeSockets.size),
       occupiedCartelaIds: Array.from(occupiedCartelaIds)
     };
 

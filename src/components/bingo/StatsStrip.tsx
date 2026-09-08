@@ -10,6 +10,7 @@ export const StatsStrip: React.FC = () => {
     prizePool,
     playersCount,
     realPlayerCount,
+    activeUsersCount,
     calledNumbers,
     roundPhase,
     waitingForPlayers,
@@ -27,10 +28,15 @@ export const StatsStrip: React.FC = () => {
   // Short round game code
   const gameId = `KL-${betAmount}`;
 
-  // Matchmaking player display for clarity
+  // Matchmaking player display for clarity: never show misleading "0/2" when players are in room
   const isLobbyWaiting = roundPhase === 'lobby' && waitingForPlayers;
+  const effectiveInRoom = Math.max(activeUsersCount, currentPlayers, hasTicket ? 1 : 0);
   const playersDisplay = isLobbyWaiting
-    ? (currentPlayers === 1 || hasTicket ? '1/2 ⏳' : '0/2')
+    ? (currentPlayers >= 1 || hasTicket
+        ? `${Math.max(currentPlayers, 1)}/2 ⏳`
+        : (effectiveInRoom >= 2
+            ? (lang === 'am' ? `${effectiveInRoom} ተጫዋች` : `${effectiveInRoom} in Room`)
+            : (lang === 'am' ? 'ይጠብቁ ⏳' : 'Waiting ⏳')))
     : `${currentPlayers}`;
 
   const canSwitchStake = roundPhase === 'lobby' && !hasTicket;

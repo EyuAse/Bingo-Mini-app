@@ -5601,6 +5601,18 @@
   animation: countdownGlow 1s infinite alternate ease-in-out;
 }
 
+.compact-current-ball-pill.lobby-timer.players-in-room {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+
+.compact-current-ball-pill.lobby-timer.ready-waiting {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+}
+
 @keyframes countdownGlow {
   0% { box-shadow: 0 2px 6px rgba(34, 197, 94, 0.4); }
   100% { box-shadow: 0 2px 14px rgba(34, 197, 94, 0.85); }
@@ -5610,6 +5622,94 @@
   font-size: 0.74rem !important;
   letter-spacing: 0.1px;
   white-space: nowrap;
+}
+
+/* Matchmaking guide inside recent balls tray */
+.compact-recent-matchmaking-note {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.compact-recent-matchmaking-note .matchmaking-guide.text-green {
+  color: #15803d;
+}
+
+.compact-recent-matchmaking-note .matchmaking-guide.text-amber {
+  color: #b45309;
+}
+
+.compact-recent-matchmaking-note .matchmaking-guide.text-blue {
+  color: #1d4ed8;
+}
+
+.compact-recent-matchmaking-note .matchmaking-guide.text-muted {
+  color: #64748b;
+}
+
+/* ── COMPACT LOBBY PRESENCE STRIP (Above Buy Bar) ── */
+.compact-lobby-buy-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 3px;
+}
+
+.compact-lobby-presence-strip {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.presence-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+.presence-hint.waiting-alone {
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.presence-hint.opponents-present {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  animation: pulse-presence 2s infinite ease-in-out;
+}
+
+.presence-hint.ready-waiting {
+  color: #c2410c;
+  background: #fff7ed;
+  border: 1px solid #ffedd5;
+  animation: pulse-presence 1.5s infinite ease-in-out;
+}
+
+.presence-hint.countdown-active {
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+@keyframes pulse-presence {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.92; transform: scale(1.008); }
 }
 
 /* ── WIN MODAL 5x5 CARTELA SHOWCASE ── */

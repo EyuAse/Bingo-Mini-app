@@ -19,6 +19,7 @@ export const BettingBar: React.FC = () => {
     roundPhase,
     waitingForPlayers,
     realPlayerCount,
+    activeUsersCount,
     lobbyCountdown,
     hasTicket,
     stakeRoomsSummary,
@@ -26,7 +27,7 @@ export const BettingBar: React.FC = () => {
     hasSelectedCartelas
   } = useBingo();
   const { balance, bonus, isBalanceVisible } = useWallet();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const [showStakeModal, setShowStakeModal] = useState<boolean>(false);
   const [pendingSwitchStake, setPendingSwitchStake] = useState<number | null>(null);
@@ -84,8 +85,10 @@ export const BettingBar: React.FC = () => {
               </span>
               <span className="lobby-matchmaking-hint">
                 {waitingForPlayers
-                  ? '🟡 Waiting for 1 more player to join (1/2) · Starts at 2 players'
-                  : `🟢 Ready! Game starts in ${lobbyCountdown}s (${realPlayerCount || 2} Players)`}
+                  ? (activeUsersCount >= 2
+                      ? (lang === 'am' ? `👥 ${activeUsersCount} ተጫዋቾች በክፍሉ አሉ · ካርቴላ እስኪገዙ በመጠበቅ ላይ...` : `👥 ${activeUsersCount} players in room · Waiting for opponent to buy ticket...`)
+                      : (lang === 'am' ? '⏳ ሌላ ተጫዋች እስኪገባ በመጠበቅ ላይ... (1/2)' : '⏳ Waiting for an opponent to join (1/2) · Starts at 2 players'))
+                  : (lang === 'am' ? `🟢 ዝግጁ! ጨዋታ በ ${lobbyCountdown} ሰከንድ ይጀምራል (${realPlayerCount || 2} ተጫዋቾች)` : `🟢 Ready! Game starts in ${lobbyCountdown}s (${realPlayerCount || 2} Players)`)}
               </span>
             </div>
           </div>
@@ -101,8 +104,32 @@ export const BettingBar: React.FC = () => {
           </button>
         </div>
       ) : (
-        /* ── Ultra-Compact Single-Row Lobby Buy Bar (~46px) ── */
-        <div className="compact-lobby-buy-bar">
+        <div className="compact-lobby-buy-wrapper">
+          {/* Matchmaking guidance indicator when in lobby before buying ticket */}
+          <div className="compact-lobby-presence-strip">
+            {waitingForPlayers ? (
+              realPlayerCount >= 1 ? (
+                <span className="presence-hint ready-waiting">
+                  <i className="fa-solid fa-bell"></i> {lang === 'am' ? '1 ተጫዋች ዝግጁ ሆኖ እየጠበቀዎት ነው! ለመጫወት ካርቴላ ይግዙ' : '1 player is ready & waiting! Buy ticket to start match!'}
+                </span>
+              ) : activeUsersCount >= 2 ? (
+                <span className="presence-hint opponents-present">
+                  <i className="fa-solid fa-users"></i> {lang === 'am' ? `${activeUsersCount} ተጫዋቾች በክፍሉ አሉ! አብረው ለመጫወት ካርቴላ ይግዙ` : `${activeUsersCount} players in room! Buy ticket to start match!`}
+                </span>
+              ) : (
+                <span className="presence-hint waiting-alone">
+                  <i className="fa-solid fa-hourglass-half"></i> {lang === 'am' ? 'ተጫዋች በመጠበቅ ላይ... ካርቴላ ይምረጡና ዝግጁ ይሁኑ!' : 'Waiting for players to come... Pick cards & tap Buy Ticket!'}
+                </span>
+              )
+            ) : (
+              <span className="presence-hint countdown-active">
+                <i className="fa-solid fa-clock"></i> {lang === 'am' ? `2 ተጫዋቾች ዝግጁ ናቸው! ጨዋታው በ ${lobbyCountdown} ሰከንድ ይጀምራል` : `2 players ready! Game starts in ${lobbyCountdown}s`}
+              </span>
+            )}
+          </div>
+
+          {/* ── Ultra-Compact Single-Row Lobby Buy Bar (~46px) ── */}
+          <div className="compact-lobby-buy-bar">
           <div className="compact-lobby-left-controls">
             {/* 1. Stepper for 1 or 2 cartelas */}
             <div className="compact-lobby-stepper" title="Choose 1 or 2 cartelas">
@@ -167,6 +194,7 @@ export const BettingBar: React.FC = () => {
             </span>
           </button>
         </div>
+      </div>
       )}
 
       {/* ── Safe In-Lobby Cancel Bet Confirmation Modal ── */}

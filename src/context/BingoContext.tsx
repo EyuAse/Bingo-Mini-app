@@ -116,6 +116,7 @@ interface BingoContextType {
   // Lobby State & Join Feed
   waitingForPlayers: boolean;
   realPlayerCount: number;
+  activeUsersCount: number;
   joinFeed: Array<{ id: number; userName: string; countdownStarted: boolean }>;
 
   // Actions
@@ -264,6 +265,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [winnerCountdown, setWinnerCountdown] = useState<number>(8);
   const [waitingForPlayers, setWaitingForPlayers] = useState<boolean>(true);
   const [realPlayerCount, setRealPlayerCount] = useState<number>(0);
+  const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
   const [joinFeed, setJoinFeed] = useState<Array<{ id: number; userName: string; countdownStarted: boolean }>>([]);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
@@ -749,6 +751,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       if (typeof state.waitingForPlayers === 'boolean') setWaitingForPlayers(state.waitingForPlayers);
       if (typeof state.realPlayerCount === 'number') setRealPlayerCount(state.realPlayerCount);
+      if (typeof state.activeUsersCount === 'number') setActiveUsersCount(state.activeUsersCount);
       if (state.stakeRoomsSummary) setStakeRoomsSummary(state.stakeRoomsSummary);
       if (Array.isArray(state.occupiedCartelaIds)) setOccupiedCartelaIds(state.occupiedCartelaIds);
 
@@ -990,14 +993,29 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
     });
 
-    // 8. Real-Time Lobby Player Joined Event
+    // 8. Real-Time Lobby Player Joined Event (Ticket bought)
     const unsubPlayerJoined = socketService.onPlayerJoined((data: any) => {
       if (data.roomId && data.roomId !== roomId) return;
       if (typeof data.realPlayerCount === 'number') setRealPlayerCount(data.realPlayerCount);
       if (typeof data.waitingForPlayers === 'boolean') setWaitingForPlayers(data.waitingForPlayers);
+      if (typeof data.activeUsersCount === 'number') setActiveUsersCount(data.activeUsersCount);
       if (data.userName) {
         setJoinFeed(prev => [
           { id: Date.now(), userName: data.userName, countdownStarted: Boolean(data.countdownStarted) },
+          ...prev
+        ].slice(0, 4));
+      }
+    });
+
+    // 8b. Real-Time Room User Entered Event (Room presence)
+    const unsubRoomUserJoined = socketService.onRoomUserJoined((data: any) => {
+      if (data.roomId && data.roomId !== roomId) return;
+      if (typeof data.activeUsersCount === 'number') setActiveUsersCount(data.activeUsersCount);
+      if (typeof data.realPlayerCount === 'number') setRealPlayerCount(data.realPlayerCount);
+      if (typeof data.waitingForPlayers === 'boolean') setWaitingForPlayers(data.waitingForPlayers);
+      if (data.userName) {
+        setJoinFeed(prev => [
+          { id: Date.now(), userName: `${data.userName} entered`, countdownStarted: false },
           ...prev
         ].slice(0, 4));
       }
@@ -1018,6 +1036,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       unsubConn();
       unsubOfflineWins();
       unsubPlayerJoined();
+      unsubRoomUserJoined();
       unsubStakeSummary();
     };
   }, [getActiveRoomId, user?.id]);
@@ -1063,6 +1082,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     else if (typeof data.totalPot === 'number') setPrizePool(data.totalPot);
     if (typeof data.waitingForPlayers === 'boolean') setWaitingForPlayers(data.waitingForPlayers);
     if (typeof data.realPlayerCount === 'number') setRealPlayerCount(data.realPlayerCount);
+    if (typeof data.activeUsersCount === 'number') setActiveUsersCount(data.activeUsersCount);
     if (data.stakeRoomsSummary) setStakeRoomsSummary(data.stakeRoomsSummary);
 
     if (Array.isArray(data.drawnNumbers) && data.drawnNumbers.length > 0) {
@@ -1786,6 +1806,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         toggleMute,
         waitingForPlayers,
         realPlayerCount,
+        activeUsersCount,
         joinFeed,
         startLobbyCountdown,
         claimInProgress,
