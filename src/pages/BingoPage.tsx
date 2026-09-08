@@ -219,8 +219,10 @@ export const BingoPage: React.FC = () => {
       {/* 400 Cartela Selection Modal */}
       <CartelaPickerModal />
 
-      {/* Victory Celebration Modal */}
-      <WinModal />
+      {/* Victory Celebration Modal — silent boundary prevents root-level crash */}
+      <ErrorBoundary componentName="WinModal" fallback={null}>
+        <WinModal />
+      </ErrorBoundary>
 
       {/* Insufficient Balance Pop-Up Alert Modal */}
       <InsufficientBalanceModal />

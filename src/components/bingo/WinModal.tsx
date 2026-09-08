@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useBingo, generateCardFromId } from '../../context/BingoContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
@@ -22,10 +22,19 @@ export const WinModal: React.FC = () => {
   const { user } = useAuth();
 
   // Auto-dismiss after 8 seconds to match celebration countdown
+  // isMounted guard prevents calling closeWinModalAndRestart during unmount
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   useEffect(() => {
     if (!showWinModal) return;
     const timer = setTimeout(() => {
-      closeWinModalAndRestart();
+      if (isMountedRef.current) {
+        closeWinModalAndRestart();
+      }
     }, 8000);
     return () => clearTimeout(timer);
   }, [showWinModal, closeWinModalAndRestart]);
@@ -80,7 +89,8 @@ export const WinModal: React.FC = () => {
       if (!name || !name.trim()) return false;
       if (name.trim() === 'You') return false;
       const cleanName = name.trim().toLowerCase();
-      if (user?.fullName && typeof user.fullName === 'string' && cleanName === user.fullName.trim().toLowerCase()) return false;
+      const fullName = user?.fullName;
+      if (fullName && typeof fullName === 'string' && cleanName === fullName.trim().toLowerCase()) return false;
       const userUsername = (user as any)?.username || user?.telegramUsername;
       if (userUsername && typeof userUsername === 'string' && cleanName.includes(userUsername.toLowerCase())) return false;
       return true;
@@ -101,8 +111,7 @@ export const WinModal: React.FC = () => {
     ? winResult.winningLine
     : (Array.isArray((winResult as any).winningIndices) ? (winResult as any).winningIndices : []);
 
-  try {
-    return (
+  return (
       <div className="fresh-victory-modal-backdrop" onClick={closeWinModalAndRestart}>
         <div className="victory-celebration-card" onClick={e => e.stopPropagation()}>
           {/* Close Button */}
@@ -320,9 +329,5 @@ export const WinModal: React.FC = () => {
           </div>
         </div>
       </div>
-    );
-  } catch (err) {
-    console.error('⚠️ [WinModal render crash prevented]:', err);
-    return null;
-  }
+  );
 };
