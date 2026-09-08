@@ -13,6 +13,7 @@ import { ConfettiCanvas } from '../components/common/ConfettiCanvas.tsx';
 import { NetworkStatusBanner, NetworkLatencyPill } from '../components/bingo/NetworkStatusBanner.tsx';
 import { OneToGoAlert } from '../components/bingo/OneToGoAlert.tsx';
 import { MasterBoard75 } from '../components/bingo/MasterBoard75.tsx';
+import { LeaveConfirmModal } from '../components/bingo/LeaveConfirmModal.tsx';
 
 export const BingoPage: React.FC = () => {
   const {
@@ -22,6 +23,7 @@ export const BingoPage: React.FC = () => {
   const { switchPage } = useApp();
   const [showVoiceTester, setShowVoiceTester] = useState<boolean>(false);
   const [showMenuDrawer, setShowMenuDrawer] = useState<boolean>(false);
+  const [showLeaveModal, setShowLeaveModal] = useState<boolean>(false);
 
   // Safe Back Handler: If player is waiting in lobby with bought ticket, auto-refund on exit
   const handleBackClick = async () => {
@@ -100,9 +102,34 @@ export const BingoPage: React.FC = () => {
             {roundPhase !== 'playing' && (
               <BettingBar />
             )}
+
+            {/* In-Game Bottom Action Bar: Visible during active game! */}
+            {roundPhase === 'playing' && (
+              <div className="in-game-bottom-action-bar">
+                <button
+                  type="button"
+                  className="btn-in-game-leave"
+                  onClick={() => setShowLeaveModal(true)}
+                  title="Leave this game round safely"
+                >
+                  <i className="fa-solid fa-arrow-right-from-bracket"></i>
+                  <span>Leave Game</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Leave Game Confirmation Modal */}
+      <LeaveConfirmModal
+        isOpen={showLeaveModal}
+        onConfirm={() => {
+          setShowLeaveModal(false);
+          switchPage('games');
+        }}
+        onCancel={() => setShowLeaveModal(false)}
+      />
 
       {/* Settings & Tools Modal Drawer — keeps top bar 100% clean without overlapping buttons */}
       {showMenuDrawer && (

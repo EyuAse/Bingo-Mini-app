@@ -4621,37 +4621,50 @@
   color: #64748b;
 }
 
-/* 2. Recent Balls Tray */
+/* 2. Recent Balls Tray (Prominent & Legible) */
 .compact-recent-balls-tray {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 7px;
-  padding: 1px 4px;
-  height: 20px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 2px 6px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .compact-recent-balls-inner {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
 }
 
 .compact-recent-ball {
-  width: 17px;
-  height: 17px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.52rem;
+  gap: 1px;
+  font-size: 0.76rem;
   font-weight: 950;
   color: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.compact-recent-ball .recent-ball-col {
+  font-weight: 950;
+  font-size: 0.72rem;
+  opacity: 0.95;
+}
+
+.compact-recent-ball .recent-ball-num {
+  font-weight: 950;
+  font-size: 0.8rem;
 }
 
 .compact-recent-ball.col-b {
@@ -4674,19 +4687,20 @@
 .compact-recent-empty-dots {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
 }
 
 .recent-empty-ball {
-  width: 16px;
-  height: 16px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: #f1f5f9;
+  border: 1.5px dashed #cbd5e1;
   color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.48rem;
+  font-size: 0.7rem;
 }
 
 /* 3. Controls Row (Sound & Auto Pill) */
@@ -4996,6 +5010,132 @@
     height: 26px;
     font-size: 0.88rem;
   }
+}
+
+/* ── SINGLE CARTELA PROPORTIONAL ANTI-STRETCH (Image 2 Fix) ── */
+.compact-cartelas-stack.single-cartela {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.new-cartela-card.single-card {
+  flex: 0 1 auto;
+  max-height: fit-content;
+  width: 100%;
+  max-width: 320px;
+}
+
+.new-cartela-card.single-card .new-card-header {
+  height: 18px;
+}
+
+.new-cartela-card.single-card .new-card-body {
+  height: auto;
+  flex: 0 1 auto;
+  gap: 2px;
+}
+
+.new-cartela-card.single-card .new-bingo-col-headers {
+  height: 18px;
+}
+
+.new-cartela-card.single-card .new-cartela-5x5 {
+  height: auto;
+  flex: 0 1 auto;
+  aspect-ratio: 1 / 1;
+  max-height: 260px;
+  gap: 2px;
+}
+
+.new-cartela-card.single-card .new-cartela-cell {
+  aspect-ratio: 1 / 1;
+  font-size: clamp(0.78rem, 2.8vw, 0.95rem);
+}
+
+/* ── PREVIEW & SHUFFLE CONTROLS ── */
+.btn-card-preview-shuffle {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 0.6rem;
+  font-weight: 850;
+  color: #1d4ed8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.btn-card-preview-shuffle:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.compact-change-cartela-btn {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  font-weight: 850;
+  color: #1d4ed8;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.compact-change-cartela-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+/* ── IN-GAME BOTTOM ACTION BAR (LEAVE GAME) ── */
+.in-game-bottom-action-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 2px 0;
+  margin-top: auto;
+}
+
+.btn-in-game-leave {
+  width: 100%;
+  height: 36px;
+  border-radius: 999px;
+  background: #fff1f2;
+  border: 1.5px solid #fecdd3;
+  color: #e11d48;
+  font-size: 0.8rem;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.08);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.btn-in-game-leave:hover {
+  background: #ffe4e6;
+  border-color: #fda4af;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(225, 29, 72, 0.15);
+}
+
+.btn-in-game-leave:active {
+  transform: scale(0.98);
 }
 
 

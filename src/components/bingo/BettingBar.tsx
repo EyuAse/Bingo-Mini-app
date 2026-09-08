@@ -18,7 +18,8 @@ export const BettingBar: React.FC = () => {
     roundPhase,
     waitingForPlayers,
     hasTicket,
-    stakeRoomsSummary
+    stakeRoomsSummary,
+    shuffleCartela
   } = useBingo();
   const { balance, bonus, isBalanceVisible } = useWallet();
   const { t } = useLanguage();
@@ -135,22 +136,29 @@ export const BettingBar: React.FC = () => {
             })}
           </div>
 
-          {/* ── Row 3: Compact Assigned & System Row ── */}
+          {/* ── Row 3: Interactive Selected Cartela & Shuffle Action ── */}
           <div className="compact-assigned-row">
             <div className="compact-assigned-left">
-              <span className="compact-assigned-tag">#</span>
-              <span className="compact-assigned-lbl">Assigned:</span>
+              <span className="compact-assigned-tag">🎟️</span>
+              <span className="compact-assigned-lbl">Selected:</span>
               <span className="compact-assigned-val">
                 #{selectedCartelaIds[0]}
                 {cardQuantity >= 2 && ` · #${selectedCartelaIds[1]}`}
               </span>
             </div>
 
-            <div className="compact-assigned-right">
-              <i className="fa-solid fa-shield-halved"></i>
-              <span>System Assigned</span>
-              <i className="fa-solid fa-chevron-right" style={{ fontSize: '0.6rem', opacity: 0.6 }}></i>
-            </div>
+            <button
+              type="button"
+              className="compact-change-cartela-btn"
+              onClick={() => {
+                shuffleCartela(0);
+                if (cardQuantity >= 2) shuffleCartela(1);
+              }}
+              title="Pick different cartela numbers"
+            >
+              <i className="fa-solid fa-shuffle"></i>
+              <span>Shuffle 🎲</span>
+            </button>
           </div>
 
           {/* ── Row 4: Inline Cartelas Stepper ── */}

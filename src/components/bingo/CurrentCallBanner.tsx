@@ -73,7 +73,8 @@ export const CurrentCallBanner: React.FC = () => {
               const colLetter = getColLetter(num);
               return (
                 <div key={`${num}-${idx}`} className={`compact-recent-ball col-${colClass}`}>
-                  <span>{colLetter}{num}</span>
+                  <span className="recent-ball-col">{colLetter}</span>
+                  <span className="recent-ball-num">{num}</span>
                 </div>
               );
             })

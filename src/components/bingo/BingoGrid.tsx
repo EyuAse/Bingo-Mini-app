@@ -50,18 +50,35 @@ const NewCard5x5: React.FC<{
   winningLine: number[];
   autoPlay: boolean;
   onDaub: (cardIdx: number, cellIdx: number) => void;
+  isSingleCard?: boolean;
+  isPreview?: boolean;
+  onShuffle?: () => void;
 }> = ({
   cells, cardIndex, cartelaId, label,
-  isWinningCard, winningLine, autoPlay, onDaub
+  isWinningCard, winningLine, autoPlay, onDaub,
+  isSingleCard, isPreview, onShuffle
 }) => {
   const status = getCardStatus(cells);
 
   return (
-    <div className="new-cartela-card">
+    <div className={`new-cartela-card ${isSingleCard ? 'single-card' : ''}`}>
       {/* ── Card Header Bar: Cartela #202 (matches screenshot) ── */}
       <div className="new-card-header">
         <span className="new-card-header-label">{label}</span>
-        {status.hot && (
+        {isPreview && onShuffle && (
+          <button
+            type="button"
+            className="btn-card-preview-shuffle"
+            onClick={e => {
+              e.stopPropagation();
+              onShuffle();
+            }}
+            title="Preview different cartela number"
+          >
+            🎲 Change
+          </button>
+        )}
+        {!isPreview && status.hot && (
           <span className={`new-card-status-pill ${status.label.includes('BINGO') ? 'bingo' : 'hot'}`}>
             {status.label}
           </span>
@@ -126,25 +143,29 @@ export const BingoGrid: React.FC = () => {
     winResult,
     autoPlay,
     roundPhase,
+    hasTicket,
+    shuffleCartela,
   } = useBingo();
+
+  const isSingleCard = totalPlayableCards === 1;
 
   const currentCards = [
     {
       data: cartela1Data,
       id: selectedCartelaIds[0],
       cardIndex: 0,
-      label: `Cartela #${selectedCartelaIds[0]}`,
+      label: hasTicket ? `Cartela #${selectedCartelaIds[0]}` : `Cartela #${selectedCartelaIds[0]} (Preview)`,
     },
     {
       data: cartela2Data,
       id: selectedCartelaIds[1],
       cardIndex: 1,
-      label: `Cartela #${selectedCartelaIds[1]}`,
+      label: hasTicket ? `Cartela #${selectedCartelaIds[1]}` : `Cartela #${selectedCartelaIds[1]} (Preview)`,
     },
   ].slice(0, totalPlayableCards);
 
   return (
-    <div className="compact-cartelas-stack">
+    <div className={`compact-cartelas-stack ${isSingleCard ? 'single-cartela' : 'dual-cartela'}`}>
       {currentCards.map(card => (
         <NewCard5x5
           key={card.cardIndex}
@@ -156,6 +177,9 @@ export const BingoGrid: React.FC = () => {
           winningLine={winResult?.winningLine || []}
           autoPlay={autoPlay}
           onDaub={handleManualDaub}
+          isSingleCard={isSingleCard}
+          isPreview={roundPhase === 'lobby' && !hasTicket}
+          onShuffle={() => shuffleCartela(card.cardIndex)}
         />
       ))}
     </div>

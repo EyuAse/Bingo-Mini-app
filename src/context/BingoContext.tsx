@@ -117,6 +117,8 @@ interface BingoContextType {
   claimBingo: () => void;
   closeWinModalAndRestart: () => void;
   stopGame: () => void;
+  shuffleCartela: (cardIdx?: number) => void;
+  selectSpecificCartela: (cardIdx: number, cartelaId: number) => void;
 
   // Network Resilience & Disconnect Protection
   networkStatus: 'connected' | 'reconnecting' | 'polling' | 'disconnected' | 'degraded';
@@ -1145,6 +1147,25 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     showToast(`🎟️ Selected Cartela #${newId}`);
   };
 
+  const shuffleCartela = (cardIdx: number = 0) => {
+    if (hasTicket && roundPhase === 'playing') return;
+    const newId = Math.floor(1 + Math.random() * 400);
+    const updated: [number, number, number] = [...selectedCartelaIds];
+    updated[cardIdx] = newId;
+    setSelectedCartelaIds(updated);
+    soundEngine.playPop();
+    showToast(`🎲 Previewing Cartela #${newId}`);
+  };
+
+  const selectSpecificCartela = (cardIdx: number, cartelaId: number) => {
+    if (hasTicket && roundPhase === 'playing') return;
+    const clamped = Math.max(1, Math.min(400, cartelaId));
+    const updated: [number, number, number] = [...selectedCartelaIds];
+    updated[cardIdx] = clamped;
+    setSelectedCartelaIds(updated);
+    showToast(`🎟️ Selected Cartela #${clamped}`);
+  };
+
   const stopGame = useCallback(() => {
     setGameActive(false);
   }, []);
@@ -1517,6 +1538,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         claimBingo,
         closeWinModalAndRestart,
         stopGame,
+        shuffleCartela,
+        selectSpecificCartela,
         networkStatus,
         networkLatency,
         offlineWinsNotice,
