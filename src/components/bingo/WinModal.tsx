@@ -4,6 +4,13 @@ import { useApp } from '../../context/AppContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useAuth } from '../../context/AuthContext.tsx';
 
+// Safe numeric formatter that NEVER throws on undefined, null, or NaN
+const safeLocale = (val: any, fallback = 0): string => {
+  if (val === null || val === undefined) return fallback.toLocaleString();
+  const num = typeof val === 'number' ? val : Number(val);
+  return (isNaN(num) ? fallback : num).toLocaleString();
+};
+
 export const WinModal: React.FC = () => {
   const {
     showWinModal,
@@ -29,43 +36,70 @@ export const WinModal: React.FC = () => {
   const isSplit = winResult.winType === 'user_split';
   const isOpponentWin = winResult.winType === 'opponent_win';
 
-  const userShare = typeof winResult.userShare === 'number' 
-    ? winResult.userShare 
+  const userShare = typeof winResult.userShare === 'number' && !isNaN(winResult.userShare)
+    ? winResult.userShare
     : (typeof (winResult as any).sharePerWinner === 'number' ? (winResult as any).sharePerWinner : 0);
-  const winnerPayout = typeof winResult.winnerPayout === 'number'
+
+  const winnerPayout = typeof winResult.winnerPayout === 'number' && !isNaN(winResult.winnerPayout)
     ? winResult.winnerPayout
     : (typeof (winResult as any).sharePerWinner === 'number' ? (winResult as any).sharePerWinner : (winResult.totalPot || 50));
-  const stakeAmt = winResult.stakeAmount || 10;
-  const cartelaNum = winResult.winningCartelaNumber || (winResult as any).winningCartela || 1;
-  const winnerName = winResult.winnerName || (winResult as any).winnerNames?.[0] || 'Player';
 
+  const stakeAmt = Number(winResult.stakeAmount) || 10;
+
+  // Clamped valid Cartela ID (1-400)
+  const rawCartela = Number(winResult.winningCartelaNumber || (winResult as any).winningCartela || 1);
+  const cartelaNum = (!isNaN(rawCartela) && rawCartela >= 1 && rawCartela <= 400) ? rawCartela : 1;
+
+  const winnerName = typeof winResult.winnerName === 'string' && winResult.winnerName.trim()
+    ? winResult.winnerName
+    : (Array.isArray((winResult as any).winnerNames) && (winResult as any).winnerNames[0]
+      ? String((winResult as any).winnerNames[0])
+      : 'Player');
+
+  // Bulletproof 5x5 card cells generation
   const winningCardCells = useMemo(() => {
-    return generateCardFromId(cartelaNum);
+    try {
+      const cells = generateCardFromId(cartelaNum);
+      if (Array.isArray(cells) && cells.length === 25) {
+        return cells;
+      }
+    } catch (e) {
+      console.warn('⚠️ [WinModal] generateCardFromId fallback to #1:', e);
+    }
+    return generateCardFromId(1);
   }, [cartelaNum]);
 
-  // Filter out current user's own name, 'You', and username from co-winners to eliminate the self-split bug
-  const rawCoWinners: string[] = Array.isArray(winResult.coWinners) && winResult.coWinners.length > 0
+  // Safe string filtering of co-winners
+  const rawCoWinners: any[] = Array.isArray(winResult.coWinners) && winResult.coWinners.length > 0
     ? winResult.coWinners
     : (Array.isArray((winResult as any).winnerNames) ? (winResult as any).winnerNames : []);
 
-  const otherCoWinners = rawCoWinners.filter(name => {
-    if (!name) return false;
-    if (name === 'You') return false;
-    if (user?.fullName && name.trim().toLowerCase() === user.fullName.trim().toLowerCase()) return false;
-    const userUsername = (user as any)?.username || user?.telegramUsername;
-    if (userUsername && name.toLowerCase().includes(userUsername.toLowerCase())) return false;
-    return true;
-  });
+  const otherCoWinners = rawCoWinners
+    .map(item => (typeof item === 'string' ? item : (typeof item === 'object' && item?.userName ? String(item.userName) : String(item || ''))))
+    .filter(name => {
+      if (!name || !name.trim()) return false;
+      if (name.trim() === 'You') return false;
+      const cleanName = name.trim().toLowerCase();
+      if (user?.fullName && typeof user.fullName === 'string' && cleanName === user.fullName.trim().toLowerCase()) return false;
+      const userUsername = (user as any)?.username || user?.telegramUsername;
+      if (userUsername && typeof userUsername === 'string' && cleanName.includes(userUsername.toLowerCase())) return false;
+      return true;
+    });
 
   const isTrueMultiplayerSplit = isSplit && otherCoWinners.length > 0;
   const coWinnersList = otherCoWinners.join(', ');
 
   const handleShareWin = () => {
     const text = encodeURIComponent(
-      `🎉 I just won ${userShare.toLocaleString()} ETB on Lomi 75-Ball Bingo! Come play and win with me: https://t.me/LomiBingoBot`
+      `🎉 I just won ${safeLocale(userShare)} ETB on Lomi 75-Ball Bingo! Come play and win with me: https://t.me/LomiBingoBot`
     );
     window.open(`https://t.me/share/url?url=https://t.me/LomiBingoBot&text=${text}`, '_blank');
   };
+
+  // Safe winning indices array
+  const winningIndices = Array.isArray(winResult.winningLine)
+    ? winResult.winningLine
+    : (Array.isArray((winResult as any).winningIndices) ? (winResult as any).winningIndices : []);
 
   return (
     <div className="fresh-victory-modal-backdrop" onClick={closeWinModalAndRestart}>
@@ -157,19 +191,19 @@ export const WinModal: React.FC = () => {
           </span>
           <strong className={`victory-prize-amount ${isOpponentWin ? 'gold' : 'green'}`}>
             {isOpponentWin
-              ? `${winnerPayout.toLocaleString()} ETB`
-              : `+${userShare.toLocaleString()} ETB`}
+              ? `${safeLocale(winnerPayout)} ETB`
+              : `+${safeLocale(userShare)} ETB`}
           </strong>
 
           {/* Pot & Commission Transparency Breakdown */}
           {(() => {
-            const grossPot = winResult.totalPot || winnerPayout;
+            const grossPot = Number(winResult.totalPot) || Number(winnerPayout) || 0;
             const houseFee = typeof (winResult as any).houseFee === 'number'
-              ? (winResult as any).houseFee
-              : (isTrueMultiplayerSplit ? 0 : Math.max(0, grossPot - winnerPayout));
+              ? Number((winResult as any).houseFee) || 0
+              : (isTrueMultiplayerSplit ? 0 : Math.max(0, grossPot - (Number(winnerPayout) || 0)));
             const netPrizePool = typeof (winResult as any).netPrizePot === 'number'
-              ? (winResult as any).netPrizePot
-              : (grossPot - houseFee);
+              ? Number((winResult as any).netPrizePot) || 0
+              : Math.max(0, grossPot - houseFee);
             const isFeeCharged = houseFee > 0;
 
             return (
@@ -187,25 +221,25 @@ export const WinModal: React.FC = () => {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Total Room Pot:</span>
-                  <strong style={{ color: '#0f172a' }}>{grossPot.toLocaleString()} ETB</strong>
+                  <strong style={{ color: '#0f172a' }}>{safeLocale(grossPot)} ETB</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Platform Commission:</span>
                   <span style={{ color: isFeeCharged ? '#b91c1c' : '#16a34a', fontWeight: 600 }}>
                     {isFeeCharged
-                      ? `20% (-${houseFee.toLocaleString()} ETB)`
+                      ? `20% (-${safeLocale(houseFee)} ETB)`
                       : '0% (0.00 ETB • ≤5 Players)'}
                   </span>
                 </div>
                 {isTrueMultiplayerSplit && (
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span>Net Prize Pot:</span>
-                    <strong style={{ color: '#0f172a' }}>{netPrizePool.toLocaleString()} ETB</strong>
+                    <strong style={{ color: '#0f172a' }}>{safeLocale(netPrizePool)} ETB</strong>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #cbd5e1', paddingTop: '4px' }}>
                   <span>{isTrueMultiplayerSplit ? 'Your Split Share (50/50):' : 'Net Winner Payout:'}</span>
-                  <strong style={{ color: '#16a34a' }}>{winnerPayout.toLocaleString()} ETB</strong>
+                  <strong style={{ color: '#16a34a' }}>{safeLocale(winnerPayout)} ETB</strong>
                 </div>
               </div>
             );
@@ -225,7 +259,7 @@ export const WinModal: React.FC = () => {
               🏆 Cartela #{cartelaNum} (Winning Card)
             </span>
             <span className="winning-cartela-badge">
-              {winResult.winningLine && winResult.winningLine.length >= 4 ? '5-IN-A-ROW' : 'BINGO'}
+              {winningIndices.length >= 4 ? '5-IN-A-ROW' : 'BINGO'}
             </span>
           </div>
 
@@ -239,7 +273,7 @@ export const WinModal: React.FC = () => {
             </div>
             <div className="winning-cartela-5x5">
               {winningCardCells.map(cell => {
-                const isWinningCell = Array.isArray(winResult.winningLine) && winResult.winningLine.includes(cell.index);
+                const isWinningCell = winningIndices.includes(cell.index);
                 return (
                   <div
                     key={cell.index}
@@ -267,7 +301,7 @@ export const WinModal: React.FC = () => {
             <span>
               {isOpponentWin
                 ? 'PLAY NEXT ROUND'
-                : `CLAIM ${userShare.toLocaleString()} ETB & PLAY NEXT ROUND`}
+                : `CLAIM ${safeLocale(userShare)} ETB & PLAY NEXT ROUND`}
             </span>
           </button>
 

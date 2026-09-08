@@ -58,7 +58,41 @@ const NewCard5x5: React.FC<{
   isWinningCard, winningLine, autoPlay, onDaub,
   isSingleCard, isPreview, onOpenPicker
 }) => {
-  const status = getCardStatus(cells);
+  const status = getCardStatus(cells || []);
+
+  // ── Unselected Cartela Placeholder (When user hasn't chosen cartelas yet) ──
+  if (isPreview && (!cartelaId || cartelaId === 0 || !cells || cells.length === 0)) {
+    return (
+      <div
+        className={`new-cartela-card empty-cartela-placeholder ${isSingleCard ? 'single-card' : ''}`}
+        onClick={onOpenPicker}
+        title="Tap to choose your cartela from 400 available boards"
+      >
+        <div className="empty-cartela-inner">
+          <div className="empty-cartela-top">
+            <span className="empty-cartela-badge">CARTELA #{cardIndex + 1}</span>
+            <span className="empty-cartela-status">NOT SELECTED</span>
+          </div>
+          <div className="empty-cartela-icon-wrap">
+            <span className="empty-cartela-icon">🎟️</span>
+          </div>
+          <div className="empty-cartela-title">Tap to Choose Board</div>
+          <div className="empty-cartela-sub">Pick your number from 400 cartelas</div>
+          <button
+            type="button"
+            className="btn-empty-cartela-cta"
+            onClick={e => {
+              e.stopPropagation();
+              onOpenPicker?.();
+            }}
+          >
+            <i className="fa-solid fa-plus"></i>
+            <span>Select Cartela</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`new-cartela-card ${isSingleCard ? 'single-card' : ''}`}>
@@ -160,15 +194,15 @@ export const BingoGrid: React.FC = () => {
   const currentCards = [
     {
       data: cartela1Data,
-      id: selectedCartelaIds[0],
+      id: selectedCartelaIds[0] || 0,
       cardIndex: 0,
-      label: `Cartela #${selectedCartelaIds[0]}`,
+      label: selectedCartelaIds[0] ? `Cartela #${selectedCartelaIds[0]}` : 'Cartela #1 (Unselected)',
     },
     {
       data: cartela2Data,
-      id: selectedCartelaIds[1],
+      id: selectedCartelaIds[1] || 0,
       cardIndex: 1,
-      label: `Cartela #${selectedCartelaIds[1]}`,
+      label: selectedCartelaIds[1] ? `Cartela #${selectedCartelaIds[1]}` : 'Cartela #2 (Unselected)',
     },
   ].slice(0, totalPlayableCards);
 

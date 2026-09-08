@@ -14,13 +14,15 @@ import { NetworkStatusBanner, NetworkLatencyPill } from '../components/bingo/Net
 import { MasterBoard75 } from '../components/bingo/MasterBoard75.tsx';
 import { LeaveConfirmModal } from '../components/bingo/LeaveConfirmModal.tsx';
 import { CartelaPickerModal } from '../components/bingo/CartelaPickerModal.tsx';
+import { ErrorBoundary } from '../components/common/ErrorBoundary.tsx';
 
 export const BingoPage: React.FC = () => {
   const {
     hasTicket, showWinModal, isMuted, toggleMute, triggerManualSync, isSyncing,
-    roundPhase, waitingForPlayers, realPlayerCount, lobbyCountdown, cancelLobbyTicket
+    roundPhase, waitingForPlayers, realPlayerCount, lobbyCountdown, cancelLobbyTicket,
+    autoPlay, hasWinningPattern, claimBingo
   } = useBingo();
-  const { switchPage } = useApp();
+  const { switchPage, showToast } = useApp();
   const [showVoiceTester, setShowVoiceTester] = useState<boolean>(false);
   const [showMenuDrawer, setShowMenuDrawer] = useState<boolean>(false);
   const [showLeaveModal, setShowLeaveModal] = useState<boolean>(false);
@@ -113,6 +115,24 @@ export const BingoPage: React.FC = () => {
                   <i className="fa-solid fa-arrow-right-from-bracket"></i>
                   <span>Leave Game</span>
                 </button>
+
+                {!autoPlay && (
+                  <button
+                    type="button"
+                    className={`btn-in-game-bingo ${hasWinningPattern ? 'active-claim-ready' : 'inactive'}`}
+                    onClick={() => {
+                      if (hasWinningPattern) {
+                        claimBingo();
+                      } else {
+                        showToast("Complete any 5-in-a-row line on your card to call BINGO!");
+                      }
+                    }}
+                    title={hasWinningPattern ? "Call Bingo to claim your victory!" : "Complete a 5-in-a-row line to call Bingo"}
+                  >
+                    <i className={hasWinningPattern ? "fa-solid fa-trophy fa-bounce" : "fa-solid fa-trophy"}></i>
+                    <span>{hasWinningPattern ? 'CALL BINGO! ⚡' : 'BINGO! 🎯'}</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -199,8 +219,10 @@ export const BingoPage: React.FC = () => {
       {/* 400 Cartela Selection Modal */}
       <CartelaPickerModal />
 
-      {/* Victory Celebration Modal */}
-      <WinModal />
+      {/* Victory Celebration Modal wrapped in ErrorBoundary to prevent any dark screen freeze */}
+      <ErrorBoundary componentName="WinModal">
+        <WinModal />
+      </ErrorBoundary>
 
       {/* Insufficient Balance Pop-Up Alert Modal */}
       <InsufficientBalanceModal />

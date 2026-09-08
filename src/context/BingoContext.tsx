@@ -51,6 +51,8 @@ export interface WinResult {
   userShare: number;
   winnerPayout?: number;
   stakeAmount?: number;
+  houseFee?: number;
+  netPrizePot?: number;
 }
 
 export type RoundPhase = 'lobby' | 'locked' | 'playing' | 'winner';
@@ -73,8 +75,10 @@ interface BingoContextType {
   stakeRoomsSummary: Record<number, number>;
 
   // 400 Cartelas Pool & Selection
-  selectedCartelaIds: [number, number, number];
-  setSelectedCartelaIds: (ids: [number, number, number]) => void;
+  selectedCartelaIds: number[];
+  setSelectedCartelaIds: (ids: number[]) => void;
+  hasSelectedCartelas: boolean;
+  hasWinningPattern: boolean;
   occupiedCartelaIds: number[];
   isCartelaPickerOpen: boolean;
   openCartelaPicker: () => void;
@@ -268,12 +272,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [hasTicket, setHasTicket] = useState<boolean>(false);
   const [hasPreBoughtNext, setHasPreBoughtNext] = useState<boolean>(false);
 
-  // 400 Cartelas Pool Selection (System Assigned)
-  const [selectedCartelaIds, setSelectedCartelaIds] = useState<[number, number, number]>([
-    Math.floor(1 + Math.random() * 120),
-    Math.floor(121 + Math.random() * 140),
-    Math.floor(261 + Math.random() * 135)
-  ]);
+  // 400 Cartelas Pool Selection (User Assigned — starts unselected)
+  const [selectedCartelaIds, setSelectedCartelaIds] = useState<number[]>([]);
   const [isCartelaPickerOpen, setIsCartelaPickerOpen] = useState<boolean>(false);
   const [occupiedCartelaIds, setOccupiedCartelaIds] = useState<number[]>([]);
 
@@ -282,11 +282,18 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const totalPlayableCards = cardQuantity;
+  const hasSelectedCartelas = selectedCartelaIds.filter(id => id > 0).length >= cardQuantity;
 
-  // Active Cartelas
-  const [cartela1Data, setCartela1Data] = useState<BingoCell[]>(() => generateCardFromId(selectedCartelaIds[0]));
-  const [cartela2Data, setCartela2Data] = useState<BingoCell[]>(() => generateCardFromId(selectedCartelaIds[1]));
-  const [cartela3Data, setCartela3Data] = useState<BingoCell[]>(() => generateCardFromId(selectedCartelaIds[2]));
+  // Active Cartelas (Safe deterministic generation from chosen IDs)
+  const [cartela1Data, setCartela1Data] = useState<BingoCell[]>(() =>
+    selectedCartelaIds[0] ? generateCardFromId(selectedCartelaIds[0]) : []
+  );
+  const [cartela2Data, setCartela2Data] = useState<BingoCell[]>(() =>
+    selectedCartelaIds[1] ? generateCardFromId(selectedCartelaIds[1]) : []
+  );
+  const [cartela3Data, setCartela3Data] = useState<BingoCell[]>(() =>
+    selectedCartelaIds[2] ? generateCardFromId(selectedCartelaIds[2]) : []
+  );
   const [activeCartelaIndex, setActiveCartelaIndex] = useState<number>(0);
 
   // Game Engine State
@@ -306,6 +313,14 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [canWin, setCanWin] = useState<boolean>(false);
   const [winResult, setWinResult] = useState<WinResult | null>(null);
   const [showWinModal, setShowWinModal] = useState<boolean>(false);
+
+  // Reactive Winning Pattern Detection for Manual Mode BINGO Claim Button
+  const hasWinningPattern = useMemo(() => {
+    if (roundPhase !== 'playing') return false;
+    const win1 = cartela1Data.length > 0 ? checkWinningPatterns(cartela1Data) : null;
+    const win2 = totalPlayableCards >= 2 && cartela2Data.length > 0 ? checkWinningPatterns(cartela2Data) : null;
+    return !!(win1 || win2);
+  }, [roundPhase, cartela1Data, cartela2Data, totalPlayableCards]);
   const winModalDismissedForRoundRef = useRef<number | null>(null);
   const lastLiveWinRoundRef = useRef<number | null>(null);
   const [spherePop, setSpherePop] = useState<boolean>(false);
@@ -436,12 +451,12 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   }, []);
 
-  // Keep Cartelas synchronized when IDs change
+  // Keep Cartelas synchronized when IDs change (safe when unselected)
   useEffect(() => {
     if (roundPhase === 'lobby' || !hasTicket) {
-      setCartela1Data(generateCardFromId(selectedCartelaIds[0]));
-      setCartela2Data(generateCardFromId(selectedCartelaIds[1]));
-      setCartela3Data(generateCardFromId(selectedCartelaIds[2]));
+      setCartela1Data(selectedCartelaIds[0] ? generateCardFromId(selectedCartelaIds[0]) : []);
+      setCartela2Data(selectedCartelaIds[1] ? generateCardFromId(selectedCartelaIds[1]) : []);
+      setCartela3Data(selectedCartelaIds[2] ? generateCardFromId(selectedCartelaIds[2]) : []);
     }
   }, [selectedCartelaIds, roundPhase, hasTicket]);
 
@@ -702,14 +717,16 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
         setWinResult({
           winType,
-          winningCartelaNumber: state.winResult.winningCartelaNumber || (state.winResult.winningCartelas?.[0]) || 1,
-          winningLine: state.winResult.winningIndices || [],
-          winnerName: state.winResult.winnerName || (state.winResult.winnerNames?.[0]) || 'Winner',
+          winningCartelaNumber: Number(state.winResult.winningCartelaNumber || state.winResult.winningCartelas?.[0] || 1) || 1,
+          winningLine: Array.isArray(state.winResult.winningIndices) ? state.winResult.winningIndices : [],
+          winnerName: typeof state.winResult.winnerName === 'string' ? state.winResult.winnerName : (Array.isArray(state.winResult.winnerNames) ? String(state.winResult.winnerNames[0] || 'Winner') : 'Winner'),
           coWinners: Array.isArray(state.winResult.coWinners) ? state.winResult.coWinners : (Array.isArray(state.winResult.winnerNames) ? state.winResult.winnerNames : []),
-          totalPot: state.winResult.totalPot || displayPayout,
-          userShare: payout,
-          winnerPayout: displayPayout,
-          stakeAmount: state.winResult.stakeAmount || 10
+          totalPot: Number(state.winResult.totalPot || displayPayout) || 0,
+          userShare: Number(payout) || 0,
+          winnerPayout: Number(displayPayout) || 0,
+          stakeAmount: Number(state.winResult.stakeAmount) || 10,
+          houseFee: Number(state.winResult.houseFee) || 0,
+          netPrizePot: Number(state.winResult.netPrizePot || displayPayout) || 0
         });
         setShowWinModal(true);
       }
@@ -788,14 +805,16 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       setWinResult({
         winType,
-        winningCartelaNumber: winData.winningCartelaNumber || (winData.winningCartelas?.[0]) || 1,
-        winningLine: winData.winningIndices || [],
-        winnerName: winData.winnerName || (winData.winnerNames?.[0]) || 'Winner',
+        winningCartelaNumber: Number(winData.winningCartelaNumber || winData.winningCartelas?.[0] || 1) || 1,
+        winningLine: Array.isArray(winData.winningIndices) ? winData.winningIndices : [],
+        winnerName: typeof winData.winnerName === 'string' ? winData.winnerName : (Array.isArray(winData.winnerNames) ? String(winData.winnerNames[0] || 'Winner') : 'Winner'),
         coWinners: Array.isArray(winData.coWinners) ? winData.coWinners : (Array.isArray(winData.winnerNames) ? winData.winnerNames : []),
-        totalPot: winData.totalPot || displayPayout,
-        userShare: payout,
-        winnerPayout: displayPayout,
-        stakeAmount: winData.stakeAmount || 10
+        totalPot: Number(winData.totalPot || displayPayout) || 0,
+        userShare: Number(payout) || 0,
+        winnerPayout: Number(displayPayout) || 0,
+        stakeAmount: Number(winData.stakeAmount) || 10,
+        houseFee: Number(winData.houseFee) || 0,
+        netPrizePot: Number(winData.netPrizePot || displayPayout) || 0
       });
       setShowWinModal(true);
 
@@ -1001,14 +1020,16 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const payout = isRealUserWin ? (data.winResult.sharePerWinner || data.winResult.userShare || 0) : 0;
       setWinResult({
         winType,
-        winningCartelaNumber: data.winResult.winningCartelaNumber || 1,
-        winningLine: data.winResult.winningIndices || [],
-        winnerName: data.winResult.winnerName || 'Winner',
+        winningCartelaNumber: Number(data.winResult.winningCartelaNumber || 1) || 1,
+        winningLine: Array.isArray(data.winResult.winningIndices) ? data.winResult.winningIndices : [],
+        winnerName: typeof data.winResult.winnerName === 'string' ? data.winResult.winnerName : 'Winner',
         coWinners: Array.isArray(data.winResult.coWinners) ? data.winResult.coWinners : [],
-        totalPot: data.winResult.totalPot || (data.winResult.winnerPayout || 50),
-        userShare: payout,
-        winnerPayout: data.winResult.winnerPayout || (data.winResult.totalPot || 50),
-        stakeAmount: data.winResult.stakeAmount || 10
+        totalPot: Number(data.winResult.totalPot || data.winResult.winnerPayout || 50) || 0,
+        userShare: Number(payout) || 0,
+        winnerPayout: Number(data.winResult.winnerPayout || data.winResult.totalPot || 50) || 0,
+        stakeAmount: Number(data.winResult.stakeAmount) || 10,
+        houseFee: Number(data.winResult.houseFee) || 0,
+        netPrizePot: Number(data.winResult.netPrizePot || data.winResult.winnerPayout || 50) || 0
       });
       setShowWinModal(true);
     }
@@ -1168,33 +1189,28 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     setSelectedCartelaIds(prev => {
-      const activeIds = prev.slice(0, cardQuantity);
-      const updated: [number, number, number] = [prev[0], prev[1], prev[2]];
-
-      if (activeIds.includes(cartelaId)) {
-        // Deselect: replace with next available untaken cartela so user always has valid cards
-        let altId = Math.floor(1 + Math.random() * 400);
-        while (altId === cartelaId || updated.includes(altId) || occupiedCartelaIds.includes(altId)) {
-          altId = Math.floor(1 + Math.random() * 400);
-        }
-        const idx = activeIds.indexOf(cartelaId);
-        updated[idx] = altId;
-        if (idx === 0) setCartela1Data(generateCardFromId(altId));
-        else if (idx === 1) setCartela2Data(generateCardFromId(altId));
+      const exists = prev.includes(cartelaId);
+      let updated: number[];
+      if (exists) {
+        // Deselect
+        updated = prev.filter(id => id !== cartelaId);
         showToast(`Deselected Cartela #${cartelaId}`);
       } else {
-        // Select: in 1-card mode, set slot 0. In 2-card mode, place into slot 0 and shift slot 0 to slot 1
-        if (cardQuantity === 1) {
-          updated[0] = cartelaId;
-          setCartela1Data(generateCardFromId(cartelaId));
+        // Select up to cardQuantity
+        if (prev.length < cardQuantity) {
+          updated = [...prev, cartelaId];
         } else {
-          updated[1] = updated[0];
-          updated[0] = cartelaId;
-          setCartela1Data(generateCardFromId(cartelaId));
-          setCartela2Data(generateCardFromId(updated[1]));
+          // Replace oldest
+          updated = [...prev.slice(1), cartelaId];
         }
         showToast(`✓ Picked Cartela #${cartelaId}`);
       }
+
+      // Sync data matrices
+      if (updated[0]) setCartela1Data(generateCardFromId(updated[0]));
+      else setCartela1Data([]);
+      if (updated[1]) setCartela2Data(generateCardFromId(updated[1]));
+      else setCartela2Data([]);
 
       return updated;
     });
@@ -1292,6 +1308,11 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Buy Ticket via Live Socket Engine & Neon DB with Anytime Pre-Betting
   const buyTicket = async () => {
+    if (selectedCartelaIds.filter(id => id > 0).length < cardQuantity) {
+      showToast('🎟️ Please select your cartela board(s) first!');
+      openCartelaPicker();
+      return;
+    }
     const roomId = getActiveRoomId();
     const activeIds = selectedCartelaIds.slice(0, totalPlayableCards);
     const totalCost = betAmount * cardQuantity;
@@ -1483,11 +1504,12 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setTargetData(newCells);
         soundEngine.playDaub();
 
-        // INSTANT WIN CHECK: If this tap completes a 5-in-a-row line, claim BINGO immediately with no extra button!
+        // In manual mode, completing a line does NOT auto-claim: player must click the in-game BINGO button!
         const winLine = checkWinningPatterns(newCells);
         if (winLine && winLine.length > 0) {
-          console.log(`🎉 [ManualDaub] Winning line completed on Cartela #${selectedCartelaIds[cartelaIdx]}! Triggering instant claim...`);
-          claimBingo(cartelaIdx, newCells);
+          console.log(`🎉 [ManualDaub] Winning line completed on Cartela #${selectedCartelaIds[cartelaIdx]}! Ready for manual claim via BINGO button.`);
+          soundEngine.playWinFanfare();
+          showToast('🎉 BINGO COMPLETED! Tap the BINGO button to claim! ⚡');
         }
       } else {
         showToast(`⚠️ ${cell.colLetter}-${cell.val} has not been called yet!`);
@@ -1563,15 +1585,6 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setShowWinModal(false);
     setWinResult(null);
     setHasTicket(false);
-    const newIds: [number, number, number] = [
-      Math.floor(1 + Math.random() * 120),
-      Math.floor(121 + Math.random() * 140),
-      Math.floor(261 + Math.random() * 135)
-    ];
-    setSelectedCartelaIds(newIds);
-    setCartela1Data(generateCardFromId(newIds[0]));
-    setCartela2Data(generateCardFromId(newIds[1]));
-    setCartela3Data(generateCardFromId(newIds[2]));
   };
 
   const startLobbyCountdown = () => {
@@ -1595,6 +1608,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         stakeRoomsSummary,
         selectedCartelaIds,
         setSelectedCartelaIds,
+        hasSelectedCartelas,
+        hasWinningPattern,
         isCartelaPickerOpen,
         openCartelaPicker,
         closeCartelaPicker,

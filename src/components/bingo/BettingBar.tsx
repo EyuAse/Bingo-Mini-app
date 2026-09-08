@@ -23,7 +23,8 @@ export const BettingBar: React.FC = () => {
     stakeRoomsSummary,
     shuffleCartela,
     shuffleAllCartelas,
-    openCartelaPicker
+    openCartelaPicker,
+    hasSelectedCartelas
   } = useBingo();
   const { balance, bonus, isBalanceVisible } = useWallet();
   const { t } = useLanguage();
@@ -158,8 +159,14 @@ export const BettingBar: React.FC = () => {
               <span className="compact-assigned-tag">🎟️</span>
               <span className="compact-assigned-lbl">Selected:</span>
               <span className="compact-assigned-val">
-                #{selectedCartelaIds[0]}
-                {cardQuantity >= 2 && ` · #${selectedCartelaIds[1]}`}
+                {hasSelectedCartelas && selectedCartelaIds.length > 0 ? (
+                  <>
+                    #{selectedCartelaIds[0]}
+                    {cardQuantity >= 2 && selectedCartelaIds[1] && ` · #${selectedCartelaIds[1]}`}
+                  </>
+                ) : (
+                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>None Selected (Tap to Pick)</span>
+                )}
               </span>
             </div>
 
@@ -170,7 +177,7 @@ export const BettingBar: React.FC = () => {
               title="Pick your favorite Cartelas from 400 numbers"
             >
               <i className="fa-solid fa-hand-pointer"></i>
-              <span>Pick Cards 🎟️</span>
+              <span>{hasSelectedCartelas ? 'Change Cards' : 'Pick Cards 🎟️'}</span>
             </button>
           </div>
 
@@ -206,11 +213,16 @@ export const BettingBar: React.FC = () => {
           <button
             type="button"
             className="btn-buy-ticket-compact"
-            onClick={hasTicket ? undefined : buyTicket}
+            onClick={hasTicket ? undefined : (!hasSelectedCartelas ? openCartelaPicker : buyTicket)}
             disabled={hasTicket}
           >
-            <i className="fa-solid fa-ticket"></i>
-            <span>{t('bingo.buyTicket')} · {totalCost} ETB</span>
+            <i className={hasSelectedCartelas ? "fa-solid fa-ticket" : "fa-solid fa-hand-pointer"}></i>
+            <span>
+              {!hasSelectedCartelas
+                ? `🎟️ SELECT CARTELA(S) TO BET (${totalCost} ETB)`
+                : `${t('bingo.buyTicket')} · ${totalCost} ETB`
+              }
+            </span>
           </button>
         </>
       )}
