@@ -4530,11 +4530,13 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
   width: 100%;
   min-width: 0;
-  overflow: hidden;
-  justify-content: space-between;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding-bottom: 6px;
 }
 
 /* Compact Current Call Block */
@@ -4769,31 +4771,28 @@
   box-shadow: 0 0 4px rgba(249, 115, 22, 0.4);
 }
 
-/* ── STACKED CARTELA CARDS (Matching Screenshot Card Style, Fits 100% Without Scroll) ── */
+/* ── STACKED CARTELA CARDS (Crisp 5x5 Matrix, Zero Squish) ── */
 .compact-cartelas-stack {
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
   width: 100%;
-  overflow: hidden;
-  justify-content: space-between;
+  min-height: fit-content;
+  flex-shrink: 0;
 }
 
 .new-cartela-card {
-  flex: 1;
-  min-height: 0;
+  min-height: 180px;
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 2px 3px 3px 3px;
+  border-radius: 10px;
+  padding: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   width: 100%;
-  overflow: hidden;
+  flex-shrink: 0;
   box-sizing: border-box;
 }
 
@@ -4854,32 +4853,31 @@
 }
 
 .new-card-body {
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  height: calc(100% - 15px);
+  gap: 2px;
+  width: 100%;
+  min-height: fit-content;
 }
 
 /* Column Header Row: B I N G O */
 .new-bingo-col-headers {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 1.5px;
-  height: 15px;
+  gap: 2px;
+  height: 17px;
   flex-shrink: 0;
 }
 
 .new-bingo-col-hdr {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 950;
-  font-size: 0.65rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  font-size: 0.68rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .new-bingo-col-hdr.col-b {
@@ -4903,31 +4901,30 @@
   color: #ffffff;
 }
 
-/* 5x5 Matrix: Crisp white rounded cells, green daubs, golden star free center */
+/* 5x5 Matrix: Fixed row height prevents any overlapping of numbers */
 .new-cartela-5x5 {
-  flex: 1;
-  min-height: 0;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(5, 1fr);
-  gap: 1.5px;
-  height: 100%;
+  grid-template-rows: repeat(5, 27px);
+  gap: 2px;
+  width: 100%;
 }
 
 .new-cartela-cell {
-  height: 100%;
+  height: 27px;
+  min-height: 27px;
   width: 100%;
-  min-height: 0;
   min-width: 0;
-  border-radius: 3.5px;
+  border-radius: 4px;
   background: #ffffff;
   color: #0f172a;
   border: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.68rem, 2.3vw, 0.85rem);
+  font-size: clamp(0.74rem, 2.3vw, 0.88rem);
   font-weight: 950;
+  line-height: 1;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   cursor: default;
   transition: all 0.12s ease;
@@ -5156,19 +5153,27 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  padding: 4px 0;
+  padding: 8px 6px;
   margin-top: auto;
   gap: 10px;
+  position: sticky;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid #e2e8f0;
+  border-radius: 12px;
+  z-index: 50;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .btn-in-game-leave {
   flex: 1;
-  height: 38px;
+  height: 42px;
   border-radius: 999px;
   background: #fff1f2;
   border: 1.5px solid #fecdd3;
   color: #e11d48;
-  font-size: 0.8rem;
+  font-size: 0.825rem;
   font-weight: 900;
   display: inline-flex;
   align-items: center;
@@ -5192,38 +5197,41 @@
 }
 
 .btn-in-game-bingo {
-  flex: 1.4;
-  height: 38px;
+  flex: 1.5;
+  height: 42px;
   border-radius: 999px;
-  font-size: 0.825rem;
+  font-size: 0.85rem;
   font-weight: 900;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   user-select: none;
+  cursor: pointer;
+  box-sizing: border-box;
   transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .btn-in-game-bingo.inactive {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1.5px solid rgba(255, 255, 255, 0.16);
-  color: #94a3b8;
-  cursor: pointer;
+  background: #f8fafc;
+  border: 2px solid #cbd5e1;
+  color: #334155;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .btn-in-game-bingo.inactive:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #cbd5e1;
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
   transform: translateY(-1px);
 }
 
 .btn-in-game-bingo.active-claim-ready {
   background: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #eab308 100%);
-  border: 1.5px solid #86efac;
+  border: 2px solid #86efac;
   color: #ffffff;
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.7), 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.7), 0 4px 12px rgba(0, 0, 0, 0.35);
   animation: bingoPulseClaim 1.1s infinite ease-in-out;
   cursor: pointer;
   font-weight: 950;

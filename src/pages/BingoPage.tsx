@@ -98,8 +98,8 @@ export const BingoPage: React.FC = () => {
               <SpectatorCard />
             )}
 
-            {/* Stake Bar: COMPLETELY HIDDEN during active game! Visible only in lobby/spectating */}
-            {roundPhase !== 'playing' && (
+            {/* Stake Bar: Visible strictly during lobby matchmaking only */}
+            {roundPhase === 'lobby' && (
               <BettingBar />
             )}
 
@@ -219,10 +219,8 @@ export const BingoPage: React.FC = () => {
       {/* 400 Cartela Selection Modal */}
       <CartelaPickerModal />
 
-      {/* Victory Celebration Modal wrapped in ErrorBoundary to prevent any dark screen freeze */}
-      <ErrorBoundary componentName="WinModal">
-        <WinModal />
-      </ErrorBoundary>
+      {/* Victory Celebration Modal */}
+      <WinModal />
 
       {/* Insufficient Balance Pop-Up Alert Modal */}
       <InsufficientBalanceModal />
