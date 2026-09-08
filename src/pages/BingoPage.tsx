@@ -93,7 +93,9 @@ export const BingoPage: React.FC = () => {
             <CurrentCallBanner />
 
             {hasTicket || roundPhase === 'lobby' ? (
-              <BingoGrid />
+              <ErrorBoundary componentName="BingoGrid" fallback={null}>
+                <BingoGrid />
+              </ErrorBoundary>
             ) : (
               <SpectatorCard />
             )}

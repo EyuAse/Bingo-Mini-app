@@ -283,14 +283,14 @@ export const WinModal: React.FC = () => {
               </div>
               <div className="winning-cartela-5x5">
                 {Array.isArray(winningCardCells) && winningCardCells.map(cell => {
-                  if (!cell) return null;
-                  const isWinningCell = winningIndices.includes(cell.index);
+                  if (!cell || typeof cell.index !== 'number') return null;
+                  const isWinningCell = Array.isArray(winningIndices) && winningIndices.includes(cell.index);
                   return (
                     <div
                       key={cell.index}
                       className={`win-modal-cell ${isWinningCell ? 'win-highlight' : ''} ${cell.isFree ? 'free-cell' : ''}`}
                     >
-                      {cell.isFree ? '⭐' : cell.val}
+                      {cell.isFree ? '⭐' : (cell.val !== undefined && cell.val !== null ? cell.val : '')}
                     </div>
                   );
                 })}

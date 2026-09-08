@@ -323,6 +323,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return !!(win1 || win2);
   }, [roundPhase, cartela1Data, cartela2Data, totalPlayableCards]);
   const winModalDismissedForRoundRef = useRef<number | null>(null);
+  const activeWinModalRoundRef = useRef<number | null>(null);
   const lastLiveWinRoundRef = useRef<number | null>(null);
   const [spherePop, setSpherePop] = useState<boolean>(false);
   const [isVerticalBoard, setIsVerticalBoard] = useState<boolean>(true);
@@ -641,6 +642,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setRoundPhase(prev => {
           if (prev !== 'lobby' && state.phase === 'lobby') {
             winModalDismissedForRoundRef.current = null;
+            activeWinModalRoundRef.current = null;
             setShowWinModal(false);
             setHasTicket(hasPreBoughtNextRef.current);
             setHasPreBoughtNext(false);
@@ -697,7 +699,10 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
 
       if (state.winResult && winModalDismissedForRoundRef.current !== (state.roundNumber || roundNumberRef.current)) {
-        const currentUser = userRef.current;
+        const currentRound = state.roundNumber || roundNumberRef.current;
+        if (activeWinModalRoundRef.current !== currentRound) {
+          activeWinModalRoundRef.current = currentRound;
+          const currentUser = userRef.current;
         const isRealUserWin = 
           Boolean(currentUser?.id && Array.isArray(state.winResult.winnerUserIds) && state.winResult.winnerUserIds.includes(currentUser.id)) ||
           Boolean(currentUser?.id && state.winResult.winnerId && state.winResult.winnerId.includes(currentUser.id)) || 
@@ -730,6 +735,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           netPrizePot: Number(state.winResult.netPrizePot || displayPayout) || 0
         });
         setShowWinModal(true);
+        }
       }
     });
 
@@ -1546,16 +1552,21 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const winnerPayout = winData?.winnerPayout || totalPot;
         const userShare = winData?.sharePerWinner || winData?.userShare || winnerPayout;
 
+        const houseFee = Number(winData?.houseFee || 0);
+        const netPrizePot = Number(winData?.netPrizePot || winnerPayout);
+
         setWinResult({
           winType: winData?.isSplit ? 'user_split' : 'user_solo',
           winningCartelaNumber: winningCartelaId,
-          winningLine: win1 || win2 || win3 || [],
+          winningLine: Array.isArray(win1 || win2 || win3) ? (win1 || win2 || win3)! : [],
           winnerName: user.fullName || 'እርስዎ (You)',
-          coWinners: winData?.coWinners || [],
+          coWinners: Array.isArray(winData?.coWinners) ? winData.coWinners : [],
           totalPot: totalPot,
           userShare: userShare,
           winnerPayout: winnerPayout,
-          stakeAmount: betAmount
+          stakeAmount: betAmount,
+          houseFee: houseFee,
+          netPrizePot: netPrizePot
         });
         setShowWinModal(true);
         soundEngine.playWinFanfare();
@@ -1565,13 +1576,15 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setWinResult({
         winType: 'user_solo',
         winningCartelaNumber: winningCartelaId,
-        winningLine: win1 || win2 || win3 || [],
+        winningLine: Array.isArray(win1 || win2 || win3) ? (win1 || win2 || win3)! : [],
         winnerName: 'እርስዎ (You)',
         coWinners: [],
         totalPot: prizePool,
         userShare: prizePool,
         winnerPayout: prizePool,
-        stakeAmount: betAmount
+        stakeAmount: betAmount,
+        houseFee: 0,
+        netPrizePot: prizePool
       });
       setShowWinModal(true);
       soundEngine.playWinFanfare();
@@ -1583,6 +1596,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const closeWinModalAndRestart = () => {
     winModalDismissedForRoundRef.current = roundNumberRef.current || roundNumber;
+    activeWinModalRoundRef.current = null;
     setShowWinModal(false);
     setWinResult(null);
     setHasTicket(false);

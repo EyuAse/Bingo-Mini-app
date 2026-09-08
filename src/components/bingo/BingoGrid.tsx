@@ -28,7 +28,7 @@ const WIN_PATTERNS = [
 
 // ── Card status helper ─────────────────────────────────────
 const getCardStatus = (cells: BingoCell[]) => {
-  if (!cells || !cells.length) return { label: '2 TO GO', hot: false };
+  if (!Array.isArray(cells) || !cells.length) return { label: '2 TO GO', hot: false };
   let max = 0;
   for (const p of WIN_PATTERNS) {
     const count = p.filter((idx: number) => cells[idx]?.marked).length;
@@ -140,8 +140,10 @@ const NewCard5x5: React.FC<{
 
         {/* 5×5 grid cells */}
         <div className="new-cartela-5x5">
-          {cells.map(cell => {
-            const isWinningCell = isWinningCard && winningLine.includes(cell.index);
+          {(Array.isArray(cells) ? cells : []).map(cell => {
+            if (!cell || typeof cell.index !== 'number') return null;
+            const safeWinningLine = Array.isArray(winningLine) ? winningLine : [];
+            const isWinningCell = Boolean(isWinningCard && safeWinningLine.includes(cell.index));
             return (
               <div
                 key={`${cardIndex}-${cell.index}`}
@@ -216,7 +218,7 @@ export const BingoGrid: React.FC = () => {
           cartelaId={card.id}
           label={card.label}
           isWinningCard={roundPhase !== 'lobby' && winResult !== null && winResult.winningCartelaNumber === card.id}
-          winningLine={winResult?.winningLine || []}
+          winningLine={Array.isArray(winResult?.winningLine) ? winResult.winningLine : []}
           autoPlay={autoPlay}
           onDaub={handleManualDaub}
           isSingleCard={isSingleCard}
