@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useBingo, BingoCell } from '../../context/BingoContext.tsx';
 
 // ── Column headers (display only) ─────────────────────────
@@ -109,7 +109,7 @@ const NewCard5x5: React.FC<{
                   </div>
                 ) : (
                   /* Normal cell — show number */
-                  <span className="cartela-cell-val">{cell.val}</span>
+                  <span>{cell.val}</span>
                 )}
               </div>
             );
@@ -120,7 +120,7 @@ const NewCard5x5: React.FC<{
         {status.hot && (
           <div style={{
             textAlign: 'center',
-            fontSize: '0.55rem',
+            fontSize: '0.5rem',
             fontWeight: 900,
             color: status.label.includes('BINGO') ? '#16a34a' : '#dc2626',
             marginTop: '2px',
@@ -151,8 +151,6 @@ export const BingoGrid: React.FC = () => {
     realPlayerCount,
   } = useBingo();
 
-  const [mobileCardView, setMobileCardView] = useState<'both' | 0 | 1>('both');
-
   const currentCards = [
     {
       data: cartela1Data,
@@ -170,12 +168,8 @@ export const BingoGrid: React.FC = () => {
     },
   ].slice(0, totalPlayableCards);
 
-  const displayedCards = (totalPlayableCards === 2 && mobileCardView !== 'both')
-    ? [currentCards[mobileCardView]]
-    : currentCards;
-
   const cardCountLabel = `${totalPlayableCards} ${totalPlayableCards === 1 ? 'Card' : 'Cards'}`;
-  const gridClass = `cartelas-grid grid-${displayedCards.length}${displayedCards.length === 1 && totalPlayableCards === 2 ? ' focus-card-view' : ''}`;
+  const gridClass = `cartelas-grid grid-${totalPlayableCards}`;
 
   return (
     <div className="your-cartelas-section">
@@ -188,37 +182,6 @@ export const BingoGrid: React.FC = () => {
           </div>
           <span className="your-cartelas-title">YOUR CARTELAS</span>
           <span className="your-cartelas-count-badge">{cardCountLabel}</span>
-
-          {/* Quick View Switcher on Mobile for 2 cards */}
-          {totalPlayableCards === 2 && (
-            <div className="cartelas-view-switcher">
-              <button
-                type="button"
-                className={`btn-view-pill ${mobileCardView === 'both' ? 'active' : ''}`}
-                onClick={() => setMobileCardView('both')}
-                title="View Both Cards"
-              >
-                <i className="fa-solid fa-table-cells-large"></i>
-                <span>Both</span>
-              </button>
-              <button
-                type="button"
-                className={`btn-view-pill ${mobileCardView === 0 ? 'active' : ''}`}
-                onClick={() => setMobileCardView(0)}
-                title="Focus on Card 1 (Larger)"
-              >
-                <span>Card 1</span>
-              </button>
-              <button
-                type="button"
-                className={`btn-view-pill ${mobileCardView === 1 ? 'active' : ''}`}
-                onClick={() => setMobileCardView(1)}
-                title="Focus on Card 2 (Larger)"
-              >
-                <span>Card 2</span>
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Sleek Auto Play / Manual Pill Toggle Button with Mid-Game Lock */}
@@ -245,9 +208,9 @@ export const BingoGrid: React.FC = () => {
         })()}
       </div>
 
-      {/* ── Cards Grid (1 or 2 cards, responsive on mobile & PC) ── */}
+      {/* ── Cards Grid (1 or 2 equal side-by-side) ── */}
       <div className={gridClass}>
-        {displayedCards.map(card => (
+        {currentCards.map(card => (
           <NewCard5x5
             key={card.cardIndex}
             cells={card.data}

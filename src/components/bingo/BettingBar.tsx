@@ -36,54 +36,6 @@ export const BettingBar: React.FC = () => {
     }
   };
 
-  // In-Game Clean HUD: When a game is active and user has a ticket, collapse the 210px
-  // stake picker into a 38px in-game status bar to maximize cartela visibility!
-  if (hasTicket && roundPhase === 'playing') {
-    return (
-      <div className="ingame-active-ticket-bar">
-        <RoomSwitchModal
-          isOpen={pendingSwitchStake !== null}
-          currentStake={betAmount}
-          targetStake={pendingSwitchStake || 10}
-          totalRefundAmount={betAmount * cardQuantity}
-          onConfirm={() => {
-            if (pendingSwitchStake !== null) {
-              setBetAmount(pendingSwitchStake);
-            }
-            setPendingSwitchStake(null);
-          }}
-          onCancel={() => setPendingSwitchStake(null)}
-        />
-
-        <div className="ingame-active-content">
-          <div className="ingame-active-left">
-            <span className="ingame-live-badge">
-              <span className="ingame-pulse-dot"></span>
-              LIVE ROUND
-            </span>
-            <span className="ingame-card-count">
-              {cardQuantity} {cardQuantity === 1 ? 'Card' : 'Cards'}
-            </span>
-            <span className="ingame-ids-pill">
-              #{selectedCartelaIds.slice(0, cardQuantity).join(' · #')}
-            </span>
-          </div>
-
-          <div className="ingame-active-right">
-            <div className="ingame-stake-box">
-              <span className="ingame-stake-lbl">Stake:</span>
-              <strong className="ingame-stake-val">{totalCost} ETB</strong>
-            </div>
-            <div className="compact-balance-pill ingame-balance">
-              <i className="fa-solid fa-wallet"></i>
-              <span>{isBalanceVisible ? `${(balance + bonus).toFixed(0)} ETB` : '••••'}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="compact-betting-bar">
 
