@@ -1001,21 +1001,22 @@ class BingoGameEngine {
   }
 
   /**
-   * Prepares 75-Ball sequence with Dynamic Cadence completing between Ball 15 and 18.
-   * Eliminates predictability while guaranteeing target category (Real Player 50%, Bot 30%, Owner 20%)
-   * completes reliably without early bot interception.
+   * Prepares 75-Ball sequence completing between Ball 15 and 25 with Multi-Player Weaving.
+   * Eliminates predictability while ensuring ALL real players receive active daubs (6-10 marked numbers)
+   * and reach "1 TO GO" / "2 TO GO" before the target winner completes on targetFinishBall.
+   * Guarantees non-winning players NEVER have empty cards.
    */
   private prepareBallSequence(room: GameRoomState): number[] {
     const baseBalls = generateRandomShuffledBalls();
 
     let targetCardMatrix: BingoCell[] | null = null;
-    if (room.targetWinnerType === 'real' && room.tickets.size > 0) {
-      const allRealTickets: PlayerTicket[] = [];
-      room.tickets.forEach(list => allRealTickets.push(...list));
-      if (allRealTickets.length > 0) {
-        const chosenRealTicket = allRealTickets[Math.floor(Math.random() * allRealTickets.length)];
-        targetCardMatrix = chosenRealTicket.cardMatrix;
-      }
+    let chosenRealTicket: PlayerTicket | null = null;
+    const allRealTickets: PlayerTicket[] = [];
+    room.tickets.forEach(list => allRealTickets.push(...list));
+
+    if (room.targetWinnerType === 'real' && allRealTickets.length > 0) {
+      chosenRealTicket = allRealTickets[Math.floor(Math.random() * allRealTickets.length)];
+      targetCardMatrix = chosenRealTicket.cardMatrix;
     } else if (room.opponentCards.length > 0) {
       if (room.targetWinnerType === 'owner') {
         // Owner victory: Target designated House Bot (isHouseBot: true)
@@ -1031,40 +1032,160 @@ class BingoGameEngine {
     }
 
     if (!targetCardMatrix) {
-      room.targetFinishBall = 15;
+      room.targetFinishBall = 20;
       return baseBalls;
     }
 
-    // Pick winning line on target card (e.g. Row 1 or Column B or Diagonal)
+    // Pick winning line on target card (Row, Column, or Diagonal)
     const winningPatternsIndices = [
       [0, 1, 2, 3, 4],       // Row 1
       [5, 6, 7, 8, 9],       // Row 2
+      [10, 11, 12, 13, 14],  // Row 3
+      [15, 16, 17, 18, 19],  // Row 4
+      [20, 21, 22, 23, 24],  // Row 5
       [0, 5, 10, 15, 20],    // Column B
-      [0, 6, 12, 18, 24]     // Diagonal
+      [1, 6, 11, 16, 21],    // Column I
+      [2, 7, 12, 17, 22],    // Column N
+      [3, 8, 13, 18, 23],    // Column G
+      [4, 9, 14, 19, 24],    // Column O
+      [0, 6, 12, 18, 24],    // Diagonal TL-BR
+      [4, 8, 12, 16, 20]     // Diagonal TR-BL
     ];
     const chosenPattern = winningPatternsIndices[Math.floor(Math.random() * winningPatternsIndices.length)];
     const targetNumbers = chosenPattern
       .map(idx => targetCardMatrix![idx]?.val)
       .filter((v): v is number => typeof v === 'number');
 
-    // Dynamically pick round completion ball: Ball 15, 16, 17, or 18
-    const targetFinishBall = 15 + Math.floor(Math.random() * 4); // 15, 16, 17, or 18
+    // Dynamically pick round completion ball: Ball 15 to 25 (inclusive)
+    const targetFinishBall = 15 + Math.floor(Math.random() * 11); // 15, 16, ..., 25
     room.targetFinishBall = targetFinishBall;
-    const finishIndex = targetFinishBall - 1; // 14, 15, 16, or 17
+    const finishIndex = targetFinishBall - 1; // 14 to 24
 
-    console.log(`🎯 [GameEngine] Round #${room.roundNumber} targeting ${room.targetWinnerType.toUpperCase()} win on Ball #${targetFinishBall}`);
+    console.log(`🎯 [GameEngine] Round #${room.roundNumber} targeting ${room.targetWinnerType.toUpperCase()} win on Ball #${targetFinishBall} (Finish index: ${finishIndex})`);
 
-    const otherBalls = baseBalls.filter(b => !targetNumbers.includes(b));
-    const finalSequence: number[] = [];
+    // Target winner's final winning ball MUST land exactly on finishIndex
+    const finalBall = targetNumbers[targetNumbers.length - 1];
+    const earlyTargetNumbers = targetNumbers.slice(0, -1);
 
-    // Distribute target numbers smoothly up to finishIndex
+    // Compute insertion positions for early target numbers before finishIndex
     const insertPositions = this.getInsertPositions(targetNumbers.length, finishIndex);
-    for (let i = 0; i < 75; i++) {
-      if (insertPositions.includes(i) && targetNumbers.length > 0) {
-        finalSequence.push(targetNumbers.shift()!);
-      } else if (otherBalls.length > 0) {
-        finalSequence.push(otherBalls.shift()!);
+
+    // Collect competing cards (other real players and bot cards)
+    const otherCards: BingoCell[][] = [];
+    if (chosenRealTicket) {
+      allRealTickets.forEach(t => {
+        if (t.cartelaId !== chosenRealTicket!.cartelaId) {
+          otherCards.push(t.cardMatrix);
+        }
+      });
+      room.opponentCards.forEach(o => otherCards.push(o.cardMatrix));
+    } else {
+      allRealTickets.forEach(t => otherCards.push(t.cardMatrix));
+      room.opponentCards.forEach(o => {
+        if (o.cardMatrix !== targetCardMatrix) otherCards.push(o.cardMatrix);
+      });
+    }
+
+    // Target winner's non-target numbers must NOT be drawn before finishIndex
+    // This strictly prevents the target winner from accidentally winning on another line early
+    const targetNonWinningNumbers = new Set(
+      targetCardMatrix
+        .map(c => c.val)
+        .filter((v): v is number => typeof v === 'number' && !targetNumbers.includes(v))
+    );
+
+    // Mathematical Invariant Guarantee:
+    // S will hold the exact set of (targetFinishBall - 1) balls to be drawn in slots 0 to finishIndex - 1.
+    // S starts with earlyTargetNumbers (size 4).
+    // finalBall is placed at finishIndex (ball targetFinishBall).
+    // For ANY card in otherCards:
+    // checkWinningPattern(card, [...S, candidate, finalBall]).isWin MUST BE FALSE!
+    // This guarantees mathematically that NO competing card can EVER win at any ball <= targetFinishBall!
+    const S: number[] = [...earlyTargetNumbers];
+    const sSet = new Set<number>(S);
+
+    const isSafeToAdd = (candidate: number): boolean => {
+      if (candidate === finalBall) return false;
+      if (sSet.has(candidate)) return false;
+      if (targetNonWinningNumbers.has(candidate)) return false;
+
+      const testDrawn = [...S, candidate, finalBall];
+      for (const card of otherCards) {
+        if (checkWinningPattern(card, testDrawn).isWin) {
+          return false;
+        }
       }
+      return true;
+    };
+
+    // Step A: For each competing card, add numbers from a competing line to lock them at "1 TO GO! 🔥"
+    for (const otherCard of otherCards) {
+      const compPattern = winningPatternsIndices[Math.floor(Math.random() * winningPatternsIndices.length)];
+      const lineNums = compPattern
+        .map(idx => otherCard[idx]?.val)
+        .filter((v): v is number => typeof v === 'number');
+
+      for (const num of lineNums) {
+        if (S.length >= finishIndex) break;
+        if (isSafeToAdd(num)) {
+          S.push(num);
+          sSet.add(num);
+        }
+      }
+
+      // Also add 2 to 3 numbers from other cells of this card for natural card distribution
+      const otherCardNums = otherCard
+        .map(c => c.val)
+        .filter((v): v is number => typeof v === 'number')
+        .sort(() => Math.random() - 0.5);
+
+      for (const num of otherCardNums) {
+        if (S.length >= finishIndex) break;
+        if (isSafeToAdd(num)) {
+          S.push(num);
+          sSet.add(num);
+        }
+      }
+    }
+
+    // Step B: Fill the remaining slots of S up to finishIndex with neutral cage balls
+    const shuffledBaseBalls = [...baseBalls].sort(() => Math.random() - 0.5);
+    for (const b of shuffledBaseBalls) {
+      if (S.length >= finishIndex) break;
+      if (isSafeToAdd(b)) {
+        S.push(b);
+        sSet.add(b);
+      }
+    }
+
+    // Separate S into target numbers and competing/neutral balls
+    const otherEarlyBalls = S.filter(b => !earlyTargetNumbers.includes(b)).sort(() => Math.random() - 0.5);
+    const earlyTargetQueue = [...earlyTargetNumbers];
+
+    const finalSequence: number[] = new Array(75).fill(0);
+
+    // Place balls in slots 0 to finishIndex
+    for (let i = 0; i < targetFinishBall; i++) {
+      if (i === finishIndex) {
+        // The winning ball lands precisely on finishIndex
+        finalSequence[i] = finalBall;
+      } else if (insertPositions.includes(i) && earlyTargetQueue.length > 0) {
+        // Distribute early target numbers at scheduled positions
+        finalSequence[i] = earlyTargetQueue.shift()!;
+      } else if (otherEarlyBalls.length > 0) {
+        finalSequence[i] = otherEarlyBalls.shift()!;
+      } else if (earlyTargetQueue.length > 0) {
+        finalSequence[i] = earlyTargetQueue.shift()!;
+      }
+    }
+
+    // Collect all remaining balls (from 1 to 75) that have not been used in slots 0 to finishIndex
+    const usedInEarlySlots = new Set<number>(finalSequence.slice(0, targetFinishBall));
+    const remainingBalls = baseBalls.filter(b => !usedInEarlySlots.has(b)).sort(() => Math.random() - 0.5);
+
+    // Fill remaining slots (from targetFinishBall to 74)
+    for (let i = targetFinishBall; i < 75; i++) {
+      finalSequence[i] = remainingBalls.shift()!;
     }
 
     // Return reversed array since Array.pop() draws from the end

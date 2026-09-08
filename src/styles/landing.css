@@ -549,7 +549,8 @@
   border: 2px solid #ffffff;
 }
 
-.ball-num {
+.hero-ball .ball-num,
+.auth-fresh-card .ball-num {
   width: 28px;
   height: 28px;
   background: #ffffff;

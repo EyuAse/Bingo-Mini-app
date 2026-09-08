@@ -125,6 +125,7 @@ export const BingoGrid: React.FC = () => {
     handleManualDaub,
     winResult,
     autoPlay,
+    roundPhase,
   } = useBingo();
 
   const currentCards = [
@@ -151,7 +152,7 @@ export const BingoGrid: React.FC = () => {
           cardIndex={card.cardIndex}
           cartelaId={card.id}
           label={card.label}
-          isWinningCard={winResult !== null && winResult.winningCartelaNumber === card.id}
+          isWinningCard={roundPhase !== 'lobby' && winResult !== null && winResult.winningCartelaNumber === card.id}
           winningLine={winResult?.winningLine || []}
           autoPlay={autoPlay}
           onDaub={handleManualDaub}

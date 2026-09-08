@@ -46,19 +46,19 @@ export const CurrentCallBanner: React.FC = () => {
         <div className="compact-call-badge-wrap">
           {currentCall ? (
             <div className={`compact-current-ball-pill ${mainColClass}`}>
-              <span className="ball-col">{currentCall.col}</span>
-              <span className="ball-hyphen">-</span>
-              <span className="ball-num">{currentCall.num}</span>
+              <span className="call-ball-col">{currentCall.col}</span>
+              <span className="call-ball-hyphen">-</span>
+              <span className="call-ball-num">{currentCall.num}</span>
             </div>
           ) : roundPhase === 'lobby' ? (
             <div className="compact-current-ball-pill lobby-timer">
-              <span className="ball-col">⏳</span>
-              <span className="ball-num">{waitingForPlayers ? 'WAIT' : `${lobbyCountdown}s`}</span>
+              <span className="call-ball-col">⏳</span>
+              <span className="call-ball-num">{waitingForPlayers ? 'WAIT' : `${lobbyCountdown}s`}</span>
             </div>
           ) : (
             <div className="compact-current-ball-pill waiting">
-              <span className="ball-col">🎱</span>
-              <span className="ball-num">--</span>
+              <span className="call-ball-col">🎱</span>
+              <span className="call-ball-num">--</span>
             </div>
           )}
         </div>

@@ -915,10 +915,17 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (prev !== 'lobby' && data.phase === 'lobby') {
           winModalDismissedForRoundRef.current = null;
           setShowWinModal(false);
+          setWinResult(null);
           setHasTicket(hasPreBoughtNextRef.current);
           setHasPreBoughtNext(false);
           setCalledNumbers([]);
           setCurrentCall(null);
+
+          // Regenerate fresh unmarked cartelas on entering lobby so previous win-glow never persists
+          const currentIds = selectedCartelaIdsRef.current;
+          setCartela1Data(generateCardFromId(currentIds[0]));
+          setCartela2Data(generateCardFromId(currentIds[1]));
+          setCartela3Data(generateCardFromId(currentIds[2]));
         } else if (data.phase === 'playing') {
           setGameActive(true);
         }
@@ -1440,12 +1447,17 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const closeWinModalAndRestart = () => {
     winModalDismissedForRoundRef.current = roundNumberRef.current || roundNumber;
     setShowWinModal(false);
+    setWinResult(null);
     setHasTicket(false);
-    setSelectedCartelaIds([
+    const newIds: [number, number, number] = [
       Math.floor(1 + Math.random() * 120),
       Math.floor(121 + Math.random() * 140),
       Math.floor(261 + Math.random() * 135)
-    ]);
+    ];
+    setSelectedCartelaIds(newIds);
+    setCartela1Data(generateCardFromId(newIds[0]));
+    setCartela2Data(generateCardFromId(newIds[1]));
+    setCartela3Data(generateCardFromId(newIds[2]));
   };
 
   const startLobbyCountdown = () => {

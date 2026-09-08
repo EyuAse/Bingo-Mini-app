@@ -3658,7 +3658,7 @@
   height: 100vh;
   height: 100dvh;
   max-height: 100dvh;
-  background: #08071e;
+  background: #f8fafc;
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
@@ -3673,7 +3673,7 @@
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
-  background: #0b0b1e;
+  background: #f8fafc;
 }
 
 .app-container.dedicated-game-view .bingo-page-content-wrapper {
@@ -4304,9 +4304,9 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4314,11 +4314,13 @@
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.12s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .btn-bingo-mini-back:hover,
 .btn-bingo-mini-menu:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #f1f5f9;
+  border-color: #94a3b8;
 }
 
 .bingo-top-status-strip {
@@ -4397,12 +4399,11 @@
 }
 
 .fresh-master-board-card {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 2px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -4489,10 +4490,10 @@
   align-items: center;
   justify-content: center;
   font-size: clamp(0.55rem, 1.8vw, 0.68rem);
-  font-weight: 850;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  font-weight: 900;
+  background: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
   transition: all 0.12s ease;
   user-select: none;
 }
@@ -4547,35 +4548,52 @@
 
 /* 1. Header Bar with "Current Call" and Ball Pill */
 .compact-call-header {
-  background: linear-gradient(135deg, #4a044e 0%, #701a75 50%, #4a044e 100%);
-  border: 1px solid rgba(216, 74, 237, 0.4);
-  border-radius: 8px;
-  padding: 1px 8px;
-  height: 26px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  padding: 2px 8px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .compact-call-title {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 900;
-  color: #ffffff;
+  color: #0f172a;
   letter-spacing: 0.2px;
 }
 
 .compact-current-ball-pill {
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   color: #ffffff;
-  padding: 1px 6px;
+  padding: 2px 8px;
   border-radius: 999px;
   font-weight: 950;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  box-shadow: 0 0 8px rgba(249, 115, 22, 0.55);
+  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4);
+}
+
+.compact-current-ball-pill .call-ball-col {
+  font-weight: 950;
+  font-size: 0.92rem;
+}
+
+.compact-current-ball-pill .call-ball-hyphen {
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.compact-current-ball-pill .call-ball-num {
+  font-weight: 950;
+  font-size: 0.98rem;
+  min-width: 18px;
+  text-align: center;
 }
 
 .compact-current-ball-pill.col-b {
@@ -4599,14 +4617,14 @@
   color: #0f172a;
 }
 .compact-current-ball-pill.waiting {
-  background: rgba(255, 255, 255, 0.15);
-  color: #94a3b8;
+  background: #e2e8f0;
+  color: #64748b;
 }
 
 /* 2. Recent Balls Tray */
 .compact-recent-balls-tray {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 7px;
   padding: 1px 4px;
   height: 20px;
@@ -4614,6 +4632,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .compact-recent-balls-inner {
@@ -4632,7 +4651,7 @@
   font-size: 0.52rem;
   font-weight: 950;
   color: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .compact-recent-ball.col-b {
@@ -4662,8 +4681,8 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.3);
+  background: #f1f5f9;
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4676,27 +4695,28 @@
   align-items: center;
   justify-content: space-between;
   gap: 4px;
-  height: 16px;
+  height: 18px;
   padding: 0 2px;
   flex-shrink: 0;
 }
 
 .btn-compact-sound {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
   border-radius: 999px;
-  padding: 1px 6px;
-  color: #ffffff;
+  padding: 1px 8px;
+  color: #0f172a;
   font-size: 0.65rem;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .btn-compact-sound.muted {
-  color: #f87171;
+  color: #ef4444;
   border-color: rgba(239, 68, 68, 0.35);
 }
 
@@ -4713,7 +4733,7 @@
 .btn-compact-auto .auto-lbl {
   font-size: 0.65rem;
   font-weight: 800;
-  color: #ffffff;
+  color: #0f172a;
 }
 
 .auto-switch-pill {
@@ -4750,11 +4770,11 @@
 .new-cartela-card {
   flex: 1;
   min-height: 0;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
   border-radius: 8px;
   padding: 2px 3px 3px 3px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -4864,12 +4884,13 @@
   border-radius: 3.5px;
   background: #ffffff;
   color: #0f172a;
+  border: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: clamp(0.68rem, 2.3vw, 0.85rem);
   font-weight: 950;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   cursor: default;
   transition: all 0.12s ease;
   user-select: none;
