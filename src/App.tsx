@@ -23,6 +23,7 @@ import { HistoryPage } from './pages/HistoryPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
 import { BingoPage } from './pages/BingoPage.tsx';
 import { AffiliatePage } from './pages/AffiliatePage.tsx';
+import { telegramService } from './services/telegramService.ts';
 import { AccountInfoPage } from './pages/AccountInfoPage.tsx';
 import { HelpCenterPage } from './pages/HelpCenterPage.tsx';
 import { AboutLomiPage } from './pages/AboutLomiPage.tsx';
@@ -87,9 +88,10 @@ export const App: React.FC = () => {
     currentPage === 'about';
 
   const isDedicatedGamePage = currentPage === 'bingo';
+  const isDesktop = telegramService.isDesktopPlatform();
 
   return (
-    <div className={`app-container${isDedicatedGamePage ? ' dedicated-game-view' : ''}`}>
+    <div className={`app-container${isDedicatedGamePage ? ' dedicated-game-view' : ''}${isDesktop ? ' is-desktop-platform' : ''}`}>
       {/* Top Header for all main game & user views */}
       {!isStandalonePage && !isSubpage && !isDedicatedGamePage && <TopHeader />}
 

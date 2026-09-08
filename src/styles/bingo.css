@@ -3691,6 +3691,11 @@
   gap: 2px !important;
 }
 
+.app-container.dedicated-game-view.is-desktop-platform .bingo-page-content-wrapper,
+.app-container.dedicated-game-view .bingo-page-content-wrapper.is-desktop-view {
+  max-width: min(1080px, 96vw);
+}
+
 /* ── Dynamic Column Color System (Image 2 Match) ─────────── */
 /* Column B (1–15): Vibrant Gold */
 .col-b {
@@ -5013,65 +5018,9 @@
    RESPONSIVE MEDIA QUERIES (PC / TABLET TMA)
    ══════════════════════════════════════════════════════════════════════════ */
 
-@media (min-width: 768px) {
-  .app-container.dedicated-game-view .bingo-page-content-wrapper {
-    max-width: 980px !important;
-    padding: 4px 16px calc(4px + env(safe-area-inset-bottom, 0px)) 16px !important;
-  }
-
-  .bingo-split-layout-grid {
-    grid-template-columns: 210px 1fr !important;
-    gap: 14px !important;
-    max-width: 100% !important;
-    height: 100% !important;
-  }
-
-  .compact-cartelas-stack.dual-cartela {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 12px !important;
-    width: 100% !important;
-    flex: 0 0 auto !important;
-    overflow: visible !important;
-  }
-
-  .compact-cartelas-stack.dual-cartela .new-cartela-card {
-    flex: none !important;
-    max-height: none !important;
-    width: 100% !important;
-  }
-
-  .compact-cartelas-stack.dual-cartela .new-cartela-5x5 {
-    aspect-ratio: 1 / 1 !important;
-    max-height: 280px !important;
-    flex: none !important;
-    height: auto !important;
-  }
-
-  .compact-cartelas-stack.single-cartela .new-cartela-card {
-    max-width: 380px !important;
-    margin: 0 auto !important;
-  }
-
-  .mb-num-box {
-    font-size: 0.82rem;
-  }
-
-  .mb-header-cell {
-    height: 28px;
-    font-size: 0.9rem;
-  }
-
-  .new-cartela-cell {
-    font-size: 1.05rem;
-    max-height: 44px;
-  }
-
-  .new-bingo-col-hdr {
-    height: 26px;
-    font-size: 0.88rem;
-  }
-}
+/* ══════════════════════════════════════════════════════════════════════════
+   MOBILE DEFAULT RULES (< 460px Portrait Phone View - Untouched)
+   ══════════════════════════════════════════════════════════════════════════ */
 
 /* ── SINGLE CARTELA PROPORTIONAL ANTI-STRETCH (Image 2 Fix) ── */
 .compact-cartelas-stack.single-cartela {
@@ -5119,7 +5068,7 @@
   font-size: clamp(0.78rem, 2.8vw, 0.95rem);
 }
 
-/* ── DUAL CARTELA COMPACT PROPORTIONAL STACK (Zero-Squish, Anti-Stretch) ── */
+/* ── DUAL CARTELA COMPACT PROPORTIONAL STACK (Default Mobile Portrait) ── */
 .compact-cartelas-stack.dual-cartela {
   flex: 0 1 auto;
   min-height: min-content;
@@ -5150,6 +5099,203 @@
 
 .compact-cartelas-stack.dual-cartela .new-cartela-cell {
   font-size: clamp(0.68rem, 2.2vw, 0.86rem);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PC / DESKTOP & TABLET RESPONSIVE ZERO-SCROLL ARCHITECTURE
+   Triggered on PC TMA (Telegram Desktop, macOS, Web), screens >= 460px,
+   and landscape aspect ratios to guarantee ZERO VERTICAL SCROLLING.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 460px), screen and (min-aspect-ratio: 1/1) and (min-width: 420px) {
+  /* Dual Cartelas Side-by-Side: cuts height from 520px to ~210px! */
+  .compact-cartelas-stack.dual-cartela {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+    align-items: start !important;
+  }
+
+  .compact-cartelas-stack.dual-cartela .new-cartela-card {
+    flex: none !important;
+    max-height: none !important;
+    width: 100% !important;
+    padding: 3px 3px 4px 3px !important;
+    box-sizing: border-box !important;
+  }
+
+  .compact-cartelas-stack.dual-cartela .new-cartela-5x5 {
+    aspect-ratio: 1 / 1 !important;
+    max-height: min(215px, 31vh) !important;
+    flex: none !important;
+    height: auto !important;
+    gap: 2px !important;
+    margin: 0 auto !important;
+  }
+
+  .compact-cartelas-stack.dual-cartela .new-cartela-cell {
+    font-size: clamp(0.66rem, 1.85vh, 0.88rem) !important;
+  }
+
+  /* Action bar: Non-intrusive relative positioning underneath both cards */
+  .in-game-bottom-action-bar {
+    position: relative !important;
+    bottom: auto !important;
+    margin-top: auto !important;
+    padding: 4px 6px !important;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04) !important;
+    border-radius: 10px !important;
+    z-index: 10 !important;
+  }
+
+  .btn-in-game-leave,
+  .btn-in-game-bingo {
+    height: 38px !important;
+  }
+
+  /* Play area: Zero-scroll lock */
+  .bingo-right-playarea-col {
+    overflow-y: hidden !important;
+    padding-bottom: 2px !important;
+  }
+
+  /* Single cartela centered and proportional */
+  .compact-cartelas-stack.single-cartela .new-cartela-card {
+    max-width: 320px !important;
+    margin: 0 auto !important;
+  }
+  .compact-cartelas-stack.single-cartela .new-cartela-5x5 {
+    max-height: min(240px, 34vh) !important;
+  }
+}
+
+/* Explicit class triggers for Telegram Desktop platform detection */
+.is-desktop-view .compact-cartelas-stack.dual-cartela,
+.app-container.is-desktop-platform .compact-cartelas-stack.dual-cartela {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+  width: 100% !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+  align-items: start !important;
+}
+
+.is-desktop-view .compact-cartelas-stack.dual-cartela .new-cartela-card,
+.app-container.is-desktop-platform .compact-cartelas-stack.dual-cartela .new-cartela-card {
+  flex: none !important;
+  max-height: none !important;
+  width: 100% !important;
+  padding: 3px 3px 4px 3px !important;
+  box-sizing: border-box !important;
+}
+
+.is-desktop-view .compact-cartelas-stack.dual-cartela .new-cartela-5x5,
+.app-container.is-desktop-platform .compact-cartelas-stack.dual-cartela .new-cartela-5x5 {
+  aspect-ratio: 1 / 1 !important;
+  max-height: min(215px, 31vh) !important;
+  flex: none !important;
+  height: auto !important;
+  gap: 2px !important;
+  margin: 0 auto !important;
+}
+
+.is-desktop-view .compact-cartelas-stack.dual-cartela .new-cartela-cell,
+.app-container.is-desktop-platform .compact-cartelas-stack.dual-cartela .new-cartela-cell {
+  font-size: clamp(0.66rem, 1.85vh, 0.88rem) !important;
+}
+
+.is-desktop-view .in-game-bottom-action-bar,
+.app-container.is-desktop-platform .in-game-bottom-action-bar {
+  position: relative !important;
+  bottom: auto !important;
+  margin-top: auto !important;
+  padding: 4px 6px !important;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04) !important;
+  border-radius: 10px !important;
+  z-index: 10 !important;
+}
+
+.is-desktop-view .in-game-bottom-action-bar .btn-in-game-leave,
+.is-desktop-view .in-game-bottom-action-bar .btn-in-game-bingo,
+.app-container.is-desktop-platform .in-game-bottom-action-bar .btn-in-game-leave,
+.app-container.is-desktop-platform .in-game-bottom-action-bar .btn-in-game-bingo {
+  height: 38px !important;
+}
+
+.is-desktop-view .bingo-right-playarea-col,
+.app-container.is-desktop-platform .bingo-right-playarea-col {
+  overflow-y: hidden !important;
+  padding-bottom: 2px !important;
+}
+
+/* Graceful fallback for ultra-short window heights (< 460px) */
+@media (max-height: 460px) {
+  .bingo-right-playarea-col,
+  .is-desktop-view .bingo-right-playarea-col,
+  .app-container.is-desktop-platform .bingo-right-playarea-col {
+    overflow-y: auto !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EXPANDED DESKTOP SCREENS (>= 768px & Wide Monitors)
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  .app-container.dedicated-game-view .bingo-page-content-wrapper {
+    max-width: min(1080px, 96vw) !important;
+    padding: 4px 14px calc(4px + env(safe-area-inset-bottom, 0px)) 14px !important;
+  }
+
+  .bingo-split-layout-grid {
+    grid-template-columns: minmax(130px, 185px) 1fr !important;
+    gap: 12px !important;
+    max-width: 100% !important;
+    height: 100% !important;
+  }
+
+  .compact-cartelas-stack.dual-cartela {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+
+  .compact-cartelas-stack.dual-cartela .new-cartela-5x5 {
+    aspect-ratio: 1 / 1 !important;
+    max-height: min(250px, 34vh) !important;
+    flex: none !important;
+    height: auto !important;
+  }
+
+  .compact-cartelas-stack.single-cartela .new-cartela-card {
+    max-width: 360px !important;
+    margin: 0 auto !important;
+  }
+
+  .mb-num-box {
+    font-size: 0.8rem;
+  }
+
+  .mb-header-cell {
+    height: 24px;
+    font-size: 0.85rem;
+  }
+
+  .new-cartela-cell {
+    font-size: clamp(0.72rem, 1.8vw, 0.96rem) !important;
+    max-height: 48px;
+  }
+
+  .new-bingo-col-hdr {
+    height: 24px;
+    font-size: 0.85rem;
+  }
 }
 
 /* ── PREVIEW & SHUFFLE CONTROLS ── */

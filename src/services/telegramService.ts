@@ -153,6 +153,29 @@ export class TelegramService {
       return () => {};
     }
   }
+
+  /**
+   * Detect if running on PC / Desktop (Telegram Desktop, macOS Telegram, Telegram Web, or Desktop browser)
+   */
+  public isDesktopPlatform(): boolean {
+    const tg = this.webApp;
+    if (tg?.platform) {
+      const p = tg.platform.toLowerCase();
+      if (['tdesktop', 'macos', 'web', 'weba', 'webk'].includes(p)) {
+        return true;
+      }
+      if (['android', 'ios'].includes(p)) {
+        return false;
+      }
+    }
+    if (typeof window !== 'undefined') {
+      const ua = navigator.userAgent || '';
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+      if (isMobileUA) return false;
+      return window.innerWidth >= 460 || window.matchMedia('(pointer: fine)').matches;
+    }
+    return false;
+  }
 }
 
 export const telegramService = TelegramService.getInstance();

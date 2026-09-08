@@ -15,8 +15,10 @@ import { MasterBoard75 } from '../components/bingo/MasterBoard75.tsx';
 import { LeaveConfirmModal } from '../components/bingo/LeaveConfirmModal.tsx';
 import { CartelaPickerModal } from '../components/bingo/CartelaPickerModal.tsx';
 import { ErrorBoundary } from '../components/common/ErrorBoundary.tsx';
+import { telegramService } from '../services/telegramService.ts';
 
 export const BingoPage: React.FC = () => {
+  const isDesktop = telegramService.isDesktopPlatform();
   const {
     hasTicket, showWinModal, isMuted, toggleMute, triggerManualSync, isSyncing,
     roundPhase, waitingForPlayers, realPlayerCount, lobbyCountdown, cancelLobbyTicket,
@@ -48,11 +50,11 @@ export const BingoPage: React.FC = () => {
   const heroTitleHighlight = titleParts[titleParts.length - 1];
 
   return (
-    <div className="fresh-bingo-page">
+    <div className={`fresh-bingo-page ${isDesktop ? 'is-desktop-view' : ''}`}>
       {/* Confetti Celebration for Wins */}
       <ConfettiCanvas active={showWinModal} />
 
-      <div className="bingo-page-content-wrapper">
+      <div className={`bingo-page-content-wrapper ${isDesktop ? 'is-desktop-view' : ''}`}>
 
         {/* 1. Ultra-Slim Top Action Bar matching Image 2 */}
         <div className="bingo-top-action-bar">
