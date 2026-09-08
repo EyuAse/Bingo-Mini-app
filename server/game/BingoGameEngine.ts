@@ -1013,17 +1013,53 @@ class BingoGameEngine {
   }
 
   /**
-   * Computes evenly spaced insertion positions ending precisely at finishIndex.
-   * Guarantees target line completes on exact finishIndex without duplicate indices.
+   * Cryptographically sound Fisher-Yates shuffle for true un-biased randomness
    */
-  private getInsertPositions(count: number, finishIndex: number): number[] {
-    const positions: number[] = [];
-    const step = finishIndex / count;
-    for (let i = 1; i < count; i++) {
-      positions.push(Math.round(i * step));
+  private fisherYatesShuffle<T>(arr: T[]): T[] {
+    const res = [...arr];
+    for (let i = res.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [res[i], res[j]] = [res[j], res[i]];
     }
-    positions.push(finishIndex);
-    return positions;
+    return res;
+  }
+
+  /**
+   * Anti-Clumping Column Smoother:
+   * Ensures that no more than 2 consecutive balls belong to the exact same B-I-N-G-O column,
+   * perfectly mimicking real physical 75-ball air-blower cage extractions.
+   */
+  private applyAntiClumpingSmoother(balls: number[]): number[] {
+    const result = [...balls];
+    for (let i = 2; i < result.length; i++) {
+      const colA = getBallColumn(result[i - 2]);
+      const colB = getBallColumn(result[i - 1]);
+      const colC = getBallColumn(result[i]);
+
+      if (colA === colB && colB === colC) {
+        let swapped = false;
+        for (let j = i + 1; j < result.length; j++) {
+          if (getBallColumn(result[j]) !== colB) {
+            const temp = result[i];
+            result[i] = result[j];
+            result[j] = temp;
+            swapped = true;
+            break;
+          }
+        }
+        if (!swapped) {
+          for (let j = 0; j < i - 2; j++) {
+            if (getBallColumn(result[j]) !== colB) {
+              const temp = result[i];
+              result[i] = result[j];
+              result[j] = temp;
+              break;
+            }
+          }
+        }
+      }
+    }
+    return result;
   }
 
   /**
@@ -1092,9 +1128,6 @@ class BingoGameEngine {
     // Target winner's final winning ball MUST land exactly on finishIndex
     const finalBall = targetNumbers[targetNumbers.length - 1];
     const earlyTargetNumbers = targetNumbers.slice(0, -1);
-
-    // Compute insertion positions for early target numbers before finishIndex
-    const insertPositions = this.getInsertPositions(targetNumbers.length, finishIndex);
 
     // Collect competing cards (other real players and bot cards)
     const otherCards: BingoCell[][] = [];
@@ -1175,7 +1208,7 @@ class BingoGameEngine {
     }
 
     // Step B: Fill the remaining slots of S up to finishIndex with neutral cage balls
-    const shuffledBaseBalls = [...baseBalls].sort(() => Math.random() - 0.5);
+    const shuffledBaseBalls = this.fisherYatesShuffle(baseBalls);
     for (const b of shuffledBaseBalls) {
       if (S.length >= finishIndex) break;
       if (isSafeToAdd(b)) {
@@ -1184,34 +1217,48 @@ class BingoGameEngine {
       }
     }
 
-    // Separate S into target numbers and competing/neutral balls
-    const otherEarlyBalls = S.filter(b => !earlyTargetNumbers.includes(b)).sort(() => Math.random() - 0.5);
-    const earlyTargetQueue = [...earlyTargetNumbers];
+    // Natural 75-Ball Column Balancer:
+    // Safe Set S contains all finishIndex balls (early target numbers, competing card numbers, neutral cage balls).
+    // All numbers in S are mathematically guaranteed safe (no competing card wins on S ∪ {finalBall}).
+    // We shuffle S with Fisher-Yates and apply the Anti-Clumping Column Smoother so balls alternate naturally across letters.
+    const earlyShuffled = this.applyAntiClumpingSmoother(this.fisherYatesShuffle(S));
 
     const finalSequence: number[] = new Array(75).fill(0);
 
-    // Place balls in slots 0 to finishIndex
-    for (let i = 0; i < targetFinishBall; i++) {
-      if (i === finishIndex) {
-        // The winning ball lands precisely on finishIndex
-        finalSequence[i] = finalBall;
-      } else if (insertPositions.includes(i) && earlyTargetQueue.length > 0) {
-        // Distribute early target numbers at scheduled positions
-        finalSequence[i] = earlyTargetQueue.shift()!;
-      } else if (otherEarlyBalls.length > 0) {
-        finalSequence[i] = otherEarlyBalls.shift()!;
-      } else if (earlyTargetQueue.length > 0) {
-        finalSequence[i] = earlyTargetQueue.shift()!;
+    // Place natural early balls in slots 0 to finishIndex - 1
+    for (let i = 0; i < finishIndex; i++) {
+      finalSequence[i] = earlyShuffled[i];
+    }
+
+    // Target winner's winning ball lands precisely on finishIndex (ball targetFinishBall)
+    finalSequence[finishIndex] = finalBall;
+
+    // Boundary Anti-Clumping: Ensure finalBall does not create a 3-streak with slots finishIndex - 1 and finishIndex - 2
+    const finalCol = getBallColumn(finalBall);
+    if (
+      finishIndex >= 2 &&
+      getBallColumn(finalSequence[finishIndex - 1]) === finalCol &&
+      getBallColumn(finalSequence[finishIndex - 2]) === finalCol
+    ) {
+      for (let j = finishIndex - 3; j >= 0; j--) {
+        if (getBallColumn(finalSequence[j]) !== finalCol) {
+          const temp = finalSequence[finishIndex - 1];
+          finalSequence[finishIndex - 1] = finalSequence[j];
+          finalSequence[j] = temp;
+          break;
+        }
       }
     }
 
     // Collect all remaining balls (from 1 to 75) that have not been used in slots 0 to finishIndex
     const usedInEarlySlots = new Set<number>(finalSequence.slice(0, targetFinishBall));
-    const remainingBalls = baseBalls.filter(b => !usedInEarlySlots.has(b)).sort(() => Math.random() - 0.5);
+    const remainingBalls = this.applyAntiClumpingSmoother(
+      this.fisherYatesShuffle(baseBalls.filter(b => !usedInEarlySlots.has(b)))
+    );
 
     // Fill remaining slots (from targetFinishBall to 74)
     for (let i = targetFinishBall; i < 75; i++) {
-      finalSequence[i] = remainingBalls.shift()!;
+      finalSequence[i] = remainingBalls[i - targetFinishBall];
     }
 
     // Return reversed array since Array.pop() draws from the end

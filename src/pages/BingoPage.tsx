@@ -20,7 +20,7 @@ export const BingoPage: React.FC = () => {
   const {
     hasTicket, showWinModal, isMuted, toggleMute, triggerManualSync, isSyncing,
     roundPhase, waitingForPlayers, realPlayerCount, lobbyCountdown, cancelLobbyTicket,
-    autoPlay, hasWinningPattern, claimBingo
+    autoPlay, hasWinningPattern, claimBingo, claimInProgress
   } = useBingo();
   const { switchPage, showToast } = useApp();
   const [showVoiceTester, setShowVoiceTester] = useState<boolean>(false);
@@ -121,18 +121,20 @@ export const BingoPage: React.FC = () => {
                 {!autoPlay && (
                   <button
                     type="button"
-                    className={`btn-in-game-bingo ${hasWinningPattern ? 'active-claim-ready' : 'inactive'}`}
+                    disabled={claimInProgress}
+                    className={`btn-in-game-bingo ${claimInProgress ? 'claiming' : hasWinningPattern ? 'active-claim-ready' : 'inactive'}`}
                     onClick={() => {
+                      if (claimInProgress) return;
                       if (hasWinningPattern) {
                         claimBingo();
                       } else {
                         showToast("Complete any 5-in-a-row line on your card to call BINGO!");
                       }
                     }}
-                    title={hasWinningPattern ? "Call Bingo to claim your victory!" : "Complete a 5-in-a-row line to call Bingo"}
+                    title={claimInProgress ? "Claiming your win..." : hasWinningPattern ? "Call Bingo to claim your victory!" : "Complete a 5-in-a-row line to call Bingo"}
                   >
-                    <i className={hasWinningPattern ? "fa-solid fa-trophy fa-bounce" : "fa-solid fa-trophy"}></i>
-                    <span>{hasWinningPattern ? 'CALL BINGO! ⚡' : 'BINGO! 🎯'}</span>
+                    <i className={claimInProgress ? "fa-solid fa-spinner fa-spin" : hasWinningPattern ? "fa-solid fa-trophy fa-bounce" : "fa-solid fa-trophy"}></i>
+                    <span>{claimInProgress ? 'CLAIMING... ⚡' : hasWinningPattern ? 'CALL BINGO! ⚡' : 'BINGO! 🎯'}</span>
                   </button>
                 )}
               </div>

@@ -6,6 +6,7 @@ export const BingoActions: React.FC = () => {
     autoPlay,
     toggleAutoPlay,
     claimBingo,
+    claimInProgress,
     canWin,
     roundPhase,
     lobbyCountdown
@@ -28,13 +29,13 @@ export const BingoActions: React.FC = () => {
         <span className="autoplay-label">{autoPlay ? 'AUTO ON' : 'MANUAL'}</span>
       </button>
 
-      {/* 2. BINGO! Call Button — disabled when in lobby or when auto-play on */}
+      {/* 2. BINGO! Call Button — disabled when in lobby or when auto-play on or claim in progress */}
       <button
         type="button"
-        className={`btn-claim-bingo-gold ${canWin && !autoPlay && isPlaying ? 'can-claim-pulsing' : ''} ${autoPlay ? 'auto-claimed' : ''} ${isLobby ? 'lobby-waiting' : ''}`}
-        onClick={autoPlay || !isPlaying ? undefined : claimBingo}
-        disabled={!isPlaying}
-        title={isLobby ? `Round starts in ${lobbyCountdown}s` : autoPlay ? 'Auto-Play will claim BINGO automatically!' : 'Claim BINGO'}
+        className={`btn-claim-bingo-gold ${canWin && !autoPlay && isPlaying ? 'can-claim-pulsing' : ''} ${autoPlay ? 'auto-claimed' : ''} ${isLobby ? 'lobby-waiting' : ''} ${claimInProgress ? 'claiming' : ''}`}
+        onClick={autoPlay || !isPlaying || claimInProgress ? undefined : claimBingo}
+        disabled={!isPlaying || claimInProgress}
+        title={isLobby ? `Round starts in ${lobbyCountdown}s` : autoPlay ? 'Auto-Play will claim BINGO automatically!' : claimInProgress ? 'Claiming your victory...' : 'Claim BINGO'}
       >
         {isLobby ? (
           <>
@@ -45,6 +46,11 @@ export const BingoActions: React.FC = () => {
           <>
             <i className="fa-solid fa-bolt"></i>
             <span>AUTO</span>
+          </>
+        ) : claimInProgress ? (
+          <>
+            <i className="fa-solid fa-spinner fa-spin"></i>
+            <span>CLAIMING...</span>
           </>
         ) : (
           <>

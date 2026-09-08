@@ -119,6 +119,7 @@ interface BingoContextType {
   joinFeed: Array<{ id: number; userName: string; countdownStarted: boolean }>;
 
   // Actions
+  claimInProgress: boolean;
   startLobbyCountdown: () => void;
   handleManualDaub: (cartelaIdx: number, cellIdx: number) => void;
   claimBingo: () => void;
@@ -314,6 +315,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [canWin, setCanWin] = useState<boolean>(false);
   const [winResult, setWinResult] = useState<WinResult | null>(null);
   const [showWinModal, setShowWinModal] = useState<boolean>(false);
+  const [claimInProgress, setClaimInProgress] = useState<boolean>(false);
+  const isClaimingRef = useRef<boolean>(false);
+  const lastDaubClickTimeRef = useRef<{ [key: string]: number }>({});
 
   // Reactive Winning Pattern Detection for Manual Mode BINGO Claim Button
   const hasWinningPattern = useMemo(() => {
@@ -553,22 +557,105 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const calledNumbersRef = useRef<number[]>([]);
   calledNumbersRef.current = calledNumbers;
 
-  // Helper to rehydrate card checkmarks with drawn numbers (prevents raw server matrix from wiping user ticks upon resume)
+  const cartela1DataRef = useRef<BingoCell[]>([]);
+  const cartela2DataRef = useRef<BingoCell[]>([]);
+  const cartela3DataRef = useRef<BingoCell[]>([]);
+  cartela1DataRef.current = cartela1Data;
+  cartela2DataRef.current = cartela2Data;
+  cartela3DataRef.current = cartela3Data;
+
+  // Storage key and in-memory set for user-marked cell indices in manual mode
+  const ACTIVE_MANUAL_MARKS_KEY = 'betika_bingo_manual_marks';
+  const manualDaubedCellsRef = useRef<{ [cartelaId: number]: Set<number> }>({});
+
+  const loadSavedManualMarks = (currentRound?: number) => {
+    try {
+      const raw = sessionStorage.getItem(ACTIVE_MANUAL_MARKS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (!currentRound || parsed.roundNumber === currentRound) {
+          if (parsed.marks && typeof parsed.marks === 'object') {
+            for (const [cId, indices] of Object.entries(parsed.marks)) {
+              manualDaubedCellsRef.current[Number(cId)] = new Set(Array.isArray(indices) ? (indices as number[]) : []);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading manual marks storage:', e);
+    }
+  };
+
+  const saveManualMarks = (roundNum: number) => {
+    try {
+      const serializable: { [cId: number]: number[] } = {};
+      for (const [cId, set] of Object.entries(manualDaubedCellsRef.current)) {
+        serializable[Number(cId)] = Array.from(set);
+      }
+      sessionStorage.setItem(ACTIVE_MANUAL_MARKS_KEY, JSON.stringify({
+        roundNumber: roundNum,
+        marks: serializable
+      }));
+    } catch {
+      // ignore
+    }
+  };
+
+  const clearManualMarks = () => {
+    try {
+      sessionStorage.removeItem(ACTIVE_MANUAL_MARKS_KEY);
+      manualDaubedCellsRef.current = {};
+    } catch {
+      // ignore
+    }
+  };
+
+  // Helper to rehydrate card checkmarks with drawn numbers
+  // In Auto mode: marks all called numbers.
+  // In Manual mode: strictly PRESERVES user manual marks (never wipes marks upon server snapshot or tab-out).
   const hydrateCardWithDrawn = (
     cardMatrix: BingoCell[],
     drawnNums?: number[],
-    isAuto: boolean = true
+    isAuto: boolean = true,
+    cartelaId?: number,
+    existingCells?: BingoCell[]
   ): BingoCell[] => {
     if (!cardMatrix || !Array.isArray(cardMatrix)) return cardMatrix;
-    if (!drawnNums || !Array.isArray(drawnNums) || drawnNums.length === 0 || !isAuto) {
-      return cardMatrix;
+    const drawnSet = new Set(drawnNums || []);
+
+    if (isAuto) {
+      return cardMatrix.map(c => {
+        if (c.isFree || drawnSet.has(c.val as number)) {
+          return { ...c, marked: true };
+        }
+        return { ...c, marked: false };
+      });
     }
-    const drawnSet = new Set(drawnNums);
-    return cardMatrix.map(c => {
-      if (c.isFree || drawnSet.has(c.val as number)) {
+
+    // Manual mode: NEVER erase user daubs!
+    const manualSet = cartelaId && manualDaubedCellsRef.current[cartelaId]
+      ? manualDaubedCellsRef.current[cartelaId]
+      : new Set<number>();
+
+    return cardMatrix.map((c, idx) => {
+      if (c.isFree) {
         return { ...c, marked: true };
       }
-      return c;
+      const val = c.val as number;
+      const isDrawn = drawnSet.has(val);
+      const wasMarkedInExisting = existingCells?.[idx]?.marked && isDrawn;
+      const wasMarkedInRef = manualSet.has(idx) && isDrawn;
+
+      if (wasMarkedInExisting || wasMarkedInRef) {
+        if (cartelaId) {
+          if (!manualDaubedCellsRef.current[cartelaId]) {
+            manualDaubedCellsRef.current[cartelaId] = new Set();
+          }
+          manualDaubedCellsRef.current[cartelaId].add(idx);
+        }
+        return { ...c, marked: true };
+      }
+      return { ...c, marked: false };
     });
   };
 
@@ -680,8 +767,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         ];
         setSelectedCartelaIds(updatedIds);
         const drawn = (state.drawnNumbers && state.drawnNumbers.length > 0) ? state.drawnNumbers : calledNumbersRef.current;
-        if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current));
-        if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current));
+        if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current, updatedIds[0], cartela1DataRef.current));
+        if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current, updatedIds[1], cartela2DataRef.current));
 
         if (state.isPreBuy) {
           setHasPreBoughtNext(true);
@@ -858,9 +945,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         ];
         setSelectedCartelaIds(updatedIds);
         const drawn = calledNumbersRef.current;
-        if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current));
-        if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current));
-        if (tickets[2]?.cardMatrix) setCartela3Data(hydrateCardWithDrawn(tickets[2].cardMatrix, drawn, autoPlayRef.current));
+        if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current, updatedIds[0], cartela1DataRef.current));
+        if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current, updatedIds[1], cartela2DataRef.current));
+        if (tickets[2]?.cardMatrix) setCartela3Data(hydrateCardWithDrawn(tickets[2].cardMatrix, drawn, autoPlayRef.current, updatedIds[2], cartela3DataRef.current));
 
         if (data.isPreBuy) {
           setHasPreBoughtNext(true);
@@ -953,6 +1040,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           setHasPreBoughtNext(false);
           setCalledNumbers([]);
           setCurrentCall(null);
+          isClaimingRef.current = false;
+          setClaimInProgress(false);
+          clearManualMarks();
 
           // Regenerate fresh unmarked cartelas on entering lobby so previous win-glow never persists
           const currentIds = selectedCartelaIdsRef.current;
@@ -995,9 +1085,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       ];
       setSelectedCartelaIds(updatedIds);
       const drawn = (data.drawnNumbers && data.drawnNumbers.length > 0) ? data.drawnNumbers : calledNumbersRef.current;
-      if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current));
-      if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current));
-      if (tickets[2]?.cardMatrix) setCartela3Data(hydrateCardWithDrawn(tickets[2].cardMatrix, drawn, autoPlayRef.current));
+      if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current, updatedIds[0], cartela1DataRef.current));
+      if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current, updatedIds[1], cartela2DataRef.current));
+      if (tickets[2]?.cardMatrix) setCartela3Data(hydrateCardWithDrawn(tickets[2].cardMatrix, drawn, autoPlayRef.current, updatedIds[2], cartela3DataRef.current));
 
       if (data.isPreBuy) {
         setHasPreBoughtNext(true);
@@ -1492,20 +1582,41 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return true;
   };
 
-  // Manual Daubing
+  // Manual Daubing with 300ms double-tap debounce & session persistence
   const handleManualDaub = (cartelaIdx: number, cellIdx: number) => {
+    const clickKey = `${cartelaIdx}_${cellIdx}`;
+    const now = Date.now();
+    const lastClick = lastDaubClickTimeRef.current[clickKey] || 0;
+    if (now - lastClick < 300) {
+      // Rapid double click debounce: avoid accidental un-marking
+      return;
+    }
+    lastDaubClickTimeRef.current[clickKey] = now;
+
     const targetData = cartelaIdx === 0 ? cartela1Data : cartelaIdx === 1 ? cartela2Data : cartela3Data;
     const setTargetData = cartelaIdx === 0 ? setCartela1Data : cartelaIdx === 1 ? setCartela2Data : setCartela3Data;
     const cell = targetData[cellIdx];
+    const cartelaId = selectedCartelaIds[cartelaIdx];
 
     if (!cell || cell.isFree) return;
 
     if (cell.marked) {
+      if (cartelaId && manualDaubedCellsRef.current[cartelaId]) {
+        manualDaubedCellsRef.current[cartelaId].delete(cellIdx);
+      }
+      saveManualMarks(roundNumberRef.current);
       const newCells = [...targetData];
       newCells[cellIdx] = { ...cell, marked: false };
       setTargetData(newCells);
     } else {
       if (calledNumbers.includes(cell.val as number)) {
+        if (cartelaId) {
+          if (!manualDaubedCellsRef.current[cartelaId]) {
+            manualDaubedCellsRef.current[cartelaId] = new Set();
+          }
+          manualDaubedCellsRef.current[cartelaId].add(cellIdx);
+        }
+        saveManualMarks(roundNumberRef.current);
         const newCells = [...targetData];
         newCells[cellIdx] = { ...cell, marked: true };
         setTargetData(newCells);
@@ -1524,8 +1635,13 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-  // Claim BINGO to Server Engine (supports direct override with current cell state)
+  // Claim BINGO to Server Engine with in-flight debounce lock
   const claimBingo = async (overrideCardIdx?: number, overrideCells?: BingoCell[]) => {
+    if (isClaimingRef.current || claimInProgress) {
+      console.log('⚡ [BingoContext] Claim already in flight — ignoring duplicate click');
+      return;
+    }
+
     const c1 = overrideCardIdx === 0 && overrideCells ? overrideCells : cartela1Data;
     const c2 = overrideCardIdx === 1 && overrideCells ? overrideCells : cartela2Data;
     const c3 = overrideCardIdx === 2 && overrideCells ? overrideCells : cartela3Data;
@@ -1535,41 +1651,52 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const win3 = totalPlayableCards >= 3 ? checkWinningPatterns(c3) : null;
 
     if (win1 || win2 || win3) {
+      isClaimingRef.current = true;
+      setClaimInProgress(true);
+
       const activeWinCardIdx = win1 ? 0 : win2 ? 1 : 2;
       const winningCartelaId = selectedCartelaIds[activeWinCardIdx];
       const roomId = getActiveRoomId();
 
       if (user?.id) {
-        const res = await socketService.claimBingo(roomId, user.id, user.fullName, winningCartelaId);
-        if (!res.success) {
-          showToast(`⚠️ ${res.message}`);
-          return;
+        try {
+          const res = await socketService.claimBingo(roomId, user.id, user.fullName, winningCartelaId);
+          if (!res.success) {
+            showToast(`⚠️ ${res.message}`);
+            isClaimingRef.current = false;
+            setClaimInProgress(false);
+            return;
+          }
+
+          const winData = res.winResult;
+          lastLiveWinRoundRef.current = winData?.roundNumber || roundNumberRef.current;
+          const totalPot = winData?.totalPot || prizePool;
+          const winnerPayout = winData?.winnerPayout || totalPot;
+          const userShare = winData?.sharePerWinner || winData?.userShare || winnerPayout;
+
+          const houseFee = Number(winData?.houseFee || 0);
+          const netPrizePot = Number(winData?.netPrizePot || winnerPayout);
+
+          setWinResult({
+            winType: winData?.isSplit ? 'user_split' : 'user_solo',
+            winningCartelaNumber: winningCartelaId,
+            winningLine: Array.isArray(win1 || win2 || win3) ? (win1 || win2 || win3)! : [],
+            winnerName: user.fullName || 'እርስዎ (You)',
+            coWinners: Array.isArray(winData?.coWinners) ? winData.coWinners : [],
+            totalPot: totalPot,
+            userShare: userShare,
+            winnerPayout: winnerPayout,
+            stakeAmount: betAmount,
+            houseFee: houseFee,
+            netPrizePot: netPrizePot
+          });
+          setShowWinModal(true);
+          soundEngine.playWinFanfare();
+        } catch (e) {
+          console.error('Error in claimBingo:', e);
+          isClaimingRef.current = false;
+          setClaimInProgress(false);
         }
-
-        const winData = res.winResult;
-        lastLiveWinRoundRef.current = winData?.roundNumber || roundNumberRef.current;
-        const totalPot = winData?.totalPot || prizePool;
-        const winnerPayout = winData?.winnerPayout || totalPot;
-        const userShare = winData?.sharePerWinner || winData?.userShare || winnerPayout;
-
-        const houseFee = Number(winData?.houseFee || 0);
-        const netPrizePot = Number(winData?.netPrizePot || winnerPayout);
-
-        setWinResult({
-          winType: winData?.isSplit ? 'user_split' : 'user_solo',
-          winningCartelaNumber: winningCartelaId,
-          winningLine: Array.isArray(win1 || win2 || win3) ? (win1 || win2 || win3)! : [],
-          winnerName: user.fullName || 'እርስዎ (You)',
-          coWinners: Array.isArray(winData?.coWinners) ? winData.coWinners : [],
-          totalPot: totalPot,
-          userShare: userShare,
-          winnerPayout: winnerPayout,
-          stakeAmount: betAmount,
-          houseFee: houseFee,
-          netPrizePot: netPrizePot
-        });
-        setShowWinModal(true);
-        soundEngine.playWinFanfare();
         return;
       }
 
@@ -1595,6 +1722,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const closeWinModalAndRestart = () => {
+    isClaimingRef.current = false;
+    setClaimInProgress(false);
     winModalDismissedForRoundRef.current = roundNumberRef.current || roundNumber;
     activeWinModalRoundRef.current = null;
     setShowWinModal(false);
@@ -1659,6 +1788,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         realPlayerCount,
         joinFeed,
         startLobbyCountdown,
+        claimInProgress,
         handleManualDaub,
         claimBingo,
         closeWinModalAndRestart,
