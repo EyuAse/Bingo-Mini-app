@@ -13,6 +13,7 @@ import { ConfettiCanvas } from '../components/common/ConfettiCanvas.tsx';
 import { NetworkStatusBanner, NetworkLatencyPill } from '../components/bingo/NetworkStatusBanner.tsx';
 import { MasterBoard75 } from '../components/bingo/MasterBoard75.tsx';
 import { LeaveConfirmModal } from '../components/bingo/LeaveConfirmModal.tsx';
+import { CartelaPickerModal } from '../components/bingo/CartelaPickerModal.tsx';
 
 export const BingoPage: React.FC = () => {
   const {
@@ -194,6 +195,9 @@ export const BingoPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 400 Cartela Selection Modal */}
+      <CartelaPickerModal />
 
       {/* Victory Celebration Modal */}
       <WinModal />

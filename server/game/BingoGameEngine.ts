@@ -624,7 +624,7 @@ class BingoGameEngine {
       room.nextRoundTickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
     }
 
-    // System draws random unique Cartela numbers from 1 to 400
+    // Validate and honor requested Cartela IDs (1-400) chosen by user
     const drawnIds: number[] = [];
     const getNextUniqueCartelaId = (): number => {
       let attempts = 0;
@@ -638,11 +638,37 @@ class BingoGameEngine {
       return Math.floor(1 + Math.random() * 400);
     };
 
-    // Card 1
-    drawnIds.push(getNextUniqueCartelaId());
+    if (Array.isArray(requestedCartelaIds) && requestedCartelaIds.length > 0) {
+      for (let i = 0; i < quantity; i++) {
+        const reqId = requestedCartelaIds[i];
+        if (reqId && reqId >= 1 && reqId <= 400) {
+          if (assignedIds.has(reqId)) {
+            return {
+              success: false,
+              preBoughtForNextRound: false,
+              tickets: [],
+              error: `Cartela #${reqId} is already taken in this arena. Please choose another cartela.`
+            };
+          }
+          if (!drawnIds.includes(reqId)) {
+            drawnIds.push(reqId);
+          }
+        }
+      }
+    } else if (typeof requestedCartelaIds === 'number' && requestedCartelaIds >= 1 && requestedCartelaIds <= 400) {
+      if (assignedIds.has(requestedCartelaIds)) {
+        return {
+          success: false,
+          preBoughtForNextRound: false,
+          tickets: [],
+          error: `Cartela #${requestedCartelaIds} is already taken in this arena. Please choose another cartela.`
+        };
+      }
+      drawnIds.push(requestedCartelaIds);
+    }
 
-    // If quantity is 2: draw Card 2 (strictly max 2 cartelas, zero free bonus card)
-    if (quantity === 2) {
+    // Fill any remaining required card slots with unique untaken cartelas
+    while (drawnIds.length < quantity) {
       drawnIds.push(getNextUniqueCartelaId());
     }
 
@@ -1567,7 +1593,14 @@ class BingoGameEngine {
       clearInterval(this.intervals.get(intervalKey)!);
     }
 
-    await this.processRoundVictory(room, [
+    const winningCards: Array<{
+      userId?: string;
+      userName: string;
+      cartelaId: number;
+      isReal: boolean;
+      winningPattern: string;
+      winningIndices: number[];
+    }> = [
       {
         userId,
         userName,
@@ -1576,7 +1609,41 @@ class BingoGameEngine {
         winningPattern: winCheck.winningPattern || 'Bingo Line',
         winningIndices: winCheck.winningIndices || []
       }
-    ]);
+    ];
+
+    // Check if other real players also completed a winning line on this ball (simultaneous split pot)
+    for (const [otherUid, tList] of room.tickets.entries()) {
+      for (const t of tList) {
+        if (otherUid === userId && t.cartelaId === cartelaId) continue;
+        const otherCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
+        if (otherCheck.isWin) {
+          winningCards.push({
+            userId: otherUid,
+            userName: t.userName,
+            cartelaId: t.cartelaId,
+            isReal: true,
+            winningPattern: otherCheck.winningPattern || 'Bingo Line',
+            winningIndices: otherCheck.winningIndices || []
+          });
+        }
+      }
+    }
+
+    // Check if any bot cards also completed on this ball
+    for (const opp of room.opponentCards) {
+      const botCheck = checkWinningPattern(opp.cardMatrix, room.drawnNumbers);
+      if (botCheck.isWin) {
+        winningCards.push({
+          userName: opp.opponentName,
+          cartelaId: opp.cartelaId,
+          isReal: false,
+          winningPattern: botCheck.winningPattern || 'Bingo Line',
+          winningIndices: botCheck.winningIndices || []
+        });
+      }
+    }
+
+    await this.processRoundVictory(room, winningCards);
 
     return {
       success: true,
@@ -1621,6 +1688,12 @@ class BingoGameEngine {
   }
 
   public broadcastRoomState(room: GameRoomState) {
+    const occupiedCartelaIds = new Set<number>();
+    room.tickets.forEach(list => list.forEach(t => occupiedCartelaIds.add(t.cartelaId)));
+    if (room.nextRoundTickets) {
+      room.nextRoundTickets.forEach(list => list.forEach(t => occupiedCartelaIds.add(t.cartelaId)));
+    }
+
     const payload = {
       success: true,
       roomId: room.id,
@@ -1637,7 +1710,8 @@ class BingoGameEngine {
       currentCall: room.currentCall,
       winResult: room.winResult,
       waitingForPlayers: room.waitingForPlayers || false,
-      realPlayerCount: room.tickets.size
+      realPlayerCount: room.tickets.size,
+      occupiedCartelaIds: Array.from(occupiedCartelaIds)
     };
 
     io.to(room.id).emit('room_state', payload);

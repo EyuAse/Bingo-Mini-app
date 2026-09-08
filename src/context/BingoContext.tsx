@@ -75,10 +75,12 @@ interface BingoContextType {
   // 400 Cartelas Pool & Selection
   selectedCartelaIds: [number, number, number];
   setSelectedCartelaIds: (ids: [number, number, number]) => void;
+  occupiedCartelaIds: number[];
   isCartelaPickerOpen: boolean;
   openCartelaPicker: () => void;
   closeCartelaPicker: () => void;
   chooseCartelaId: (slotIdx: number, newId: number) => void;
+  toggleCartelaSelection: (cartelaId: number) => void;
 
   // Active Game State
   gameActive: boolean;
@@ -273,6 +275,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     Math.floor(261 + Math.random() * 135)
   ]);
   const [isCartelaPickerOpen, setIsCartelaPickerOpen] = useState<boolean>(false);
+  const [occupiedCartelaIds, setOccupiedCartelaIds] = useState<number[]>([]);
 
   const setCardQuantity = (qty: number) => {
     setCardQuantityState(Math.max(1, Math.min(2, qty)));
@@ -642,6 +645,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (typeof state.waitingForPlayers === 'boolean') setWaitingForPlayers(state.waitingForPlayers);
       if (typeof state.realPlayerCount === 'number') setRealPlayerCount(state.realPlayerCount);
       if (state.stakeRoomsSummary) setStakeRoomsSummary(state.stakeRoomsSummary);
+      if (Array.isArray(state.occupiedCartelaIds)) setOccupiedCartelaIds(state.occupiedCartelaIds);
 
       if (state.currentCall) {
         setCurrentCall(state.currentCall);
@@ -1142,10 +1146,59 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const closeCartelaPicker = () => setIsCartelaPickerOpen(false);
 
   const chooseCartelaId = (slotIdx: number, newId: number) => {
-    const updated: [number, number, number] = [...selectedCartelaIds];
-    updated[slotIdx] = newId;
-    setSelectedCartelaIds(updated);
-    showToast(`🎟️ Selected Cartela #${newId}`);
+    if (hasTicket && roundPhase === 'playing') return;
+    const clamped = Math.max(1, Math.min(400, newId));
+    setSelectedCartelaIds(prev => {
+      const updated: [number, number, number] = [prev[0], prev[1], prev[2]];
+      updated[slotIdx] = clamped;
+      if (slotIdx === 0) setCartela1Data(generateCardFromId(clamped));
+      else if (slotIdx === 1) setCartela2Data(generateCardFromId(clamped));
+      else if (slotIdx === 2) setCartela3Data(generateCardFromId(clamped));
+      return updated;
+    });
+    soundEngine.playPop();
+    showToast(`🎟️ Selected Cartela #${clamped}`);
+  };
+
+  const toggleCartelaSelection = (cartelaId: number) => {
+    if (hasTicket && roundPhase === 'playing') return;
+    if (occupiedCartelaIds.includes(cartelaId)) {
+      showToast(`🔒 Cartela #${cartelaId} is already taken in this arena!`);
+      return;
+    }
+
+    setSelectedCartelaIds(prev => {
+      const activeIds = prev.slice(0, cardQuantity);
+      const updated: [number, number, number] = [prev[0], prev[1], prev[2]];
+
+      if (activeIds.includes(cartelaId)) {
+        // Deselect: replace with next available untaken cartela so user always has valid cards
+        let altId = Math.floor(1 + Math.random() * 400);
+        while (altId === cartelaId || updated.includes(altId) || occupiedCartelaIds.includes(altId)) {
+          altId = Math.floor(1 + Math.random() * 400);
+        }
+        const idx = activeIds.indexOf(cartelaId);
+        updated[idx] = altId;
+        if (idx === 0) setCartela1Data(generateCardFromId(altId));
+        else if (idx === 1) setCartela2Data(generateCardFromId(altId));
+        showToast(`Deselected Cartela #${cartelaId}`);
+      } else {
+        // Select: in 1-card mode, set slot 0. In 2-card mode, place into slot 0 and shift slot 0 to slot 1
+        if (cardQuantity === 1) {
+          updated[0] = cartelaId;
+          setCartela1Data(generateCardFromId(cartelaId));
+        } else {
+          updated[1] = updated[0];
+          updated[0] = cartelaId;
+          setCartela1Data(generateCardFromId(cartelaId));
+          setCartela2Data(generateCardFromId(updated[1]));
+        }
+        showToast(`✓ Picked Cartela #${cartelaId}`);
+      }
+
+      return updated;
+    });
+    soundEngine.playPop();
   };
 
   const shuffleCartela = (cardIdx: number = 0) => {
@@ -1546,6 +1599,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         openCartelaPicker,
         closeCartelaPicker,
         chooseCartelaId,
+        toggleCartelaSelection,
+        occupiedCartelaIds,
         gameActive,
         cartela1Data,
         cartela2Data,

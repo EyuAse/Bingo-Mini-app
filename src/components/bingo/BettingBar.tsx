@@ -22,7 +22,8 @@ export const BettingBar: React.FC = () => {
     hasTicket,
     stakeRoomsSummary,
     shuffleCartela,
-    shuffleAllCartelas
+    shuffleAllCartelas,
+    openCartelaPicker
   } = useBingo();
   const { balance, bonus, isBalanceVisible } = useWallet();
   const { t } = useLanguage();
@@ -146,9 +147,14 @@ export const BettingBar: React.FC = () => {
             })}
           </div>
 
-          {/* ── Row 3: Interactive Selected Cartela & Shuffle Action ── */}
+          {/* ── Row 3: Interactive Selected Cartela & Pick Action ── */}
           <div className="compact-assigned-row">
-            <div className="compact-assigned-left">
+            <div
+              className="compact-assigned-left"
+              onClick={openCartelaPicker}
+              style={{ cursor: 'pointer' }}
+              title="Click to choose cartela numbers"
+            >
               <span className="compact-assigned-tag">🎟️</span>
               <span className="compact-assigned-lbl">Selected:</span>
               <span className="compact-assigned-val">
@@ -160,13 +166,11 @@ export const BettingBar: React.FC = () => {
             <button
               type="button"
               className="compact-change-cartela-btn"
-              onClick={() => {
-                shuffleAllCartelas(cardQuantity);
-              }}
-              title="Pick different cartela numbers"
+              onClick={openCartelaPicker}
+              title="Pick your favorite Cartelas from 400 numbers"
             >
-              <i className="fa-solid fa-shuffle"></i>
-              <span>Shuffle 🎲</span>
+              <i className="fa-solid fa-hand-pointer"></i>
+              <span>Pick Cards 🎟️</span>
             </button>
           </div>
 

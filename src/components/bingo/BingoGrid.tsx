@@ -52,11 +52,11 @@ const NewCard5x5: React.FC<{
   onDaub: (cardIdx: number, cellIdx: number) => void;
   isSingleCard?: boolean;
   isPreview?: boolean;
-  onShuffle?: () => void;
+  onOpenPicker?: () => void;
 }> = ({
   cells, cardIndex, cartelaId, label,
   isWinningCard, winningLine, autoPlay, onDaub,
-  isSingleCard, isPreview, onShuffle
+  isSingleCard, isPreview, onOpenPicker
 }) => {
   const status = getCardStatus(cells);
 
@@ -64,21 +64,26 @@ const NewCard5x5: React.FC<{
     <div className={`new-cartela-card ${isSingleCard ? 'single-card' : ''}`}>
       {/* ── Card Header Bar: Cartela #202 (Single-line, no overlap) ── */}
       <div className="new-card-header">
-        <div className="new-card-header-left">
+        <div
+          className="new-card-header-left"
+          onClick={isPreview && onOpenPicker ? onOpenPicker : undefined}
+          style={{ cursor: isPreview ? 'pointer' : 'default' }}
+          title={isPreview ? "Click to pick from 400 cartelas" : undefined}
+        >
           <span className="new-card-header-label">{label}</span>
           {isPreview && <span className="new-card-preview-badge">PREVIEW</span>}
         </div>
-        {isPreview && onShuffle && (
+        {isPreview && onOpenPicker && (
           <button
             type="button"
             className="btn-card-preview-shuffle"
             onClick={e => {
               e.stopPropagation();
-              onShuffle();
+              onOpenPicker();
             }}
-            title="Preview different cartela number"
+            title="Choose from 400 cartelas"
           >
-            🎲 Change
+            🎟️ Pick
           </button>
         )}
         {!isPreview && status.hot && (
@@ -147,7 +152,7 @@ export const BingoGrid: React.FC = () => {
     autoPlay,
     roundPhase,
     hasTicket,
-    shuffleCartela,
+    openCartelaPicker,
   } = useBingo();
 
   const isSingleCard = totalPlayableCards === 1;
@@ -182,7 +187,7 @@ export const BingoGrid: React.FC = () => {
           onDaub={handleManualDaub}
           isSingleCard={isSingleCard}
           isPreview={roundPhase === 'lobby' && !hasTicket}
-          onShuffle={() => shuffleCartela(card.cardIndex)}
+          onOpenPicker={openCartelaPicker}
         />
       ))}
     </div>
