@@ -3,6 +3,7 @@ import { useBingo } from '../../context/BingoContext.tsx';
 import { useWallet } from '../../context/WalletContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { RoomSwitchModal } from './RoomSwitchModal.tsx';
+import { StakeRoomSelectorModal } from '../games/StakeRoomSelectorModal.tsx';
 
 export const BettingBar: React.FC = () => {
   // ── All hooks untouched ────────────────────────────────────
@@ -21,14 +22,13 @@ export const BettingBar: React.FC = () => {
     lobbyCountdown,
     hasTicket,
     stakeRoomsSummary,
-    shuffleCartela,
-    shuffleAllCartelas,
     openCartelaPicker,
     hasSelectedCartelas
   } = useBingo();
   const { balance, bonus, isBalanceVisible } = useWallet();
   const { t } = useLanguage();
 
+  const [showStakeModal, setShowStakeModal] = useState<boolean>(false);
   const [pendingSwitchStake, setPendingSwitchStake] = useState<number | null>(null);
   const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
   const [isCancelling, setIsCancelling] = useState<boolean>(false);
@@ -43,21 +43,20 @@ export const BettingBar: React.FC = () => {
     }
   };
 
-  // ── All logic untouched ────────────────────────────────────
-  const betChips = [10, 20, 50, 100];
   const totalCost = betAmount * cardQuantity;
-
-  const handleChipClick = (chip: number) => {
-    if (chip === betAmount) return;
-    if (hasTicket && roundPhase === 'lobby') {
-      setPendingSwitchStake(chip);
-    } else {
-      setBetAmount(chip);
-    }
-  };
 
   return (
     <div className="compact-betting-bar">
+
+      {/* Stake Room Selector Modal for switching rooms inside lobby */}
+      <StakeRoomSelectorModal
+        isOpen={showStakeModal}
+        onClose={() => setShowStakeModal(false)}
+        onSelectStake={(stake) => {
+          setBetAmount(stake);
+          setShowStakeModal(false);
+        }}
+      />
 
       {/* Active Room Switch Confirmation Modal — logic 100% untouched */}
       <RoomSwitchModal
@@ -102,129 +101,72 @@ export const BettingBar: React.FC = () => {
           </button>
         </div>
       ) : (
-        <>
-          {/* ── Row 1: Header + Balance ── */}
-          <div className="compact-betting-hdr">
-            <div className="compact-betting-hdr-left">
-              <div className="compact-hdr-icon">🪙</div>
-              <div className="compact-hdr-text">
-                <span className="compact-hdr-title">Stake Amount</span>
-                <span className="compact-hdr-sub">Bigger stakes, bigger prizes!</span>
-              </div>
+        /* ── Ultra-Compact Single-Row Lobby Buy Bar (~46px) ── */
+        <div className="compact-lobby-buy-bar">
+          <div className="compact-lobby-left-controls">
+            {/* 1. Stepper for 1 or 2 cartelas */}
+            <div className="compact-lobby-stepper" title="Choose 1 or 2 cartelas">
+              <button
+                type="button"
+                className="btn-stepper-mini"
+                onClick={() => setCardQuantity(cardQuantity - 1)}
+                disabled={cardQuantity <= 1 || hasTicket}
+              >
+                −
+              </button>
+              <span className="compact-stepper-num">{cardQuantity}</span>
+              <button
+                type="button"
+                className="btn-stepper-mini"
+                onClick={() => setCardQuantity(cardQuantity + 1)}
+                disabled={cardQuantity >= 2 || hasTicket}
+              >
+                +
+              </button>
             </div>
 
-            {/* Balance pill */}
-            <div className="compact-balance-pill">
-              <i className="fa-solid fa-wallet"></i>
-              <strong>
-                {isBalanceVisible ? `${(balance + bonus).toFixed(0)} ETB` : '••••'}
-              </strong>
-            </div>
-          </div>
-
-          {/* ── Row 2: Sleek Low-Profile Stake Chips (10, 20, 50, 100 ETB) ── */}
-          <div className="compact-stake-chips-row">
-            {betChips.map(chip => {
-              const count = stakeRoomsSummary[chip] || 0;
-              const isSelected = betAmount === chip;
-              return (
-                <button
-                  key={chip}
-                  type="button"
-                  className={`compact-stake-chip${isSelected ? ' selected' : ''}`}
-                  onClick={() => handleChipClick(chip)}
-                  disabled={roundPhase === 'playing' && hasTicket}
-                >
-                  {isSelected && (
-                    <span className="compact-chip-check">✓</span>
-                  )}
-                  <span className="compact-chip-coin">🪙</span>
-                  <span className="compact-chip-amount">{chip} ETB</span>
-                  <span className="compact-chip-player-dot" title={`${count} players`}>
-                    {count >= 2 ? '🟢' : '🟡'} {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* ── Row 3: Interactive Selected Cartela & Pick Action ── */}
-          <div className="compact-assigned-row">
-            <div
-              className="compact-assigned-left"
-              onClick={openCartelaPicker}
-              style={{ cursor: 'pointer' }}
-              title="Click to choose cartela numbers"
-            >
-              <span className="compact-assigned-tag">🎟️</span>
-              <span className="compact-assigned-lbl">Selected:</span>
-              <span className="compact-assigned-val">
-                {hasSelectedCartelas && selectedCartelaIds.length > 0 ? (
-                  <>
-                    #{selectedCartelaIds[0]}
-                    {cardQuantity >= 2 && selectedCartelaIds[1] && ` · #${selectedCartelaIds[1]}`}
-                  </>
-                ) : (
-                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>None Selected (Tap to Pick)</span>
-                )}
-              </span>
-            </div>
-
+            {/* 2. Pick cards button */}
             <button
               type="button"
-              className="compact-change-cartela-btn"
+              className="btn-compact-pick-cards"
               onClick={openCartelaPicker}
-              title="Pick your favorite Cartelas from 400 numbers"
+              title="Pick your cartela numbers (from 400 cards)"
             >
               <i className="fa-solid fa-hand-pointer"></i>
-              <span>{hasSelectedCartelas ? 'Change Cards' : 'Pick Cards 🎟️'}</span>
+              <span>
+                {hasSelectedCartelas && selectedCartelaIds.length > 0
+                  ? `Cards #${selectedCartelaIds.slice(0, cardQuantity).join(', #')}`
+                  : 'Pick Cards 🎟️'}
+              </span>
+            </button>
+
+            {/* 3. Active Stake Room Pill / Switcher */}
+            <button
+              type="button"
+              className="btn-compact-stake-pill"
+              onClick={() => setShowStakeModal(true)}
+              title="Change stake room (10, 20, 50, 100 ETB)"
+            >
+              <span>🪙 {betAmount} ETB</span>
+              <i className="fa-solid fa-chevron-down mini-arrow"></i>
             </button>
           </div>
 
-          {/* ── Row 4: Inline Cartelas Stepper ── */}
-          <div className="compact-stepper-row">
-            <div className="compact-stepper-left">
-              <span className="compact-cartelas-icon">🎴</span>
-              <span className="compact-cartelas-label">Cartelas:</span>
-
-              <div className="compact-stepper-ctrls">
-                <button
-                  type="button"
-                  className="btn-stepper-mini"
-                  onClick={() => setCardQuantity(cardQuantity - 1)}
-                  disabled={cardQuantity <= 1 || hasTicket}
-                >
-                  −
-                </button>
-                <span className="compact-stepper-num">{cardQuantity}</span>
-                <button
-                  type="button"
-                  className="btn-stepper-mini"
-                  onClick={() => setCardQuantity(cardQuantity + 1)}
-                  disabled={cardQuantity >= 2 || hasTicket}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Row 5: Compact Full-Width Buy Ticket CTA Button ── */}
+          {/* 4. Primary CTA: Buy Ticket Button */}
           <button
             type="button"
-            className="btn-buy-ticket-compact"
+            className="btn-compact-buy-cta"
             onClick={hasTicket ? undefined : (!hasSelectedCartelas ? openCartelaPicker : buyTicket)}
             disabled={hasTicket}
           >
             <i className={hasSelectedCartelas ? "fa-solid fa-ticket" : "fa-solid fa-hand-pointer"}></i>
             <span>
               {!hasSelectedCartelas
-                ? `🎟️ SELECT CARTELA(S) TO BET (${totalCost} ETB)`
-                : `${t('bingo.buyTicket')} · ${totalCost} ETB`
-              }
+                ? `SELECT CARDS (${totalCost} ETB)`
+                : `${t('bingo.buyTicket')} · ${totalCost} ETB`}
             </span>
           </button>
-        </>
+        </div>
       )}
 
       {/* ── Safe In-Lobby Cancel Bet Confirmation Modal ── */}

@@ -1,16 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { useBingo } from '../../context/BingoContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
+import { StakeRoomSelectorModal } from './StakeRoomSelectorModal.tsx';
 
 export const BigBingoCard: React.FC = () => {
   const { switchPage } = useApp();
   const { startLobbyCountdown, playersCount, prizePool } = useBingo();
   const { lang } = useLanguage();
+  const [showStakeModal, setShowStakeModal] = useState<boolean>(false);
 
   const handlePlayNow = () => {
-    switchPage('bingo');
-    startLobbyCountdown();
+    setShowStakeModal(true);
   };
 
   return (
@@ -82,6 +83,12 @@ export const BigBingoCard: React.FC = () => {
         <span>{lang === 'am' ? 'አሁን 75-ኳስ ቢንጎ ይጫወቱ' : 'PLAY 75-BALL BINGO NOW'}</span>
         <i className="fa-solid fa-arrow-right"></i>
       </button>
+
+      {/* Stake Room Selection Modal */}
+      <StakeRoomSelectorModal
+        isOpen={showStakeModal}
+        onClose={() => setShowStakeModal(false)}
+      />
     </div>
   );
 };

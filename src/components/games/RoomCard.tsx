@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { useBingo } from '../../context/BingoContext.tsx';
+import { StakeRoomSelectorModal } from './StakeRoomSelectorModal.tsx';
 
 export interface RoomCardProps {
   id: string;
@@ -22,10 +23,10 @@ export const RoomCard: React.FC<RoomCardProps> = ({
 }) => {
   const { switchPage } = useApp();
   const { startLobbyCountdown } = useBingo();
+  const [showStakeModal, setShowStakeModal] = useState<boolean>(false);
 
   const handlePlayNow = () => {
-    switchPage('bingo');
-    startLobbyCountdown();
+    setShowStakeModal(true);
   };
 
   return (
@@ -58,6 +59,11 @@ export const RoomCard: React.FC<RoomCardProps> = ({
           <i className="fa-solid fa-arrow-right"></i>
         </button>
       </div>
+
+      <StakeRoomSelectorModal
+        isOpen={showStakeModal}
+        onClose={() => setShowStakeModal(false)}
+      />
     </div>
   );
 };

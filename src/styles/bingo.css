@@ -5022,50 +5022,63 @@
    MOBILE DEFAULT RULES (< 460px Portrait Phone View - Untouched)
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* ── SINGLE CARTELA PROPORTIONAL ANTI-STRETCH (Image 2 Fix) ── */
+/* ── SINGLE CARTELA PROPORTIONAL ANTI-STRETCH ── */
 .compact-cartelas-stack.single-cartela {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 4px !important;
+  width: 100% !important;
+  overflow: hidden !important;
 }
 
 .new-cartela-card.single-card {
-  flex: 0 1 auto;
-  max-height: fit-content;
-  width: 100%;
-  max-width: 320px;
+  flex: 0 1 auto !important;
+  max-height: fit-content !important;
+  width: 100% !important;
+  max-width: 320px !important;
+  margin: 0 auto !important;
 }
 
 .new-cartela-card.single-card .new-card-header {
-  height: 18px;
+  height: 20px !important;
 }
 
 .new-cartela-card.single-card .new-card-body {
-  height: auto;
-  flex: 0 1 auto;
-  gap: 2px;
+  width: 100% !important;
+  max-width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.new-cartela-card.single-card .new-bingo-col-headers,
+.new-cartela-card.single-card .new-cartela-5x5 {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 2px !important;
+  box-sizing: border-box !important;
 }
 
 .new-cartela-card.single-card .new-bingo-col-headers {
-  height: 18px;
+  height: 20px !important;
 }
 
 .new-cartela-card.single-card .new-cartela-5x5 {
-  height: auto;
-  flex: 0 1 auto;
-  aspect-ratio: 1 / 1;
-  max-height: 260px;
-  gap: 2px;
+  grid-template-rows: repeat(5, 1fr) !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1 !important;
+  max-height: 280px !important;
 }
 
 .new-cartela-card.single-card .new-cartela-cell {
-  aspect-ratio: 1 / 1;
-  font-size: clamp(0.78rem, 2.8vw, 0.95rem);
+  aspect-ratio: 1 !important;
+  font-size: clamp(0.85rem, 3vw, 1.05rem) !important;
 }
 
 
@@ -5083,18 +5096,18 @@
   width: 100% !important;
   flex: 1 1 0 !important;
   min-height: 0 !important;
-  justify-content: space-between !important;
+  justify-content: flex-start !important;
   overflow: hidden !important;
 }
 
 .compact-cartelas-stack.dual-cartela .new-cartela-card {
   flex: 1 1 0 !important;
   min-height: 0 !important;
-  max-height: min(202px, calc((100% - 4px) / 2)) !important;
+  max-height: calc((100% - 4px) / 2) !important;
   width: 100% !important;
   max-width: min(290px, 100%) !important;
   margin: 0 auto !important;
-  padding: 3px 4px 4px 4px !important;
+  padding: 3px 5px 4px 5px !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
@@ -5102,13 +5115,14 @@
 }
 
 .compact-cartelas-stack.dual-cartela .new-card-header {
-  height: 16px !important;
+  height: 18px !important;
   flex-shrink: 0 !important;
   padding: 0 2px !important;
 }
 
 .compact-cartelas-stack.dual-cartela .new-card-header-label {
-  font-size: 0.68rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
 }
 
 .compact-cartelas-stack.dual-cartela .new-card-body {
@@ -5116,21 +5130,33 @@
   min-height: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 1.5px !important;
+  gap: 2px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
   overflow: hidden !important;
 }
 
-.compact-cartelas-stack.dual-cartela .new-bingo-col-headers {
-  height: 15px !important;
-  flex-shrink: 0 !important;
-  gap: 1.5px !important;
-  max-width: min(270px, 100%) !important;
+/* BOTH header and 5x5 share exact 100% width, repeat(5, 1fr), and 2px gap — guarantees 100% column alignment */
+.compact-cartelas-stack.dual-cartela .new-bingo-col-headers,
+.compact-cartelas-stack.dual-cartela .new-cartela-5x5 {
   width: 100% !important;
+  max-width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 2px !important;
+  box-sizing: border-box !important;
   margin: 0 auto !important;
 }
 
+.compact-cartelas-stack.dual-cartela .new-bingo-col-headers {
+  height: 18px !important;
+  flex-shrink: 0 !important;
+}
+
 .compact-cartelas-stack.dual-cartela .new-bingo-col-hdr {
-  font-size: 0.65rem !important;
+  font-size: 0.68rem !important;
+  font-weight: 950 !important;
   height: 100% !important;
 }
 
@@ -5139,26 +5165,25 @@
   min-height: 0 !important;
   height: 100% !important;
   max-height: 100% !important;
-  aspect-ratio: 1 / 1 !important;
-  margin: 0 auto !important;
-  display: grid !important;
-  grid-template-columns: repeat(5, 1fr) !important;
   grid-template-rows: repeat(5, 1fr) !important;
-  gap: 1.5px !important;
-  width: auto !important;
 }
 
 .compact-cartelas-stack.dual-cartela .new-cartela-cell {
+  width: 100% !important;
   height: 100% !important;
   min-height: 0 !important;
-  aspect-ratio: 1 !important;
-  font-size: clamp(0.7rem, 1.9vh, 0.88rem) !important;
+  aspect-ratio: unset !important;
+  font-size: clamp(0.72rem, 2.2vh, 0.92rem) !important;
   padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-/* ── ACTION BAR (Clean relative bottom placement, zero sticky overlap) ── */
+/* ── ACTION BAR (Clean relative bottom placement, zero sticky overlap, never cut off) ── */
 .in-game-bottom-action-bar,
-.lobby-placed-bet-container {
+.lobby-placed-bet-container,
+.compact-lobby-buy-bar {
   position: relative !important;
   bottom: auto !important;
   margin-top: auto !important;
@@ -5181,6 +5206,155 @@
 
 .btn-lobby-cancel-action {
   padding: 6px 10px !important;
+  height: 36px !important;
+  white-space: nowrap !important;
+}
+
+/* ── COMPACT LOBBY BUY BAR (Single Row ~46px) ── */
+.compact-lobby-buy-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  width: 100% !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important;
+}
+
+.compact-lobby-left-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Mini stepper */
+.compact-lobby-stepper {
+  display: flex !important;
+  align-items: center !important;
+  background: #f1f5f9 !important;
+  border-radius: 8px !important;
+  padding: 2px 4px !important;
+  gap: 4px !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.compact-lobby-stepper .btn-stepper-mini {
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 900 !important;
+  font-size: 0.85rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: all 0.12s ease !important;
+}
+
+.compact-lobby-stepper .btn-stepper-mini:hover:not(:disabled) {
+  background: #e2e8f0 !important;
+}
+
+.compact-lobby-stepper .btn-stepper-mini:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+.compact-lobby-stepper .compact-stepper-num {
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  min-width: 12px !important;
+  text-align: center !important;
+}
+
+/* Pick cards button */
+.btn-compact-pick-cards {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  border-radius: 8px !important;
+  padding: 4px 7px !important;
+  font-size: 0.68rem !important;
+  font-weight: 850 !important;
+  color: #1d4ed8 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer !important;
+  height: 28px !important;
+  white-space: nowrap !important;
+  transition: all 0.15s ease !important;
+}
+
+.btn-compact-pick-cards:hover {
+  background: #dbeafe !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Stake badge / switcher */
+.btn-compact-stake-pill {
+  background: #fefce8 !important;
+  border: 1px solid #fef08a !important;
+  border-radius: 8px !important;
+  padding: 4px 6px !important;
+  font-size: 0.68rem !important;
+  font-weight: 900 !important;
+  color: #854d0e !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  cursor: pointer !important;
+  height: 28px !important;
+  white-space: nowrap !important;
+  transition: all 0.15s ease !important;
+}
+
+.btn-compact-stake-pill:hover {
+  background: #fef9c3 !important;
+  border-color: #facc15 !important;
+}
+
+.btn-compact-stake-pill .mini-arrow {
+  font-size: 0.55rem !important;
+  color: #ca8a04 !important;
+}
+
+/* Buy Ticket CTA */
+.btn-compact-buy-cta {
+  flex: 1 !important;
+  height: 36px !important;
+  background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%) !important;
+  color: #713f12 !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-weight: 950 !important;
+  font-size: 0.76rem !important;
+  letter-spacing: 0.3px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(234, 179, 8, 0.35) !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+  padding: 0 8px !important;
+}
+
+.btn-compact-buy-cta:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.5) !important;
+}
+
+.btn-compact-buy-cta:active {
+  transform: scale(0.98) !important;
 }
 
 /* Play area: strictly zero-scroll */
@@ -5278,17 +5452,17 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  padding: 8px 6px;
+  padding: 4px 6px;
   margin-top: auto;
-  gap: 10px;
-  position: sticky;
-  bottom: 0;
+  gap: 8px;
+  position: relative !important;
+  bottom: auto !important;
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(12px);
   border-top: 1px solid #e2e8f0;
   border-radius: 12px;
   z-index: 50;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .btn-in-game-leave {
@@ -6246,6 +6420,283 @@
   color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.6);
 }
+
+/* ══════════════════════════════════════════════════════════════
+   STAKE ROOM SELECTOR MODAL (Casino-Grade Arena Switcher)
+   ══════════════════════════════════════════════════════════════ */
+.stake-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.stake-modal-sheet {
+  background: #0f172a;
+  border: 1.5px solid #334155;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 440px;
+  padding: 16px;
+  box-sizing: border-box;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(234, 179, 8, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #f8fafc;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+/* Modal Header */
+.stake-modal-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+}
+
+.stake-modal-hdr-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stake-modal-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  margin: 0;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+}
+
+.stake-modal-sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.btn-close-stake-modal {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-close-stake-modal:hover {
+  background: #334155;
+  color: #ffffff;
+}
+
+/* Wallet Balance Strip */
+.stake-modal-wallet-bar {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wallet-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.wallet-bar-left i {
+  color: #facc15;
+}
+
+.wallet-bar-val {
+  font-size: 0.92rem;
+  font-weight: 950;
+  color: #22c55e;
+}
+
+/* 4 Rooms Grid */
+.stake-rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.stake-room-card {
+  background: #1e293b;
+  border: 1.5px solid #334155;
+  border-radius: 14px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.stake-room-card:hover {
+  transform: translateY(-2px);
+  border-color: #64748b;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.stake-room-card.active-room {
+  border-color: #facc15;
+  background: linear-gradient(145deg, rgba(234, 179, 8, 0.12), rgba(30, 41, 59, 0.95));
+  box-shadow: 0 0 16px rgba(250, 204, 21, 0.25);
+}
+
+.room-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.room-stake-pill {
+  font-size: 0.62rem;
+  font-weight: 950;
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 1px 5px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.room-live-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 2px 5px;
+  border-radius: 999px;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.live-dot.green {
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.live-dot.yellow {
+  background: #eab308;
+  box-shadow: 0 0 6px #eab308;
+}
+
+.room-main-stake-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.room-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.room-stake-values {
+  display: flex;
+  flex-direction: column;
+}
+
+.room-stake-amount {
+  font-size: 1.05rem;
+  font-weight: 950;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.room-stake-tier {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.room-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 6px;
+  margin-top: 2px;
+}
+
+.room-payout-label {
+  font-size: 0.64rem;
+  color: #94a3b8;
+}
+
+.room-payout-label strong {
+  color: #facc15;
+  font-weight: 900;
+}
+
+.room-enter-cta {
+  font-size: 0.66rem;
+  font-weight: 900;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.room-current-tag {
+  color: #facc15;
+  font-size: 0.64rem;
+  font-weight: 950;
+}
+
+/* Clickable stake pill in top stats strip */
+.clickable-stake-pill {
+  transition: all 0.15s ease;
+  border: 1px solid rgba(250, 204, 21, 0.3) !important;
+}
+
+.clickable-stake-pill:hover {
+  border-color: #facc15 !important;
+  background: rgba(250, 204, 21, 0.1) !important;
+  transform: translateY(-1px);
+}
+
 
 
 
