@@ -12,6 +12,7 @@ import { VoiceTesterModal } from '../components/bingo/VoiceTesterModal.tsx';
 import { ConfettiCanvas } from '../components/common/ConfettiCanvas.tsx';
 import { NetworkStatusBanner, NetworkLatencyPill } from '../components/bingo/NetworkStatusBanner.tsx';
 import { OneToGoAlert } from '../components/bingo/OneToGoAlert.tsx';
+import { MasterBoard75 } from '../components/bingo/MasterBoard75.tsx';
 
 export const BingoPage: React.FC = () => {
   const {
@@ -122,24 +123,31 @@ export const BingoPage: React.FC = () => {
         {/* Real-Time Network Resilience Alerts */}
         <NetworkStatusBanner />
 
-        {/* 2. Live Current Call Banner */}
-        <CurrentCallBanner />
-
-        {/* 3. Live Stats: Stake / Prize / Players / Called (Floating white card) */}
+        {/* Live Stats: Stake / Prize / Players / Called (Floating slim strip) */}
         <StatsStrip />
 
-        {/* 4. Full-Width Cartela Area (Side-by-side cards when playing, clean Spectator card when not) */}
-        {hasTicket ? (
-          <BingoGrid />
-        ) : (
-          <SpectatorCard />
-        )}
+        {/* ── Main Split 2-Column Board & Cartela Layout ── */}
+        <div className="bingo-split-layout-grid">
+          {/* Left Column: Full 1-75 Main Master Board (Flashboard) */}
+          <div className="bingo-left-flashboard-col">
+            <MasterBoard75 />
+          </div>
 
-        {/* 4.2 In-Game "1 to Go" (1TG) Alert Banner */}
-        <OneToGoAlert />
+          {/* Right Column: Call Banner, Controls, Active Cartelas, Betting Bar */}
+          <div className="bingo-right-playarea-col">
+            <CurrentCallBanner />
 
-        {/* 5. Stake Selector, System Cartelas & Buy Ticket Bar */}
-        <BettingBar />
+            {hasTicket ? (
+              <BingoGrid />
+            ) : (
+              <SpectatorCard />
+            )}
+
+            <OneToGoAlert />
+
+            <BettingBar />
+          </div>
+        </div>
       </div>
 
       {/* Settings & Tools Modal Drawer — keeps top bar 100% clean without overlapping buttons */}
