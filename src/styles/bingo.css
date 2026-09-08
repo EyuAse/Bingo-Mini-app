@@ -1422,7 +1422,7 @@
   }
 
   .bingo-page-content-wrapper {
-    padding: 4px 6px calc(115px + env(safe-area-inset-bottom, 20px));
+    padding: 4px 4px calc(90px + env(safe-area-inset-bottom, 16px));
     gap: 5px;
     max-width: 100%;
   }
@@ -3446,34 +3446,35 @@
 /* Side-by-side Cartela Grid (1 or 2 equal cards) */
 .cartelas-grid {
   display: grid;
-  gap: 5px;
+  gap: 6px;
   width: 100%;
   box-sizing: border-box;
 }
 .cartelas-grid.grid-1 {
   grid-template-columns: 1fr;
-  max-width: 340px;
+  max-width: 440px;
   margin: 0 auto;
   width: 100%;
 }
 .cartelas-grid.grid-2 {
   grid-template-columns: 1fr 1fr;
-  gap: 5px;
+  gap: 6px;
   width: 100%;
   align-items: stretch;
 }
 
-/* ── New Card Component ──────────────────────────────────── */
+/* ── New Card Component (Larger, High Readability) ────────── */
 .new-cartela-card {
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.09);
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
   background: #ffffff;
   box-sizing: border-box;
   width: 100%;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Card top header bar */
@@ -3481,17 +3482,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px;
-  font-size: 0.6875rem;
+  padding: 5px 9px;
+  font-size: 0.72rem;
   font-weight: 900;
   color: #fff;
 }
 .new-card-header-label { letter-spacing: 0.2px; }
 .new-card-id-pill {
-  background: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.28);
   border-radius: 9999px;
-  padding: 1px 6px;
-  font-size: 0.5625rem;
+  padding: 2px 7px;
+  font-size: 0.58rem;
   font-weight: 900;
   color: #fff;
 }
@@ -3518,25 +3519,25 @@
 
 /* Card body (BINGO header + 5x5 grid) */
 .new-card-body {
-  padding: 3px 3px 4px;
+  padding: 4px 4px 5px;
   display: flex;
   flex-direction: column;
-  gap: 2.5px;
+  gap: 3px;
 }
 
 /* BINGO column headers */
 .new-bingo-col-headers {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 2px;
+  gap: 2.5px;
 }
 .new-bingo-col-hdr {
-  border-radius: 5px;
-  height: 23px;
+  border-radius: 6px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.7rem, 2.8vw, 0.85rem);
+  font-size: clamp(0.78rem, 3vw, 0.95rem);
   font-weight: 950;
   color: #fff;
 }
@@ -3550,19 +3551,19 @@
 .new-cartela-5x5 {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 2px;
+  gap: 2.5px;
 }
 
 .new-cartela-cell {
   aspect-ratio: 1;
-  min-height: 34px;
-  border-radius: 6px;
+  min-height: 38px;
+  border-radius: 7px;
   background: #fff;
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1.5px solid rgba(0,0,0,0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.8rem, 3.8vw, 1.05rem);
+  font-size: clamp(0.95rem, 4.4vw, 1.25rem);
   font-weight: 950;
   color: #0f172a;
   cursor: pointer;
@@ -3571,11 +3572,34 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
+.new-cartela-cell .cartela-cell-val {
+  display: inline-block;
+  line-height: 1;
+  font-weight: 950;
+}
 .new-cartela-cell.interactive-tap:hover {
   border-color: #a855f7;
   background: #faf5ff;
 }
 .new-cartela-cell:active { transform: scale(0.92); }
+
+/* In 1-card mode or Focus Card view, make the cells extra-large */
+.cartelas-grid.grid-1 .new-cartela-cell,
+.cartelas-grid.focus-card-view .new-cartela-cell {
+  min-height: 52px;
+  font-size: clamp(1.2rem, 5.5vw, 1.6rem);
+  border-radius: 9px;
+}
+.cartelas-grid.grid-1 .new-bingo-col-hdr,
+.cartelas-grid.focus-card-view .new-bingo-col-hdr {
+  height: 32px;
+  font-size: 1.05rem;
+}
+.cartelas-grid.grid-1 .new-card-header,
+.cartelas-grid.focus-card-view .new-card-header {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
 
 /* Daubed cell — gold checkmark */
 .new-cartela-cell.daubed {
@@ -3585,13 +3609,13 @@
 .new-daub-check {
   position: absolute;
   inset: 1px;
-  border-radius: 5px;
+  border-radius: 6px;
   background: linear-gradient(135deg, #fde047, #eab308);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #0f172a;
-  font-size: clamp(0.75rem, 3.2vw, 0.95rem);
+  font-size: clamp(0.85rem, 3.8vw, 1.15rem);
   font-weight: 900;
   animation: popDaub 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -3611,7 +3635,7 @@
   gap: 1px;
 }
 .new-free-star {
-  font-size: clamp(0.85rem, 3.5vw, 1.15rem);
+  font-size: clamp(0.95rem, 4.2vw, 1.35rem);
   color: #ca8a04;
   line-height: 1;
   filter: drop-shadow(0 1px 2px rgba(202, 138, 4, 0.3));
@@ -3629,6 +3653,136 @@
 .card-bonus-tag {
   font-size: 0.625rem;
   margin-left: 4px;
+}
+
+/* ── Mobile Cartela View Switcher ── */
+.cartelas-view-switcher {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  padding: 2px;
+  gap: 2px;
+  margin-left: 6px;
+}
+
+.btn-view-pill {
+  background: transparent;
+  border: none;
+  border-radius: 9999px;
+  padding: 2px 7px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.12s ease;
+  line-height: 1.2;
+}
+.btn-view-pill:hover {
+  color: #0f172a;
+}
+.btn-view-pill.active {
+  background: #ffffff;
+  color: #4f46e5;
+  font-weight: 950;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* ── In-Game Active HUD Strip (Clean 38px strip replacing 210px BettingBar during live play) ── */
+.ingame-active-ticket-bar {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 7px 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  border: 1.5px solid rgba(99, 102, 241, 0.22);
+  width: 100%;
+  box-sizing: border-box;
+  animation: fadeIn 0.2s ease;
+}
+
+.ingame-active-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.ingame-active-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ingame-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  color: #065f46;
+  font-size: 0.625rem;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  letter-spacing: 0.3px;
+}
+
+.ingame-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulseGreen 1s infinite alternate;
+}
+
+.ingame-card-count {
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.ingame-ids-pill {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #6366f1;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.ingame-active-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ingame-stake-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ingame-stake-lbl {
+  font-size: 0.625rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.ingame-stake-val {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #ca8a04;
+}
+
+.ingame-balance {
+  font-size: 0.65rem;
+  padding: 2px 7px;
 }
 
 /* ── New Stake / Betting Bar ─────────────────────────────── */
@@ -4070,6 +4224,130 @@
   cursor: default;
   box-shadow: none;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   PC / DESKTOP RESPONSIVE DESIGN (TELEGRAM MINI APP ON PC)
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  .bingo-page-content-wrapper {
+    max-width: 960px;
+    padding: 12px 20px 48px;
+    gap: 12px;
+  }
+
+  /* Cartelas View Switcher not needed on desktop: both cards fit generously */
+  .cartelas-view-switcher {
+    display: none;
+  }
+
+  /* Spacious 2-card grid on PC: each card is 380px–460px wide */
+  .cartelas-grid.grid-2 {
+    grid-template-columns: repeat(2, minmax(360px, 460px));
+    justify-content: center;
+    gap: 18px;
+  }
+
+  /* Generous 1-card on PC */
+  .cartelas-grid.grid-1 {
+    max-width: 480px;
+  }
+
+  /* Large PC cells with big legible numbers */
+  .new-cartela-cell {
+    min-height: 56px;
+    font-size: 1.45rem;
+    border-radius: 9px;
+  }
+
+  .new-cartela-cell .cartela-cell-val {
+    font-size: 1.45rem;
+  }
+
+  .new-bingo-col-hdr {
+    height: 32px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+  }
+
+  .new-card-header {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+
+  .new-card-id-pill {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+  }
+
+  .new-card-body {
+    padding: 6px 6px 8px;
+    gap: 4px;
+  }
+
+  .new-cartela-5x5 {
+    gap: 4px;
+  }
+
+  .new-bingo-col-headers {
+    gap: 4px;
+  }
+
+  .new-daub-check {
+    font-size: 1.25rem;
+  }
+
+  .new-free-star {
+    font-size: 1.55rem;
+  }
+
+  /* Clean wide Call Banner & Stats Strip on PC */
+  .nb-call-section {
+    padding: 12px 18px;
+    border-radius: 18px;
+  }
+
+  .new-stats-strip {
+    padding: 10px 16px;
+    border-radius: 16px;
+  }
+
+  .new-stat-value {
+    font-size: 1.05rem;
+  }
+
+  .compact-betting-bar,
+  .ingame-active-ticket-bar {
+    max-width: 960px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bingo-page-content-wrapper {
+    max-width: 1040px;
+  }
+
+  .cartelas-grid.grid-2 {
+    grid-template-columns: repeat(2, minmax(380px, 490px));
+    gap: 24px;
+  }
+
+  .new-cartela-cell {
+    min-height: 62px;
+    font-size: 1.55rem;
+  }
+
+  .new-cartela-cell .cartela-cell-val {
+    font-size: 1.55rem;
+  }
+
+  .new-bingo-col-hdr {
+    height: 36px;
+    font-size: 1.2rem;
+  }
+}
+
 
 
 
