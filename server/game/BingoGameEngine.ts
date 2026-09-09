@@ -390,9 +390,12 @@ class BingoGameEngine {
       }
     }
     const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
+    // Only set waitingForPlayers flag — do NOT reset the countdown timer.
+    // The lobby interval's own freeze logic handles keeping the timer paused.
+    // Hard-resetting to 45 here causes visible jumps when a user briefly disconnects/reconnects.
     if (activeInRoom < 2 && room.tickets.size < 2) {
       room.waitingForPlayers = true;
-      room.lobbyCountdown = 45;
+      // lobbyCountdown intentionally NOT reset here — the interval freeze handles it
     }
     this.broadcastRoomState(room);
   }
@@ -907,19 +910,28 @@ class BingoGameEngine {
         return;
       }
 
-      // FREEZE countdown until at least 2 real players are present in room or have tickets
-      const realUserCount = room.tickets.size;
+      const realUserCount = room.tickets.size; // distinct real users who have BOUGHT tickets
       const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
       room.realPlayerCount = realUserCount;
 
-      if (realUserCount < 2 && activeInRoom < 2) {
-        room.waitingForPlayers = true;
-        room.lobbyCountdown = 45; // keep frozen at 45 — do not decrement
+      // FREEZE countdown: requires at least 2 real players present OR at least 2 tickets purchased.
+      // Priority: ticket count (realUserCount) takes precedence — if 2+ have tickets, ALWAYS let countdown tick
+      // even if activeInRoom temporarily dips (e.g. during reconnect).
+      const shouldFreeze = realUserCount < 2 && activeInRoom < 2;
+
+      if (shouldFreeze) {
+        if (!room.waitingForPlayers) {
+          room.waitingForPlayers = true;
+        }
+        // Clamp to 45 only if it drifted above (e.g. just entered lobby) — never decrement when frozen
+        if (room.lobbyCountdown > 45) {
+          room.lobbyCountdown = 45;
+        }
         this.broadcastRoomState(room);
         return;
       }
 
-      // 2+ players joined or present — countdown runs normally
+      // 2+ players confirmed (present or ticketed) — countdown runs normally
       room.waitingForPlayers = false;
       room.lobbyCountdown -= 1;
       this.broadcastRoomState(room);
@@ -929,8 +941,9 @@ class BingoGameEngine {
           clearInterval(interval);
           await this.startRound(room.id);
         } else {
-          // If 45s timer reached 0 but fewer than 2 players confirmed bets, restart countdown cycle
+          // Countdown reached 0 but fewer than 2 tickets purchased — reset and wait again
           room.lobbyCountdown = 45;
+          room.waitingForPlayers = true;
           this.broadcastRoomState(room);
         }
       }

@@ -20,9 +20,13 @@ export const StatsStrip: React.FC = () => {
   const [showStakeModal, setShowStakeModal] = useState<boolean>(false);
 
   const currentPlayers = realPlayerCount > 0 ? realPlayerCount : playersCount;
+  // Effective player count — always ≥ 1 when user has a ticket, prevents "0/0" display lag
+  const effectivePlayerCount = hasTicket ? Math.max(currentPlayers, 1) : currentPlayers;
   const currentPrize = prizePool > 0
     ? prizePool
-    : (currentPlayers <= 5 ? currentPlayers * betAmount : Math.floor(currentPlayers * betAmount * 0.8));
+    : (effectivePlayerCount <= 5
+        ? effectivePlayerCount * betAmount
+        : Math.floor(effectivePlayerCount * betAmount * 0.8));
   const prizeDisplay = currentPrize >= 1000 ? `${(currentPrize / 1000).toFixed(1)}K` : `${currentPrize}`;
 
   // Short round game code
@@ -32,12 +36,12 @@ export const StatsStrip: React.FC = () => {
   const isLobbyWaiting = roundPhase === 'lobby' && waitingForPlayers;
   const effectiveInRoom = Math.max(activeUsersCount, currentPlayers, hasTicket ? 1 : 0);
   const playersDisplay = isLobbyWaiting
-    ? (currentPlayers >= 1 || hasTicket
-        ? `${Math.max(currentPlayers, 1)}/2 ⏳`
+    ? (effectivePlayerCount >= 1 || hasTicket
+        ? `${Math.max(effectivePlayerCount, 1)}/2 ⏳`
         : (effectiveInRoom >= 2
             ? (lang === 'am' ? `${effectiveInRoom} ተጫዋች` : `${effectiveInRoom} in Room`)
             : (lang === 'am' ? 'ይጠብቁ ⏳' : 'Waiting ⏳')))
-    : `${currentPlayers}`;
+    : `${Math.max(currentPlayers, hasTicket ? 1 : 0)}`;
 
   const canSwitchStake = roundPhase === 'lobby' && !hasTicket;
 

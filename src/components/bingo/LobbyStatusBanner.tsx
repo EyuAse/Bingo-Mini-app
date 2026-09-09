@@ -7,11 +7,15 @@ export const LobbyStatusBanner: React.FC = () => {
     lobbyCountdown,
     waitingForPlayers,
     realPlayerCount,
+    hasTicket,
     joinFeed,
     betAmount,
     setBetAmount,
     stakeRoomsSummary
   } = useBingo();
+
+  // Never show 0 when local user holds a ticket (server broadcast may not have arrived yet)
+  const displayPlayerCount = Math.max(realPlayerCount, hasTicket ? 1 : 0);
 
   const suggestedStake = Object.entries(stakeRoomsSummary)
     .map(([stakeStr, count]) => ({ stake: Number(stakeStr), count }))
@@ -74,7 +78,7 @@ export const LobbyStatusBanner: React.FC = () => {
               <div className="waiting-title-row">
                 <span className="waiting-title">Waiting for Players</span>
                 <span className="waiting-count-pill">
-                  <i className="fa-solid fa-users"></i> {realPlayerCount} / 2 Needed
+                  <i className="fa-solid fa-users"></i> {displayPlayerCount} / 2 Needed
                 </span>
               </div>
               <p className="waiting-subtext">
@@ -122,13 +126,13 @@ export const LobbyStatusBanner: React.FC = () => {
               <div className="countdown-title-row">
                 <span className="countdown-title">Game Starting Soon!</span>
                 <span className="countdown-players-pill">
-                  <i className="fa-solid fa-users-viewfinder"></i> {realPlayerCount} Players Ready
+                  <i className="fa-solid fa-users-viewfinder"></i> {displayPlayerCount} Players Ready
                 </span>
               </div>
               <p className="countdown-subtext">
-                {realPlayerCount <= 5
+                {displayPlayerCount <= 5
                   ? '🎯 100% Payout Tier: 0% House Fee (Winner takes all!)'
-                  : realPlayerCount <= 10
+                  : displayPlayerCount <= 10
                   ? '🛡️ 100% Real Players (No Bots in Room)'
                   : '⚡ Big Arena Match (3 bots added)'}
               </p>

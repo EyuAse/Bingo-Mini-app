@@ -101,11 +101,18 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         return;
       }
       console.log('⚡ [Live Real Balance Event Received]:', data);
+      // Optimistically update both balance and bonus from push event payload
       if (typeof data.newBalance === 'number') {
         setBalance(data.newBalance);
+      } else if (typeof data.balance === 'number') {
+        setBalance(data.balance);
       } else if (typeof data.amount === 'number') {
         setBalance(prev => prev + data.amount);
       }
+      if (typeof data.bonus === 'number') {
+        setBonus(data.bonus);
+      }
+      // Always follow up with authoritative DB fetch
       fetchLiveBalance();
     };
 

@@ -111,6 +111,13 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     }
   }
 
+  // Compute occupied cartela IDs (same as broadcastRoomState) so HTTP polling matches socket payloads
+  const occupiedCartelaIds: number[] = [];
+  room.tickets.forEach(list => list.forEach(t => occupiedCartelaIds.push(t.cartelaId)));
+  if (room.nextRoundTickets) {
+    room.nextRoundTickets.forEach(list => list.forEach(t => occupiedCartelaIds.push(t.cartelaId)));
+  }
+
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.json({
     success: true,
@@ -131,6 +138,8 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     isPreBuy,
     waitingForPlayers: room.waitingForPlayers || false,
     realPlayerCount: room.tickets.size,
+    activeUsersCount: Math.max(room.activeUsers.size, room.activeSockets.size),
+    occupiedCartelaIds,
     stakeRoomsSummary: gameEngine.getStakeRoomsSummary(),
     serverTime: Date.now()
   });
