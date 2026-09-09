@@ -263,25 +263,26 @@ class AuthService {
     let isNewUser = false;
     if (!user) {
       isNewUser = true;
-      let finalPhone = customPhone || `+2519${String(tgUser.id).slice(-8).padStart(8, '8')}`;
-      const validation = validateEthiopianPhone(finalPhone);
+      let finalPhone = customPhone || '';
+      const validation = finalPhone ? validateEthiopianPhone(finalPhone) : null;
 
-      user = {
+      const newUser: StoredUser = {
         id: `UID-TG-${tgUser.id}`,
-        phone: validation.canonicalNumber || finalPhone,
-        nationalPhone: validation.nationalNumber || `0${finalPhone.slice(-9)}`,
-        formattedPhone: validation.formattedDisplay || finalPhone,
-        carrier: validation.carrier || 'ethiotelecom',
+        phone: validation?.canonicalNumber || '',
+        nationalPhone: validation?.nationalNumber || '',
+        formattedPhone: validation?.formattedDisplay || '',
+        carrier: validation?.carrier || 'ethiotelecom',
         fullName: fullName,
         telegramUsername: tgUsername,
-        isPhoneVerified: true,
+        isPhoneVerified: !!validation?.isValid,
         role: 'player',
         pin: '1234',
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString()
       };
-      users.push(user);
+      users.push(newUser);
       this.saveStoredUsers(users);
+      user = newUser;
     } else {
       user.lastLogin = new Date().toISOString();
       if (fullName && (user.fullName === 'Lomi Player' || user.fullName.startsWith('tg_'))) {

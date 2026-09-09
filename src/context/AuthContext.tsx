@@ -148,16 +148,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (exists && !isExplicitlyLoggedOut) {
               // Existing account: auto restore session
               const apiResult = await apiClient.auth.loginWithTelegram(tgUser);
+              const rawPhone = apiResult.user.phone;
+              const tgIdStr = String(tgUser.id);
+              const isRealServerPhone =
+                rawPhone &&
+                rawPhone.length >= 9 &&
+                !rawPhone.startsWith('+25198888') &&
+                rawPhone !== '0911234567' &&
+                !rawPhone.includes(tgIdStr.slice(-6)) &&
+                rawPhone !== `09${tgIdStr.slice(-8)}`;
+
               const mappedUser: User = {
                 id: apiResult.user.id,
                 telegramId: apiResult.user.telegramId,
                 telegramUsername: apiResult.user.telegramUsername,
                 fullName: apiResult.user.fullName || tgUser.first_name,
-                phone: apiResult.user.phone || `09${String(tgUser.id).slice(-8)}`,
-                nationalPhone: apiResult.user.phone ? `0${apiResult.user.phone.slice(-9)}` : `09${String(tgUser.id).slice(-8)}`,
-                formattedPhone: apiResult.user.phone || `09${String(tgUser.id).slice(-8)}`,
-                carrier: 'ethiotelecom',
-                isPhoneVerified: true,
+                phone: isRealServerPhone ? rawPhone : '',
+                nationalPhone: isRealServerPhone ? `0${rawPhone.slice(-9)}` : '',
+                formattedPhone: isRealServerPhone ? rawPhone : '',
+                carrier: isRealServerPhone ? (apiResult.user.carrier || 'ethiotelecom') : undefined,
+                isPhoneVerified: !!isRealServerPhone,
                 role: apiResult.user.role || 'player',
                 referralCode: apiResult.user.referralCode,
                 pin: '1234',
@@ -190,16 +200,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             try {
               const meRes = await apiClient.auth.getMe();
               const u = meRes.user;
+              const isRealWebPhone =
+                u.phone &&
+                u.phone.length >= 9 &&
+                !u.phone.startsWith('+25198888') &&
+                u.phone !== '0911234567';
+
               const mappedUser: User = {
                 id: u.id,
                 telegramId: u.telegramId,
                 telegramUsername: u.telegramUsername,
                 fullName: u.fullName,
-                phone: u.phone || '0911234567',
-                nationalPhone: u.phone ? `0${u.phone.slice(-9)}` : '0911234567',
-                formattedPhone: u.phone || '0911234567',
-                carrier: 'ethiotelecom',
-                isPhoneVerified: true,
+                phone: isRealWebPhone ? u.phone : '',
+                nationalPhone: isRealWebPhone ? `0${u.phone.slice(-9)}` : '',
+                formattedPhone: isRealWebPhone ? u.phone : '',
+                carrier: isRealWebPhone ? (u.carrier || 'ethiotelecom') : undefined,
+                isPhoneVerified: !!isRealWebPhone,
                 role: u.role || 'player',
                 referralCode: u.referralCode,
                 pin: '1234',
@@ -338,16 +354,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const apiResult = await apiClient.auth.loginWithTelegram(tgUser, customPhone, refCode);
       localStorage.removeItem('lomi_explicit_logout');
 
+      const tgIdStr = String(tgUser.id);
+      const isRealPhoneProvided = customPhone || (apiResult.user.phone &&
+        apiResult.user.phone.length >= 9 &&
+        !apiResult.user.phone.startsWith('+25198888') &&
+        apiResult.user.phone !== '0911234567' &&
+        !apiResult.user.phone.includes(tgIdStr.slice(-6)) &&
+        apiResult.user.phone !== `09${tgIdStr.slice(-8)}`);
+      const finalPhone = isRealPhoneProvided ? (customPhone || apiResult.user.phone) : '';
+
       const mappedUser: User = {
         id: apiResult.user.id,
         telegramId: apiResult.user.telegramId,
         telegramUsername: apiResult.user.telegramUsername,
         fullName: apiResult.user.fullName || `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim(),
-        phone: apiResult.user.phone || customPhone || `09${String(tgUser.id).slice(-8)}`,
-        nationalPhone: customPhone || `09${String(tgUser.id).slice(-8)}`,
-        formattedPhone: customPhone || `09${String(tgUser.id).slice(-8)}`,
-        carrier: 'ethiotelecom',
-        isPhoneVerified: true,
+        phone: finalPhone,
+        nationalPhone: finalPhone ? `0${finalPhone.slice(-9)}` : '',
+        formattedPhone: finalPhone,
+        carrier: finalPhone ? (apiResult.user.carrier || 'ethiotelecom') : undefined,
+        isPhoneVerified: !!finalPhone,
         role: apiResult.user.role || 'player',
         referralCode: apiResult.user.referralCode,
         pin: '1234',

@@ -10,9 +10,6 @@ export const ProfilePage: React.FC = () => {
   const { lang, toggleLang, t } = useLanguage();
   const { logout } = useAuth();
 
-  // Stateful Theme Toggle (Light / Dark)
-  const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark'>('light');
-
   const handleLogout = () => {
     logout();
     showToast(lang === 'am' ? '👋 በተሳካ ሁኔታ ወጥተዋል።' : '👋 You have been logged out.');
@@ -75,43 +72,6 @@ export const ProfilePage: React.FC = () => {
                   <span style={{ fontWeight: 800 }}>{lang === 'am' ? 'አማርኛ' : 'English'}</span>
                 </span>
                 <i className="fa-solid fa-chevron-right settings-chevron"></i>
-              </div>
-            </div>
-
-            {/* Theme */}
-            <div className="settings-row-item">
-              <div className="settings-row-icon-circ">
-                <i className="fa-regular fa-moon"></i>
-              </div>
-              <div className="settings-row-text-col">
-                <strong className="settings-row-title">{t('profile.theme')}</strong>
-                <span className="settings-row-sub">
-                  {lang === 'am' ? 'የገጽታ ቀለም ይምረጡ' : 'Choose light or dark interface'}
-                </span>
-              </div>
-              <div className="theme-toggle-pill-wrap">
-                <button
-                  type="button"
-                  className={`btn-theme-pill ${selectedTheme === 'light' ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedTheme('light');
-                    showToast('☀️ Light mode active');
-                  }}
-                >
-                  <i className="fa-solid fa-sun"></i>
-                  <span>{t('profile.light')}</span>
-                </button>
-                <button
-                  type="button"
-                  className={`btn-theme-pill ${selectedTheme === 'dark' ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedTheme('dark');
-                    showToast('🌙 Dark mode active');
-                  }}
-                >
-                  <i className="fa-solid fa-moon"></i>
-                  <span>{t('profile.dark')}</span>
-                </button>
               </div>
             </div>
           </div>

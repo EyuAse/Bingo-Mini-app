@@ -19,11 +19,13 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ onEditClick }) => 
   };
 
   const displayName = user?.fullName || (user?.telegramUsername ? `@${user.telegramUsername}` : 'Telegram Player');
-  const hasRealPhone = user?.phone && !user.id.includes(user.phone.slice(-6)) && user.phone.length >= 10 && !user.phone.startsWith('+25198888');
-  
-  const displayHandle = user?.telegramUsername
-    ? `@${user.telegramUsername}`
-    : (user?.formattedPhone || user?.phone || 'Telegram Account');
+  const tgIdStr = user?.telegramId ? String(user.telegramId) : '';
+  const hasRealPhone =
+    !!user?.phone &&
+    user.phone.length >= 9 &&
+    !user.phone.startsWith('+25198888') &&
+    user.phone !== '0911234567' &&
+    (!tgIdStr || (!user.phone.includes(tgIdStr.slice(-6)) && user.phone !== `09${tgIdStr.slice(-8)}`));
 
   const initials = displayName
     .split(' ')
@@ -56,7 +58,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ onEditClick }) => 
         <h2 className="profile-name-bold">{displayName}</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span className="profile-phone-sub">
-            {hasRealPhone ? user?.formattedPhone : displayHandle}
+            {hasRealPhone
+              ? (user?.formattedPhone || user?.phone)
+              : (user?.telegramUsername ? `@${user.telegramUsername}` : 'ስልክ ቁጥር አልተያያዘም')}
           </span>
           {hasRealPhone && user?.carrier && (
             <span
@@ -78,13 +82,17 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ onEditClick }) => 
               style={{
                 fontSize: '10px',
                 fontWeight: 700,
-                padding: '1px 6px',
+                padding: '2px 8px',
                 borderRadius: '999px',
-                background: '#e0f2fe',
-                color: '#0369a1'
+                background: 'rgba(234, 179, 8, 0.15)',
+                color: '#ca8a04',
+                border: '1px solid rgba(234, 179, 8, 0.3)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px'
               }}
             >
-              Telegram
+              <i className="fa-solid fa-plus" style={{ fontSize: '8px' }}></i> ስልክ አያይዝ
             </span>
           )}
         </div>

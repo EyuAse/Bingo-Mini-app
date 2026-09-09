@@ -23,9 +23,15 @@ export const AccountInfoPage: React.FC = () => {
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
 
   // Phone Number Linking / Editing State
-  const hasRealPhone = user?.phone && !user.id.includes(user.phone.slice(-6)) && user.phone.length >= 10 && !user.phone.startsWith('+25198888');
-  const [phoneInput, setPhoneInput] = useState<string>(hasRealPhone ? (user?.nationalPhone || '') : '');
-  const [isEditingPhone, setIsEditingPhone] = useState<boolean>(false);
+  const tgIdStr = user?.telegramId ? String(user.telegramId) : '';
+  const hasRealPhone =
+    !!user?.phone &&
+    user.phone.length >= 9 &&
+    !user.phone.startsWith('+25198888') &&
+    user.phone !== '0911234567' &&
+    (!tgIdStr || (!user.phone.includes(tgIdStr.slice(-6)) && user.phone !== `09${tgIdStr.slice(-8)}`));
+  const [phoneInput, setPhoneInput] = useState<string>(hasRealPhone ? (user?.nationalPhone || user?.phone || '') : '');
+  const [isEditingPhone, setIsEditingPhone] = useState<boolean>(!hasRealPhone);
 
   // Telegram Account Linking State
   const [telegramUsername, setTelegramUsername] = useState<string>(user?.telegramUsername || '');
@@ -49,11 +55,14 @@ export const AccountInfoPage: React.FC = () => {
         setTelegramUsername(user.telegramUsername);
         setTempTelegramInput(user.telegramUsername);
       }
-      if (hasRealPhone && user.nationalPhone) {
-        setPhoneInput(user.nationalPhone);
+      if (hasRealPhone && (user.nationalPhone || user.phone)) {
+        setPhoneInput(user.nationalPhone || user.phone);
+        setIsEditingPhone(false);
+      } else if (!hasRealPhone) {
+        setIsEditingPhone(true);
       }
     }
-  }, [user]);
+  }, [user, hasRealPhone]);
 
   useEffect(() => {
     try {
