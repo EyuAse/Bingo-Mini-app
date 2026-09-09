@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useBingo, generateCardFromId } from '../../context/BingoContext.tsx';
+import { useApp } from '../../context/AppContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 
 const CARD_RANGES = [
@@ -18,13 +19,17 @@ export const CartelaPickerModal: React.FC = () => {
     toggleCartelaSelection,
     occupiedCartelaIds,
     cardQuantity,
-    betAmount
+    betAmount,
+    buyTicket,
+    hasTicket
   } = useBingo();
+  const { showToast } = useApp();
   const { lang } = useLanguage();
 
   const [activeRangeIdx, setActiveRangeIdx] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [previewCartelaId, setPreviewCartelaId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const activeRange = CARD_RANGES[activeRangeIdx] || CARD_RANGES[0];
 
@@ -206,10 +211,10 @@ export const CartelaPickerModal: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Footer Bar: Confirm & Close ── */}
+        {/* ── Footer Bar: Confirm & Buy / Play ── */}
         <div className="afro-picker-footer">
           <div className="afro-footer-info">
-            <span className="footer-playing-lbl">Ready:</span>
+            <span className="footer-playing-lbl">{lang === 'am' ? 'የተመረጡ:' : 'Ready:'}</span>
             <strong className="footer-playing-nums">
               #{activeSelected.join(' · #')}
             </strong>
@@ -218,10 +223,35 @@ export const CartelaPickerModal: React.FC = () => {
           <button
             type="button"
             className="btn-afro-confirm-action"
-            onClick={closeCartelaPicker}
+            onClick={async () => {
+              if (activeSelected.length < cardQuantity) {
+                showToast(
+                  lang === 'am'
+                    ? `እባክዎ ${cardQuantity} ካርቴላ ይምረጡ!`
+                    : `Please select ${cardQuantity} cartela${cardQuantity > 1 ? 's' : ''} first!`
+                );
+                return;
+              }
+              closeCartelaPicker();
+              if (!hasTicket) {
+                setIsSubmitting(true);
+                try {
+                  await buyTicket();
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }
+            }}
+            disabled={isSubmitting}
           >
             <i className="fa-solid fa-circle-check"></i>
-            <span>Confirm Cartelas ({boardsText})</span>
+            <span>
+              {hasTicket
+                ? (lang === 'am' ? `ምርጫ አረጋግጥ (${boardsText})` : `Confirm Cartelas (${boardsText})`)
+                : (lang === 'am'
+                    ? `ካርቴላ ይግዙ · ${cardQuantity * betAmount} ብር (${boardsText})`
+                    : `Confirm & Buy Ticket · ${cardQuantity * betAmount} ETB (${boardsText})`)}
+            </span>
           </button>
         </div>
 

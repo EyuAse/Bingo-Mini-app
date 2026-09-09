@@ -354,6 +354,9 @@ class BingoGameEngine {
       room.activeUserSockets.set(userId, socketId);
     }
     const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
+    if (activeInRoom >= 2 || room.tickets.size >= 2) {
+      room.waitingForPlayers = false;
+    }
     this.broadcastRoomState(room);
 
     // Notify other players in the room that a player entered the room
@@ -362,7 +365,7 @@ class BingoGameEngine {
       userName: userName || 'A player',
       activeUsersCount: activeInRoom,
       realPlayerCount: room.tickets.size,
-      waitingForPlayers: room.tickets.size < 2,
+      waitingForPlayers: room.waitingForPlayers,
       roomId: room.id
     });
     if (room.id === 'room-10') {
@@ -371,7 +374,7 @@ class BingoGameEngine {
         userName: userName || 'A player',
         activeUsersCount: activeInRoom,
         realPlayerCount: room.tickets.size,
-        waitingForPlayers: room.tickets.size < 2,
+        waitingForPlayers: room.waitingForPlayers,
         roomId: ARENA_ROOM_ID
       });
     }
@@ -385,6 +388,11 @@ class BingoGameEngine {
         room.activeUserSockets.delete(uid);
         room.activeUsers.delete(uid);
       }
+    }
+    const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
+    if (activeInRoom < 2 && room.tickets.size < 2) {
+      room.waitingForPlayers = true;
+      room.lobbyCountdown = 45;
     }
     this.broadcastRoomState(room);
   }
@@ -899,25 +907,32 @@ class BingoGameEngine {
         return;
       }
 
-      // FREEZE countdown until at least 2 real players have tickets
+      // FREEZE countdown until at least 2 real players are present in room or have tickets
       const realUserCount = room.tickets.size;
+      const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
       room.realPlayerCount = realUserCount;
 
-      if (realUserCount < 2) {
+      if (realUserCount < 2 && activeInRoom < 2) {
         room.waitingForPlayers = true;
         room.lobbyCountdown = 45; // keep frozen at 45 — do not decrement
         this.broadcastRoomState(room);
         return;
       }
 
-      // 2+ players joined — countdown runs normally
+      // 2+ players joined or present — countdown runs normally
       room.waitingForPlayers = false;
       room.lobbyCountdown -= 1;
       this.broadcastRoomState(room);
 
       if (room.lobbyCountdown <= 0) {
-        clearInterval(interval);
-        await this.startRound(room.id);
+        if (room.tickets.size >= 2) {
+          clearInterval(interval);
+          await this.startRound(room.id);
+        } else {
+          // If 45s timer reached 0 but fewer than 2 players confirmed bets, restart countdown cycle
+          room.lobbyCountdown = 45;
+          this.broadcastRoomState(room);
+        }
       }
     }, 1000);
 

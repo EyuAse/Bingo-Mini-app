@@ -1,5 +1,6 @@
 import React from 'react';
 import { useBingo, BingoCell } from '../../context/BingoContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 
 // ── Column headers with distinct standard bingo colors ─────
 const CARD_COLUMNS = [
@@ -58,6 +59,7 @@ const NewCard5x5: React.FC<{
   isWinningCard, winningLine, autoPlay, onDaub,
   isSingleCard, isPreview, onOpenPicker
 }) => {
+  const { lang } = useLanguage();
   const status = getCardStatus(cells || []);
 
   // ── Unselected Cartela Placeholder (When user hasn't chosen cartelas yet) ──
@@ -70,14 +72,18 @@ const NewCard5x5: React.FC<{
       >
         <div className="empty-cartela-inner">
           <div className="empty-cartela-top">
-            <span className="empty-cartela-badge">CARTELA #{cardIndex + 1}</span>
-            <span className="empty-cartela-status">NOT SELECTED</span>
+            <span className="empty-cartela-badge">{lang === 'am' ? `ካርቴላ #${cardIndex + 1}` : `CARTELA #${cardIndex + 1}`}</span>
+            <span className="empty-cartela-status">{lang === 'am' ? 'አልተመረጠም' : 'NOT SELECTED'}</span>
           </div>
           <div className="empty-cartela-icon-wrap">
             <span className="empty-cartela-icon">🎟️</span>
           </div>
-          <div className="empty-cartela-title">Tap to Choose Board</div>
-          <div className="empty-cartela-sub">Pick your number from 400 cartelas</div>
+          <div className="empty-cartela-title">
+            {lang === 'am' ? 'ካርቴላ ለመምረጥ ይንኩ' : 'Tap to Choose Board'}
+          </div>
+          <div className="empty-cartela-sub">
+            {lang === 'am' ? 'ከ400 ካርቴላዎች ውስጥ ይምረጡ' : 'Pick your number from 400 cartelas'}
+          </div>
           <button
             type="button"
             className="btn-empty-cartela-cta"
@@ -87,7 +93,7 @@ const NewCard5x5: React.FC<{
             }}
           >
             <i className="fa-solid fa-plus"></i>
-            <span>Select Cartela</span>
+            <span>{lang === 'am' ? 'ካርቴላ ይምረጡ' : 'Select Cartela'}</span>
           </button>
         </div>
       </div>

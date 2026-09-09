@@ -149,10 +149,10 @@ export const StakeRoomSelectorModal: React.FC<StakeRoomSelectorModalProps> = ({
                   <span className="room-payout-label">{lang === 'am' ? 'እስከ' : 'Up to'} <strong>{r.maxPayout}</strong></span>
                   <span className="room-enter-cta">
                     {isSelected ? (
-                      <span className="room-current-tag">✓ CURRENT</span>
+                      <span className="room-current-tag">{lang === 'am' ? '✓ አሁን ያለዎት' : '✓ CURRENT'}</span>
                     ) : (
                       <>
-                        <span>ENTER</span>
+                        <span>{lang === 'am' ? 'ይግቡ' : 'ENTER'}</span>
                         <i className="fa-solid fa-chevron-right"></i>
                       </>
                     )}
