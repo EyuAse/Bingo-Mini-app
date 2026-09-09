@@ -14,11 +14,13 @@ export const StatsStrip: React.FC = () => {
     calledNumbers,
     roundPhase,
     waitingForPlayers,
-    hasTicket
+    hasTicket,
+    roomMode
   } = useBingo();
   const { lang } = useLanguage();
   const [showStakeModal, setShowStakeModal] = useState<boolean>(false);
 
+  const isSpectatingHouse = roomMode === 'spectating' && !hasTicket;
   const currentPlayers = realPlayerCount > 0 ? realPlayerCount : playersCount;
   // Effective player count — always ≥ 1 when user has a ticket, prevents "0/0" display lag
   const effectivePlayerCount = hasTicket ? Math.max(currentPlayers, 1) : currentPlayers;
@@ -27,7 +29,9 @@ export const StatsStrip: React.FC = () => {
   const expectedPot = effectivePlayerCount * betAmount;
   const calculatedPrize = effectivePlayerCount <= 5 ? expectedPot : Math.floor(expectedPot * 0.8);
   const currentPrize = Math.max(prizePool, calculatedPrize);
-  const prizeDisplay = currentPrize >= 1000 ? `${(currentPrize / 1000).toFixed(1)}K` : `${currentPrize}`;
+  const prizeDisplay = isSpectatingHouse && roundPhase === 'playing'
+    ? '0'
+    : (currentPrize >= 1000 ? `${(currentPrize / 1000).toFixed(1)}K` : `${currentPrize}`);
 
   // Short round game code
   const gameId = `KL-${betAmount}`;
@@ -41,7 +45,9 @@ export const StatsStrip: React.FC = () => {
         : (effectiveInRoom >= 2
             ? (lang === 'am' ? `${effectiveInRoom} ተጫዋች` : `${effectiveInRoom} in Room`)
             : (lang === 'am' ? 'ይጠብቁ ⏳' : 'Waiting ⏳')))
-    : `${Math.max(currentPlayers, hasTicket ? 1 : 0)}`;
+    : (isSpectatingHouse && roundPhase === 'playing'
+        ? (lang === 'am' ? 'እይታ 👁️' : 'Spectate 👁️')
+        : `${Math.max(currentPlayers, hasTicket ? 1 : 0)}`);
 
   const canSwitchStake = roundPhase === 'lobby' && !hasTicket;
 

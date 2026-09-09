@@ -797,6 +797,10 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
 
       if (state.winResult && winModalDismissedForRoundRef.current !== (state.roundNumber || roundNumberRef.current)) {
+        if (state.winResult.roomId && state.winResult.roomId !== roomId) {
+          // Ignore win event from external stake house
+          return;
+        }
         const currentRound = state.roundNumber || roundNumberRef.current;
         if (activeWinModalRoundRef.current !== currentRound) {
           activeWinModalRoundRef.current = currentRound;

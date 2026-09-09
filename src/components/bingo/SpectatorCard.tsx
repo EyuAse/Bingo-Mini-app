@@ -3,11 +3,12 @@ import { useBingo } from '../../context/BingoContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 
 export const SpectatorCard: React.FC = () => {
-  const { buyTicket, lobbyCountdown, roundPhase, hasPreBoughtNext, preBuyNextRound } = useBingo();
-  const { t } = useLanguage();
+  const { buyTicket, lobbyCountdown, roundPhase, hasPreBoughtNext, roomMode, betAmount } = useBingo();
+  const { t, lang } = useLanguage();
 
   const isLobby = roundPhase === 'lobby';
   const isPlaying = roundPhase === 'playing' || roundPhase === 'locked';
+  const isSpectatingHouse = roomMode === 'spectating';
   const formattedCountdown = `00:${lobbyCountdown < 10 ? `0${lobbyCountdown}` : lobbyCountdown}`;
 
   return (
@@ -37,9 +38,19 @@ export const SpectatorCard: React.FC = () => {
       </div>
 
       {/* Title & Subtitle */}
-      <h3 className="spectator-card-title">{t('bingo.spectatorTitle')}</h3>
+      <h3 className="spectator-card-title">
+        {isSpectatingHouse
+          ? (lang === 'am' ? 'ይህ ክፍል በመመልከት ላይ ነው' : 'House Spectating Live Stream')
+          : t('bingo.spectatorTitle')}
+      </h3>
       <p className="spectator-card-sub">
-        {isPlaying ? 'A live round is currently in progress. Join now or pre-buy for next round!' : t('bingo.spectatorSub')}
+        {isSpectatingHouse
+          ? (lang === 'am'
+              ? `ይህ ${betAmount} ብር ክፍል ቢያንስ 2 ተጫዋቾች እስኪገቡ በመመልከት ላይ ነው። ለቀጣይ ዙር ካርቴላ ቀድመው ይግዙ!`
+              : `This ${betAmount} ETB house is currently spectating. Pre-buy your ticket now to activate the pot for the next round!`)
+          : (isPlaying
+              ? (lang === 'am' ? 'የቀጥታ ጨዋታ በመካሄድ ላይ ነው። ለቀጣይ ዙር ካርቴላ ቀድመው ይግዙ!' : 'A live round is currently in progress. Pre-buy now for the next round!')
+              : t('bingo.spectatorSub'))}
       </p>
 
       {/* Next Round Countdown Card / Live Status */}
@@ -52,8 +63,8 @@ export const SpectatorCard: React.FC = () => {
         ) : (
           <>
             <span className="countdown-tiny-lbl">LIVE STATUS</span>
-            <strong className="countdown-digits-huge" style={{ fontSize: '1.2rem', color: '#16a34a' }}>
-              🎱 LIVE IN PROGRESS
+            <strong className="countdown-digits-huge" style={{ fontSize: '1.15rem', color: isSpectatingHouse ? '#eab308' : '#16a34a' }}>
+              {isSpectatingHouse ? '👁️ SPECTATING LIVE STREAM' : '🎱 LIVE IN PROGRESS'}
             </strong>
           </>
         )}
@@ -66,8 +77,13 @@ export const SpectatorCard: React.FC = () => {
         onClick={buyTicket}
       >
         <i className="fa-solid fa-ticket"></i>
-        <span>{hasPreBoughtNext ? 'TICKET PRE-BOUGHT ✓' : t('bingo.buyTicket')}</span>
+        <span>
+          {hasPreBoughtNext
+            ? (lang === 'am' ? 'ካርቴላ ቀድመው ገዝተዋል ✓' : 'TICKET PRE-BOUGHT ✓')
+            : (isPlaying ? (lang === 'am' ? 'ለቀጣይ ዙር ይግዙ' : 'PRE-BUY FOR NEXT ROUND') : t('bingo.buyTicket'))}
+        </span>
       </button>
     </div>
   );
 };
+
