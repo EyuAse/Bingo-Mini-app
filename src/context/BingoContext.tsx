@@ -114,6 +114,7 @@ interface BingoContextType {
   toggleMute: () => void;
 
   // Lobby State & Join Feed
+  roomMode: 'active' | 'spectating';
   waitingForPlayers: boolean;
   realPlayerCount: number;
   activeUsersCount: number;
@@ -264,6 +265,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [lobbyCountdown, setLobbyCountdown] = useState<number>(45);
   const [winnerCountdown, setWinnerCountdown] = useState<number>(8);
   const [waitingForPlayers, setWaitingForPlayers] = useState<boolean>(true);
+  const [roomMode, setRoomMode] = useState<'active' | 'spectating'>('active');
   const [realPlayerCount, setRealPlayerCount] = useState<number>(0);
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
   const [joinFeed, setJoinFeed] = useState<Array<{ id: number; userName: string; countdownStarted: boolean }>>([]);
@@ -755,6 +757,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       else if (typeof state.totalPot === 'number') setPrizePool(state.totalPot);
 
       if (typeof state.waitingForPlayers === 'boolean') setWaitingForPlayers(state.waitingForPlayers);
+      if (state.mode === 'active' || state.mode === 'spectating') setRoomMode(state.mode);
       if (typeof state.realPlayerCount === 'number') setRealPlayerCount(state.realPlayerCount);
       if (typeof state.activeUsersCount === 'number') setActiveUsersCount(state.activeUsersCount);
       if (state.stakeRoomsSummary) setStakeRoomsSummary(state.stakeRoomsSummary);
@@ -856,6 +859,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setRoundPhase('playing');
       setGameActive(true);
       setWaitingForPlayers(false);
+      if (data.mode === 'active' || data.mode === 'spectating') setRoomMode(data.mode);
       if (typeof data.realPlayerCount === 'number') {
         setRealPlayerCount(data.realPlayerCount);
       }
@@ -1093,6 +1097,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (typeof data.winnerPayout === 'number') setPrizePool(data.winnerPayout);
     else if (typeof data.totalPot === 'number') setPrizePool(data.totalPot);
     if (typeof data.waitingForPlayers === 'boolean') setWaitingForPlayers(data.waitingForPlayers);
+    if (data.mode === 'active' || data.mode === 'spectating') setRoomMode(data.mode);
     if (typeof data.realPlayerCount === 'number') setRealPlayerCount(data.realPlayerCount);
     if (typeof data.activeUsersCount === 'number') setActiveUsersCount(data.activeUsersCount);
     if (data.stakeRoomsSummary) setStakeRoomsSummary(data.stakeRoomsSummary);
@@ -1821,6 +1826,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         isMuted,
         toggleMute,
         waitingForPlayers,
+        roomMode,
         realPlayerCount,
         activeUsersCount,
         joinFeed,

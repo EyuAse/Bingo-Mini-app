@@ -51,6 +51,9 @@ export interface GameRoomState {
   commissionPercent: number;
   commissionEnabled: boolean;
   phase: 'lobby' | 'locked' | 'playing' | 'winner';
+  mode: 'active' | 'spectating';
+  isProcessingVictory: boolean;
+  lastBallTime: number;
   lobbyCountdown: number;
   winnerCountdown: number;
   currentRoundId: string | null;
@@ -108,6 +111,7 @@ function getRandomBotStake(): number {
 
 export const ARENA_ROOM_ID = 'lomi-arena';
 export const ROOM_ALIASES = ['lomi-arena', 'room-10', 'room-20', 'room-50', 'room-100', 'default'];
+export const STAKE_ROOM_IDS = ['room-10', 'room-20', 'room-50', 'room-100'];
 
 class BingoGameEngine {
   private static instance: BingoGameEngine;
@@ -127,9 +131,6 @@ class BingoGameEngine {
 
   // Disconnect Protection: Rolling ledger of auto-credited wins
   private offlineWins: OfflineWinRecord[] = [];
-
-  // Victory Processing Concurrency Guard (prevents double-spend on simultaneous BINGO claims)
-  private isProcessingVictory: boolean = false;
 
   private constructor() {
     this.initializeUnifiedArena();
@@ -192,6 +193,9 @@ class BingoGameEngine {
       commissionPercent: 0,
       commissionEnabled: false,
       phase: 'lobby',
+      mode: 'active',
+      isProcessingVictory: false,
+      lastBallTime: Date.now(),
       lobbyCountdown: 45,
       winnerCountdown: 8,
       currentRoundId: null,
@@ -231,13 +235,16 @@ class BingoGameEngine {
     for (const def of stakeDefs) {
       const state = this.createRoomState(def.id, def.name, def.stake);
       this.rooms.set(def.id, state);
-      this.startLobbyTimer(def.id);
     }
 
     // Default aliases map to room-10
     const primary = this.rooms.get('room-10')!;
     this.rooms.set(ARENA_ROOM_ID, primary);
     this.rooms.set('default', primary);
+
+    // Launch Single Synchronized Master Cycle across all houses!
+    this.startMasterLobbyTimer();
+    this.startWatchdogTimer();
   }
 
   public getRoom(roomId?: string): GameRoomState {
@@ -867,179 +874,216 @@ class BingoGameEngine {
   }
 
   /**
-   * 45-Second Gap Between Games (Lobby Timer)
+   * Synchronized 45-Second Master Lobby Timer across all 4 houses (10, 20, 50, 100 ETB)
    */
-  private startLobbyTimer(roomId: string = 'room-10') {
-    const room = this.rooms.get(roomId) || this.rooms.get('room-10') || this.rooms.get(ARENA_ROOM_ID)!;
+  public startMasterLobbyTimer() {
+    if (this.intervals.has('master_lobby')) {
+      clearInterval(this.intervals.get('master_lobby')!);
+    }
+    if (this.intervals.has('master_ball')) {
+      clearInterval(this.intervals.get('master_ball')!);
+    }
+    if (this.intervals.has('master_winner')) {
+      clearInterval(this.intervals.get('master_winner')!);
+    }
 
-    this.isProcessingVictory = false; // Reset victory lock for new round
-    room.phase = 'lobby';
-    room.lobbyCountdown = 45; // Authoritative 45-second gap
-    room.drawnNumbers = [];
-    room.currentCall = null;
-    room.winResult = null;
+    // Reset all stake houses into synchronized lobby state
+    for (const roomId of STAKE_ROOM_IDS) {
+      const room = this.rooms.get(roomId);
+      if (!room) continue;
 
-    // Seamless Activation of Anytime Pre-Bought Tickets
-    if (room.nextRoundTickets && room.nextRoundTickets.size > 0) {
-      room.tickets = new Map(room.nextRoundTickets);
-      room.nextRoundTickets.clear();
-      console.log(`🎟️ [Lobby ${room.id}] Activated pre-bought tickets for ${room.tickets.size} users for Round #${room.roundNumber}`);
-      io.to(room.id).emit('prebought_tickets_activated', {
-        roundNumber: room.roundNumber,
-        activeTicketsCount: room.tickets.size,
-        roomId: room.id
-      });
-      if (room.id === 'room-10') {
-        io.to(ARENA_ROOM_ID).emit('prebought_tickets_activated', {
+      room.isProcessingVictory = false;
+      room.phase = 'lobby';
+      room.mode = 'active';
+      room.lobbyCountdown = 45;
+      room.drawnNumbers = [];
+      room.currentCall = null;
+      room.winResult = null;
+      room.opponentCards = [];
+
+      // Seamless Activation of Anytime Pre-Bought Tickets
+      if (room.nextRoundTickets && room.nextRoundTickets.size > 0) {
+        room.tickets = new Map(room.nextRoundTickets);
+        room.nextRoundTickets.clear();
+        console.log(`🎟️ [Lobby ${room.id}] Activated pre-bought tickets for ${room.tickets.size} users for Round #${room.roundNumber}`);
+        io.to(room.id).emit('prebought_tickets_activated', {
           roundNumber: room.roundNumber,
           activeTicketsCount: room.tickets.size,
-          roomId: ARENA_ROOM_ID
+          roomId: room.id
         });
+        if (room.id === 'room-10') {
+          io.to(ARENA_ROOM_ID).emit('prebought_tickets_activated', {
+            roundNumber: room.roundNumber,
+            activeTicketsCount: room.tickets.size,
+            roomId: ARENA_ROOM_ID
+          });
+        }
       }
-    } else {
-      room.tickets.clear();
+
+      this.recalculatePot(room);
+      this.broadcastRoomState(room);
     }
 
-    this.recalculatePot(room);
-
-    const intervalKey = `lobby_${room.id}`;
-    if (this.intervals.has(intervalKey)) {
-      clearInterval(this.intervals.get(intervalKey)!);
-    }
+    let currentLobbyCountdown = 45;
 
     const interval = setInterval(async () => {
-      if (room.phase !== 'lobby') {
+      const sample = this.rooms.get('room-10');
+      if (sample && sample.phase !== 'lobby') {
         clearInterval(interval);
         return;
       }
 
-      const realUserCount = room.tickets.size; // distinct real users who have BOUGHT tickets
-      const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
-      room.realPlayerCount = realUserCount;
+      // Check: Does AT LEAST ONE house have >= 2 real players with confirmed purchased tickets?
+      const anyHouseReady = STAKE_ROOM_IDS.some(id => {
+        const r = this.rooms.get(id);
+        return r && r.tickets.size >= 2;
+      });
 
-      // FREEZE countdown: strictly requires at least 2 real players with confirmed purchased tickets.
-      // Mere page visitors (activeInRoom) must never trigger countdown to round start!
-      const shouldFreeze = realUserCount < 2;
+      for (const roomId of STAKE_ROOM_IDS) {
+        const room = this.rooms.get(roomId);
+        if (!room) continue;
 
-      if (shouldFreeze) {
-        room.waitingForPlayers = true;
-        // Keep countdown locked at 45s while waiting for 2nd ticket — never tick down prematurely!
-        room.lobbyCountdown = 45;
-        this.broadcastRoomState(room);
-        return;
-      }
+        room.realPlayerCount = room.tickets.size;
 
-      // 2+ ticketed players confirmed — countdown runs normally toward guaranteed game start
-      room.waitingForPlayers = false;
-      room.lobbyCountdown -= 1;
-      this.broadcastRoomState(room);
-
-      if (room.lobbyCountdown <= 0) {
-        if (room.tickets.size >= 2) {
-          clearInterval(interval);
-          await this.startRound(room.id);
-        } else {
-          // Fallback clamp
-          room.lobbyCountdown = 45;
+        if (!anyHouseReady) {
           room.waitingForPlayers = true;
+          room.lobbyCountdown = 45;
+          this.broadcastRoomState(room);
+        } else {
+          // If any house has 2+ players, game clock ticks for ALL houses together!
+          // Houses with >= 2 players are active participants
+          // Houses with < 2 players are marked waiting (will spectate if no 2nd player joins)
+          room.waitingForPlayers = room.tickets.size < 2;
+          room.lobbyCountdown = Math.max(0, currentLobbyCountdown - 1);
           this.broadcastRoomState(room);
         }
       }
+
+      if (!anyHouseReady) {
+        currentLobbyCountdown = 45;
+        return;
+      }
+
+      currentLobbyCountdown -= 1;
+
+      if (currentLobbyCountdown <= 0) {
+        clearInterval(interval);
+        await this.startMasterRound();
+      }
     }, 1000);
 
-    this.intervals.set(intervalKey, interval);
+    this.intervals.set('master_lobby', interval);
+  }
+
+  // Backwards-compatible alias for existing call sites
+  public startLobbyTimer(_roomId?: string) {
+    this.startMasterLobbyTimer();
   }
 
   /**
-   * Start Live Round for a specific stake room
+   * Start Live Round across all houses simultaneously
+   * Houses with >= 2 players play actively for their house pot.
+   * Houses with < 2 players spectate/watch the exact same live bingo.
    */
-  private async startRound(roomId: string = 'room-10') {
-    const room = this.rooms.get(roomId) || this.rooms.get('room-10') || this.rooms.get(ARENA_ROOM_ID)!;
+  public async startMasterRound() {
+    const activeHouses: GameRoomState[] = [];
 
-    try {
+    for (const roomId of STAKE_ROOM_IDS) {
+      const room = this.rooms.get(roomId);
+      if (!room) continue;
+
       room.phase = 'locked';
+      room.isProcessingVictory = false;
+      room.lastBallTime = Date.now();
       this.recalculatePot(room);
-      this.broadcastRoomState(room);
 
-      // 1. Count Real Player Tickets
-      let realTicketsCount = 0;
-      const assignedIds = new Set<number>();
-      room.tickets.forEach(list => {
-        realTicketsCount += list.length;
-        list.forEach(t => assignedIds.add(t.cartelaId));
-      });
+      if (room.tickets.size >= 2) {
+        // >= 2 players: Active Play Mode!
+        room.mode = 'active';
+        room.waitingForPlayers = false;
 
-      // 2. New Rule: Inject exactly 3 bots ONLY when 11+ real players; otherwise no bots
-      const realUserCount = room.tickets.size; // distinct real users
-      room.opponentCards = [];
+        // Bot injection if 11+ real players in this house
+        room.opponentCards = [];
+        if (room.tickets.size >= 11) {
+          if (this.botAccounts.length < 3) await this.loadBotAccounts();
+          const botPool = this.botAccounts.length >= 3 ? this.botAccounts : REGISTERED_3_BOTS;
+          const assignedIds = new Set<number>();
+          room.tickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
 
-      if (realUserCount >= 11) {
-        if (this.botAccounts.length < 3) {
-          await this.loadBotAccounts();
-        }
-
-        const botPool = this.botAccounts.length >= 3 ? this.botAccounts : REGISTERED_3_BOTS;
-
-        // Add exactly the 3 registered bots — always, regardless of how many real players (11, 50, 100...)
-        for (let i = 0; i < 3; i++) {
-          let botCartelaId = Math.floor(1 + Math.random() * 400);
-          while (assignedIds.has(botCartelaId)) {
-            botCartelaId = Math.floor(1 + Math.random() * 400);
+          for (let i = 0; i < 3; i++) {
+            let botCartelaId = Math.floor(1 + Math.random() * 400);
+            while (assignedIds.has(botCartelaId)) {
+              botCartelaId = Math.floor(1 + Math.random() * 400);
+            }
+            assignedIds.add(botCartelaId);
+            const botProfile = botPool[i];
+            room.opponentCards.push({
+              botUserId: botProfile.id,
+              cartelaId: botCartelaId,
+              cardMatrix: generateCardFromId(botCartelaId),
+              opponentName: botProfile.name,
+              stakeAmount: room.stakeAmount,
+              isHouseBot: i === 0
+            });
           }
-          assignedIds.add(botCartelaId);
-
-          const botProfile = botPool[i];
-          room.opponentCards.push({
-            botUserId: botProfile.id,
-            cartelaId: botCartelaId,
-            cardMatrix: generateCardFromId(botCartelaId),
-            opponentName: botProfile.name,
-            stakeAmount: room.stakeAmount, // bots bet same as room stake
-            isHouseBot: i === 0
-          });
+          this.recalculatePot(room);
         }
-        // Recalculate pot to include injected bot stakes
-        this.recalculatePot(room);
-      }
 
-      // 3. Win routing: bots win 20% only when 11+ real players; real player wins otherwise
-      if (room.opponentCards.length > 0) {
-        // 11+ players: 20% collective bot win probability
-        room.targetWinnerType = Math.random() < 0.20 ? 'bot' : 'real';
+        room.targetWinnerType = room.opponentCards.length > 0
+          ? (Math.random() < 0.20 ? 'bot' : 'real')
+          : 'real';
+
+        // Insert database round & tickets for active house
+        try {
+          const roundRes = await query(
+            `INSERT INTO game_rounds (room_id, round_number, phase, total_pot, platform_fee, winner_payout, started_at)
+             VALUES ($1, $2, 'playing', $3, $4, $5, NOW()) RETURNING id`,
+            [room.id, room.roundNumber, room.totalPot, room.houseFee, room.winnerPayout]
+          );
+          room.currentRoundId = roundRes.rows[0]?.id;
+
+          for (const [userId, tList] of room.tickets.entries()) {
+            for (const t of tList) {
+              await query(
+                `INSERT INTO game_tickets (round_id, user_id, cartela_id, card_matrix, bet_amount, status)
+                 VALUES ($1, $2, $3, $4, $5, 'active')`,
+                [room.currentRoundId, userId, t.cartelaId, JSON.stringify(t.cardMatrix), t.betAmount]
+              );
+            }
+          }
+        } catch (err) {
+          console.error(`❌ [GameEngine Error saving round to DB in ${room.id}]:`, err);
+        }
+
+        activeHouses.push(room);
       } else {
-        // 2–10 players: real player always wins (no bots in the game)
-        room.targetWinnerType = 'real';
+        // < 2 players: Spectator / Watch Mode!
+        room.mode = 'spectating';
+        room.waitingForPlayers = true;
+        room.opponentCards = [];
+        room.totalPot = 0;
+        room.winnerPayout = 0;
+        room.houseFee = 0;
+        room.currentRoundId = null;
       }
+    }
 
-      // 4. Save Round to Neon PostgreSQL
-      try {
-        const roundRes = await query(
-          `INSERT INTO game_rounds (room_id, round_number, phase, total_pot, platform_fee, winner_payout, started_at)
-           VALUES ($1, $2, 'playing', $3, $4, $5, NOW())
-           RETURNING id`,
-          [room.id, room.roundNumber, room.totalPot, room.houseFee, room.winnerPayout]
-        );
-        room.currentRoundId = roundRes.rows[0]?.id;
+    // 2. Prepare Single Master Ball Sequence (1-75)
+    const primaryActive = activeHouses[0] || this.rooms.get('room-10')!;
+    const masterBallSequence = this.prepareBallSequence(primaryActive);
 
-        // Save purchased tickets to Neon DB
-        for (const [userId, tList] of room.tickets.entries()) {
-          for (const t of tList) {
-            await query(
-              `INSERT INTO game_tickets (round_id, user_id, cartela_id, card_matrix, bet_amount, status)
-               VALUES ($1, $2, $3, $4, $5, 'active')`,
-              [room.currentRoundId, userId, t.cartelaId, JSON.stringify(t.cardMatrix), t.betAmount]
-            );
-          }
-        }
-      } catch (err) {
-        console.error(`❌ [GameEngine Error saving round to DB in ${room.id}]:`, err);
-      }
+    // 3. Set all rooms to 'playing' with the identical ball sequence
+    for (const roomId of STAKE_ROOM_IDS) {
+      const room = this.rooms.get(roomId);
+      if (!room) continue;
 
-      // 5. Generate Shuffled 1-75 Balls with Natural Win Steering
-      room.ballSequence = this.prepareBallSequence(room);
+      room.ballSequence = [...masterBallSequence];
       room.drawnNumbers = [];
+      room.currentCall = null;
+      room.winResult = null;
       room.phase = 'playing';
 
+      const realTicketsCount = Array.from(room.tickets.values()).reduce((sum, t) => sum + t.length, 0);
       const roundStartedPayload = {
         roundId: room.currentRoundId,
         roundNumber: room.roundNumber,
@@ -1047,23 +1091,26 @@ class BingoGameEngine {
         winnerPayout: room.winnerPayout,
         playersCount: realTicketsCount + room.opponentCards.length,
         realPlayerCount: room.tickets.size,
-        waitingForPlayers: false,
+        waitingForPlayers: room.waitingForPlayers,
+        mode: room.mode,
         roomId: room.id
       };
 
-      // Broadcast Round Started to room
       io.to(room.id).emit('round_started', roundStartedPayload);
       if (room.id === 'room-10') {
         io.to(ARENA_ROOM_ID).emit('round_started', { ...roundStartedPayload, roomId: ARENA_ROOM_ID });
         io.to('default').emit('round_started', { ...roundStartedPayload, roomId: 'default' });
       }
-
-      // Start 3.5s Ball Drawing Loop
-      this.startBallCallingLoop(room.id);
-    } catch (err) {
-      console.error(`❌ [BingoGameEngine] Error in startRound for ${room.id}:`, err);
-      this.startLobbyTimer(room.id);
+      this.broadcastRoomState(room);
     }
+
+    // 4. Launch Synchronized Master Ball Calling Loop
+    this.startMasterBallCallingLoop(masterBallSequence);
+  }
+
+  // Backwards-compatible alias for existing call sites
+  public async startRound(_roomId?: string) {
+    await this.startMasterRound();
   }
 
   /**
@@ -1335,107 +1382,143 @@ class BingoGameEngine {
   }
 
   /**
-   * 3.5s Ball Drawing Loop with Authoritative Split Pot Tie Evaluation
+   * Synchronized 3.5s Master Ball Drawing Loop across all 4 houses (10, 20, 50, 100 ETB)
    */
-  private startBallCallingLoop(roomId: string = 'room-10') {
-    const room = this.rooms.get(roomId) || this.rooms.get('room-10') || this.rooms.get(ARENA_ROOM_ID)!;
-
-    const intervalKey = `ball_${room.id}`;
-    if (this.intervals.has(intervalKey)) {
-      clearInterval(this.intervals.get(intervalKey)!);
+  private startMasterBallCallingLoop(masterBallSequence: number[]) {
+    if (this.intervals.has('master_ball')) {
+      clearInterval(this.intervals.get('master_ball')!);
     }
 
     const interval = setInterval(async () => {
-      if (room.phase !== 'playing') {
+      // 1. Check if all rooms are still playing
+      const sample = this.rooms.get('room-10');
+      if (sample && sample.phase !== 'playing') {
         clearInterval(interval);
         return;
       }
 
-      if (room.ballSequence.length === 0) {
+      if (masterBallSequence.length === 0) {
         clearInterval(interval);
-        this.finishRoundWithoutWinner(room.id);
+        this.startMasterWinnerCelebrationTimer();
         return;
       }
 
-      const nextNum = room.ballSequence.pop()!;
-      room.drawnNumbers.push(nextNum);
+      const nextNum = masterBallSequence.pop()!;
       const col = getBallColumn(nextNum);
 
-      room.currentCall = {
-        num: nextNum,
-        col,
-        index: room.drawnNumbers.length
-      };
+      // 2. Broadcast Ball Called to ALL 4 houses simultaneously
+      for (const roomId of STAKE_ROOM_IDS) {
+        const room = this.rooms.get(roomId);
+        if (!room) continue;
 
-      const ballPayload = {
-        currentCall: room.currentCall,
-        drawnNumbers: room.drawnNumbers,
-        totalCalled: room.drawnNumbers.length,
-        roomId: room.id
-      };
+        room.drawnNumbers.push(nextNum);
+        room.lastBallTime = Date.now();
+        room.currentCall = {
+          num: nextNum,
+          col,
+          index: room.drawnNumbers.length
+        };
 
-      // Broadcast Ball Called to room
-      io.to(room.id).emit('ball_called', ballPayload);
-      if (room.id === 'room-10') {
-        io.to(ARENA_ROOM_ID).emit('ball_called', { ...ballPayload, roomId: ARENA_ROOM_ID });
-        io.to('default').emit('ball_called', { ...ballPayload, roomId: 'default' });
+        const ballPayload = {
+          currentCall: room.currentCall,
+          drawnNumbers: room.drawnNumbers,
+          totalCalled: room.drawnNumbers.length,
+          mode: room.mode,
+          roomId: room.id
+        };
+
+        io.to(room.id).emit('ball_called', ballPayload);
+        if (room.id === 'room-10') {
+          io.to(ARENA_ROOM_ID).emit('ball_called', { ...ballPayload, roomId: ARENA_ROOM_ID });
+          io.to('default').emit('ball_called', { ...ballPayload, roomId: 'default' });
+        }
       }
 
-      // Evaluate Winning Patterns on each ball drawn once round target finish ball is reached
-      const evalThreshold = room.targetFinishBall || 15;
-      if (room.drawnNumbers.length >= evalThreshold) {
-        const winningCards: Array<{
-          userId?: string;
-          userName: string;
-          cartelaId: number;
-          isReal: boolean;
-          winningPattern: string;
-          winningIndices: number[];
-        }> = [];
+      // 3. Evaluate Winning Patterns for each ACTIVE house independently
+      let allActiveHousesCompleted = true;
+      const anyActiveHouse = STAKE_ROOM_IDS.some(id => this.rooms.get(id)?.mode === 'active');
 
-        // Check all Real Player tickets (Only auto-win for Auto-Play tickets; manual players must claim)
-        for (const [uid, tList] of room.tickets.entries()) {
-          for (const t of tList) {
-            if (t.isAutoPlay !== false) {
-              const winCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
-              if (winCheck.isWin) {
-                winningCards.push({
-                  userId: uid,
-                  userName: t.userName,
-                  cartelaId: t.cartelaId,
-                  isReal: true,
-                  winningPattern: winCheck.winningPattern || 'Bingo Line',
-                  winningIndices: winCheck.winningIndices || []
-                });
+      for (const roomId of STAKE_ROOM_IDS) {
+        const room = this.rooms.get(roomId);
+        if (!room || room.mode !== 'active') continue;
+
+        if (room.winResult) {
+          continue; // House already won
+        }
+
+        const evalThreshold = room.targetFinishBall || 15;
+        if (room.drawnNumbers.length >= evalThreshold) {
+          const winningCards: Array<{
+            userId?: string;
+            userName: string;
+            cartelaId: number;
+            isReal: boolean;
+            winningPattern: string;
+            winningIndices: number[];
+          }> = [];
+
+          // Check all Real Player tickets in this house
+          for (const [uid, tList] of room.tickets.entries()) {
+            for (const t of tList) {
+              if (t.isAutoPlay !== false) {
+                const winCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
+                if (winCheck.isWin) {
+                  winningCards.push({
+                    userId: uid,
+                    userName: t.userName,
+                    cartelaId: t.cartelaId,
+                    isReal: true,
+                    winningPattern: winCheck.winningPattern || 'Bingo Line',
+                    winningIndices: winCheck.winningIndices || []
+                  });
+                }
               }
             }
           }
-        }
 
-        // Check all Bot Opponent cards
-        for (const opp of room.opponentCards) {
-          const winCheck = checkWinningPattern(opp.cardMatrix, room.drawnNumbers);
-          if (winCheck.isWin) {
-            winningCards.push({
-              userName: opp.opponentName,
-              cartelaId: opp.cartelaId,
-              isReal: false,
-              winningPattern: winCheck.winningPattern || 'Bingo Line',
-              winningIndices: winCheck.winningIndices || []
-            });
+          // Check Bot Opponent cards in this house
+          for (const opp of room.opponentCards) {
+            const winCheck = checkWinningPattern(opp.cardMatrix, room.drawnNumbers);
+            if (winCheck.isWin) {
+              winningCards.push({
+                userName: opp.opponentName,
+                cartelaId: opp.cartelaId,
+                isReal: false,
+                winningPattern: winCheck.winningPattern || 'Bingo Line',
+                winningIndices: winCheck.winningIndices || []
+              });
+            }
           }
-        }
 
-        // Winner or Split Pot Detected!
-        if (winningCards.length > 0) {
-          clearInterval(interval);
-          await this.processRoundVictory(room, winningCards);
-          return;
+          if (winningCards.length > 0) {
+            await this.processRoundVictory(room, winningCards);
+          } else {
+            allActiveHousesCompleted = false;
+          }
+        } else {
+          allActiveHousesCompleted = false;
         }
+      }
+
+      // 4. Conclude when all active houses resolved or upon reaching reasonable cap (25+ balls)
+      if (anyActiveHouse && allActiveHousesCompleted) {
+        clearInterval(interval);
+        this.startMasterWinnerCelebrationTimer();
+      } else if (!anyActiveHouse && sample && sample.drawnNumbers.length >= 25) {
+        clearInterval(interval);
+        this.startMasterWinnerCelebrationTimer();
       }
     }, 3500);
 
-    this.intervals.set(intervalKey, interval);
+    this.intervals.set('master_ball', interval);
+  }
+
+  // Backwards-compatible alias for existing call sites
+  private startBallCallingLoop(roomId: string = 'room-10') {
+    const room = this.rooms.get(roomId);
+    if (room && room.ballSequence.length > 0) {
+      this.startMasterBallCallingLoop(room.ballSequence);
+    }
   }
 
   /**
@@ -1452,233 +1535,245 @@ class BingoGameEngine {
       winningIndices: number[];
     }>
   ) {
-    if (this.isProcessingVictory) {
-      console.warn('⚠️ [GameEngine] Victory processing already in progress. Ignoring concurrent claim.');
+    if (room.isProcessingVictory || room.winResult) {
+      console.warn(`⚠️ [GameEngine] Victory processing already in progress for ${room.id}. Ignoring concurrent claim.`);
       return;
     }
-    this.isProcessingVictory = true;
+    room.isProcessingVictory = true;
     room.phase = 'winner';
-    const totalWinningCards = winningCards.length;
-    const realWinners = winningCards.filter(w => w.isReal);
-    const botWinners = winningCards.filter(w => !w.isReal);
 
-    // Group winning cards by unique entity: real users by userId, bots by opponent ID
-    const distinctEntities = new Set(winningCards.map(w => w.isReal ? `real_${w.userId}` : `bot_${w.cartelaId}`));
-    const isSplit = distinctEntities.size > 1;
+    try {
+      const totalWinningCards = winningCards.length;
+      const realWinners = winningCards.filter(w => w.isReal);
+      const botWinners = winningCards.filter(w => !w.isReal);
 
-    // Group real winning cards by userId
-    const realWinnersByUser = new Map<string, typeof realWinners>();
-    for (const rw of realWinners) {
-      if (!rw.userId) continue;
-      const list = realWinnersByUser.get(rw.userId) || [];
-      list.push(rw);
-      realWinnersByUser.set(rw.userId, list);
-    }
+      // Group winning cards by unique entity: real users by userId, bots by opponent ID
+      const distinctEntities = new Set(winningCards.map(w => w.isReal ? `real_${w.userId}` : `bot_${w.cartelaId}`));
+      const isSplit = distinctEntities.size > 1;
 
-    const netPayout = room.winnerPayout > 0 ? room.winnerPayout : room.totalPot;
-    const perCardPayout = Math.max(1, Math.floor(netPayout / totalWinningCards));
+      // Group real winning cards by userId
+      const realWinnersByUser = new Map<string, typeof realWinners>();
+      for (const rw of realWinners) {
+        if (!rw.userId) continue;
+        const list = realWinnersByUser.get(rw.userId) || [];
+        list.push(rw);
+        realWinnersByUser.set(rw.userId, list);
+      }
 
-    let primaryUserPayout = 0;
-    let displayWinnerPayout = netPayout;
+      const netPayout = room.winnerPayout > 0 ? room.winnerPayout : room.totalPot;
+      const perCardPayout = Math.max(1, Math.floor(netPayout / totalWinningCards));
 
-    // 1. Credit all winning real players atomically via Neon PostgreSQL
-    if (realWinnersByUser.size > 0) {
-      try {
-        await withTransaction(async (client) => {
-          for (const [userId, userWinningCards] of realWinnersByUser.entries()) {
-            const userTickets = room.tickets.get(userId) || [];
+      let primaryUserPayout = 0;
+      let displayWinnerPayout = netPayout;
 
-            // Calculate total payout for this user based on dynamic net prize pool:
-            const userTotalWin = userWinningCards.length * perCardPayout;
+      // 1. Credit all winning real players atomically via Neon PostgreSQL
+      if (realWinnersByUser.size > 0) {
+        try {
+          await withTransaction(async (client) => {
+            for (const [userId, userWinningCards] of realWinnersByUser.entries()) {
+              const userTickets = room.tickets.get(userId) || [];
 
-            primaryUserPayout = userTotalWin;
-            displayWinnerPayout = userTotalWin;
+              // Calculate total payout for this user based on dynamic net prize pool:
+              const userTotalWin = userWinningCards.length * perCardPayout;
 
-            const walletRes = await client.query(
-              'SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE',
-              [userId]
-            );
+              primaryUserPayout = userTotalWin;
+              displayWinnerPayout = userTotalWin;
 
-            if (walletRes.rows.length > 0) {
-              const currentBal = parseFloat(walletRes.rows[0].balance || '0');
-              const newBal = currentBal + userTotalWin;
-
-              await client.query(
-                'UPDATE wallets SET balance = $1, updated_at = NOW() WHERE user_id = $2',
-                [newBal, userId]
+              const walletRes = await client.query(
+                'SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE',
+                [userId]
               );
 
-              const isSocketConnected = room.activeUsers.has(userId) || userTickets.some(t => room.activeSockets.has(t.socketId));
-              const isOffline = !isSocketConnected;
-              const winRef = `WIN-ARENA-${Date.now().toString().slice(-6)}`;
-              const winningCardIds = userWinningCards.map(w => `#${w.cartelaId}`).join(', ');
-              const firstTicket = userTickets.find(t => t.cartelaId === userWinningCards[0].cartelaId);
-              const ticketStake = firstTicket?.betAmount || room.stakeAmount;
+              if (walletRes.rows.length > 0) {
+                const currentBal = parseFloat(walletRes.rows[0].balance || '0');
+                const newBal = currentBal + userTotalWin;
 
-              const description = isSplit
-                ? `Split Pot Winner (${userWinningCards.length} of ${totalWinningCards} cards, ${ticketStake} ETB Stake) in ${room.name} (Cartela ${winningCardIds})${isOffline ? ' [Protected Offline Auto-Claim]' : ''}`
-                : `Bingo Solo Winner (${ticketStake} ETB Stake) in ${room.name} (Cartela ${winningCardIds})${isOffline ? ' [Protected Offline Auto-Claim]' : ''}`;
+                await client.query(
+                  'UPDATE wallets SET balance = $1, updated_at = NOW() WHERE user_id = $2',
+                  [newBal, userId]
+                );
 
+                const isSocketConnected = room.activeUsers.has(userId) || userTickets.some(t => room.activeSockets.has(t.socketId));
+                const isOffline = !isSocketConnected;
+                const winRef = `WIN-ARENA-${Date.now().toString().slice(-6)}`;
+                const winningCardIds = userWinningCards.map(w => `#${w.cartelaId}`).join(', ');
+                const firstTicket = userTickets.find(t => t.cartelaId === userWinningCards[0].cartelaId);
+                const ticketStake = firstTicket?.betAmount || room.stakeAmount;
+
+                const description = isSplit
+                  ? `Split Pot Winner (${userWinningCards.length} of ${totalWinningCards} cards, ${ticketStake} ETB Stake) in ${room.name} (Cartela ${winningCardIds})${isOffline ? ' [Protected Offline Auto-Claim]' : ''}`
+                  : `Bingo Solo Winner (${ticketStake} ETB Stake) in ${room.name} (Cartela ${winningCardIds})${isOffline ? ' [Protected Offline Auto-Claim]' : ''}`;
+
+                await client.query(
+                  `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, payment_method, description)
+                   VALUES ($1, 'win', $2, $3, $4, 'completed', 'in_game', $5)`,
+                  [userId, userTotalWin, newBal, winRef, description]
+                );
+
+                // Disconnect Protection: Record in authoritative offline/online ledger
+                const winRecord: OfflineWinRecord = {
+                  id: `WINREC-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+                  userId,
+                  userName: userWinningCards[0].userName,
+                  roomId: room.id,
+                  roundNumber: room.roundNumber,
+                  cartelaId: userWinningCards[0].cartelaId,
+                  amount: userTotalWin,
+                  referenceCode: winRef,
+                  timestamp: new Date().toISOString(),
+                  isOffline,
+                  acknowledged: !isOffline,
+                  winningPattern: userWinningCards[0].winningPattern
+                };
+                this.offlineWins.unshift(winRecord);
+                if (this.offlineWins.length > 200) this.offlineWins.pop();
+
+                io.emit('offline_win_recorded', winRecord);
+
+                // Automated Big Winner Channel Broadcast (if enabled & threshold met)
+                telegramBotService.announceBigWinner(
+                  userWinningCards[0].userName,
+                  userTotalWin,
+                  room.name,
+                  userWinningCards[0].cartelaId
+                ).catch(() => {});
+
+                io.emit(`user_${userId}_balance`, {
+                  type: 'bingo_win',
+                  amount: userTotalWin,
+                  newBalance: newBal
+                });
+                io.emit('user_balance_updated', {
+                  userId,
+                  type: 'bingo_win',
+                  amount: userTotalWin,
+                  newBalance: newBal,
+                  balance: newBal
+                });
+              }
+            }
+
+            if (room.currentRoundId) {
               await client.query(
+                `UPDATE game_rounds 
+                 SET phase = 'ended', 
+                     winner_user_ids = $1, 
+                     winner_cartelas = $2, 
+                     winner_names = $3, 
+                     ended_at = NOW() 
+                 WHERE id = $4`,
+                [
+                  JSON.stringify(Array.from(realWinnersByUser.keys())),
+                  JSON.stringify(winningCards.map(w => w.cartelaId)),
+                  JSON.stringify(winningCards.map(w => w.userName)),
+                  room.currentRoundId
+                ]
+              );
+            }
+          });
+        } catch (err) {
+          console.error(`❌ [GameEngine Error processing winning payout in ${room.id}]:`, err);
+        }
+      }
+
+      // 2. Process Bot Victory: Real Ledger Credit in Neon DB
+      if (botWinners.length > 0 && realWinners.length === 0) {
+        try {
+          for (const bw of botWinners) {
+            const matchingOpp = room.opponentCards.find(o => o.cartelaId === bw.cartelaId);
+            const botStake = matchingOpp?.stakeAmount || 10;
+            const botPayout = perCardPayout;
+            displayWinnerPayout = botPayout;
+
+            if (matchingOpp?.botUserId && !matchingOpp.botUserId.startsWith('bot_legacy_')) {
+              await query(
+                'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
+                [botPayout, matchingOpp.botUserId]
+              );
+
+              const botWinRef = `BOT-WIN-${Date.now().toString().slice(-6)}`;
+              await query(
                 `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, payment_method, description)
-                 VALUES ($1, 'win', $2, $3, $4, 'completed', 'in_game', $5)`,
-                [userId, userTotalWin, newBal, winRef, description]
+                 VALUES ($1, 'win', $2, (SELECT balance FROM wallets WHERE user_id = $1), $3, 'completed', 'in_game', $4)`,
+                [
+                  matchingOpp.botUserId,
+                  botPayout,
+                  botWinRef,
+                  isSplit
+                    ? `Split Pot Winner (1 of ${totalWinningCards}, ${botStake} ETB Stake) in ${room.name} (Cartela #${bw.cartelaId})`
+                    : `Bingo Solo Winner (${botStake} ETB Stake) in ${room.name} (Cartela #${bw.cartelaId})`
+                ]
               );
-
-              // Disconnect Protection: Record in authoritative offline/online ledger
-              const winRecord: OfflineWinRecord = {
-                id: `WINREC-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
-                userId,
-                userName: userWinningCards[0].userName,
-                roomId: room.id,
-                roundNumber: room.roundNumber,
-                cartelaId: userWinningCards[0].cartelaId,
-                amount: userTotalWin,
-                referenceCode: winRef,
-                timestamp: new Date().toISOString(),
-                isOffline,
-                acknowledged: !isOffline, // Connected winners celebrate live inside the app; offline winners get the modal upon return
-                winningPattern: userWinningCards[0].winningPattern
-              };
-              this.offlineWins.unshift(winRecord);
-              if (this.offlineWins.length > 200) this.offlineWins.pop();
-
-              io.emit('offline_win_recorded', winRecord);
-
-              // Automated Big Winner Channel Broadcast (if enabled & threshold met)
-              telegramBotService.announceBigWinner(
-                userWinningCards[0].userName,
-                userTotalWin,
-                room.name,
-                userWinningCards[0].cartelaId
-              ).catch(() => {});
-
-              io.emit(`user_${userId}_balance`, {
-                type: 'bingo_win',
-                amount: userTotalWin,
-                newBalance: newBal
-              });
-              io.emit('user_balance_updated', {
-                userId,
-                type: 'bingo_win',
-                amount: userTotalWin,
-                newBalance: newBal,
-                balance: newBal
-              });
             }
           }
-
-          if (room.currentRoundId) {
-            await client.query(
-              `UPDATE game_rounds 
-               SET phase = 'ended', 
-                   winner_user_ids = $1, 
-                   winner_cartelas = $2, 
-                   winner_names = $3, 
-                   ended_at = NOW() 
-               WHERE id = $4`,
-              [
-                JSON.stringify(Array.from(realWinnersByUser.keys())),
-                JSON.stringify(winningCards.map(w => w.cartelaId)),
-                JSON.stringify(winningCards.map(w => w.userName)),
-                room.currentRoundId
-              ]
-            );
-          }
-        });
-      } catch (err) {
-        console.error('❌ [GameEngine Error processing winning payout]:', err);
-      }
-    }
-
-    // 2. Process Bot Victory: Real Ledger Credit in Neon DB
-    if (botWinners.length > 0 && realWinners.length === 0) {
-      try {
-        for (const bw of botWinners) {
-          const matchingOpp = room.opponentCards.find(o => o.cartelaId === bw.cartelaId);
-          const botStake = matchingOpp?.stakeAmount || 10;
-          const botPayout = perCardPayout;
-          displayWinnerPayout = botPayout;
-
-          if (matchingOpp?.botUserId && !matchingOpp.botUserId.startsWith('bot_legacy_')) {
-            // Deposit real winnings into the bot's Neon DB wallet!
-            await query(
-              'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
-              [botPayout, matchingOpp.botUserId]
-            );
-
-            const botWinRef = `BOT-WIN-${Date.now().toString().slice(-6)}`;
-            await query(
-              `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, payment_method, description)
-               VALUES ($1, 'win', $2, (SELECT balance FROM wallets WHERE user_id = $1), $3, 'completed', 'in_game', $4)`,
-              [
-                matchingOpp.botUserId,
-                botPayout,
-                botWinRef,
-                isSplit
-                  ? `Split Pot Winner (1 of ${totalWinningCards}, ${botStake} ETB Stake) in ${room.name} (Cartela #${bw.cartelaId})`
-                  : `Bingo Solo Winner (${botStake} ETB Stake) in ${room.name} (Cartela #${bw.cartelaId})`
-              ]
-            );
-          }
+        } catch (err) {
+          console.error(`❌ [GameEngine Error crediting bot win in ${room.id}]:`, err);
         }
-      } catch (err) {
-        console.error('❌ [GameEngine Error crediting bot win]:', err);
       }
+
+      const firstWinner = winningCards[0];
+      const matchingOpp = room.opponentCards.find(o => o.cartelaId === firstWinner.cartelaId);
+      const winnerStake = firstWinner.isReal
+        ? (room.tickets.get(firstWinner.userId || '')?.[0]?.betAmount || 10)
+        : (matchingOpp?.stakeAmount || 10);
+
+      const primaryEntityId = firstWinner.isReal ? `real_${firstWinner.userId}` : `bot_${firstWinner.cartelaId}`;
+      const externalCoWinners = Array.from(
+        new Set(
+          winningCards
+            .filter(w => (w.isReal ? `real_${w.userId}` : `bot_${w.cartelaId}`) !== primaryEntityId)
+            .map(w => w.userName)
+        )
+      );
+
+      const winResult = {
+        winType: isSplit
+          ? (realWinners.length > 0 ? 'user_split' : 'opponent_win')
+          : (firstWinner.isReal ? 'user_solo' : 'opponent_win'),
+        winnerId: firstWinner.userId || matchingOpp?.botUserId || `bot_${firstWinner.cartelaId}`,
+        winnerName: firstWinner.userName,
+        winnerNames: Array.from(new Set(winningCards.map(w => w.userName))),
+        winnerUserIds: Array.from(new Set(realWinners.map(rw => rw.userId))),
+        winningCartelaNumber: firstWinner.cartelaId,
+        winningCartelas: winningCards.map(w => w.cartelaId),
+        winningPattern: firstWinner.winningPattern,
+        winningIndices: firstWinner.winningIndices,
+        totalPot: room.totalPot,
+        houseFee: room.houseFee || 0,
+        netPrizePot: room.winnerPayout > 0 ? room.winnerPayout : room.totalPot,
+        commissionPercent: room.commissionEnabled ? (room.commissionPercent || 20) : 0,
+        winnerPayout: displayWinnerPayout,
+        stakeAmount: winnerStake,
+        sharePerWinner: isSplit ? perCardPayout : displayWinnerPayout,
+        userShare: primaryUserPayout,
+        coWinners: isSplit ? externalCoWinners : [],
+        isSplit,
+        winnersCount: distinctEntities.size
+      };
+
+      room.winResult = winResult;
+
+      // Broadcast round winner to room
+      io.to(room.id).emit('round_winner', winResult);
+      if (room.id === 'room-10') {
+        io.to(ARENA_ROOM_ID).emit('round_winner', winResult);
+        io.to('default').emit('round_winner', winResult);
+      }
+      this.broadcastRoomState(room);
+    } catch (err) {
+      console.error(`❌ [GameEngine General Error processing victory in ${room.id}]:`, err);
+    } finally {
+      room.isProcessingVictory = false;
     }
 
-    const firstWinner = winningCards[0];
-    const matchingOpp = room.opponentCards.find(o => o.cartelaId === firstWinner.cartelaId);
-    const winnerStake = firstWinner.isReal
-      ? (room.tickets.get(firstWinner.userId || '')?.[0]?.betAmount || 10)
-      : (matchingOpp?.stakeAmount || 10);
-
-    // List other external winner names, excluding the primary winner's own entity
-    const primaryEntityId = firstWinner.isReal ? `real_${firstWinner.userId}` : `bot_${firstWinner.cartelaId}`;
-    const externalCoWinners = Array.from(
-      new Set(
-        winningCards
-          .filter(w => (w.isReal ? `real_${w.userId}` : `bot_${w.cartelaId}`) !== primaryEntityId)
-          .map(w => w.userName)
-      )
-    );
-
-    const winResult = {
-      winType: isSplit
-        ? (realWinners.length > 0 ? 'user_split' : 'opponent_win')
-        : (firstWinner.isReal ? 'user_solo' : 'opponent_win'),
-      winnerId: firstWinner.userId || matchingOpp?.botUserId || `bot_${firstWinner.cartelaId}`,
-      winnerName: firstWinner.userName,
-      winnerNames: Array.from(new Set(winningCards.map(w => w.userName))),
-      winnerUserIds: Array.from(new Set(realWinners.map(rw => rw.userId))),
-      winningCartelaNumber: firstWinner.cartelaId,
-      winningCartelas: winningCards.map(w => w.cartelaId),
-      winningPattern: firstWinner.winningPattern,
-      winningIndices: firstWinner.winningIndices,
-      totalPot: room.totalPot,
-      houseFee: room.houseFee || 0,
-      netPrizePot: room.winnerPayout > 0 ? room.winnerPayout : room.totalPot,
-      commissionPercent: room.commissionEnabled ? (room.commissionPercent || 20) : 0,
-      winnerPayout: displayWinnerPayout, // Exact payout won
-      stakeAmount: winnerStake,
-      sharePerWinner: isSplit ? perCardPayout : displayWinnerPayout,
-      userShare: primaryUserPayout,
-      coWinners: isSplit ? externalCoWinners : [],
-      isSplit,
-      winnersCount: distinctEntities.size
-    };
-
-    room.winResult = winResult;
-
-    // Broadcast round winner to room
-    io.to(room.id).emit('round_winner', winResult);
-    if (room.id === 'room-10') {
-      io.to(ARENA_ROOM_ID).emit('round_winner', winResult);
-      io.to('default').emit('round_winner', winResult);
+    // Check if any other active house still pending
+    const otherActivePending = STAKE_ROOM_IDS.some(id => {
+      const r = this.rooms.get(id);
+      return r && r.id !== room.id && r.mode === 'active' && !r.winResult;
+    });
+    if (!otherActivePending) {
+      this.startMasterWinnerCelebrationTimer();
     }
-
-    // 8-Second celebration before transitioning to next 45s lobby
-    this.startWinnerCelebrationTimer(room.id);
   }
 
   /**
@@ -1691,7 +1786,7 @@ class BingoGameEngine {
     cartelaId: number
   ): Promise<{ success: boolean; message: string; winResult?: any }> {
     const room = this.getRoom(roomId);
-    if (!room || room.phase !== 'playing' || this.isProcessingVictory) {
+    if (!room || room.phase !== 'playing' || room.isProcessingVictory) {
       return { success: false, message: 'Game is not currently in playing phase or victory is already being processed.' };
     }
 
@@ -1705,11 +1800,6 @@ class BingoGameEngine {
         success: false,
         message: 'Invalid Bingo claim. Not all numbers in a winning line have been drawn yet.'
       };
-    }
-
-    const intervalKey = `ball_${room.id}`;
-    if (this.intervals.has(intervalKey)) {
-      clearInterval(this.intervals.get(intervalKey)!);
     }
 
     const winningCards: Array<{
@@ -1779,31 +1869,93 @@ class BingoGameEngine {
       io.to(ARENA_ROOM_ID).emit('round_ended_no_winner', { totalPot: room.totalPot, roomId: ARENA_ROOM_ID });
       io.to('default').emit('round_ended_no_winner', { totalPot: room.totalPot, roomId: 'default' });
     }
-    this.startWinnerCelebrationTimer(room.id);
+    this.startMasterWinnerCelebrationTimer();
   }
 
-  private startWinnerCelebrationTimer(roomId: string = 'room-10') {
-    const room = this.rooms.get(roomId) || this.rooms.get('room-10') || this.rooms.get(ARENA_ROOM_ID)!;
-
-    room.winnerCountdown = 8;
-    const intervalKey = `winner_${room.id}`;
-    if (this.intervals.has(intervalKey)) {
-      clearInterval(this.intervals.get(intervalKey)!);
+  /**
+   * Synchronized 8-Second Celebration across all 4 houses, then transitions all to next 45s lobby together
+   */
+  public startMasterWinnerCelebrationTimer() {
+    if (this.intervals.has('master_ball')) {
+      clearInterval(this.intervals.get('master_ball')!);
+    }
+    if (this.intervals.has('master_winner')) {
+      clearInterval(this.intervals.get('master_winner')!);
     }
 
-    const interval = setInterval(() => {
-      room.winnerCountdown -= 1;
+    for (const roomId of STAKE_ROOM_IDS) {
+      const room = this.rooms.get(roomId);
+      if (!room) continue;
+      room.phase = 'winner';
+      room.winnerCountdown = 8;
       this.broadcastRoomState(room);
+    }
 
-      if (room.winnerCountdown <= 0) {
+    let currentWinnerCountdown = 8;
+
+    const interval = setInterval(() => {
+      currentWinnerCountdown -= 1;
+
+      for (const roomId of STAKE_ROOM_IDS) {
+        const room = this.rooms.get(roomId);
+        if (!room) continue;
+        room.winnerCountdown = Math.max(0, currentWinnerCountdown);
+        this.broadcastRoomState(room);
+      }
+
+      if (currentWinnerCountdown <= 0) {
         clearInterval(interval);
-        room.roundNumber += 1;
-        room.tickets.clear();
-        this.startLobbyTimer(room.id); // Transition to 45s lobby
+        for (const roomId of STAKE_ROOM_IDS) {
+          const room = this.rooms.get(roomId);
+          if (!room) continue;
+          room.roundNumber += 1;
+          room.tickets.clear();
+        }
+        this.startMasterLobbyTimer();
       }
     }, 1000);
 
-    this.intervals.set(intervalKey, interval);
+    this.intervals.set('master_winner', interval);
+  }
+
+  // Backwards-compatible alias for existing call sites
+  private startWinnerCelebrationTimer(_roomId: string = 'room-10') {
+    this.startMasterWinnerCelebrationTimer();
+  }
+
+  /**
+   * Self-Healing Watchdog: Ensures game never freezes even under extreme network disruption
+   */
+  public startWatchdogTimer() {
+    setInterval(() => {
+      const sample = this.rooms.get('room-10');
+      if (!sample) return;
+
+      if (sample.phase === 'playing') {
+        const now = Date.now();
+        const stallThreshold = 14000; // 14 seconds without a ball drawn
+        if (now - (sample.lastBallTime || 0) > stallThreshold) {
+          console.warn('⚠️ [Watchdog] Master ball loop stalled for >14s. Auto-recovering round.');
+          this.startMasterWinnerCelebrationTimer();
+        }
+      }
+    }, 5000);
+  }
+
+  /**
+   * Emergency Force-Reset (Used to immediately unstick any stuck room like room-50)
+   */
+  public forceResetRoomToLobby(roomId?: string) {
+    if (roomId && this.rooms.has(roomId)) {
+      const r = this.rooms.get(roomId)!;
+      r.phase = 'lobby';
+      r.isProcessingVictory = false;
+      r.drawnNumbers = [];
+      r.currentCall = null;
+      r.winResult = null;
+    }
+    this.startMasterLobbyTimer();
+    console.log(`🔄 [GameEngine] Force reset rooms to synchronized lobby`);
   }
 
   public broadcastRoomState(room: GameRoomState) {
@@ -1817,6 +1969,7 @@ class BingoGameEngine {
       success: true,
       roomId: room.id,
       phase: room.phase,
+      mode: room.mode || (room.tickets.size >= 2 ? 'active' : 'spectating'),
       roundNumber: room.roundNumber,
       lobbyCountdown: room.lobbyCountdown,
       winnerCountdown: room.winnerCountdown,

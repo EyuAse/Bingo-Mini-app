@@ -123,6 +123,7 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     success: true,
     roomId: room.id,
     phase: room.phase,
+    mode: room.mode || (room.tickets.size >= 2 ? 'active' : 'spectating'),
     roundNumber: room.roundNumber,
     lobbyCountdown: room.lobbyCountdown,
     winnerCountdown: room.winnerCountdown,
@@ -143,6 +144,13 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     stakeRoomsSummary: gameEngine.getStakeRoomsSummary(),
     serverTime: Date.now()
   });
+});
+
+// Emergency Unstick & Reset Endpoint
+app.post('/api/rooms/reset', (req, res) => {
+  const roomId = req.query.roomId as string | undefined;
+  gameEngine.forceResetRoomToLobby(roomId);
+  res.json({ success: true, message: 'Rooms reset to synchronized lobby.' });
 });
 
 // Rate Limiters for DoS and Brute-Force Hardening
