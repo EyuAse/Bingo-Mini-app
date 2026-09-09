@@ -49,7 +49,7 @@ export const WinModalEmergencyFallback: React.FC<{
   payout?: number;
   winnerName?: string;
 }> = ({ onClose, payout, winnerName }) => {
-  const { closeWinModalAndRestart, winResult } = useBingo();
+  const { closeWinModalAndRestart, winResult, betAmount } = useBingo();
   const handleDismiss = onClose || closeWinModalAndRestart;
   const displayPayout = typeof payout === 'number' && !isNaN(payout) && payout > 0
     ? payout
@@ -100,7 +100,7 @@ export const WinModalEmergencyFallback: React.FC<{
         </div>
 
         <h2 className="victory-celebration-title">
-          🎉 BINGO VICTORY!
+          🎉 {betAmount ? `${betAmount} ETB HOUSE · ` : ''}BINGO VICTORY!
         </h2>
 
         <p className="victory-celebration-sub">
@@ -136,7 +136,8 @@ export const WinModal: React.FC = () => {
   const {
     showWinModal,
     winResult,
-    closeWinModalAndRestart
+    closeWinModalAndRestart,
+    betAmount
   } = useBingo();
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -335,10 +336,10 @@ export const WinModal: React.FC = () => {
           {/* Title */}
           <h2 className="victory-celebration-title">
             {isOpponentWin
-              ? '🏆 BINGO CALLED!'
+              ? `🏆 ${betAmount} ETB HOUSE · BINGO CALLED!`
               : isTrueMultiplayerSplit
-              ? '🤝 SPLIT POT VICTORY!'
-              : '🎉 BINGO! YOU WON!'}
+              ? `🤝 ${betAmount} ETB HOUSE · SPLIT POT!`
+              : `🎉 ${betAmount} ETB HOUSE CHAMPION!`}
           </h2>
 
           <p className="victory-celebration-sub">
