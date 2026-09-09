@@ -1068,9 +1068,8 @@ class BingoGameEngine {
       }
     }
 
-    // 2. Prepare Single Master Ball Sequence (1-75)
-    const primaryActive = activeHouses[0] || this.rooms.get('room-10')!;
-    const masterBallSequence = this.prepareBallSequence(primaryActive);
+    // 2. Prepare Single Master Ball Sequence (1-75) supporting all active houses simultaneously
+    const masterBallSequence = this.prepareMasterBallSequence(activeHouses);
 
     // 3. Set all rooms to 'playing' with the identical ball sequence
     for (const roomId of STAKE_ROOM_IDS) {
@@ -1382,6 +1381,282 @@ class BingoGameEngine {
   }
 
   /**
+   * Prepares a single authoritative 75-ball sequence that simultaneously weaves
+   * organic winning lines and active dispersion for ALL active houses.
+   * Every active house is assigned an unpredictable target finish ball between 16 and 24.
+   */
+  private prepareMasterBallSequence(activeHouses: GameRoomState[]): number[] {
+    if (activeHouses.length === 0) {
+      return generateRandomShuffledBalls();
+    }
+
+    if (activeHouses.length === 1) {
+      return this.prepareBallSequence(activeHouses[0]);
+    }
+
+    // Stagger finish targets across active houses so they don't all collide on the same ball
+    const targetPool = [17, 18, 19, 20, 21, 22, 23, 24].sort(() => Math.random() - 0.5);
+    const houseConfigs: Array<{
+      room: GameRoomState;
+      targetCardMatrix: BingoCell[];
+      targetNumbers: number[];
+      finalBall: number;
+      earlyTargetNumbers: number[];
+      finishIndex: number;
+    }> = [];
+
+    for (let i = 0; i < activeHouses.length; i++) {
+      const room = activeHouses[i];
+      const targetFinishBall = targetPool[i] || (17 + i * 2);
+      room.targetFinishBall = targetFinishBall;
+
+      const allRealTickets: PlayerTicket[] = [];
+      room.tickets.forEach(list => allRealTickets.push(...list));
+
+      let targetCardMatrix: BingoCell[] | null = null;
+      if (room.targetWinnerType === 'real' && allRealTickets.length > 0) {
+        const chosenRealTicket = allRealTickets[Math.floor(Math.random() * allRealTickets.length)];
+        targetCardMatrix = chosenRealTicket.cardMatrix;
+      } else if (room.opponentCards.length > 0) {
+        const bot = room.opponentCards[0];
+        targetCardMatrix = bot.cardMatrix;
+      } else if (allRealTickets.length > 0) {
+        targetCardMatrix = allRealTickets[0].cardMatrix;
+      }
+
+      if (!targetCardMatrix) continue;
+
+      const winningPatternsIndices = [
+        [0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24],
+        [0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 18, 23], [4, 9, 14, 19, 24],
+        [0, 6, 12, 18, 24], [4, 8, 12, 16, 20]
+      ];
+
+      // Ensure every active house selects a strictly unique final winning ball
+      const assignedFinalBalls = new Set<number>(houseConfigs.map(h => h.finalBall));
+      let selectedFinalBall = 0;
+      let selectedEarly: number[] = [];
+      let selectedPatternNums: number[] = [];
+
+      const shuffledPatterns = [...winningPatternsIndices].sort(() => Math.random() - 0.5);
+      for (const pattern of shuffledPatterns) {
+        const pNums = pattern
+          .map(idx => targetCardMatrix![idx]?.val)
+          .filter((v): v is number => typeof v === 'number');
+
+        const candidate = pNums.find(n => !assignedFinalBalls.has(n));
+        if (candidate) {
+          selectedFinalBall = candidate;
+          selectedEarly = pNums.filter(n => n !== candidate);
+          selectedPatternNums = pNums;
+          break;
+        }
+      }
+
+      if (!selectedFinalBall) {
+        // Fallback: pick any number on targetCardMatrix not yet in assignedFinalBalls
+        const anyAvail = targetCardMatrix
+          .map(c => c.val)
+          .find((v): v is number => typeof v === 'number' && !assignedFinalBalls.has(v));
+        if (!anyAvail) continue;
+        selectedFinalBall = anyAvail;
+        selectedEarly = [];
+        selectedPatternNums = [anyAvail];
+      }
+
+      houseConfigs.push({
+        room,
+        targetCardMatrix,
+        targetNumbers: selectedPatternNums,
+        finalBall: selectedFinalBall,
+        earlyTargetNumbers: selectedEarly,
+        finishIndex: targetFinishBall - 1
+      });
+
+      console.log(`🎯 [GameEngine] Active House ${room.id} targeting ${room.targetWinnerType.toUpperCase()} win on Ball #${targetFinishBall} (Winning Ball: ${selectedFinalBall})`);
+    }
+
+    if (houseConfigs.length === 0) {
+      return this.prepareBallSequence(activeHouses[0]);
+    }
+
+    // Sort house configs by finishIndex ascending
+    houseConfigs.sort((a, b) => a.finishIndex - b.finishIndex);
+    const maxFinishIndex = Math.max(...houseConfigs.map(h => h.finishIndex));
+
+    const finalSequence: number[] = new Array(75).fill(0);
+    // Available numbers 1..75
+    const availableBalls = new Set<number>(Array.from({ length: 75 }, (_, i) => i + 1));
+
+    // 1. Place final winning balls at their respective finish indices
+    for (const h of houseConfigs) {
+      finalSequence[h.finishIndex] = h.finalBall;
+      availableBalls.delete(h.finalBall);
+    }
+
+    // Count how many early slots (0 to maxFinishIndex) are currently 0 (unassigned)
+    const emptyEarlySlots: number[] = [];
+    for (let slot = 0; slot <= maxFinishIndex; slot++) {
+      if (finalSequence[slot] === 0) {
+        emptyEarlySlots.push(slot);
+      }
+    }
+
+    // Gather all participating cards with their house target finish ball
+    const allCardsWithMinBall: Array<{ card: BingoCell[]; minBall: number }> = [];
+    for (const h of houseConfigs) {
+      allCardsWithMinBall.push({ card: h.targetCardMatrix, minBall: h.room.targetFinishBall });
+      h.room.tickets.forEach(l => l.forEach(t => {
+        if (t.cardMatrix !== h.targetCardMatrix) {
+          allCardsWithMinBall.push({ card: t.cardMatrix, minBall: h.room.targetFinishBall });
+        }
+      }));
+      h.room.opponentCards.forEach(o => {
+        if (o.cardMatrix !== h.targetCardMatrix) {
+          allCardsWithMinBall.push({ card: o.cardMatrix, minBall: h.room.targetFinishBall });
+        }
+      });
+    }
+
+    const allAssignedFinalBalls = new Set<number>(houseConfigs.map(h => h.finalBall));
+
+    const isSafeCandidate = (candidate: number, slotIndex: number): boolean => {
+      if (allAssignedFinalBalls.has(candidate)) return false;
+      const testDrawn = [...finalSequence.slice(0, slotIndex), candidate];
+      const ballNumber = testDrawn.length;
+
+      for (const item of allCardsWithMinBall) {
+        if (ballNumber < item.minBall) {
+          if (checkWinningPattern(item.card, testDrawn).isWin) {
+            return false;
+          }
+        }
+      }
+      return true;
+    };
+
+    // Priority pools of balls to place early:
+    // 1. Target early numbers from houses
+    const preferredEarlyPool: number[] = [];
+    for (const h of houseConfigs) {
+      for (const num of h.earlyTargetNumbers) {
+        if (availableBalls.has(num) && !preferredEarlyPool.includes(num)) {
+          preferredEarlyPool.push(num);
+        }
+      }
+    }
+
+    // 2. Competitor dispersion numbers
+    for (const h of houseConfigs) {
+      const otherTickets: BingoCell[][] = [];
+      h.room.tickets.forEach(list => list.forEach(t => {
+        if (t.cardMatrix !== h.targetCardMatrix) otherTickets.push(t.cardMatrix);
+      }));
+      h.room.opponentCards.forEach(o => {
+        if (o.cardMatrix !== h.targetCardMatrix) otherTickets.push(o.cardMatrix);
+      });
+
+      for (const comp of otherTickets) {
+        const compNums = comp
+          .map(c => c.val)
+          .filter((v): v is number => typeof v === 'number' && availableBalls.has(v) && !preferredEarlyPool.includes(v))
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 2);
+        preferredEarlyPool.push(...compNums);
+      }
+    }
+
+    // Now fill empty slots sequentially from left to right
+    for (const slot of emptyEarlySlots) {
+      let chosenBall = 0;
+
+      // Try preferred early pool first
+      for (let i = 0; i < preferredEarlyPool.length; i++) {
+        const candidate = preferredEarlyPool[i];
+        if (availableBalls.has(candidate) && isSafeCandidate(candidate, slot)) {
+          chosenBall = candidate;
+          preferredEarlyPool.splice(i, 1);
+          break;
+        }
+      }
+
+      // If preferred wasn't safe or was empty, draw from remaining available cage balls
+      if (!chosenBall) {
+        const shuffledRemaining = this.fisherYatesShuffle(Array.from(availableBalls));
+        for (const candidate of shuffledRemaining) {
+          if (isSafeCandidate(candidate, slot)) {
+            chosenBall = candidate;
+            break;
+          }
+        }
+      }
+
+      // Absolute fallback if no candidate passed safety
+      if (!chosenBall) {
+        chosenBall = Array.from(availableBalls)[0];
+      }
+
+      finalSequence[slot] = chosenBall;
+      availableBalls.delete(chosenBall);
+    }
+
+    // 6. Fill all remaining slots (maxFinishIndex + 1 to 74) with the rest of availableBalls
+    const remainingBalls = this.applyAntiClumpingSmoother(this.fisherYatesShuffle(Array.from(availableBalls)));
+    let remIdx = 0;
+    for (let slot = maxFinishIndex + 1; slot < 75; slot++) {
+      finalSequence[slot] = remainingBalls[remIdx++];
+    }
+
+    return finalSequence.reverse();
+  }
+
+  /**
+   * Fallback Best Card Finder: Guarantees a win resolution if balls reach round safety cap (Ball 26)
+   */
+  private findBestCardForFallbackWin(room: GameRoomState) {
+    let bestTicket: {
+      userId?: string;
+      userName: string;
+      cartelaId: number;
+      isReal: boolean;
+      winningPattern: string;
+      winningIndices: number[];
+      matchCount: number;
+    } | null = null;
+
+    for (const [uid, tList] of room.tickets.entries()) {
+      for (const t of tList) {
+        const winCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
+        const matches = t.cardMatrix.filter(c => typeof c.val === 'number' && room.drawnNumbers.includes(c.val)).length;
+        if (!bestTicket || matches > bestTicket.matchCount) {
+          bestTicket = {
+            userId: uid,
+            userName: t.userName,
+            cartelaId: t.cartelaId,
+            isReal: true,
+            winningPattern: winCheck.winningPattern || 'Bingo Line',
+            winningIndices: winCheck.winningIndices || [0, 1, 2, 3, 4],
+            matchCount: matches
+          };
+        }
+      }
+    }
+
+    if (!bestTicket && room.opponentCards.length > 0) {
+      const opp = room.opponentCards[0];
+      return {
+        userName: opp.opponentName,
+        cartelaId: opp.cartelaId,
+        isReal: false,
+        winningPattern: 'Bingo Line',
+        winningIndices: [0, 1, 2, 3, 4]
+      };
+    }
+
+    return bestTicket;
+  }
+
+  /**
    * Synchronized 3.5s Master Ball Drawing Loop across all 4 houses (10, 20, 50, 100 ETB)
    */
   private startMasterBallCallingLoop(masterBallSequence: number[]) {
@@ -1435,9 +1710,6 @@ class BingoGameEngine {
       }
 
       // 3. Evaluate Winning Patterns for each ACTIVE house independently
-      let allActiveHousesCompleted = true;
-      const anyActiveHouse = STAKE_ROOM_IDS.some(id => this.rooms.get(id)?.mode === 'active');
-
       for (const roomId of STAKE_ROOM_IDS) {
         const room = this.rooms.get(roomId);
         if (!room || room.mode !== 'active') continue;
@@ -1492,19 +1764,37 @@ class BingoGameEngine {
 
           if (winningCards.length > 0) {
             await this.processRoundVictory(room, winningCards);
-          } else {
-            allActiveHousesCompleted = false;
           }
-        } else {
-          allActiveHousesCompleted = false;
         }
       }
 
-      // 4. Conclude when all active houses resolved or upon reaching reasonable cap (25+ balls)
-      if (anyActiveHouse && allActiveHousesCompleted) {
+      // 4. Conclude when ALL active houses have resolved, or upon reaching safety cap (26 balls)
+      const anyActiveHouse = STAKE_ROOM_IDS.some(id => this.rooms.get(id)?.mode === 'active');
+      const pendingActiveHouse = STAKE_ROOM_IDS.some(id => {
+        const r = this.rooms.get(id);
+        return r && r.mode === 'active' && !r.winResult;
+      });
+
+      if (anyActiveHouse && !pendingActiveHouse) {
+        clearInterval(interval);
+        this.startMasterWinnerCelebrationTimer();
+      } else if (anyActiveHouse && sample && sample.drawnNumbers.length >= 26) {
+        // Safety Guarantee: Force-complete any lingering active house that reached ball 26
+        for (const roomId of STAKE_ROOM_IDS) {
+          const r = this.rooms.get(roomId);
+          if (r && r.mode === 'active' && !r.winResult) {
+            const fallbackWinner = this.findBestCardForFallbackWin(r);
+            if (fallbackWinner) {
+              await this.processRoundVictory(r, [fallbackWinner]);
+            }
+          }
+        }
         clearInterval(interval);
         this.startMasterWinnerCelebrationTimer();
       } else if (!anyActiveHouse && sample && sample.drawnNumbers.length >= 25) {
+        clearInterval(interval);
+        this.startMasterWinnerCelebrationTimer();
+      } else if (sample && sample.drawnNumbers.length >= 75) {
         clearInterval(interval);
         this.startMasterWinnerCelebrationTimer();
       }
