@@ -68,11 +68,18 @@ export function setupGameSockets(io: Server) {
           : [];
         const isPreBuy = Boolean(userId && room.nextRoundTickets.has(userId));
 
+        const occupiedCartelaIds: number[] = [];
+        room.tickets.forEach(list => list.forEach(t => occupiedCartelaIds.push(t.cartelaId)));
+        if (room.nextRoundTickets) {
+          room.nextRoundTickets.forEach(list => list.forEach(t => occupiedCartelaIds.push(t.cartelaId)));
+        }
+
         // Send immediate authoritative room snapshot to joining player
         socket.emit('room_sync', {
           success: true,
           roomId: roomId,
           phase: room.phase,
+          mode: room.mode || (room.tickets.size >= 2 ? 'active' : 'spectating'),
           roundNumber: room.roundNumber,
           lobbyCountdown: room.lobbyCountdown,
           winnerCountdown: room.winnerCountdown,
@@ -86,6 +93,7 @@ export function setupGameSockets(io: Server) {
           drawnNumbers: room.drawnNumbers,
           currentCall: room.currentCall,
           winResult: room.winResult,
+          occupiedCartelaIds,
           stakeRoomsSummary: gameEngine.getStakeRoomsSummary(),
           userTickets: existingTickets,
           isPreBuy

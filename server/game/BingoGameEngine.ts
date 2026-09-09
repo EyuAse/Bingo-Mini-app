@@ -274,57 +274,27 @@ class BingoGameEngine {
     const r50 = this.getRoom('room-50');
     const r100 = this.getRoom('room-100');
 
+    const formatRoomSummary = (r: GameRoomState, idOverride?: string, nameOverride?: string) => ({
+      id: idOverride || r.id,
+      name: nameOverride || r.name,
+      stakeAmount: r.stakeAmount,
+      phase: r.phase,
+      mode: r.mode || (r.tickets.size >= 2 ? 'active' : 'spectating'),
+      lobbyCountdown: r.lobbyCountdown,
+      winnerCountdown: r.winnerCountdown,
+      playersCount: this.getRoomPlayersCount(r),
+      realPlayerCount: r.tickets.size,
+      totalPot: r.totalPot,
+      winnerPayout: r.winnerPayout,
+      winResult: r.winResult
+    });
+
     return [
-      {
-        id: 'lomi-arena',
-        name: '10 Birr Arena (Default)',
-        stakeAmount: 10.0,
-        phase: r10.phase,
-        lobbyCountdown: r10.lobbyCountdown,
-        playersCount: this.getRoomPlayersCount(r10),
-        totalPot: r10.totalPot,
-        winnerPayout: r10.winnerPayout
-      },
-      {
-        id: 'room-10',
-        name: '10 Birr Room',
-        stakeAmount: 10.0,
-        phase: r10.phase,
-        lobbyCountdown: r10.lobbyCountdown,
-        playersCount: this.getRoomPlayersCount(r10),
-        totalPot: r10.totalPot,
-        winnerPayout: r10.winnerPayout
-      },
-      {
-        id: 'room-20',
-        name: '20 Birr Room',
-        stakeAmount: 20.0,
-        phase: r20.phase,
-        lobbyCountdown: r20.lobbyCountdown,
-        playersCount: this.getRoomPlayersCount(r20),
-        totalPot: r20.totalPot,
-        winnerPayout: r20.winnerPayout
-      },
-      {
-        id: 'room-50',
-        name: '50 Birr Room',
-        stakeAmount: 50.0,
-        phase: r50.phase,
-        lobbyCountdown: r50.lobbyCountdown,
-        playersCount: this.getRoomPlayersCount(r50),
-        totalPot: r50.totalPot,
-        winnerPayout: r50.winnerPayout
-      },
-      {
-        id: 'room-100',
-        name: '100 Birr VIP Room',
-        stakeAmount: 100.0,
-        phase: r100.phase,
-        lobbyCountdown: r100.lobbyCountdown,
-        playersCount: this.getRoomPlayersCount(r100),
-        totalPot: r100.totalPot,
-        winnerPayout: r100.winnerPayout
-      }
+      formatRoomSummary(r10, 'lomi-arena', '10 Birr Arena (Default)'),
+      formatRoomSummary(r10),
+      formatRoomSummary(r20),
+      formatRoomSummary(r50),
+      formatRoomSummary(r100)
     ];
   }
 
@@ -2017,6 +1987,7 @@ class BingoGameEngine {
       );
 
       const winResult = {
+        roomId: room.id,
         winType: isSplit
           ? (realWinners.length > 0 ? 'user_split' : 'opponent_win')
           : (firstWinner.isReal ? 'user_solo' : 'opponent_win'),
