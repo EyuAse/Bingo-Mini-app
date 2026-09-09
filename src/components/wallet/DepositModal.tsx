@@ -6,6 +6,13 @@ import { useWallet } from '../../context/WalletContext.tsx';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { TelebirrLogo, CBELogo } from './PaymentLogos.tsx';
 import { apiClient } from '../../services/apiClient.ts';
+import {
+  CBE_BIRR_RECEIVER,
+  getCurrentTelebirrReceiver,
+  rotateTelebirrReceiver,
+  toggleTelebirrReceiver,
+  PaymentReceiver
+} from '../../config/paymentReceivers.ts';
 
 interface DepositModalProps {
   isOpen: boolean;
@@ -20,6 +27,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
   const { t, lang } = useLanguage();
 
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
+  const [telebirrReceiver, setTelebirrReceiver] = useState<PaymentReceiver>(() => getCurrentTelebirrReceiver());
   const [amount, setAmount] = useState<number>(100);
   const [playerPhone, setPlayerPhone] = useState<string>(() => user?.phone || user?.formattedPhone || '');
   const [transactionRef, setTransactionRef] = useState<string>('');
@@ -30,12 +38,11 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
 
   if (!isOpen) return null;
 
-  // Official Receiver Details
-  const telebirrReceiverPhone = '0998983344';
-  const cbeReceiverAccount = '100098983344';
-  const receiverName = 'Mekonen Woldekidane';
-
-  const activeReceiverNumber = selectedMethod === 'Telebirr' ? telebirrReceiverPhone : cbeReceiverAccount;
+  // Active Receiver Details (CBE Birr or Alternating Telebirr)
+  const activeReceiver = selectedMethod === 'Telebirr' ? telebirrReceiver : CBE_BIRR_RECEIVER;
+  const activeReceiverNumber = activeReceiver.accountNumber;
+  const receiverName = activeReceiver.accountName;
+  const receiverServiceName = activeReceiver.serviceName;
   const quickAmounts = [50, 100, 200, 500, 1000, 5000];
 
   const handleCopy = (text: string, label: string) => {
@@ -112,6 +119,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
       const finalRef = res.deposit?.transactionRef || assignedRef;
       setSubmittedRef(finalRef);
       setIsSubmitted(true);
+      if (selectedMethod === 'Telebirr') {
+        const next = rotateTelebirrReceiver();
+        setTelebirrReceiver(next);
+      }
       await refreshBalance();
       await refreshAdminData();
       showToast(lang === 'am' ? `✅ የ${amount} ብር ተቀማጭ ጥያቄ ተልኳል!` : `✅ Deposit request of ${amount} ETB submitted!`);
@@ -312,19 +323,48 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
               <div className="deposit-receiver-callout">
                 <div className="receiver-top-row">
                   <span className="receiver-provider-tag">
-                    {selectedMethod} {lang === 'am' ? 'ይፋዊ አካውንት' : 'Official Account'}
+                    {receiverServiceName} {activeReceiver.badge ? `• ${activeReceiver.badge}` : ''} {lang === 'am' ? 'ይፋዊ አካውንት' : 'Official Account'}
                   </span>
-                  <button
-                    type="button"
-                    className="btn-copy-receiver"
-                    onClick={() => handleCopy(activeReceiverNumber, selectedMethod)}
-                  >
-                    <i className="fa-regular fa-copy"></i> {t('common.copy')}
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {selectedMethod === 'Telebirr' && (
+                      <button
+                        type="button"
+                        className="btn-swap-receiver"
+                        style={{
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          border: '1px solid rgba(56, 189, 248, 0.4)',
+                          color: '#38bdf8',
+                          borderRadius: '6px',
+                          padding: '4px 8px',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontWeight: 700
+                        }}
+                        onClick={() => {
+                          const swapped = toggleTelebirrReceiver();
+                          setTelebirrReceiver(swapped);
+                          showToast(lang === 'am' ? `🔄 ወደ ${swapped.accountName} ተቀይሯል` : `🔄 Swapped to ${swapped.accountName}`);
+                        }}
+                        title="Swap between Telebirr accounts"
+                      >
+                        <i className="fa-solid fa-rotate"></i> {lang === 'am' ? 'ቀይር' : 'Swap'}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-copy-receiver"
+                      onClick={() => handleCopy(activeReceiverNumber, receiverServiceName)}
+                    >
+                      <i className="fa-regular fa-copy"></i> {t('common.copy')}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="receiver-number-display">
-                  <span className="receiver-num-bold">{activeReceiverNumber}</span>
+                  <span className="receiver-num-bold">{activeReceiver.formattedNumber}</span>
                 </div>
 
                 <div className="receiver-name-row">
@@ -333,7 +373,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                 </div>
 
                 <p className="receiver-note-sub">
-                  {lang === 'am' ? 'ትክክለኛውን መጠን ከባንክ መተግበሪያዎ ይላኩ፣ ከዚያም የግብይት ቁጥሩን ከታች ያስገቡ።' : `Transfer exact amount from your ${selectedMethod} app, then enter the SMS reference below.`}
+                  {lang === 'am'
+                    ? `ትክክለኛውን መጠን ከ${receiverServiceName} መተግበሪያዎ ይላኩ፣ ከዚያም የግብይት ቁጥሩን ከታች ያስገቡ።`
+                    : `Transfer exact amount from your ${receiverServiceName} app, then enter the SMS reference below.`}
                 </p>
               </div>
             </div>

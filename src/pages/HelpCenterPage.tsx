@@ -70,11 +70,11 @@ export const HelpCenterPage: React.FC = () => {
   ];
 
   const handleOpenTelegramSupport = () => {
-    window.open('https://t.me/LomiBingoBot', '_blank');
+    window.open('https://t.me/Lomibingo', '_blank');
   };
 
   const handleOpenCommunity = () => {
-    window.open('https://t.me/LomiBingoBot', '_blank');
+    window.open('https://t.me/Lomibingo', '_blank');
   };
 
   const toggleFaq = (id: string) => {
@@ -105,7 +105,7 @@ export const HelpCenterPage: React.FC = () => {
           </div>
           <div className="support-hero-text-col">
             <strong className="support-hero-title">{t('help.liveSupport')}</strong>
-            <span className="support-hero-sub">{t('help.responseEta')}</span>
+            <span className="support-hero-sub">{t('help.responseEta')} • @Lomibingo</span>
           </div>
           <button
             type="button"
@@ -119,6 +119,17 @@ export const HelpCenterPage: React.FC = () => {
 
         {/* Quick Contact Hotlines Strip */}
         <div className="contact-channels-grid">
+          <div
+            className="channel-contact-card"
+            onClick={handleOpenTelegramSupport}
+          >
+            <i className="fa-brands fa-telegram channel-icon" style={{ color: '#229ED9' }}></i>
+            <div className="channel-txt-col">
+              <span className="channel-lbl">Telegram Support</span>
+              <strong className="channel-val">@Lomibingo</strong>
+            </div>
+          </div>
+
           <div
             className="channel-contact-card"
             onClick={() => {
