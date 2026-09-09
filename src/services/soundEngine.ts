@@ -422,9 +422,9 @@ class AudioEngineService {
   /**
    * Pre-warms and caches voice files into both Web Audio RAM (AudioBuffer)
    * and HTML5 Audio elements for 100% universal cross-device playback (PC & mobile).
-   * Supports Column B (1–15), Column I (16–30), Column N (31–45), and Column G (46–60).
+   * Supports all 75 balls across Columns B (1–15), I (16–30), N (31–45), G (46–60), and O (61–75).
    */
-  async preloadVoicePack(column: string = 'ALL', count: number = 60) {
+  async preloadVoicePack(column: string = 'ALL', count: number = 75) {
     if (typeof window === 'undefined') return;
 
     for (let i = 1; i <= count; i++) {
@@ -459,24 +459,14 @@ class AudioEngineService {
   }
 
   /**
-   * Human Voice Announcement for Column B (1–15), Column I (16–30), Column N (31–45), and Column G (46–60):
-   * - Columns B, I, N, G (1–60): Plays real human voice directly with crystal-clear studio audio.
-   * - Column O (61–75): Strictly silent as per design specification until recorded.
+   * Human Voice Announcement for All 75 Balls (Columns B, I, N, G, O 1–75):
+   * Plays authentic Ethiopian human caller voice directly with crystal-clear studio audio.
    */
   async speakBall(col: string, num: number) {
     telegramService.triggerHaptic('medium');
     if (this.isMuted) return;
 
-    // Strict Voice Policy: Real human recordings exist for Column B (1–15), Column I (16–30), Column N (31–45), and Column G (46–60).
-    // For unrecorded column O (61–75), remain completely silent with 0 network calls.
-    const isSupportedCol =
-      col?.toUpperCase() === 'B' ||
-      col?.toUpperCase() === 'I' ||
-      col?.toUpperCase() === 'N' ||
-      col?.toUpperCase() === 'G' ||
-      (num >= 1 && num <= 60);
-
-    if (!isSupportedCol || num < 1 || num > 60) {
+    if (num < 1 || num > 75) {
       return;
     }
 

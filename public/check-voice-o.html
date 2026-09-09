@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Column O (61–75) Voice Checker - Betika Bingo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .badge-o {
+      display: inline-block;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #fff;
+      font-weight: 800;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+    }
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+    .control-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 24px;
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(10px);
+      padding: 12px 20px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .btn {
+      background: #334155;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+    .btn:hover {
+      background: #475569;
+      transform: translateY(-1px);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    }
+    .btn-stop {
+      background: #ef4444;
+    }
+    .btn-stop:hover {
+      background: #dc2626;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+    .card:hover {
+      border-color: rgba(245, 158, 11, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+    }
+    .card.playing {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.12);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.35);
+    }
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .ball-circle {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      font-weight: 900;
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    .card-info {
+      flex: 1;
+      margin-left: 14px;
+    }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .card-amharic {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-top: 2px;
+    }
+    .card-phonetic {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      font-style: italic;
+    }
+    .play-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #3b82f6;
+      border: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 3px 10px rgba(59, 130, 246, 0.35);
+    }
+    .play-btn:hover {
+      background: #2563eb;
+      transform: scale(1.08);
+    }
+    .card.playing .play-btn {
+      background: #ef4444;
+      box-shadow: 0 3px 10px rgba(239, 68, 68, 0.4);
+    }
+    .card-audio {
+      margin-top: 2px;
+    }
+    audio {
+      width: 100%;
+      height: 32px;
+      border-radius: 8px;
+    }
+    .tags {
+      display: flex;
+      gap: 6px;
+      font-size: 0.72rem;
+    }
+    .tag {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 8px;
+      border-radius: 6px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .tag.ok {
+      color: #fbbf24;
+      background: rgba(245, 158, 11, 0.15);
+    }
+    .now-playing-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #f59e0b;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 158, 11, 0.3);
+      backdrop-filter: blur(12px);
+      padding: 12px 24px;
+      border-radius: 50px;
+      display: none;
+      align-items: center;
+      gap: 16px;
+      z-index: 100;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #f59e0b;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-o">COLUMN O (FINAL COLUMN)</div>
+      <h1>Column O (Balls 61–75) Voice Checker</h1>
+      <p class="subtitle">Tap any ball to listen to your authentic Amharic voice announcement and verify each number.</p>
+    </header>
+
+    <div class="control-bar">
+      <button class="btn btn-primary" onclick="playAllSequentially()">▶ Play All Sequentially (61 → 75)</button>
+      <button class="btn btn-stop" onclick="stopAll()">⏹ Stop Playback</button>
+      <button class="btn" onclick="testRandom()">🎲 Test Random Ball</button>
+    </div>
+
+    <div class="grid" id="ballsGrid"></div>
+  </div>
+
+  <div class="now-playing-bar" id="nowPlayingBar">
+    <div class="pulse-dot"></div>
+    <span id="nowPlayingText">Now Playing: O-61</span>
+    <button class="btn btn-stop" style="padding: 4px 12px; font-size: 0.8rem;" onclick="stopAll()">Stop</button>
+  </div>
+
+  <script>
+    const balls = [
+      { num: 61, amharic: 'ኦ... ስድሳ አንድ!', phonetic: 'Oh... Sid-sah And!' },
+      { num: 62, amharic: 'ኦ... ስድሳ ሁለት!', phonetic: 'Oh... Sid-sah Hoo-lett!' },
+      { num: 63, amharic: 'ኦ... ስድሳ ሶስት!', phonetic: 'Oh... Sid-sah Sohst!' },
+      { num: 64, amharic: 'ኦ... ስድሳ አራት!', phonetic: 'Oh... Sid-sah Ah-raat!' },
+      { num: 65, amharic: 'ኦ... ስድሳ አምስት!', phonetic: 'Oh... Sid-sah Ah-mist!' },
+      { num: 66, amharic: 'ኦ... ስድሳ ስድስት!', phonetic: 'Oh... Sid-sah Sih-dist!' },
+      { num: 67, amharic: 'ኦ... ስድሳ ሰባት!', phonetic: 'Oh... Sid-sah Seh-baat!' },
+      { num: 68, amharic: 'ኦ... ስድሳ ስምንት!', phonetic: 'Oh... Sid-sah Sim-mint!' },
+      { num: 69, amharic: 'ኦ... ስድሳ ዘጠኝ!', phonetic: 'Oh... Sid-sah Zeh-tayn!' },
+      { num: 70, amharic: 'ኦ... ሰባ!', phonetic: 'Oh... Seh-bah!' },
+      { num: 71, amharic: 'ኦ... ሰባ አንድ!', phonetic: 'Oh... Seh-bah And!' },
+      { num: 72, amharic: 'ኦ... ሰባ ሁለት!', phonetic: 'Oh... Seh-bah Hoo-lett!' },
+      { num: 73, amharic: 'ኦ... ሰባ ሶስት!', phonetic: 'Oh... Seh-bah Sohst!' },
+      { num: 74, amharic: 'ኦ... ሰባ አራት!', phonetic: 'Oh... Seh-bah Ah-raat!' },
+      { num: 75, amharic: 'ኦ... ሰባ አምስት!', phonetic: 'Oh... Seh-bah Ah-mist!' }
+    ];
+
+    let currentAudio = null;
+    let sequentialQueue = [];
+    let isSequentialRunning = false;
+
+    const grid = document.getElementById('ballsGrid');
+
+    balls.forEach(b => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = `card-${b.num}`;
+
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="ball-circle">${b.num}</div>
+          <div class="card-info">
+            <div class="card-title">Ball O-${b.num}</div>
+            <div class="card-amharic">${b.amharic}</div>
+            <div class="card-phonetic">${b.phonetic}</div>
+          </div>
+          <button class="play-btn" onclick="togglePlay(${b.num})" id="btn-${b.num}">▶</button>
+        </div>
+        <div class="card-audio">
+          <audio controls preload="none" id="audio-${b.num}">
+            <source src="/assets/audio/am/${b.num}.mp3" type="audio/mpeg">
+            <source src="/assets/audio/am/${b.num}.wav" type="audio/wav">
+          </audio>
+        </div>
+        <div class="tags">
+          <span class="tag ok">MP3 128k</span>
+          <span class="tag ok">WAV 16-bit</span>
+          <span class="tag ok">Native DAC</span>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    function togglePlay(num) {
+      const audioEl = document.getElementById(`audio-${num}`);
+      const card = document.getElementById(`card-${num}`);
+      const btn = document.getElementById(`btn-${num}`);
+
+      if (currentAudio && currentAudio !== audioEl) {
+        stopAll();
+      }
+
+      if (audioEl.paused) {
+        audioEl.currentTime = 0;
+        audioEl.play().then(() => {
+          currentAudio = audioEl;
+          card.classList.add('playing');
+          btn.innerHTML = '⏹';
+          showNowPlaying(num);
+        }).catch(err => {
+          console.error(err);
+        });
+
+        audioEl.onended = () => {
+          card.classList.remove('playing');
+          btn.innerHTML = '▶';
+          hideNowPlaying();
+          currentAudio = null;
+          if (isSequentialRunning && sequentialQueue.length > 0) {
+            setTimeout(() => {
+              const nextNum = sequentialQueue.shift();
+              if (nextNum) togglePlay(nextNum);
+            }, 600);
+          } else {
+            isSequentialRunning = false;
+          }
+        };
+      } else {
+        audioEl.pause();
+        audioEl.currentTime = 0;
+        card.classList.remove('playing');
+        btn.innerHTML = '▶';
+        hideNowPlaying();
+        currentAudio = null;
+        isSequentialRunning = false;
+      }
+    }
+
+    function stopAll() {
+      isSequentialRunning = false;
+      sequentialQueue = [];
+      balls.forEach(b => {
+        const audioEl = document.getElementById(`audio-${b.num}`);
+        const card = document.getElementById(`card-${b.num}`);
+        const btn = document.getElementById(`btn-${num}`);
+        if (audioEl) {
+          audioEl.pause();
+          audioEl.currentTime = 0;
+        }
+        if (card) card.classList.remove('playing');
+        if (btn) btn.innerHTML = '▶';
+      });
+      hideNowPlaying();
+      currentAudio = null;
+    }
+
+    function playAllSequentially() {
+      stopAll();
+      isSequentialRunning = true;
+      sequentialQueue = balls.map(b => b.num);
+      const first = sequentialQueue.shift();
+      if (first) togglePlay(first);
+    }
+
+    function testRandom() {
+      stopAll();
+      const randBall = balls[Math.floor(Math.random() * balls.length)];
+      togglePlay(randBall.num);
+    }
+
+    function showNowPlaying(num) {
+      const bar = document.getElementById('nowPlayingBar');
+      const text = document.getElementById('nowPlayingText');
+      const ball = balls.find(b => b.num === num);
+      text.innerText = `Now Playing: Ball O-${num} — ${ball ? ball.amharic : ''}`;
+      bar.style.display = 'flex';
+    }
+
+    function hideNowPlaying() {
+      const bar = document.getElementById('nowPlayingBar');
+      bar.style.display = 'none';
+    }
+  </script>
+</body>
+</html>

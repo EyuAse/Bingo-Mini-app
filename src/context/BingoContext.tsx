@@ -443,9 +443,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     showToast(next ? '🔇 Audio Muted' : '🔊 Audio Unmuted');
   };
 
-  // Pre-warm and cache Column B, I, N, and G voice files into memory & bind universal unlock listener
+  // Pre-warm and cache all 75 balls (B, I, N, G, O) voice files into memory & bind universal unlock listener
   useEffect(() => {
-    soundEngine.preloadVoicePack('ALL', 60);
+    soundEngine.preloadVoicePack('ALL', 75);
 
     const handleInteractionUnlock = () => {
       soundEngine.unlockAudio();
