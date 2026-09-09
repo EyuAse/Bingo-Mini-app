@@ -422,9 +422,9 @@ class AudioEngineService {
   /**
    * Pre-warms and caches voice files into both Web Audio RAM (AudioBuffer)
    * and HTML5 Audio elements for 100% universal cross-device playback (PC & mobile).
-   * Supports Column B (1–15) and Column I (16–30).
+   * Supports Column B (1–15), Column I (16–30), and Column N (31–45).
    */
-  async preloadVoicePack(column: string = 'ALL', count: number = 30) {
+  async preloadVoicePack(column: string = 'ALL', count: number = 45) {
     if (typeof window === 'undefined') return;
 
     for (let i = 1; i <= count; i++) {
@@ -459,22 +459,23 @@ class AudioEngineService {
   }
 
   /**
-   * Human Voice Announcement for Column B (1–15) and Column I (16–30):
-   * - Columns B & I (1–30): Plays real human voice directly with crystal-clear studio audio.
-   * - Columns N, G, O (31–75): Strictly silent as per design specification until recorded.
+   * Human Voice Announcement for Column B (1–15), Column I (16–30), and Column N (31–45):
+   * - Columns B, I, N (1–45): Plays real human voice directly with crystal-clear studio audio.
+   * - Columns G, O (46–75): Strictly silent as per design specification until recorded.
    */
   async speakBall(col: string, num: number) {
     telegramService.triggerHaptic('medium');
     if (this.isMuted) return;
 
-    // Strict Voice Policy: Real human recordings exist for Column B (1–15) and Column I (16–30).
-    // For all other unrecorded columns (31–75), remain completely silent with 0 network calls.
+    // Strict Voice Policy: Real human recordings exist for Column B (1–15), Column I (16–30), and Column N (31–45).
+    // For unrecorded columns G & O (46–75), remain completely silent with 0 network calls.
     const isSupportedCol =
       col?.toUpperCase() === 'B' ||
       col?.toUpperCase() === 'I' ||
-      (num >= 1 && num <= 30);
+      col?.toUpperCase() === 'N' ||
+      (num >= 1 && num <= 45);
 
-    if (!isSupportedCol || num < 1 || num > 30) {
+    if (!isSupportedCol || num < 1 || num > 45) {
       return;
     }
 

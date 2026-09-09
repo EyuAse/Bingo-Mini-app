@@ -13,7 +13,11 @@ for (const folder of folders) {
 
   console.log(`\n=== Processing folder: ${folder} ===`);
 
+  const targetArg = process.argv[2] ? parseInt(process.argv[2], 10) : null;
+
   for (let i = 1; i <= 75; i++) {
+    if (targetArg && i !== targetArg) continue;
+
     const colPrefix = i <= 15 ? 'B' : i <= 30 ? 'I' : i <= 45 ? 'N' : i <= 60 ? 'G' : 'O';
     const webmFile = path.join(dir, `${i}.webm`);
     const mp3File = path.join(dir, `${i}.mp3`);
@@ -24,19 +28,29 @@ for (const folder of folders) {
     const colWav = path.join(dir, `${colPrefix}-${i}.wav`);
 
     if (fs.existsSync(webmFile)) {
+      const webmTime = fs.statSync(webmFile).mtimeMs;
+      const needsConvert = !fs.existsSync(mp3File) || !fs.existsSync(wavFile) ||
+                           fs.statSync(mp3File).mtimeMs < webmTime ||
+                           !fs.existsSync(colMp3) || !fs.existsSync(colWav);
+
       if (!fs.existsSync(colWebm)) {
         fs.copyFileSync(webmFile, colWebm);
       }
-      // Convert to MP3 (128kbps, universal mobile support)
-      execSync(`"${ffmpeg}" -y -i "${webmFile}" -c:a libmp3lame -b:a 128k -ar 44100 "${mp3File}"`, { stdio: 'ignore' });
-      // Convert to WAV (PCM 16-bit, 0ms latency)
-      execSync(`"${ffmpeg}" -y -i "${webmFile}" -c:a pcm_s16le -ar 44100 "${wavFile}"`, { stdio: 'ignore' });
 
-      // Duplicate to Column prefix format as well
-      fs.copyFileSync(mp3File, colMp3);
-      fs.copyFileSync(wavFile, colWav);
+      if (needsConvert) {
+        // Convert to MP3 (128kbps, universal mobile support)
+        execSync(`"${ffmpeg}" -y -i "${webmFile}" -c:a libmp3lame -b:a 128k -ar 44100 "${mp3File}"`, { stdio: 'ignore' });
+        // Convert to WAV (PCM 16-bit, 0ms latency)
+        execSync(`"${ffmpeg}" -y -i "${webmFile}" -c:a pcm_s16le -ar 44100 "${wavFile}"`, { stdio: 'ignore' });
 
-      console.log(`✓ Converted Ball ${colPrefix}-${i}: MP3 (${fs.statSync(mp3File).size}b) | WAV (${fs.statSync(wavFile).size}b)`);
+        // Duplicate to Column prefix format as well
+        fs.copyFileSync(mp3File, colMp3);
+        fs.copyFileSync(wavFile, colWav);
+
+        console.log(`✓ Converted Ball ${colPrefix}-${i}: MP3 (${fs.statSync(mp3File).size}b) | WAV (${fs.statSync(wavFile).size}b)`);
+      } else {
+        console.log(`- Skipping Ball ${colPrefix}-${i} (up to date)`);
+      }
     }
   }
 }
