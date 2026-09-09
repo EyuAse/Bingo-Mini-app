@@ -1152,7 +1152,7 @@ class BingoGameEngine {
       return baseBalls;
     }
 
-    // Pick winning line on target card (Row, Column, or Diagonal)
+    // Pick winning line on target card (Row, Column, Diagonal, or Four Corners)
     const winningPatternsIndices = [
       [0, 1, 2, 3, 4],       // Row 1
       [5, 6, 7, 8, 9],       // Row 2
@@ -1165,7 +1165,8 @@ class BingoGameEngine {
       [3, 8, 13, 18, 23],    // Column G
       [4, 9, 14, 19, 24],    // Column O
       [0, 6, 12, 18, 24],    // Diagonal TL-BR
-      [4, 8, 12, 16, 20]     // Diagonal TR-BL
+      [4, 8, 12, 16, 20],    // Diagonal TR-BL
+      [0, 4, 20, 24]         // Four Corners
     ];
     const chosenPattern = winningPatternsIndices[Math.floor(Math.random() * winningPatternsIndices.length)];
     const targetNumbers = chosenPattern
@@ -1199,37 +1200,51 @@ class BingoGameEngine {
       });
     }
 
-    // Target winner's non-target numbers must NOT be drawn before finishIndex
-    // This strictly prevents the target winner from accidentally winning on another line early
-    const targetNonWinningNumbers = new Set(
-      targetCardMatrix
-        .map(c => c.val)
-        .filter((v): v is number => typeof v === 'number' && !targetNumbers.includes(v))
-    );
-
     // Mathematical Invariant Guarantee:
     // S will hold the exact set of (targetFinishBall - 1) balls to be drawn in slots 0 to finishIndex - 1.
     // S starts with earlyTargetNumbers (size 4).
     // finalBall is placed at finishIndex (ball targetFinishBall).
-    // For ANY card in otherCards:
-    // checkWinningPattern(card, [...S, candidate, finalBall]).isWin MUST BE FALSE!
-    // This guarantees mathematically that NO competing card can EVER win at any ball <= targetFinishBall!
+    // Neither target winner nor any competing card can EVER win at any ball < targetFinishBall!
     const S: number[] = [...earlyTargetNumbers];
     const sSet = new Set<number>(S);
 
     const isSafeToAdd = (candidate: number): boolean => {
       if (candidate === finalBall) return false;
       if (sSet.has(candidate)) return false;
-      if (targetNonWinningNumbers.has(candidate)) return false;
 
-      const testDrawn = [...S, candidate, finalBall];
+      // Candidate must not cause target winner to win prematurely before targetFinishBall
+      const testWinnerDrawn = [...S, candidate];
+      if (checkWinningPattern(targetCardMatrix!, testWinnerDrawn).isWin) {
+        return false;
+      }
+
+      // Candidate must not cause any competing card to win on or before targetFinishBall
+      const testCompetingDrawn = [...testWinnerDrawn, finalBall];
       for (const card of otherCards) {
-        if (checkWinningPattern(card, testDrawn).isWin) {
+        if (checkWinningPattern(card, testCompetingDrawn).isWin) {
           return false;
         }
       }
       return true;
     };
+
+    // Step 0: Weave 3 to 4 natural dispersion numbers for the target winner across other rows/columns
+    // This eliminates the artificial "only 5 diagonal numbers in a row" tell so the winner has 7-9 marks total!
+    const targetOtherNums = targetCardMatrix
+      .map(c => c.val)
+      .filter((v): v is number => typeof v === 'number' && !targetNumbers.includes(v))
+      .sort(() => Math.random() - 0.5);
+
+    let winnerExtraCount = 0;
+    for (const num of targetOtherNums) {
+      if (winnerExtraCount >= 4) break;
+      if (S.length >= finishIndex - 8) break;
+      if (isSafeToAdd(num)) {
+        S.push(num);
+        sSet.add(num);
+        winnerExtraCount++;
+      }
+    }
 
     // Step A: For each competing card, add numbers from a competing line to lock them at "1 TO GO! 🔥"
     for (const otherCard of otherCards) {
@@ -1239,17 +1254,17 @@ class BingoGameEngine {
         .filter((v): v is number => typeof v === 'number');
 
       for (const num of lineNums) {
-        if (S.length >= finishIndex) break;
+        if (S.length >= finishIndex - 3) break;
         if (isSafeToAdd(num)) {
           S.push(num);
           sSet.add(num);
         }
       }
 
-      // Also add 2 to 3 numbers from other cells of this card for natural card distribution
+      // Also add 3 to 4 numbers from other cells of this card for natural card distribution
       const otherCardNums = otherCard
         .map(c => c.val)
-        .filter((v): v is number => typeof v === 'number')
+        .filter((v): v is number => typeof v === 'number' && !lineNums.includes(v))
         .sort(() => Math.random() - 0.5);
 
       for (const num of otherCardNums) {

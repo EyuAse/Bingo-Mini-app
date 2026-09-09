@@ -101,8 +101,10 @@ export const CartelaPickerModal: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Range Filter Tabs & Search Row (Strictly No Shuffle Button) ── */}
-        <div className="afro-picker-controls-row">
+        {/* ── Scrollable Modal Body (Contains controls, 9-col grid, and card preview) ── */}
+        <div className="afro-picker-modal-scrollable-body">
+          {/* ── Range Filter Tabs & Search Row (Strictly No Shuffle Button) ── */}
+          <div className="afro-picker-controls-row">
           <div className="afro-range-tabs">
             {CARD_RANGES.map((range, idx) => (
               <button
@@ -209,6 +211,7 @@ export const CartelaPickerModal: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
         </div>
 
         {/* ── Footer Bar: Confirm & Buy / Play ── */}
