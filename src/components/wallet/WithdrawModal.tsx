@@ -21,8 +21,8 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
 
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [amount, setAmount] = useState<number>(200);
-  const [accountHolder, setAccountHolder] = useState<string>(() => user?.fullName || '');
-  const [accountNumber, setAccountNumber] = useState<string>(() => user?.phone || user?.formattedPhone || '');
+  const [accountHolder, setAccountHolder] = useState<string>('');
+  const [accountNumber, setAccountNumber] = useState<string>('');
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submittedRef, setSubmittedRef] = useState<string>('');
@@ -301,7 +301,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
                     type="text"
                     value={accountNumber}
                     onChange={e => setAccountNumber(e.target.value)}
-                    placeholder={selectedMethod === 'Telebirr' ? '0911234567' : '1000...'}
+                    placeholder={selectedMethod === 'Telebirr' ? (lang === 'am' ? 'ስልክ ቁጥር (ምሳሌ፡ 09...)' : 'Phone number (e.g. 09...)') : (lang === 'am' ? 'የCBE ሒሳብ ወይም CBE Birr ቁጥር' : 'CBE Account or CBE Birr number')}
                     required
                   />
                 </div>

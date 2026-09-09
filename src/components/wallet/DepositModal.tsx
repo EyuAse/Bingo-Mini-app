@@ -29,7 +29,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [telebirrReceiver, setTelebirrReceiver] = useState<PaymentReceiver>(() => getCurrentTelebirrReceiver());
   const [amount, setAmount] = useState<number>(100);
-  const [playerPhone, setPlayerPhone] = useState<string>(() => user?.phone || user?.formattedPhone || '');
+  const [playerPhone, setPlayerPhone] = useState<string>('');
   const [transactionRef, setTransactionRef] = useState<string>('');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
@@ -394,7 +394,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                     type="tel"
                     value={playerPhone}
                     onChange={e => setPlayerPhone(e.target.value)}
-                    placeholder="0911234567"
+                    placeholder={lang === 'am' ? 'ስልክ ቁጥር ያስገቡ (ምሳሌ፡ 09...)' : 'Enter phone number (e.g. 09...)'}
                     required
                   />
                 </div>

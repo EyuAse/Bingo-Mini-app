@@ -6,7 +6,7 @@ import { StakeRoomSelectorModal } from './StakeRoomSelectorModal.tsx';
 
 export const BigBingoCard: React.FC = () => {
   const { switchPage } = useApp();
-  const { startLobbyCountdown, playersCount, prizePool } = useBingo();
+  const { startLobbyCountdown, prizePool } = useBingo();
   const { lang } = useLanguage();
   const [showStakeModal, setShowStakeModal] = useState<boolean>(false);
 
@@ -23,8 +23,8 @@ export const BigBingoCard: React.FC = () => {
           <span>{lang === 'am' ? 'ቀጥታ ስርጭት' : 'LIVE ROOM'}</span>
         </span>
         <span className="badge-players-pill">
-          <i className="fa-solid fa-users" style={{ color: '#eab308', marginRight: 4 }}></i>
-          <span>{playersCount}/50 {lang === 'am' ? 'ተጫዋቾች' : 'PLAYERS'}</span>
+          <i className="fa-solid fa-fire" style={{ color: '#eab308', marginRight: 4 }}></i>
+          <span>{lang === 'am' ? 'ቀጥታ ቢንጎ አሬና' : 'LIVE ARENA'}</span>
         </span>
       </div>
 
@@ -37,7 +37,7 @@ export const BigBingoCard: React.FC = () => {
 
           <div className="stakes-values-txt">10 • 20 • 50 • 100 ETB</div>
           <div className="stakes-limits-sub">
-            {lang === 'am' ? 'ዝቅተኛ፡ 10 • 50 ተጫዋቾች ሙሉ ክፍል' : 'Min: 10 • 50-Player Full Arena'}
+            {lang === 'am' ? 'ዝቅተኛ፡ 10 ብር • ፈጣን የቢንጎ ክፍል' : 'Min: 10 ETB • Fast Bingo Arena'}
           </div>
 
           {/* Micro Stats: Players & Top Prize */}

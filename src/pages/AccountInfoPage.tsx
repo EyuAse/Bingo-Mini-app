@@ -34,25 +34,17 @@ export const AccountInfoPage: React.FC = () => {
 
   // Attached Accounts List (Telebirr & CBE ONLY)
   const [attachedAccounts, setAttachedAccounts] = useState<AttachedAccount[]>(() => {
-    if (hasRealPhone && user?.nationalPhone) {
-      return [
-        {
-          id: 'acc-1',
-          type: 'Telebirr',
-          name: `${user.fullName} (Telebirr)`,
-          accountNumber: user.nationalPhone,
-          isDefault: true,
-          isVerified: true
-        }
-      ];
-    }
+    try {
+      const saved = localStorage.getItem('betika_attached_payout_accounts');
+      if (saved) return JSON.parse(saved);
+    } catch {}
     return [];
   });
 
   // Sync state if user changes
   useEffect(() => {
     if (user) {
-      setFullName(user.fullName || (user.telegramUsername ? `@${user.telegramUsername}` : 'Telegram Player'));
+      setFullName(user.fullName || (user.telegramUsername ? `@${user.telegramUsername}` : ''));
       if (user.telegramUsername) {
         setTelegramUsername(user.telegramUsername);
         setTempTelegramInput(user.telegramUsername);
@@ -63,10 +55,16 @@ export const AccountInfoPage: React.FC = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('betika_attached_payout_accounts', JSON.stringify(attachedAccounts));
+    } catch {}
+  }, [attachedAccounts]);
+
   // New Account Form State (Telebirr & CBE ONLY)
   const [showAddAccount, setShowAddAccount] = useState<boolean>(false);
   const [newAccType, setNewAccType] = useState<'Telebirr' | 'CBE'>('Telebirr');
-  const [newAccName, setNewAccName] = useState<string>(user?.fullName || 'Telegram Player');
+  const [newAccName, setNewAccName] = useState<string>('');
   const [newAccNumber, setNewAccNumber] = useState<string>('');
 
   const handleCopy = (text: string, label: string) => {
