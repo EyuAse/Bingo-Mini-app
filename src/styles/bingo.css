@@ -4111,46 +4111,75 @@
 .lobby-placed-bet-container {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 6px;
   width: 100%;
   box-sizing: border-box;
+  min-width: 0;
 }
 
 .lobby-placed-status-pill {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   background: linear-gradient(135deg, #f0fdf4, #dcfce7);
   border: 1.5px solid #86efac;
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 5px 8px;
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.72rem;
-  font-weight: 900;
-  color: #166534;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  box-sizing: border-box;
 }
 .lobby-placed-status-pill i {
   color: #16a34a;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   flex-shrink: 0;
 }
 
+.lobby-placed-text-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  gap: 1px;
+}
+
+.lobby-placed-text {
+  font-size: clamp(0.64rem, 1.8vw, 0.72rem);
+  font-weight: 950;
+  color: #166534;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.lobby-matchmaking-hint {
+  font-size: clamp(0.56rem, 1.5vw, 0.64rem);
+  font-weight: 800;
+  color: #15803d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
 .btn-lobby-cancel-action {
+  flex-shrink: 0;
   background: linear-gradient(135deg, #fee2e2, #fecaca);
   border: 1.5px solid #f87171;
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-size: 0.72rem;
-  font-weight: 900;
+  border-radius: 10px;
+  padding: 6px 10px;
+  height: 36px;
+  font-size: 0.68rem;
+  font-weight: 950;
   color: #b91c1c;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
+  gap: 4px;
+  white-space: nowrap;
   transition: all 0.15s ease;
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
 }
@@ -4558,18 +4587,18 @@
 .compact-call-header {
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
-  border-radius: 9px;
-  padding: 2px 8px;
-  height: 32px;
+  border-radius: 10px;
+  padding: 3px 10px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .compact-call-title {
-  font-size: 0.78rem;
-  font-weight: 900;
+  font-size: 0.90rem;
+  font-weight: 950;
   color: #0f172a;
   letter-spacing: 0.2px;
 }
@@ -4577,30 +4606,33 @@
 .compact-current-ball-pill {
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   color: #ffffff;
-  padding: 2px 8px;
+  padding: 3px 12px;
+  height: 32px;
   border-radius: 999px;
   font-weight: 950;
-  font-size: 0.88rem;
+  font-size: 1.05rem;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4);
+  gap: 3px;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.45);
+  box-sizing: border-box;
 }
 
 .compact-current-ball-pill .call-ball-col {
   font-weight: 950;
-  font-size: 0.92rem;
+  font-size: 1.12rem;
 }
 
 .compact-current-ball-pill .call-ball-hyphen {
   font-weight: 800;
   opacity: 0.85;
+  font-size: 1.05rem;
 }
 
 .compact-current-ball-pill .call-ball-num {
   font-weight: 950;
-  font-size: 0.98rem;
-  min-width: 18px;
+  font-size: 1.20rem;
+  min-width: 22px;
   text-align: center;
 }
 
@@ -4633,46 +4665,46 @@
 .compact-recent-balls-tray {
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 2px 6px;
-  height: 34px;
+  border-radius: 10px;
+  padding: 3px 8px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .compact-recent-balls-inner {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .compact-recent-ball {
-  width: 28px;
-  height: 28px;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1px;
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   font-weight: 950;
   color: #ffffff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1.5px 2px rgba(255, 255, 255, 0.4);
   flex-shrink: 0;
 }
 
 .compact-recent-ball .recent-ball-col {
   font-weight: 950;
-  font-size: 0.72rem;
+  font-size: 0.80rem;
   opacity: 0.95;
 }
 
 .compact-recent-ball .recent-ball-num {
   font-weight: 950;
-  font-size: 0.8rem;
+  font-size: 0.92rem;
 }
 
 .compact-recent-ball.col-b {
@@ -4695,12 +4727,12 @@
 .compact-recent-empty-dots {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .recent-empty-ball {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: #f1f5f9;
   border: 1.5px dashed #cbd5e1;
@@ -4708,7 +4740,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 800;
 }
 
 /* 3. Controls Row (Sound & Auto Pill) */
@@ -5033,13 +5066,14 @@
   gap: 4px !important;
   width: 100% !important;
   overflow: hidden !important;
+  padding-top: 12px !important;
 }
 
 .new-cartela-card.single-card {
   flex: 0 1 auto !important;
   max-height: fit-content !important;
   width: 100% !important;
-  max-width: 320px !important;
+  max-width: 285px !important;
   margin: 0 auto !important;
 }
 
@@ -5073,12 +5107,12 @@
   grid-template-rows: repeat(5, 1fr) !important;
   height: auto !important;
   aspect-ratio: 1 / 1 !important;
-  max-height: 280px !important;
+  max-height: 270px !important;
 }
 
 .new-cartela-card.single-card .new-cartela-cell {
   aspect-ratio: 1 !important;
-  font-size: clamp(0.85rem, 3vw, 1.05rem) !important;
+  font-size: clamp(0.78rem, 2.7vw, 0.96rem) !important;
 }
 
 
@@ -5092,7 +5126,7 @@
 .compact-cartelas-stack.dual-cartela {
   display: flex !important;
   flex-direction: column !important;
-  gap: 4px !important;
+  gap: 3px !important;
   width: 100% !important;
   flex: 1 1 0 !important;
   min-height: 0 !important;
@@ -5105,23 +5139,23 @@
   min-height: 0 !important;
   max-height: calc((100% - 4px) / 2) !important;
   width: 100% !important;
-  max-width: min(290px, 100%) !important;
+  max-width: min(280px, 100%) !important;
   margin: 0 auto !important;
-  padding: 3px 5px 4px 5px !important;
+  padding: 2px 4px 3px 4px !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 2px !important;
+  gap: 1.5px !important;
 }
 
 .compact-cartelas-stack.dual-cartela .new-card-header {
-  height: 18px !important;
+  height: 16px !important;
   flex-shrink: 0 !important;
   padding: 0 2px !important;
 }
 
 .compact-cartelas-stack.dual-cartela .new-card-header-label {
-  font-size: 0.72rem !important;
+  font-size: 0.68rem !important;
   font-weight: 900 !important;
 }
 
@@ -5130,32 +5164,32 @@
   min-height: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 2px !important;
+  gap: 1.5px !important;
   width: 100% !important;
   max-width: 100% !important;
   margin: 0 auto !important;
   overflow: hidden !important;
 }
 
-/* BOTH header and 5x5 share exact 100% width, repeat(5, 1fr), and 2px gap — guarantees 100% column alignment */
+/* BOTH header and 5x5 share exact 100% width, repeat(5, 1fr), and 1.5px gap — guarantees 100% column alignment */
 .compact-cartelas-stack.dual-cartela .new-bingo-col-headers,
 .compact-cartelas-stack.dual-cartela .new-cartela-5x5 {
   width: 100% !important;
   max-width: 100% !important;
   display: grid !important;
   grid-template-columns: repeat(5, 1fr) !important;
-  gap: 2px !important;
+  gap: 1.5px !important;
   box-sizing: border-box !important;
   margin: 0 auto !important;
 }
 
 .compact-cartelas-stack.dual-cartela .new-bingo-col-headers {
-  height: 18px !important;
+  height: 16px !important;
   flex-shrink: 0 !important;
 }
 
 .compact-cartelas-stack.dual-cartela .new-bingo-col-hdr {
-  font-size: 0.68rem !important;
+  font-size: 0.64rem !important;
   font-weight: 950 !important;
   height: 100% !important;
 }
@@ -5166,6 +5200,7 @@
   height: 100% !important;
   max-height: 100% !important;
   grid-template-rows: repeat(5, 1fr) !important;
+  gap: 1.5px !important;
 }
 
 .compact-cartelas-stack.dual-cartela .new-cartela-cell {
@@ -5173,7 +5208,7 @@
   height: 100% !important;
   min-height: 0 !important;
   aspect-ratio: unset !important;
-  font-size: clamp(0.72rem, 2.2vh, 0.92rem) !important;
+  font-size: clamp(0.66rem, 1.9vh, 0.82rem) !important;
   padding: 0 !important;
   display: flex !important;
   align-items: center !important;
@@ -5187,7 +5222,6 @@
   position: relative !important;
   bottom: auto !important;
   margin-top: auto !important;
-  padding: 4px 6px !important;
   flex-shrink: 0 !important;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04) !important;
   border-radius: 10px !important;
@@ -5195,39 +5229,117 @@
   box-sizing: border-box !important;
 }
 
+.in-game-bottom-action-bar {
+  padding: 4px 6px !important;
+}
+
 .btn-in-game-leave,
 .btn-in-game-bingo {
   height: 36px !important;
 }
 
-.lobby-placed-status-pill {
-  padding: 6px 10px !important;
-}
-
-.btn-lobby-cancel-action {
-  padding: 6px 10px !important;
-  height: 36px !important;
-  white-space: nowrap !important;
-}
-
-/* ── COMPACT LOBBY BUY BAR (Single Row ~46px) ── */
-.compact-lobby-buy-bar {
+/* ── PLACED BET CONTAINER (Never truncated, fully responsive) ── */
+.lobby-placed-bet-container {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 6px !important;
+  gap: 5px !important;
   width: 100% !important;
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 12px !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important;
+  padding: 4px 6px !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
 }
 
-.compact-lobby-left-controls {
+.lobby-placed-status-pill {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7) !important;
+  border: 1.5px solid #86efac !important;
+  border-radius: 10px !important;
+  padding: 5px 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.lobby-placed-status-pill i {
+  color: #16a34a !important;
+  font-size: 0.95rem !important;
+  flex-shrink: 0 !important;
+}
+
+.lobby-placed-text-group {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  gap: 1px !important;
+}
+
+.lobby-placed-text {
+  font-size: clamp(0.64rem, 1.8vw, 0.72rem) !important;
+  font-weight: 950 !important;
+  color: #166534 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.2 !important;
+}
+
+.lobby-matchmaking-hint {
+  font-size: clamp(0.56rem, 1.5vw, 0.64rem) !important;
+  font-weight: 800 !important;
+  color: #15803d !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.2 !important;
+}
+
+.btn-lobby-cancel-action {
+  flex-shrink: 0 !important;
+  background: linear-gradient(135deg, #fee2e2, #fecaca) !important;
+  border: 1.5px solid #f87171 !important;
+  border-radius: 10px !important;
+  padding: 6px 10px !important;
+  height: 36px !important;
+  font-size: 0.68rem !important;
+  font-weight: 950 !important;
+  color: #b91c1c !important;
+  cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
   gap: 4px !important;
-  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* ── COMPACT LOBBY BUY BAR (Responsive 2-Row Stack) ── */
+.compact-lobby-buy-bar {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  width: 100% !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 4px 6px !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important;
+  box-sizing: border-box !important;
+}
+
+.compact-lobby-controls-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 4px !important;
+  width: 100% !important;
 }
 
 /* Mini stepper */
@@ -5326,16 +5438,17 @@
   color: #ca8a04 !important;
 }
 
-/* Buy Ticket CTA */
-.btn-compact-buy-cta {
-  flex: 1 !important;
+/* Buy Ticket CTA (Full Width, Never Squished or Cut Off) */
+.compact-lobby-buy-bar .btn-compact-buy-cta {
+  width: 100% !important;
+  flex: none !important;
   height: 36px !important;
   background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%) !important;
   color: #713f12 !important;
   border: none !important;
   border-radius: 10px !important;
   font-weight: 950 !important;
-  font-size: 0.76rem !important;
+  font-size: 0.78rem !important;
   letter-spacing: 0.3px !important;
   display: flex !important;
   align-items: center !important;

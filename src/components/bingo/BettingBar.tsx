@@ -81,14 +81,14 @@ export const BettingBar: React.FC = () => {
             <i className={waitingForPlayers ? 'fa-solid fa-hourglass-half waiting-pulse-icon' : 'fa-solid fa-circle-check'}></i>
             <div className="lobby-placed-text-group">
               <span className="lobby-placed-text">
-                BET PLACED · {cardQuantity} {cardQuantity === 1 ? 'CARD' : 'CARDS'} ({totalCost} ETB)
+                BET PLACED · {cardQuantity === 1 ? '1 CARD' : '2 CARDS'} ({totalCost} ETB)
               </span>
               <span className="lobby-matchmaking-hint">
                 {waitingForPlayers || realPlayerCount < 2
                   ? (activeUsersCount >= 2
-                      ? (lang === 'am' ? `👥 ተጫዋቾች በክፍሉ አሉ · ካርቴላ እስኪገዙ በመጠበቅ ላይ...` : `👥 Opponents in room · Waiting for 2nd ticket purchase...`)
-                      : (lang === 'am' ? '⏳ ሌላ ተጫዋች እስኪገባ በመጠበቅ ላይ... (1/2)' : '⏳ Waiting for an opponent to join (1/2) · Starts at 2 players'))
-                  : (lang === 'am' ? `🟢 ዝግጁ! ጨዋታ በ ${lobbyCountdown} ሰከንድ ይጀምራል (${Math.max(realPlayerCount, 2)} ተጫዋቾች)` : `🟢 Ready! Game starts in ${lobbyCountdown}s (${Math.max(realPlayerCount, 2)} Players)`)}
+                      ? (lang === 'am' ? `👥 ተጫዋች በመጠበቅ ላይ...` : `👥 Waiting for 2nd player...`)
+                      : (lang === 'am' ? '⏳ ተጫዋች በመጠበቅ ላይ... (1/2)' : '⏳ Waiting for opponent (1/2)'))
+                  : (lang === 'am' ? `🟢 ዝግጁ! በ ${lobbyCountdown} ሰከንድ ይጀምራል` : `🟢 Ready! Starts in ${lobbyCountdown}s (${Math.max(realPlayerCount, 2)}P)`)}
               </span>
             </div>
           </div>
@@ -100,7 +100,7 @@ export const BettingBar: React.FC = () => {
             title="Cancel your bet and get an immediate refund"
           >
             <i className="fa-solid fa-ban"></i>
-            <span>CANCEL BET</span>
+            <span>CANCEL</span>
           </button>
         </div>
       ) : (
@@ -110,91 +110,91 @@ export const BettingBar: React.FC = () => {
             {waitingForPlayers || realPlayerCount < 2 ? (
               realPlayerCount >= 1 ? (
                 <span className="presence-hint ready-waiting">
-                  <i className="fa-solid fa-bell"></i> {lang === 'am' ? '1 ተጫዋች ዝግጁ ሆኖ እየጠበቀዎት ነው! ለመጫወት ካርቴላ ይግዙ' : '1 player is ready & waiting! Buy ticket to start match!'}
+                  <i className="fa-solid fa-bell"></i> {lang === 'am' ? '1 ተጫዋች ዝግጁ ነው! ካርቴላ ይግዙ' : '1 player ready! Buy ticket to start!'}
                 </span>
               ) : activeUsersCount >= 2 ? (
                 <span className="presence-hint opponents-present">
-                  <i className="fa-solid fa-users"></i> {lang === 'am' ? `${activeUsersCount} ተጫዋቾች በክፍሉ አሉ! አብረው ለመጫወት ካርቴላ ይግዙ` : `${activeUsersCount} players in room! Buy ticket to start match!`}
+                  <i className="fa-solid fa-users"></i> {lang === 'am' ? `${activeUsersCount} ተጫዋቾች አሉ! ካርቴላ ይግዙ` : `${activeUsersCount} in room! Buy ticket to play!`}
                 </span>
               ) : (
                 <span className="presence-hint waiting-alone">
-                  <i className="fa-solid fa-hourglass-half"></i> {lang === 'am' ? 'ተጫዋች በመጠበቅ ላይ... ካርቴላ ይምረጡና ዝግጁ ይሁኑ!' : 'Waiting for players to come... Pick cards & tap Buy Ticket!'}
+                  <i className="fa-solid fa-hourglass-half"></i> {lang === 'am' ? 'ተጫዋች በመጠበቅ ላይ...' : 'Waiting for players...'}
                 </span>
               )
             ) : (
               <span className="presence-hint countdown-active">
-                <i className="fa-solid fa-clock"></i> {lang === 'am' ? `${Math.max(realPlayerCount, 2)} ተጫዋቾች ዝግጁ ናቸው! ጨዋታው በ ${lobbyCountdown} ሰከንድ ይጀምራል` : `${Math.max(realPlayerCount, 2)} players ready! Game starts in ${lobbyCountdown}s`}
+                <i className="fa-solid fa-clock"></i> {lang === 'am' ? `${Math.max(realPlayerCount, 2)} ተጫዋቾች ዝግጁ ናቸው! በ ${lobbyCountdown}s ይጀምራል` : `${Math.max(realPlayerCount, 2)} ready! Starts in ${lobbyCountdown}s`}
               </span>
             )}
           </div>
 
-          {/* ── Ultra-Compact Single-Row Lobby Buy Bar (~46px) ── */}
+          {/* ── Responsive 2-Row Lobby Buy Bar (Controls Row + Full-Width CTA) ── */}
           <div className="compact-lobby-buy-bar">
-          <div className="compact-lobby-left-controls">
-            {/* 1. Stepper for 1 or 2 cartelas */}
-            <div className="compact-lobby-stepper" title="Choose 1 or 2 cartelas">
+            <div className="compact-lobby-controls-row">
+              {/* 1. Stepper for 1 or 2 cartelas */}
+              <div className="compact-lobby-stepper" title="Choose 1 or 2 cartelas">
+                <button
+                  type="button"
+                  className="btn-stepper-mini"
+                  onClick={() => setCardQuantity(cardQuantity - 1)}
+                  disabled={cardQuantity <= 1 || hasTicket}
+                >
+                  −
+                </button>
+                <span className="compact-stepper-num">{cardQuantity}</span>
+                <button
+                  type="button"
+                  className="btn-stepper-mini"
+                  onClick={() => setCardQuantity(cardQuantity + 1)}
+                  disabled={cardQuantity >= 2 || hasTicket}
+                >
+                  +
+                </button>
+              </div>
+
+              {/* 2. Pick cards button */}
               <button
                 type="button"
-                className="btn-stepper-mini"
-                onClick={() => setCardQuantity(cardQuantity - 1)}
-                disabled={cardQuantity <= 1 || hasTicket}
+                className="btn-compact-pick-cards"
+                onClick={openCartelaPicker}
+                title="Pick your cartela numbers (from 400 cards)"
               >
-                −
+                <i className="fa-solid fa-hand-pointer"></i>
+                <span>
+                  {hasSelectedCartelas && selectedCartelaIds.length > 0
+                    ? `#${selectedCartelaIds.slice(0, cardQuantity).join(', #')}`
+                    : 'Pick 🎟️'}
+                </span>
               </button>
-              <span className="compact-stepper-num">{cardQuantity}</span>
+
+              {/* 3. Active Stake Room Pill / Switcher */}
               <button
                 type="button"
-                className="btn-stepper-mini"
-                onClick={() => setCardQuantity(cardQuantity + 1)}
-                disabled={cardQuantity >= 2 || hasTicket}
+                className="btn-compact-stake-pill"
+                onClick={() => setShowStakeModal(true)}
+                title="Change stake room (10, 20, 50, 100 ETB)"
               >
-                +
+                <span>🪙 {betAmount} ETB</span>
+                <i className="fa-solid fa-chevron-down mini-arrow"></i>
               </button>
             </div>
 
-            {/* 2. Pick cards button */}
+            {/* 4. Primary CTA: Full-Width Buy Ticket Button */}
             <button
               type="button"
-              className="btn-compact-pick-cards"
-              onClick={openCartelaPicker}
-              title="Pick your cartela numbers (from 400 cards)"
+              className="btn-compact-buy-cta"
+              onClick={hasTicket ? undefined : (!hasSelectedCartelas ? openCartelaPicker : buyTicket)}
+              disabled={hasTicket}
             >
-              <i className="fa-solid fa-hand-pointer"></i>
+              <i className={hasSelectedCartelas ? "fa-solid fa-ticket" : "fa-solid fa-hand-pointer"}></i>
               <span>
-                {hasSelectedCartelas && selectedCartelaIds.length > 0
-                  ? `Cards #${selectedCartelaIds.slice(0, cardQuantity).join(', #')}`
-                  : 'Pick Cards 🎟️'}
+                {!hasSelectedCartelas
+                  ? `SELECT CARDS (${totalCost} ETB)`
+                  : `${t('bingo.buyTicket')} · ${totalCost} ETB`}
               </span>
             </button>
-
-            {/* 3. Active Stake Room Pill / Switcher */}
-            <button
-              type="button"
-              className="btn-compact-stake-pill"
-              onClick={() => setShowStakeModal(true)}
-              title="Change stake room (10, 20, 50, 100 ETB)"
-            >
-              <span>🪙 {betAmount} ETB</span>
-              <i className="fa-solid fa-chevron-down mini-arrow"></i>
-            </button>
           </div>
-
-          {/* 4. Primary CTA: Buy Ticket Button */}
-          <button
-            type="button"
-            className="btn-compact-buy-cta"
-            onClick={hasTicket ? undefined : (!hasSelectedCartelas ? openCartelaPicker : buyTicket)}
-            disabled={hasTicket}
-          >
-            <i className={hasSelectedCartelas ? "fa-solid fa-ticket" : "fa-solid fa-hand-pointer"}></i>
-            <span>
-              {!hasSelectedCartelas
-                ? `SELECT CARDS (${totalCost} ETB)`
-                : `${t('bingo.buyTicket')} · ${totalCost} ETB`}
-            </span>
-          </button>
         </div>
-      </div>
       )}
 
       {/* ── Safe In-Lobby Cancel Bet Confirmation Modal ── */}
