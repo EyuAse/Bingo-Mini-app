@@ -251,7 +251,7 @@ class BingoGameEngine {
     const getCount = (roomId: string) => {
       const r = this.rooms.get(roomId);
       if (!r) return 0;
-      return Math.max(r.activeUsers.size, r.tickets.size);
+      return r.phase === 'playing' ? r.realPlayerCount : r.tickets.size;
     };
     return {
       10: getCount('room-10'),
@@ -354,8 +354,10 @@ class BingoGameEngine {
       room.activeUserSockets.set(userId, socketId);
     }
     const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
-    if (activeInRoom >= 2 || room.tickets.size >= 2) {
+    if (room.tickets.size >= 2) {
       room.waitingForPlayers = false;
+    } else {
+      room.waitingForPlayers = true;
     }
     this.broadcastRoomState(room);
 
@@ -793,19 +795,20 @@ class BingoGameEngine {
         this.broadcastRoomState(room);
 
         // Notify room clients a new real player joined (for lobby join feed UI)
-        io.to(room.id).emit('player_joined', {
+        const playerJoinedPayload = {
           userName,
           realPlayerCount: room.tickets.size,
           waitingForPlayers: room.tickets.size < 2,
           countdownStarted: room.tickets.size >= 2,
+          totalPot: room.totalPot,
+          winnerPayout: room.winnerPayout,
+          stakeAmount: room.stakeAmount,
           roomId: room.id
-        });
+        };
+        io.to(room.id).emit('player_joined', playerJoinedPayload);
         if (room.id === 'room-10') {
           io.to(ARENA_ROOM_ID).emit('player_joined', {
-            userName,
-            realPlayerCount: room.tickets.size,
-            waitingForPlayers: room.tickets.size < 2,
-            countdownStarted: room.tickets.size >= 2,
+            ...playerJoinedPayload,
             roomId: ARENA_ROOM_ID
           });
         }
@@ -914,24 +917,19 @@ class BingoGameEngine {
       const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
       room.realPlayerCount = realUserCount;
 
-      // FREEZE countdown: requires at least 2 real players present OR at least 2 tickets purchased.
-      // Priority: ticket count (realUserCount) takes precedence — if 2+ have tickets, ALWAYS let countdown tick
-      // even if activeInRoom temporarily dips (e.g. during reconnect).
-      const shouldFreeze = realUserCount < 2 && activeInRoom < 2;
+      // FREEZE countdown: strictly requires at least 2 real players with confirmed purchased tickets.
+      // Mere page visitors (activeInRoom) must never trigger countdown to round start!
+      const shouldFreeze = realUserCount < 2;
 
       if (shouldFreeze) {
-        if (!room.waitingForPlayers) {
-          room.waitingForPlayers = true;
-        }
-        // Clamp to 45 only if it drifted above (e.g. just entered lobby) — never decrement when frozen
-        if (room.lobbyCountdown > 45) {
-          room.lobbyCountdown = 45;
-        }
+        room.waitingForPlayers = true;
+        // Keep countdown locked at 45s while waiting for 2nd ticket — never tick down prematurely!
+        room.lobbyCountdown = 45;
         this.broadcastRoomState(room);
         return;
       }
 
-      // 2+ players confirmed (present or ticketed) — countdown runs normally
+      // 2+ ticketed players confirmed — countdown runs normally toward guaranteed game start
       room.waitingForPlayers = false;
       room.lobbyCountdown -= 1;
       this.broadcastRoomState(room);
@@ -941,7 +939,7 @@ class BingoGameEngine {
           clearInterval(interval);
           await this.startRound(room.id);
         } else {
-          // Countdown reached 0 but fewer than 2 tickets purchased — reset and wait again
+          // Fallback clamp
           room.lobbyCountdown = 45;
           room.waitingForPlayers = true;
           this.broadcastRoomState(room);
@@ -1000,6 +998,8 @@ class BingoGameEngine {
             isHouseBot: i === 0
           });
         }
+        // Recalculate pot to include injected bot stakes
+        this.recalculatePot(room);
       }
 
       // 3. Win routing: bots win 20% only when 11+ real players; real player wins otherwise

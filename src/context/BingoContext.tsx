@@ -252,7 +252,7 @@ const fetchRoomSyncWithTimeout = async (roomId: string, timeoutMs = 6000, userId
 export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { deductBalance, addBalance, refreshBalance, balance, bonus } = useWallet();
   const { user } = useAuth();
-  const { showToast } = useApp();
+  const { currentPage, showToast } = useApp();
   const {
     commissionRate,
     simulatedPlayerCount,
@@ -712,8 +712,13 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   }, []);
 
-  // Socket.IO Multiplayer Room Listener (Stable: Never reconnects on stake change)
+  // Socket.IO Multiplayer Room Listener (Active when viewing bingo or holding active ticket)
   useEffect(() => {
+    const isBingoActive = currentPage === 'bingo' || hasTicket;
+    if (!isBingoActive) {
+      return;
+    }
+
     const roomId = getActiveRoomId();
     socketService.joinRoom(roomId, userRef.current?.id, userRef.current?.fullName);
 
@@ -999,6 +1004,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (typeof data.realPlayerCount === 'number') setRealPlayerCount(data.realPlayerCount);
       if (typeof data.waitingForPlayers === 'boolean') setWaitingForPlayers(data.waitingForPlayers);
       if (typeof data.activeUsersCount === 'number') setActiveUsersCount(data.activeUsersCount);
+      if (typeof data.winnerPayout === 'number') setPrizePool(data.winnerPayout);
+      else if (typeof data.totalPot === 'number') setPrizePool(data.totalPot);
       if (data.userName) {
         setJoinFeed(prev => [
           { id: Date.now(), userName: data.userName, countdownStarted: Boolean(data.countdownStarted) },
@@ -1021,12 +1028,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
     });
 
-    // 9. Real-Time Stake Rooms Player Count Summary
-    const unsubStakeSummary = socketService.onStakeRoomsSummary((summary) => {
-      if (summary) setStakeRoomsSummary(summary);
-    });
-
     return () => {
+      socketService.leaveRoom(roomId);
       unsubRoomState();
       unsubBallCalled();
       unsubRoundStarted();
@@ -1037,9 +1040,18 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       unsubOfflineWins();
       unsubPlayerJoined();
       unsubRoomUserJoined();
+    };
+  }, [getActiveRoomId, user?.id, currentPage, hasTicket]);
+
+  // Global Stake Rooms Player Count Summary (Runs continuously across all pages for modal/cards)
+  useEffect(() => {
+    const unsubStakeSummary = socketService.onStakeRoomsSummary((summary) => {
+      if (summary) setStakeRoomsSummary(summary);
+    });
+    return () => {
       unsubStakeSummary();
     };
-  }, [getActiveRoomId, user?.id]);
+  }, []);
 
   // Central Authoritative Room Snapshot Reconciliation
   const applyRoomSnapshot = useCallback((data: any) => {
@@ -1185,6 +1197,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Dual-Engine HTTP Polling Fallback (Runs if Socket drops, degraded, or reconnecting)
   useEffect(() => {
+    if (currentPage !== 'bingo' && !hasTicket) return;
     if (networkStatus !== 'reconnecting' && networkStatus !== 'polling' && networkStatus !== 'degraded') {
       return;
     }
@@ -1241,6 +1254,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // 2. Universal All-Phase Liveness Watchdog (Lobby + Playing + Winner)
   // Ensures countdowns, ball calls, and phase transitions never freeze even with packet drops
   useEffect(() => {
+    if (currentPage !== 'bingo' && !hasTicket) return;
     const watchdogInterval = setInterval(async () => {
       const roomId = getActiveRoomId();
 
@@ -1493,6 +1507,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     setHasTicket(true);
     setGameActive(true);
+    setPrizePool(prev => Math.max(prev, betAmount * cardQuantity, prev + (roundPhase === 'lobby' ? betAmount * cardQuantity : 0)));
+    setRealPlayerCount(prev => Math.max(prev, 1));
     refreshBalance();
 
     // Persist active ticket session so app reload / close does not lose ticket or money

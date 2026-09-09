@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 
 export const LobbyStatusBanner: React.FC = () => {
+  const { lang } = useLanguage();
   const {
     roundPhase,
     lobbyCountdown,
@@ -44,6 +46,8 @@ export const LobbyStatusBanner: React.FC = () => {
     return null;
   }
 
+  const isWaitingState = waitingForPlayers || realPlayerCount < 2;
+
   return (
     <div className="lobby-status-banner-wrap">
       {/* Live Toast Feed for Player Joins */}
@@ -68,27 +72,35 @@ export const LobbyStatusBanner: React.FC = () => {
       )}
 
       {/* Main Lobby Banner Card */}
-      <div className={`lobby-status-card ${waitingForPlayers ? 'is-waiting' : 'is-counting'}`}>
-        {waitingForPlayers ? (
+      <div className={`lobby-status-card ${isWaitingState ? 'is-waiting' : 'is-counting'}`}>
+        {isWaitingState ? (
           <div className="lobby-waiting-state">
             <div className="waiting-spinner-ring">
               <i className="fa-solid fa-spinner fa-spin"></i>
             </div>
             <div className="waiting-info">
               <div className="waiting-title-row">
-                <span className="waiting-title">Waiting for Players</span>
+                <span className="waiting-title">
+                  {lang === 'am' ? 'ተጫዋቾችን በመጠበቅ ላይ' : 'Waiting for Players'}
+                </span>
                 <span className="waiting-count-pill">
-                  <i className="fa-solid fa-users"></i> {displayPlayerCount} / 2 Needed
+                  <i className="fa-solid fa-users"></i> {displayPlayerCount} / 2 {lang === 'am' ? 'ያስፈልጋል' : 'Needed'}
                 </span>
               </div>
               <p className="waiting-subtext">
-                Waiting for 2 real players to enter the {betAmount} ETB arena • Countdown will start immediately
+                {displayPlayerCount >= 1
+                  ? (lang === 'am'
+                      ? `1 ተጫዋች ዝግጁ ነው! 1 ተጋጣሚ ወደ ${betAmount} ብር ክፍል እስኪገባ በመጠበቅ ላይ... • ቆጠራው በ2 ተጫዋቾች ይጀምራል`
+                      : `1 player ready! Waiting for an opponent to enter the ${betAmount} ETB arena... • Countdown starts at 2 players`)
+                  : (lang === 'am'
+                      ? `2 ተጫዋቾች ወደ ${betAmount} ብር ክፍል እስኪገቡ በመጠበቅ ላይ • ቆጠራው በ2 ተጫዋቾች ይጀምራል`
+                      : `Waiting for 2 real players to enter the ${betAmount} ETB arena • Countdown starts at 2 players`)}
               </p>
               {suggestedStake && (
                 <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <i className="fa-solid fa-bolt" style={{ color: '#eab308' }}></i>
-                    <span>Live Match Available in Another Room!</span>
+                    <span>{lang === 'am' ? 'በሌላ ክፍል ውስጥ የሚሰራ ጨዋታ አለ!' : 'Live Match Available in Another Room!'}</span>
                   </div>
                   <button
                     type="button"
@@ -111,7 +123,11 @@ export const LobbyStatusBanner: React.FC = () => {
                     }}
                   >
                     <i className="fa-solid fa-play"></i>
-                    <span>Switch to {suggestedStake.stake} ETB Room ({suggestedStake.count} Players Ready!)</span>
+                    <span>
+                      {lang === 'am'
+                        ? `ወደ ${suggestedStake.stake} ብር ክፍል ይቀይሩ (${suggestedStake.count} ተጫዋቾች ዝግጁ ናቸው!)`
+                        : `Switch to ${suggestedStake.stake} ETB Room (${suggestedStake.count} Players Ready!)`}
+                    </span>
                   </button>
                 </div>
               )}
@@ -124,17 +140,19 @@ export const LobbyStatusBanner: React.FC = () => {
             </div>
             <div className="countdown-info">
               <div className="countdown-title-row">
-                <span className="countdown-title">Game Starting Soon!</span>
+                <span className="countdown-title">
+                  {lang === 'am' ? 'ጨዋታው ሊጀመር ነው!' : 'Game Starting Soon!'}
+                </span>
                 <span className="countdown-players-pill">
-                  <i className="fa-solid fa-users-viewfinder"></i> {displayPlayerCount} Players Ready
+                  <i className="fa-solid fa-users-viewfinder"></i> {Math.max(displayPlayerCount, 2)} {lang === 'am' ? 'ተጫዋቾች ዝግጁ ናቸው' : 'Players Ready'}
                 </span>
               </div>
               <p className="countdown-subtext">
                 {displayPlayerCount <= 5
-                  ? '🎯 100% Payout Tier: 0% House Fee (Winner takes all!)'
+                  ? (lang === 'am' ? '🎯 100% የድል ክፍያ፡ 0% የቤት ክፍያ (አሸናፊው ሁሉንም ይወስዳል!)' : '🎯 100% Payout Tier: 0% House Fee (Winner takes all!)')
                   : displayPlayerCount <= 10
-                  ? '🛡️ 100% Real Players (No Bots in Room)'
-                  : '⚡ Big Arena Match (3 bots added)'}
+                  ? (lang === 'am' ? '🛡️ 100% እውነተኛ ተጫዋቾች (ምንም ቦቶች የሉም)' : '🛡️ 100% Real Players (No Bots in Room)')
+                  : (lang === 'am' ? '⚡ ትልቅ የአሬና ጨዋታ (3 ቦቶች ተጨምረዋል)' : '⚡ Big Arena Match (3 bots added)')}
               </p>
             </div>
           </div>

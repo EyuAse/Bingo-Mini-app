@@ -22,18 +22,18 @@ export const StatsStrip: React.FC = () => {
   const currentPlayers = realPlayerCount > 0 ? realPlayerCount : playersCount;
   // Effective player count — always ≥ 1 when user has a ticket, prevents "0/0" display lag
   const effectivePlayerCount = hasTicket ? Math.max(currentPlayers, 1) : currentPlayers;
-  const currentPrize = prizePool > 0
-    ? prizePool
-    : (effectivePlayerCount <= 5
-        ? effectivePlayerCount * betAmount
-        : Math.floor(effectivePlayerCount * betAmount * 0.8));
+  // Dynamic Real-Flow Derash Calculation:
+  // Computes the expected pot from confirmed ticketed players across any stake room (10, 20, 50, 100 ETB)
+  const expectedPot = effectivePlayerCount * betAmount;
+  const calculatedPrize = effectivePlayerCount <= 5 ? expectedPot : Math.floor(expectedPot * 0.8);
+  const currentPrize = Math.max(prizePool, calculatedPrize);
   const prizeDisplay = currentPrize >= 1000 ? `${(currentPrize / 1000).toFixed(1)}K` : `${currentPrize}`;
 
   // Short round game code
   const gameId = `KL-${betAmount}`;
 
   // Matchmaking player display for clarity: never show misleading "0/2" when players are in room
-  const isLobbyWaiting = roundPhase === 'lobby' && waitingForPlayers;
+  const isLobbyWaiting = roundPhase === 'lobby' && (waitingForPlayers || effectivePlayerCount < 2);
   const effectiveInRoom = Math.max(activeUsersCount, currentPlayers, hasTicket ? 1 : 0);
   const playersDisplay = isLobbyWaiting
     ? (effectivePlayerCount >= 1 || hasTicket
