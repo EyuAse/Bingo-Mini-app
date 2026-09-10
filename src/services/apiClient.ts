@@ -178,6 +178,28 @@ export const apiClient = {
         user: any;
         wallet: { balance: number; bonus: number; lockedBalance: number };
       }>(res);
+    },
+
+    async updateProfile(payload: {
+      phone?: string;
+      fullName?: string;
+      telegramUsername?: string;
+      attachedAccounts?: any[];
+    }) {
+      const res = await fetch(`${API_BASE}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify(payload)
+      });
+      return handleResponse<{
+        success: boolean;
+        message: string;
+        user: any;
+        wallet: { balance: number; bonus: number; lockedBalance: number };
+      }>(res);
     }
   },
 

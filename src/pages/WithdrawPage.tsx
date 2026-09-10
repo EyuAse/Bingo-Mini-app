@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWallet } from '../context/WalletContext.tsx';
 import { useApp } from '../context/AppContext.tsx';
 import { useAdmin } from '../context/AdminContext.tsx';
@@ -12,16 +12,40 @@ export const WithdrawPage: React.FC = () => {
   const { balance, deductBalance } = useWallet();
   const { showToast, switchPage } = useApp();
   const { addWithdrawRequest } = useAdmin();
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const { t, lang } = useLanguage();
 
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [amount, setAmount] = useState<number>(200);
-  const [accountHolder, setAccountHolder] = useState<string>('');
-  const [accountNumber, setAccountNumber] = useState<string>('');
+  const [accountHolder, setAccountHolder] = useState<string>(() => {
+    const attached = user?.attachedAccounts || [];
+    const match = attached.find(a => a.type === 'Telebirr' && a.isDefault) || attached.find(a => a.type === 'Telebirr');
+    return match?.name || user?.fullName || '';
+  });
+  const [accountNumber, setAccountNumber] = useState<string>(() => {
+    const attached = user?.attachedAccounts || [];
+    const match = attached.find(a => a.type === 'Telebirr' && a.isDefault) || attached.find(a => a.type === 'Telebirr');
+    return match?.accountNumber || user?.nationalPhone || user?.phone || '';
+  });
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [submittedRef, setSubmittedRef] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // Auto-fill from user's attached accounts or profile when method changes
+  useEffect(() => {
+    const attached = user?.attachedAccounts || [];
+    const match = attached.find(a => a.type === selectedMethod && a.isDefault) ||
+                  attached.find(a => a.type === selectedMethod);
+    if (match) {
+      setAccountNumber(match.accountNumber);
+      if (match.name) setAccountHolder(match.name);
+    } else if (selectedMethod === 'Telebirr' && (user?.nationalPhone || user?.phone)) {
+      setAccountNumber(user.nationalPhone || user.phone);
+      if (user.fullName) setAccountHolder(user.fullName);
+    }
+  }, [selectedMethod, user?.attachedAccounts, user?.nationalPhone, user?.phone, user?.fullName]);
+
+  const matchingAttachedAccounts = (user?.attachedAccounts || []).filter(a => a.type === selectedMethod);
 
   const quickAmounts = [100, 200, 500, 1000, 5000];
 
@@ -80,6 +104,24 @@ export const WithdrawPage: React.FC = () => {
 
       setSubmittedRef(assignedRef);
       setIsSubmitted(true);
+
+      // Auto-save newly entered account to attached accounts
+      if (accountNumber && accountNumber.trim().length >= 8) {
+        const clean = accountNumber.trim();
+        const attached = user?.attachedAccounts || [];
+        if (!attached.some(a => a.accountNumber === clean)) {
+          const newAcc = {
+            id: `acc-${Date.now()}`,
+            type: selectedMethod,
+            name: accountHolder.trim() || `${user?.fullName || 'Player'} (${selectedMethod})`,
+            accountNumber: clean,
+            isDefault: attached.length === 0,
+            isVerified: true
+          };
+          updateProfile({ attachedAccounts: [...attached, newAcc] });
+        }
+      }
+
       showToast(lang === 'am' ? `💸 የ${amount} ብር የወጪ ጥያቄ ተልኳል!` : `💸 Withdrawal request of ${amount} ETB submitted!`);
     } catch (err: any) {
       console.warn('Backend withdraw error:', err);
@@ -261,9 +303,44 @@ export const WithdrawPage: React.FC = () => {
 
               {/* 3. Destination Account Details */}
               <div className="form-section-block">
-                <label className="form-section-label">
-                  <span className="step-num">3</span> {lang === 'am' ? 'ገንዘቡ የሚላክበት አካውንት' : 'Payout Destination'}
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label className="form-section-label" style={{ margin: 0 }}>
+                    <span className="step-num">3</span> {lang === 'am' ? 'ገንዘቡ የሚላክበት አካውንት' : 'Payout Destination'}
+                  </label>
+                  {matchingAttachedAccounts.length > 0 && (
+                    <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 600 }}>
+                      <i className="fa-solid fa-circle-check" style={{ marginRight: '3px' }}></i>
+                      {lang === 'am' ? 'የተያያዘ አካውንት' : 'Linked Account'}
+                    </span>
+                  )}
+                </div>
+
+                {matchingAttachedAccounts.length > 0 && (
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                    {matchingAttachedAccounts.map(acc => (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        onClick={() => {
+                          setAccountNumber(acc.accountNumber);
+                          if (acc.name) setAccountHolder(acc.name);
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '0.72rem',
+                          fontWeight: accountNumber === acc.accountNumber ? 700 : 500,
+                          background: accountNumber === acc.accountNumber ? 'rgba(5, 150, 105, 0.12)' : '#f8fafc',
+                          border: accountNumber === acc.accountNumber ? '1px solid #10b981' : '1px solid #e2e8f0',
+                          color: accountNumber === acc.accountNumber ? '#047857' : '#64748b',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {acc.isDefault ? '⭐ ' : ''}{acc.accountNumber} ({acc.name})
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 <div className="input-field-group">
                   <label className="field-tiny-label">{lang === 'am' ? 'የአካውንት ባለቤት ስም' : 'Account Holder Name'}</label>

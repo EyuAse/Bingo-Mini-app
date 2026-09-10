@@ -31,6 +31,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_url TEXT;
 ALTER TABLE users ALTER COLUMN phone DROP NOT NULL;
 ALTER TABLE users ALTER COLUMN pin_hash DROP NOT NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_bot BOOLEAN DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS attached_accounts JSONB DEFAULT '[]'::jsonb;
 
 CREATE INDEX IF NOT EXISTS idx_users_tg_id ON users(telegram_id);
 CREATE INDEX IF NOT EXISTS idx_users_tg_username ON users(telegram_username);

@@ -1,5 +1,14 @@
 export type EthiopianCarrier = 'ethiotelecom' | 'safaricom';
 
+export interface AttachedAccount {
+  id: string;
+  type: 'Telebirr' | 'CBE';
+  name: string;
+  accountNumber: string;
+  isDefault: boolean;
+  isVerified: boolean;
+}
+
 export interface User {
   id: string;
   telegramId?: number;
@@ -15,6 +24,7 @@ export interface User {
   isPhoneVerified: boolean;
   role: 'player' | 'admin';
   referralCode?: string;
+  attachedAccounts?: AttachedAccount[];
   createdAt: string;
   lastLogin: string;
 }

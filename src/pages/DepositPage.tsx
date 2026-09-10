@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext.tsx';
 import { useAdmin } from '../context/AdminContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -17,18 +17,36 @@ import {
 export const DepositPage: React.FC = () => {
   const { switchPage, showToast } = useApp();
   const { addDepositRequest } = useAdmin();
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const { t, lang } = useLanguage();
 
   const [selectedMethod, setSelectedMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [telebirrReceiver, setTelebirrReceiver] = useState<PaymentReceiver>(() => getCurrentTelebirrReceiver());
   const [amount, setAmount] = useState<number>(100);
-  const [playerPhone, setPlayerPhone] = useState<string>('');
+  const [playerPhone, setPlayerPhone] = useState<string>(() => {
+    const attached = user?.attachedAccounts || [];
+    const def = attached.find(a => a.type === 'Telebirr' && a.isDefault) || attached.find(a => a.type === 'Telebirr');
+    return def?.accountNumber || user?.nationalPhone || user?.phone || '';
+  });
   const [transactionRef, setTransactionRef] = useState<string>('');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [submittedRef, setSubmittedRef] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // Auto-fill from user's attached accounts or profile when method changes
+  useEffect(() => {
+    const attached = user?.attachedAccounts || [];
+    const matching = attached.find(a => a.type === selectedMethod && a.isDefault) ||
+                     attached.find(a => a.type === selectedMethod);
+    if (matching) {
+      setPlayerPhone(matching.accountNumber);
+    } else if (selectedMethod === 'Telebirr' && (user?.nationalPhone || user?.phone)) {
+      setPlayerPhone(user.nationalPhone || user.phone);
+    }
+  }, [selectedMethod, user?.attachedAccounts, user?.nationalPhone, user?.phone]);
+
+  const matchingAttachedAccounts = (user?.attachedAccounts || []).filter(a => a.type === selectedMethod);
 
   // Active Receiver Details (CBE Birr or Alternating Telebirr)
   const activeReceiver = selectedMethod === 'Telebirr' ? telebirrReceiver : CBE_BIRR_RECEIVER;
@@ -127,6 +145,24 @@ export const DepositPage: React.FC = () => {
 
       setSubmittedRef(assignedRef);
       setIsSubmitted(true);
+
+      // Auto-save phone to attached accounts if not already linked
+      if (playerPhone && playerPhone.trim().length >= 9) {
+        const clean = playerPhone.trim();
+        const attached = user?.attachedAccounts || [];
+        if (!attached.some(a => a.accountNumber === clean)) {
+          const newAcc = {
+            id: `acc-${Date.now()}`,
+            type: selectedMethod,
+            name: `${user?.fullName || 'Player'} (${selectedMethod})`,
+            accountNumber: clean,
+            isDefault: attached.length === 0,
+            isVerified: true
+          };
+          updateProfile({ attachedAccounts: [...attached, newAcc] });
+        }
+      }
+
       if (selectedMethod === 'Telebirr') {
         const next = rotateTelebirrReceiver();
         setTelebirrReceiver(next);
@@ -372,7 +408,44 @@ export const DepositPage: React.FC = () => {
                 </label>
 
                 <div className="input-field-group">
-                  <label className="field-tiny-label">{lang === 'am' ? 'የእርስዎ ስልክ ቁጥር' : 'Your Phone Number'}</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label className="field-tiny-label">
+                      {selectedMethod === 'Telebirr'
+                        ? (lang === 'am' ? 'የእርስዎ የቴሌብር ቁጥር' : 'Your Telebirr Phone Number')
+                        : (lang === 'am' ? 'የእርስዎ የሲቢኢ ቁጥር/ስልክ' : 'Your CBE Account / Phone')}
+                    </label>
+                    {matchingAttachedAccounts.length > 0 && (
+                      <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>
+                        <i className="fa-solid fa-circle-check" style={{ marginRight: '3px' }}></i>
+                        {lang === 'am' ? 'የተያያዘ አካውንት' : 'Linked Account'}
+                      </span>
+                    )}
+                  </div>
+
+                  {matchingAttachedAccounts.length > 0 && (
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                      {matchingAttachedAccounts.map(acc => (
+                        <button
+                          key={acc.id}
+                          type="button"
+                          onClick={() => setPlayerPhone(acc.accountNumber)}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.72rem',
+                            fontWeight: playerPhone === acc.accountNumber ? 700 : 500,
+                            background: playerPhone === acc.accountNumber ? 'rgba(5, 150, 105, 0.12)' : '#f8fafc',
+                            border: playerPhone === acc.accountNumber ? '1px solid #10b981' : '1px solid #e2e8f0',
+                            color: playerPhone === acc.accountNumber ? '#047857' : '#64748b',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {acc.isDefault ? '⭐ ' : ''}{acc.accountNumber}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="field-input-box">
                     <i className="fa-solid fa-phone field-icon"></i>
                     <input

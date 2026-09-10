@@ -27,7 +27,7 @@ interface AuthContextType {
   loginWithTelegram: (tgUser?: TelegramUser, customPhone?: string, referralCode?: string) => Promise<{ user: User; isNewUser: boolean }>;
   logout: () => void;
   resetPin: (phone: string, otpCode: string, newPin: string) => Promise<boolean>;
-  updateProfile: (data: Partial<User>) => void;
+  updateProfile: (data: Partial<User>) => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -170,6 +170,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 isPhoneVerified: !!isRealServerPhone,
                 role: apiResult.user.role || 'player',
                 referralCode: apiResult.user.referralCode,
+                attachedAccounts: apiResult.user.attachedAccounts || [],
                 pin: '1234',
                 createdAt: apiResult.user.createdAt || new Date().toISOString(),
                 lastLogin: new Date().toISOString()
@@ -218,6 +219,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 isPhoneVerified: !!isRealWebPhone,
                 role: u.role || 'player',
                 referralCode: u.referralCode,
+                attachedAccounts: u.attachedAccounts || [],
                 pin: '1234',
                 createdAt: u.createdAt || new Date().toISOString(),
                 lastLogin: new Date().toISOString()
@@ -375,6 +377,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isPhoneVerified: !!finalPhone,
         role: apiResult.user.role || 'player',
         referralCode: apiResult.user.referralCode,
+        attachedAccounts: apiResult.user.attachedAccounts || [],
         pin: '1234',
         createdAt: apiResult.user.createdAt || new Date().toISOString(),
         lastLogin: new Date().toISOString()
@@ -416,10 +419,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return await authService.resetPin(phone, otpCode, newPin);
   };
 
-  const updateProfile = (data: Partial<User>) => {
-    if (!user) return;
-    const updated = authService.updateProfile(user.id, data);
-    setUser(updated);
+  const updateProfile = async (data: Partial<User>): Promise<User | null> => {
+    if (!user) return null;
+
+    try {
+      // 1. Send update to Neon DB
+      const res = await apiClient.auth.updateProfile({
+        phone: data.phone,
+        fullName: data.fullName,
+        telegramUsername: data.telegramUsername,
+        attachedAccounts: data.attachedAccounts
+      });
+
+      if (res.success && res.user) {
+        const u = res.user;
+        const finalPhone = u.phone !== undefined ? u.phone : (data.phone !== undefined ? data.phone : user.phone);
+        const updatedUser: User = {
+          ...user,
+          fullName: u.fullName || data.fullName || user.fullName,
+          phone: finalPhone || '',
+          nationalPhone: finalPhone ? (finalPhone.startsWith('+251') ? `0${finalPhone.slice(4)}` : (finalPhone.startsWith('0') ? finalPhone : `0${finalPhone}`)) : '',
+          formattedPhone: finalPhone || '',
+          telegramUsername: u.telegramUsername !== undefined ? u.telegramUsername : (data.telegramUsername || user.telegramUsername),
+          attachedAccounts: u.attachedAccounts !== undefined ? u.attachedAccounts : (data.attachedAccounts || user.attachedAccounts || []),
+          isPhoneVerified: !!finalPhone
+        };
+        setUser(updatedUser);
+        localStorage.setItem('lomi_user', JSON.stringify(updatedUser));
+        if (updatedUser.attachedAccounts) {
+          localStorage.setItem('betika_attached_payout_accounts', JSON.stringify(updatedUser.attachedAccounts));
+        }
+        return updatedUser;
+      }
+    } catch (err) {
+      console.warn('⚠️ Backend updateProfile error, applying optimistic local fallback:', err);
+    }
+
+    // Optimistic fallback
+    const rawPhone = data.phone !== undefined ? data.phone : user.phone;
+    const fallbackUser: User = {
+      ...user,
+      ...data,
+      phone: rawPhone || '',
+      nationalPhone: rawPhone ? (rawPhone.startsWith('+251') ? `0${rawPhone.slice(4)}` : (rawPhone.startsWith('0') ? rawPhone : `0${rawPhone}`)) : user.nationalPhone,
+      formattedPhone: rawPhone || user.formattedPhone,
+      isPhoneVerified: !!rawPhone
+    };
+    setUser(fallbackUser);
+    localStorage.setItem('lomi_user', JSON.stringify(fallbackUser));
+    if (fallbackUser.attachedAccounts) {
+      localStorage.setItem('betika_attached_payout_accounts', JSON.stringify(fallbackUser.attachedAccounts));
+    }
+    return fallbackUser;
   };
 
   return (

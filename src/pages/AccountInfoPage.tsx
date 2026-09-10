@@ -40,6 +40,9 @@ export const AccountInfoPage: React.FC = () => {
 
   // Attached Accounts List (Telebirr & CBE ONLY)
   const [attachedAccounts, setAttachedAccounts] = useState<AttachedAccount[]>(() => {
+    if (user?.attachedAccounts && user.attachedAccounts.length > 0) {
+      return user.attachedAccounts;
+    }
     try {
       const saved = localStorage.getItem('betika_attached_payout_accounts');
       if (saved) return JSON.parse(saved);
@@ -61,6 +64,9 @@ export const AccountInfoPage: React.FC = () => {
       } else if (!hasRealPhone) {
         setIsEditingPhone(true);
       }
+      if (user.attachedAccounts && user.attachedAccounts.length > 0) {
+        setAttachedAccounts(user.attachedAccounts);
+      }
     }
   }, [user, hasRealPhone]);
 
@@ -81,17 +87,17 @@ export const AccountInfoPage: React.FC = () => {
     showToast(`📋 ${t('common.copied')}: ${label}`);
   };
 
-  const handleSaveName = () => {
+  const handleSaveName = async () => {
     if (!fullName.trim()) {
       showToast('⚠️ Please enter a valid name.');
       return;
     }
-    updateProfile({ fullName: fullName.trim() });
+    await updateProfile({ fullName: fullName.trim() });
     setIsEditingName(false);
     showToast('✅ Full Name updated successfully!');
   };
 
-  const handleSavePhone = (e: React.FormEvent) => {
+  const handleSavePhone = async (e: React.FormEvent) => {
     e.preventDefault();
     const validation = validateEthiopianPhone(phoneInput);
     if (!validation.isValid) {
@@ -99,37 +105,46 @@ export const AccountInfoPage: React.FC = () => {
       return;
     }
 
-    updateProfile({
-      phone: validation.canonicalNumber,
-      nationalPhone: validation.nationalNumber,
-      formattedPhone: validation.formattedDisplay,
-      carrier: validation.carrier || undefined
-    });
-
-    // Auto add as default telebirr account if not existing
-    if (!attachedAccounts.some(a => a.type === 'Telebirr')) {
-      setAttachedAccounts(prev => [
+    let updatedAttached = [...attachedAccounts];
+    // Auto add or update as default telebirr account if not existing
+    const telebirrIndex = updatedAttached.findIndex(a => a.type === 'Telebirr');
+    if (telebirrIndex === -1) {
+      updatedAttached = [
         {
           id: `acc-${Date.now()}`,
           type: 'Telebirr',
-          name: `${fullName} (Telebirr)`,
+          name: `${fullName || user?.fullName || 'My Account'} (Telebirr)`,
           accountNumber: validation.nationalNumber,
           isDefault: true,
           isVerified: true
         },
-        ...prev
-      ]);
+        ...updatedAttached
+      ];
+    } else if (!updatedAttached[telebirrIndex].accountNumber) {
+      updatedAttached[telebirrIndex] = {
+        ...updatedAttached[telebirrIndex],
+        accountNumber: validation.nationalNumber
+      };
     }
+    setAttachedAccounts(updatedAttached);
+
+    await updateProfile({
+      phone: validation.canonicalNumber,
+      nationalPhone: validation.nationalNumber,
+      formattedPhone: validation.formattedDisplay,
+      carrier: validation.carrier || undefined,
+      attachedAccounts: updatedAttached
+    });
 
     setIsEditingPhone(false);
     showToast(
       lang === 'am'
-        ? `✅ ስልክ ቁጥርዎ (${validation.formattedDisplay}) በተሳካ ሁኔታ ተያይዟል!`
-        : `✅ Phone number (${validation.formattedDisplay}) linked successfully!`
+        ? `✅ ስልክ ቁጥርዎ (${validation.formattedDisplay}) በተሳካ ሁኔታ ተቀምጧል!`
+        : `✅ Phone number (${validation.formattedDisplay}) saved successfully!`
     );
   };
 
-  const handleLinkTelegram = (e: React.FormEvent) => {
+  const handleLinkTelegram = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanUsername = tempTelegramInput.trim().replace(/^@/, '');
     if (!cleanUsername) {
@@ -137,27 +152,29 @@ export const AccountInfoPage: React.FC = () => {
       return;
     }
     setTelegramUsername(cleanUsername);
-    updateProfile({ telegramUsername: cleanUsername });
+    await updateProfile({ telegramUsername: cleanUsername });
     setIsEditingTelegram(false);
     showToast(`✅ Telegram @${cleanUsername} ${t('accountInfo.connected')}!`);
   };
 
-  const handleSetDefault = (id: string) => {
-    setAttachedAccounts(prev =>
-      prev.map(acc => ({
-        ...acc,
-        isDefault: acc.id === id
-      }))
-    );
+  const handleSetDefault = async (id: string) => {
+    const updated = attachedAccounts.map(acc => ({
+      ...acc,
+      isDefault: acc.id === id
+    }));
+    setAttachedAccounts(updated);
+    await updateProfile({ attachedAccounts: updated });
     showToast('⭐ Default payout account updated!');
   };
 
-  const handleRemoveAccount = (id: string) => {
-    setAttachedAccounts(prev => prev.filter(a => a.id !== id));
+  const handleRemoveAccount = async (id: string) => {
+    const updated = attachedAccounts.filter(a => a.id !== id);
+    setAttachedAccounts(updated);
+    await updateProfile({ attachedAccounts: updated });
     showToast('🗑️ Attached account removed.');
   };
 
-  const handleAddNewAccount = (e: React.FormEvent) => {
+  const handleAddNewAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAccNumber || newAccNumber.trim().length < 8) {
       showToast('⚠️ Please enter a valid account or phone number.');
@@ -167,15 +184,18 @@ export const AccountInfoPage: React.FC = () => {
     const newAcc: AttachedAccount = {
       id: `acc-${Date.now()}`,
       type: newAccType,
-      name: newAccName || `${newAccType} Account`,
+      name: newAccName.trim() || `${fullName || user?.fullName || 'Player'} (${newAccType})`,
       accountNumber: newAccNumber.trim(),
       isDefault: attachedAccounts.length === 0,
       isVerified: true
     };
 
-    setAttachedAccounts(prev => [...prev, newAcc]);
+    const updated = [...attachedAccounts, newAcc];
+    setAttachedAccounts(updated);
     setShowAddAccount(false);
     setNewAccNumber('');
+    setNewAccName('');
+    await updateProfile({ attachedAccounts: updated });
     showToast(`✅ ${newAccType} account attached successfully!`);
   };
 

@@ -247,6 +247,7 @@ router.post('/telegram', async (req, res) => {
         photoUrl: userRow.photo_url,
         role: userRow.role,
         referralCode: userRow.referral_code,
+        attachedAccounts: userRow.attached_accounts || [],
         createdAt: userRow.created_at
       },
       wallet: walletRow
@@ -475,6 +476,7 @@ router.get('/me', requireAuth, async (req: AuthenticatedRequest, res) => {
         avatar: userRow.avatar || '👤',
         photoUrl: userRow.photo_url,
         role: userRow.role,
+        attachedAccounts: userRow.attached_accounts || [],
         createdAt: userRow.created_at
       },
       wallet: {
@@ -489,4 +491,83 @@ router.get('/me', requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 });
 
+/**
+ * Update Authenticated Player Profile & Attached Payout Accounts
+ * Persists phone number, name, telegram handle, and attached accounts directly to Neon DB
+ */
+router.put('/profile', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const userId = req.user!.id;
+    const { phone, fullName, telegramUsername, attachedAccounts } = req.body;
+
+    const updates: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (phone !== undefined) {
+      updates.push(`phone = $${idx++}`);
+      values.push(phone && typeof phone === 'string' ? phone.trim() : null);
+    }
+    if (fullName !== undefined && typeof fullName === 'string') {
+      updates.push(`full_name = $${idx++}`);
+      values.push(fullName.trim());
+    }
+    if (telegramUsername !== undefined && typeof telegramUsername === 'string') {
+      updates.push(`telegram_username = $${idx++}`);
+      values.push(telegramUsername.trim().replace(/^@/, ''));
+    }
+    if (attachedAccounts !== undefined && Array.isArray(attachedAccounts)) {
+      updates.push(`attached_accounts = $${idx++}::jsonb`);
+      values.push(JSON.stringify(attachedAccounts));
+    }
+
+    if (updates.length === 0) {
+      return res.json({ success: true, message: 'No updates requested' });
+    }
+
+    values.push(userId);
+    const updateRes = await query(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+
+    if (updateRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const userRow = updateRes.rows[0];
+
+    const walletRes = await query(`SELECT balance, bonus, locked_balance FROM wallets WHERE user_id = $1`, [userId]);
+    const walletRow = walletRes.rows[0] || { balance: '0', bonus: '0', locked_balance: '0' };
+
+    return res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: userRow.id,
+        telegramId: userRow.telegram_id,
+        telegramUsername: userRow.telegram_username,
+        fullName: userRow.full_name,
+        firstName: userRow.first_name,
+        lastName: userRow.last_name,
+        phone: userRow.phone,
+        avatar: userRow.avatar || '👤',
+        photoUrl: userRow.photo_url,
+        role: userRow.role,
+        attachedAccounts: userRow.attached_accounts || [],
+        createdAt: userRow.created_at
+      },
+      wallet: {
+        balance: parseFloat(walletRow.balance || '0'),
+        bonus: parseFloat(walletRow.bonus || '0'),
+        lockedBalance: parseFloat(walletRow.locked_balance || '0')
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ [Auth Update Profile Error]:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Failed to update profile' });
+  }
+});
+
 export default router;
+
