@@ -10,6 +10,9 @@
     "build": "vite build",
     "start": "tsx server/server.ts",
     "db:migrate": "tsx server/db/migrate.ts",
+    "db:backup": "tsx server/scripts/backup_database.ts",
+    "db:restore": "tsx server/scripts/restore_database.ts",
+    "db:status": "tsx server/scripts/check_neon_limits.ts",
     "preview": "vite preview"
   },
   "dependencies": {

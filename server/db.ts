@@ -16,8 +16,8 @@ if (!connectionString) {
 export const pool = new Pool({
   connectionString,
   max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 15000
+  idleTimeoutMillis: 15000,
+  connectionTimeoutMillis: 30000
 });
 
 pool.on('error', (err) => {
@@ -83,3 +83,76 @@ export async function checkDbConnection(): Promise<{ connected: boolean; latency
     };
   }
 }
+
+export interface TableStorageInfo {
+  tableName: string;
+  rowCount: number;
+  totalBytes: number;
+  totalFormatted: string;
+}
+
+export interface DatabaseStorageStats {
+  totalBytes: number;
+  totalFormatted: string;
+  quotaBytes: number;
+  quotaFormatted: string;
+  usagePercent: number;
+  status: 'healthy' | 'warning' | 'critical';
+  tables: TableStorageInfo[];
+  checkedAt: string;
+}
+
+/**
+ * Query live PostgreSQL disk usage and per-table breakdowns against Neon Free-Tier limits (512 MB)
+ */
+export async function getDatabaseStorageStats(): Promise<DatabaseStorageStats> {
+  const FREE_TIER_QUOTA_BYTES = 512 * 1024 * 1024; // 512 MB (536,870,912 bytes)
+
+  const [sizeRes, tablesRes] = await Promise.all([
+    query<{ total_bytes: string }>('SELECT pg_database_size(current_database()) as total_bytes'),
+    query<{ table_name: string; row_count: string; total_bytes: string }>(`
+      SELECT 
+        relname AS table_name,
+        COALESCE(n_live_tup, 0) AS row_count,
+        COALESCE(pg_total_relation_size(relid), 0) AS total_bytes
+      FROM pg_stat_user_tables
+      ORDER BY total_bytes DESC
+    `)
+  ]);
+
+  const totalBytes = parseInt(sizeRes.rows[0]?.total_bytes || '0', 10);
+  const usagePercent = Math.min(100, Number(((totalBytes / FREE_TIER_QUOTA_BYTES) * 100).toFixed(2)));
+
+  let status: 'healthy' | 'warning' | 'critical' = 'healthy';
+  if (usagePercent > 85) {
+    status = 'critical';
+  } else if (usagePercent > 70) {
+    status = 'warning';
+  }
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} kB`;
+    return `${bytes} B`;
+  };
+
+  const tables: TableStorageInfo[] = tablesRes.rows.map(r => ({
+    tableName: r.table_name,
+    rowCount: parseInt(r.row_count || '0', 10),
+    totalBytes: parseInt(r.total_bytes || '0', 10),
+    totalFormatted: formatBytes(parseInt(r.total_bytes || '0', 10))
+  }));
+
+  return {
+    totalBytes,
+    totalFormatted: formatBytes(totalBytes),
+    quotaBytes: FREE_TIER_QUOTA_BYTES,
+    quotaFormatted: '512 MB',
+    usagePercent,
+    status,
+    tables,
+    checkedAt: new Date().toISOString()
+  };
+}
+

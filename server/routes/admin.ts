@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { query, withTransaction } from '../db.ts';
+import { query, withTransaction, getDatabaseStorageStats } from '../db.ts';
 import { requireAdmin, AuthenticatedRequest } from '../middleware/auth.ts';
 import { io } from '../io.ts';
 import { gameEngine } from '../game/BingoGameEngine.ts';
+import { exportDatabaseBackup } from '../scripts/backup_database.ts';
 
 const router = Router();
 
@@ -565,11 +566,63 @@ router.post('/fairness-config', requireAdmin, async (req: AuthenticatedRequest, 
       botWinRate: typeof botWinRate === 'number' ? botWinRate : undefined,
       roomCapacity: typeof roomCapacity === 'number' ? roomCapacity : undefined
     });
-    return res.json({ success: true, config: gameEngine.getFairnessConfig() });
+/**
+ * Live Neon PostgreSQL Health & Storage Quota Monitor
+ */
+router.get('/database-health', requireAdmin, async (_req, res) => {
+  try {
+    const stats = await getDatabaseStorageStats();
+    return res.json({ success: true, stats });
   } catch (error: any) {
-    console.error('❌ [Admin Fairness Config POST Error]:', error);
-    return res.status(500).json({ success: false, error: 'Failed to update fairness config' });
+    console.error('❌ [Admin DB Health Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to query database health' });
+  }
+});
+
+/**
+ * 1-Click Authoritative Database Snapshot Download (JSON)
+ */
+router.get('/database-backup', requireAdmin, async (_req, res) => {
+  try {
+    const backup = await exportDatabaseBackup();
+    const filename = `neon-backup-${new Date().toISOString().slice(0, 10)}.json`;
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(JSON.stringify(backup, null, 2));
+  } catch (error: any) {
+    console.error('❌ [Admin DB Backup Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to generate database backup' });
+  }
+});
+
+/**
+ * Free-Tier Storage Optimizer: Prune Heavy Base64 Receipts Older than 30 Days
+ */
+router.post('/database-prune', requireAdmin, async (_req, res) => {
+  try {
+    // Prune base64 receipt screenshots for resolved deposits older than 30 days
+    const result = await query(`
+      UPDATE deposit_requests
+      SET receipt_image = '[ARCHIVED_SAVED_STORAGE]'
+      WHERE status IN ('approved', 'rejected')
+        AND receipt_image IS NOT NULL
+        AND receipt_image NOT LIKE '[ARCHIVED%'
+        AND created_at < NOW() - INTERVAL '30 days'
+    `);
+
+    const stats = await getDatabaseStorageStats();
+    return res.json({
+      success: true,
+      message: `Pruned base64 receipts from ${result.rowCount} legacy deposits.`,
+      prunedCount: result.rowCount,
+      stats
+    });
+  } catch (error: any) {
+    console.error('❌ [Admin DB Prune Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to optimize database storage' });
   }
 });
 
 export default router;
+

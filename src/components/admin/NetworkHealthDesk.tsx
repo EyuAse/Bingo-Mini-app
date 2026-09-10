@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { socketService } from '../../services/socketService.ts';
 import { getApiBase } from '../../config/env.ts';
+import { DatabaseHealthWidget } from './DatabaseHealthWidget.tsx';
 
 interface RoomMetric {
   id: string;
@@ -270,7 +271,10 @@ export const NetworkHealthDesk: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. Disconnect Protection & Offline Wins Audit Ledger */}
+      {/* 4. Neon Cloud Database & Free-Tier Quota Health Desk */}
+      <DatabaseHealthWidget />
+
+      {/* 5. Disconnect Protection & Offline Wins Audit Ledger */}
       <div className="desk-table-card" style={{ marginTop: '20px' }}>
         <div className="desk-table-header">
           <div className="table-header-left">

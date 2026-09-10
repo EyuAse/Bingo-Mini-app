@@ -412,6 +412,43 @@ export const apiClient = {
         headers: { ...adminHeaders }
       });
       return handleResponse<{ success: boolean; message: string }>(res);
+    },
+
+    async getDatabaseHealth() {
+      const adminHeaders = await getAdminAuthHeader();
+      const res = await fetch(`${API_BASE}/admin/database-health`, {
+        headers: { ...adminHeaders }
+      });
+      return handleResponse<{ success: boolean; stats: any }>(res);
+    },
+
+    async downloadDatabaseBackup() {
+      const adminHeaders = await getAdminAuthHeader();
+      const res = await fetch(`${API_BASE}/admin/database-backup`, {
+        headers: { ...adminHeaders }
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to generate backup: HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `neon-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      return { success: true };
+    },
+
+    async pruneDatabaseStorage() {
+      const adminHeaders = await getAdminAuthHeader();
+      const res = await fetch(`${API_BASE}/admin/database-prune`, {
+        method: 'POST',
+        headers: { ...adminHeaders }
+      });
+      return handleResponse<{ success: boolean; message: string; prunedCount: number; stats: any }>(res);
     }
   }
 };
