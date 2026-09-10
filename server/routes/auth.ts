@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { query, withTransaction } from '../db.ts';
 import { generateToken, requireAuth, AuthenticatedRequest } from '../middleware/auth.ts';
-import { io } from '../server.ts';
+import { io } from '../io.ts';
 
 const router = Router();
 

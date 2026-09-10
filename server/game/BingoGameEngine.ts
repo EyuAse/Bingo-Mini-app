@@ -1,4 +1,4 @@
-import { io } from '../server.ts';
+import { io } from '../io.ts';
 import { query, withTransaction } from '../db.ts';
 import { telegramBotService } from '../services/telegramBotService.ts';
 import {

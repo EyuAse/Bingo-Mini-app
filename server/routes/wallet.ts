@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { query, withTransaction } from '../db.ts';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.ts';
-import { io } from '../server.ts';
+import { io } from '../io.ts';
 import { gameEngine } from '../game/BingoGameEngine.ts';
 
 const router = Router();

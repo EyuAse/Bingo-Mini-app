@@ -23,6 +23,9 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import { initSocketIO, io } from './io.ts';
+export { io };
+
 const app = express();
 const server = http.createServer(app);
 
@@ -30,16 +33,7 @@ const PORT = process.env.PORT || 5000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 // Socket.IO Server Configuration with Mobile-Resilient Keep-Alive (15s timeout prevents cellular drops)
-export const io = new SocketIOServer(server, {
-  cors: {
-    origin: CORS_ORIGIN,
-    methods: ['GET', 'POST'],
-    credentials: true
-  },
-  pingInterval: 10000,
-  pingTimeout: 15000,
-  transports: ['websocket', 'polling']
-});
+initSocketIO(server, CORS_ORIGIN);
 
 // Setup Multiplayer Game Socket Handlers
 setupGameSockets(io);
