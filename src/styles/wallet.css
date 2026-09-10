@@ -3484,6 +3484,516 @@
   margin-bottom: 24px;
 }
 
+/* ============================================================
+   WALLET MENU: AMBER DICE ICON & BADGE
+   ============================================================ */
+.menu-row-icon-box.amber {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+}
+
+.menu-counter-badge.amber {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* ============================================================
+   GAME & BET HISTORY (የጨዋታ እና የውርርድ ታሪክ) STYLING
+   ============================================================ */
+.bet-history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 30px;
+}
+
+.btn-refresh-history {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.btn-refresh-history:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.btn-refresh-history:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Hero Performance Summary Card */
+.bet-history-hero-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: 20px;
+  padding: 18px 16px;
+  color: #ffffff;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hero-winrate-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.winrate-circle-badge {
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(245, 158, 11, 0.4);
+  border-radius: 16px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+}
+
+.winrate-percent-num {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #fbbf24;
+  line-height: 1;
+}
+
+.winrate-percent-lbl {
+  font-size: 0.625rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.hero-main-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hero-profit-badge {
+  font-size: 1.25rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profit-subtext {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.hero-games-record {
+  font-size: 0.8125rem;
+  color: #cbd5e1;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.record-divider {
+  color: #64748b;
+}
+
+.record-wins {
+  color: #34d399;
+}
+
+.record-losses {
+  color: #f87171;
+}
+
+.hero-secondary-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.secondary-stat-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sec-stat-label {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+}
+
+.sec-stat-val {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.sec-stat-val.text-emerald {
+  color: #34d399;
+}
+
+/* Filters Bar */
+.bet-history-filters-bar {
+  display: flex;
+  gap: 8px;
+}
+
+.bet-filter-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.8125rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.bet-filter-pill.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.bet-filter-pill.active.wins {
+  background: #065f46;
+  border-color: #065f46;
+  color: #34d399;
+}
+
+.bet-filter-pill.active.losses {
+  background: #881337;
+  border-color: #881337;
+  color: #fda4af;
+}
+
+.filter-count-badge {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.6875rem;
+}
+
+.bet-filter-pill.active .filter-count-badge {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Round Cards List */
+.bet-history-rounds-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bet-round-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.bet-round-card.won {
+  border-left: 5px solid #10b981;
+}
+
+.bet-round-card.lost {
+  border-left: 5px solid #cbd5e1;
+}
+
+.round-card-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.round-room-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.round-room-tag {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #0f172a;
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.round-number-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.round-outcome-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.round-outcome-pill.won {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.round-outcome-pill.lost {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.round-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.round-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.round-meta-item.winner-item {
+  color: #b45309;
+  font-weight: 700;
+}
+
+.text-gold {
+  color: #f59e0b;
+}
+
+/* Cartelas Selection Row */
+.round-cartelas-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.cartelas-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.cartelas-pills-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.cartela-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cartela-pill.winner {
+  background: #fef9c3;
+  border-color: #facc15;
+  color: #854d0e;
+}
+
+.cartela-pill.selected {
+  border-color: #0f172a;
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.cartela-pill.winner.selected {
+  background: #854d0e;
+  border-color: #854d0e;
+  color: #ffffff;
+}
+
+.cartela-bet-stake {
+  font-size: 0.6875rem;
+  opacity: 0.85;
+}
+
+.btn-toggle-inspector {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.btn-toggle-inspector:hover {
+  text-decoration: underline;
+}
+
+/* 5x5 Cartela Inspector */
+.round-cartela-inspector-panel {
+  background: #0f172a;
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 4px;
+  color: #ffffff;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.inspector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.8125rem;
+}
+
+.inspector-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+}
+
+.winning-badge {
+  background: #854d0e;
+  color: #fef08a;
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.inspector-stake {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.inspector-grid-5x5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+
+.grid-col-header {
+  font-weight: 900;
+  font-size: 0.75rem;
+  padding: 4px 0;
+  border-radius: 4px;
+}
+
+.grid-col-header.col-b { background: #ef4444; color: #ffffff; }
+.grid-col-header.col-i { background: #3b82f6; color: #ffffff; }
+.grid-col-header.col-n { background: #8b5cf6; color: #ffffff; }
+.grid-col-header.col-g { background: #10b981; color: #ffffff; }
+.grid-col-header.col-o { background: #f59e0b; color: #ffffff; }
+
+.inspector-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.inspector-cell.cell-free {
+  background: rgba(234, 179, 8, 0.2);
+  border: 1px solid #eab308;
+  color: #fbbf24;
+}
+
+.inspector-cell.cell-drawn {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.inspector-cell.cell-highlight {
+  background: #f59e0b;
+  color: #0f172a;
+  font-weight: 900;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+.btn-play-empty-cta {
+  margin-top: 14px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-weight: 900;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  transition: all 0.15s ease;
+}
+
+.btn-play-empty-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+}
+
 
 
 

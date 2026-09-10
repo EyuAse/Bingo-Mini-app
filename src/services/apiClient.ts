@@ -271,6 +271,51 @@ export const apiClient = {
           status: 'paid' | 'pending_deposit';
         }>;
       }>(res);
+    },
+
+    async getGameHistory() {
+      const res = await fetch(`${API_BASE}/wallet/game-history`, {
+        headers: { ...getAuthHeader() }
+      });
+      return handleResponse<{
+        success: boolean;
+        summary: {
+          totalGames: number;
+          totalWins: number;
+          totalLosses: number;
+          winRate: number;
+          totalStaked: number;
+          totalWon: number;
+          netProfit: number;
+        };
+        rounds: Array<{
+          roundId: string;
+          roomId: string;
+          roomName: string;
+          roundNumber: number;
+          phase: string;
+          totalPot: number;
+          winnerPayout: number;
+          winnerNames: string[];
+          winnerCartelas: number[];
+          winnerUserIds: string[];
+          drawnNumbers: number[];
+          endedAt: string | null;
+          betTime: string;
+          totalStake: number;
+          isWinner: boolean;
+          userWonAmount: number;
+          netPnl: number;
+          tickets: Array<{
+            id: string;
+            cartelaId: number;
+            cardMatrix: any;
+            betAmount: number;
+            isWinner: boolean;
+            status: string;
+          }>;
+        }>;
+      }>(res);
     }
   },
 
