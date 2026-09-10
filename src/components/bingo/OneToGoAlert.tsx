@@ -16,7 +16,9 @@ const WIN_PATTERNS = [
   [1, 6, 11, 16, 21],
   [2, 7, 12, 17, 22],
   [3, 8, 13, 18, 23],
-  [4, 9, 14, 19, 24]
+  [4, 9, 14, 19, 24],
+  // 4 Corners
+  [0, 4, 20, 24]
 ];
 
 interface OneToGoInfo {
@@ -59,7 +61,7 @@ export const OneToGoAlert: React.FC = () => {
 
     for (const pattern of WIN_PATTERNS) {
       const markedCount = pattern.filter(idx => card.data[idx]?.marked).length;
-      if (markedCount === 4) {
+      if (markedCount === pattern.length - 1) {
         // Find the one remaining cell in this pattern
         const missingIdx = pattern.find(idx => !card.data[idx]?.marked);
         if (missingIdx !== undefined) {

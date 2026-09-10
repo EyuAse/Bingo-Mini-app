@@ -3730,6 +3730,16 @@
   border-left: 5px solid #cbd5e1;
 }
 
+.bet-round-card.in-progress {
+  border-left: 5px solid #f59e0b;
+  background: #fffdfa;
+}
+
+.bet-round-card.queued {
+  border-left: 5px solid #0284c7;
+  background: #f8fafc;
+}
+
 .round-card-top-row {
   display: flex;
   justify-content: space-between;
@@ -3776,6 +3786,18 @@
 .round-outcome-pill.lost {
   background: #f1f5f9;
   color: #64748b;
+}
+
+.round-outcome-pill.in-progress {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.round-outcome-pill.queued {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
 }
 
 .round-meta-row {

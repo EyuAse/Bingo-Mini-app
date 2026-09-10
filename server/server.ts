@@ -138,6 +138,7 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     userTickets,
     isPreBuy,
     waitingForPlayers: room.waitingForPlayers || false,
+    waitingForOtherHouses: room.waitingForOtherHouses || false,
     realPlayerCount: room.tickets.size,
     activeUsersCount: Math.max(room.activeUsers.size, room.activeSockets.size),
     occupiedCartelaIds,

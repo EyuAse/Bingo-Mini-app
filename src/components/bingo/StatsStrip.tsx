@@ -49,7 +49,7 @@ export const StatsStrip: React.FC = () => {
         ? (lang === 'am' ? 'እይታ 👁️' : 'Spectate 👁️')
         : `${Math.max(currentPlayers, hasTicket ? 1 : 0)}`);
 
-  const canSwitchStake = roundPhase === 'lobby' && !hasTicket;
+  const canSwitchStake = roundPhase === 'lobby' || !hasTicket;
 
   return (
     <>

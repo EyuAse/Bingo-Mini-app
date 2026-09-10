@@ -116,6 +116,7 @@ interface BingoContextType {
   // Lobby State & Join Feed
   roomMode: 'active' | 'spectating';
   waitingForPlayers: boolean;
+  waitingForOtherHouses: boolean;
   realPlayerCount: number;
   activeUsersCount: number;
   joinFeed: Array<{ id: number; userName: string; countdownStarted: boolean }>;
@@ -265,6 +266,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [lobbyCountdown, setLobbyCountdown] = useState<number>(45);
   const [winnerCountdown, setWinnerCountdown] = useState<number>(8);
   const [waitingForPlayers, setWaitingForPlayers] = useState<boolean>(true);
+  const [waitingForOtherHouses, setWaitingForOtherHouses] = useState<boolean>(false);
   const [roomMode, setRoomMode] = useState<'active' | 'spectating'>('active');
   const [realPlayerCount, setRealPlayerCount] = useState<number>(0);
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
@@ -434,6 +436,17 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
     }
 
+    // If switching rooms with a pre-bought ticket, cancel & refund from old room first
+    if (hasPreBoughtNext && userRef.current?.id) {
+      try {
+        const oldRoomId = `room-${betAmount}`;
+        await socketService.cancelTicketLobby(oldRoomId, userRef.current.id);
+        setHasPreBoughtNext(false);
+      } catch (err) {
+        console.warn('Error cancelling pre-bought ticket on room switch:', err);
+      }
+    }
+
     setBetAmountState(newStake);
     showToast(`🎯 Switched to ${newStake} ETB Room`);
   };
@@ -536,6 +549,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setCartela3Data(prev => markMatching(prev));
     }
   }, []);
+
+  const roundPhaseRef = useRef(roundPhase);
+  roundPhaseRef.current = roundPhase;
 
   const hasPreBoughtNextRef = useRef<boolean>(false);
   hasPreBoughtNextRef.current = hasPreBoughtNext;
@@ -757,6 +773,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       else if (typeof state.totalPot === 'number') setPrizePool(state.totalPot);
 
       if (typeof state.waitingForPlayers === 'boolean') setWaitingForPlayers(state.waitingForPlayers);
+      if (typeof state.waitingForOtherHouses === 'boolean') setWaitingForOtherHouses(state.waitingForOtherHouses);
       if (state.mode === 'active' || state.mode === 'spectating') setRoomMode(state.mode);
       if (typeof state.realPlayerCount === 'number') setRealPlayerCount(state.realPlayerCount);
       if (typeof state.activeUsersCount === 'number') setActiveUsersCount(state.activeUsersCount);
@@ -781,8 +798,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current, updatedIds[0], cartela1DataRef.current));
         if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current, updatedIds[1], cartela2DataRef.current));
 
-        if (state.isPreBuy) {
+        if (state.isPreBuy || state.mode === 'spectating') {
           setHasPreBoughtNext(true);
+          setHasTicket(false);
         } else {
           setHasTicket(true);
           if (state.phase === 'playing') {
@@ -844,6 +862,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // 2. Ball Called
     const unsubBallCalled = socketService.onBallCalled((data: any) => {
       if (data.roomId && data.roomId !== roomId) return;
+      // Staggered Audio Isolation: Suppress ball audio & speech if this room is in winner phase
+      if (roundPhaseRef.current === 'winner') return;
+
       lastBallTimeRef.current = Date.now();
       if (data.currentCall) {
         applyDrawnNumberRef.current(data.currentCall.num, data.currentCall.col);
@@ -877,14 +898,24 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setShowWinModal(false);
       if (data.winnerPayout) setPrizePool(data.winnerPayout);
 
-      // If player had pre-bought ticket, transition to active playing
-      setHasPreBoughtNext(prev => {
-        if (prev) {
-          setHasTicket(true);
+      // If house is spectating (< 2 players), lone-player ticket is safely rolled over to next round
+      if (data.mode === 'spectating') {
+        setHasTicket(prevTicket => {
+          if (prevTicket) {
+            setHasPreBoughtNext(true);
+          }
           return false;
-        }
-        return false;
-      });
+        });
+      } else {
+        // Active house: If player had pre-bought ticket, transition to active playing
+        setHasPreBoughtNext(prev => {
+          if (prev) {
+            setHasTicket(true);
+            return false;
+          }
+          return false;
+        });
+      }
 
       // Generate fresh cards
       const currentIds = selectedCartelaIdsRef.current;
@@ -976,6 +1007,15 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       refreshBalanceRef.current();
     });
 
+    // 6.1 Lone-Player Stake Protection Notice (Spectator Mode Rollover)
+    const unsubLonePlayer = socketService.onLonePlayerSpectatingNotice((data: any) => {
+      if (data.roomId && data.roomId !== roomId) return;
+      setHasTicket(false);
+      setHasPreBoughtNext(true);
+      setRoomMode('spectating');
+      showToast(data.message || '👀 Watching as Spectator • Your ticket is reserved for the next round!');
+    });
+
     // 7. Network Connection Status & Offline Win Listeners
     const unsubConn = socketService.onConnectionStatusChange((status, latency) => {
       setNetworkLatency(latency);
@@ -1044,6 +1084,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       unsubRoundWinner();
       if (unsubBalance) unsubBalance();
       unsubTicketsSynced();
+      unsubLonePlayer();
       unsubConn();
       unsubOfflineWins();
       unsubPlayerJoined();
@@ -1101,6 +1142,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (typeof data.winnerPayout === 'number') setPrizePool(data.winnerPayout);
     else if (typeof data.totalPot === 'number') setPrizePool(data.totalPot);
     if (typeof data.waitingForPlayers === 'boolean') setWaitingForPlayers(data.waitingForPlayers);
+    if (typeof data.waitingForOtherHouses === 'boolean') setWaitingForOtherHouses(data.waitingForOtherHouses);
     if (data.mode === 'active' || data.mode === 'spectating') setRoomMode(data.mode);
     if (typeof data.realPlayerCount === 'number') setRealPlayerCount(data.realPlayerCount);
     if (typeof data.activeUsersCount === 'number') setActiveUsersCount(data.activeUsersCount);
@@ -1130,8 +1172,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current, updatedIds[1], cartela2DataRef.current));
       if (tickets[2]?.cardMatrix) setCartela3Data(hydrateCardWithDrawn(tickets[2].cardMatrix, drawn, autoPlayRef.current, updatedIds[2], cartela3DataRef.current));
 
-      if (data.isPreBuy) {
+      if (data.isPreBuy || data.mode === 'spectating') {
         setHasPreBoughtNext(true);
+        setHasTicket(false);
       } else {
         setHasTicket(true);
         if (data.phase === 'playing') {
@@ -1830,6 +1873,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         isMuted,
         toggleMute,
         waitingForPlayers,
+        waitingForOtherHouses,
         roomMode,
         realPlayerCount,
         activeUsersCount,

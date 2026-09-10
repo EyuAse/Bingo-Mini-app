@@ -27,7 +27,9 @@ export const CurrentCallBanner: React.FC = () => {
     isMuted,
     toggleMute,
     autoPlay,
-    toggleAutoPlay
+    toggleAutoPlay,
+    waitingForOtherHouses,
+    winnerCountdown
   } = useBingo();
   const { t, lang } = useLanguage();
 
@@ -51,11 +53,22 @@ export const CurrentCallBanner: React.FC = () => {
         <div className="compact-call-title">
           {roundPhase === 'playing'
             ? (lang === 'am' ? 'የተጠራ ቁጥር' : 'Current Call')
+            : roundPhase === 'winner'
+            ? (lang === 'am' ? 'የአሸናፊ ማስታወቂያ 🏆' : 'Round Concluded 🏆')
             : (lang === 'am' ? 'የተጫዋች ጥሪ' : 'Matchmaking')}
         </div>
 
         <div className="compact-call-badge-wrap">
-          {currentCall ? (
+          {roundPhase === 'winner' ? (
+            <div className="compact-current-ball-pill" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fcd34d' }}>
+              <span className="call-ball-col">{waitingForOtherHouses ? '⏳' : '🏆'}</span>
+              <span className="call-ball-num lobby-status-text">
+                {waitingForOtherHouses
+                  ? (lang === 'am' ? 'ሌሎች ክፍሎች በመጠበቅ...' : 'Waiting other houses...')
+                  : `${winnerCountdown}s`}
+              </span>
+            </div>
+          ) : currentCall ? (
             <div className={`compact-current-ball-pill ${mainColClass}`}>
               <span className="call-ball-col">{currentCall.col}</span>
               <span className="call-ball-hyphen">-</span>

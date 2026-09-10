@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { query, withTransaction } from '../db.ts';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.ts';
 import { io } from '../server.ts';
+import { gameEngine } from '../game/BingoGameEngine.ts';
 
 const router = Router();
 
@@ -372,6 +373,7 @@ router.get('/game-history', requireAuth, async (req: AuthenticatedRequest, res) 
   try {
     const userId = req.user!.id;
 
+    // 1. Authoritative Personal Tickets from Neon DB
     const ticketsRes = await query(`
       SELECT 
         gt.id as ticket_id,
@@ -423,6 +425,7 @@ router.get('/game-history', requireAuth, async (req: AuthenticatedRequest, res) 
           roomName: row.room_name,
           roundNumber: row.round_number,
           phase: row.phase,
+          status: row.phase === 'ended' ? 'ended' : 'in_progress',
           totalPot: parseFloat(row.total_pot || '0'),
           winnerPayout: parseFloat(row.winner_payout || '0'),
           winnerNames,
@@ -436,6 +439,7 @@ router.get('/game-history', requireAuth, async (req: AuthenticatedRequest, res) 
           isWinner: false,
           userWonAmount: 0,
           netPnl: 0,
+          isLive: row.phase !== 'ended'
         });
       }
 
@@ -467,7 +471,133 @@ router.get('/game-history', requireAuth, async (req: AuthenticatedRequest, res) 
       });
     }
 
-    const rounds = Array.from(roundsMap.values());
+    // 2. Real-Time In-Flight Personal Tickets (Lobby, Playing, or Lone-Player Rollover)
+    try {
+      const liveActiveRounds = gameEngine.getUserActiveTickets(userId);
+      for (const active of liveActiveRounds) {
+        const existingKey = active.roundId;
+        if (existingKey && roundsMap.has(existingKey)) {
+          // Already in DB roundsMap, skip duplicate
+          continue;
+        }
+
+        const liveRoundKey = active.roundId || `live_${active.roomId}_${active.roundNumber}_${active.isQueued ? 'q' : 'a'}`;
+        const totalStake = active.tickets.reduce((sum, t) => sum + t.betAmount, 0);
+
+        roundsMap.set(liveRoundKey, {
+          roundId: liveRoundKey,
+          roomId: active.roomId,
+          roomName: active.roomName,
+          roundNumber: active.roundNumber,
+          phase: active.isQueued ? 'queued' : active.phase,
+          status: active.isQueued ? 'queued' : 'in_progress',
+          totalPot: active.totalPot,
+          winnerPayout: active.winnerPayout,
+          winnerNames: [],
+          winnerCartelas: [],
+          winnerUserIds: [],
+          drawnNumbers: [],
+          endedAt: null,
+          betTime: new Date().toISOString(),
+          tickets: active.tickets.map((t, idx) => ({
+            id: `live_ticket_${idx}_${t.cartelaId}`,
+            cartelaId: t.cartelaId,
+            cardMatrix: t.cardMatrix,
+            betAmount: t.betAmount,
+            isWinner: false,
+            status: active.isQueued ? 'queued' : 'in_progress'
+          })),
+          totalStake,
+          isWinner: false,
+          userWonAmount: 0,
+          netPnl: 0,
+          isLive: true
+        });
+      }
+    } catch (liveErr) {
+      console.warn('⚠️ [Wallet Game History] Could not query live active tickets from engine:', liveErr);
+    }
+
+    // 3. Fallback Reconciliation with Financial Ledger (wallet_transactions)
+    try {
+      const txRes = await query(`
+        SELECT id, type, amount, description, status, created_at
+        FROM wallet_transactions
+        WHERE user_id = $1 AND type IN ('bet', 'win')
+        ORDER BY created_at DESC
+        LIMIT 50
+      `, [userId]);
+
+      const betTxs = txRes.rows.filter((tx: any) => tx.type === 'bet');
+      const winTxs = txRes.rows.filter((tx: any) => tx.type === 'win');
+
+      for (const betTx of betTxs) {
+        const betTime = new Date(betTx.created_at).getTime();
+        // Check if an existing round in roundsMap matches within ~3 minutes
+        const hasMatchingRound = Array.from(roundsMap.values()).some(r => {
+          const roundTime = new Date(r.betTime).getTime();
+          return Math.abs(roundTime - betTime) < 3 * 60 * 1000;
+        });
+
+        if (!hasMatchingRound) {
+          // Synthesize an audited historical round from ledger
+          const betAmt = parseFloat(betTx.amount || '0');
+          const roomMatch = (betTx.description || '').match(/(?:in\s+)?(\d+\s+Birr\s+Room|VIP\s+Room)/i);
+          const roomName = roomMatch ? roomMatch[1] : 'Live Bingo Room';
+
+          // Check if there was a corresponding win within 3 minutes after this bet
+          const matchingWin = winTxs.find((w: any) => {
+            const wTime = new Date(w.created_at).getTime();
+            return wTime >= betTime && wTime - betTime <= 3 * 60 * 1000;
+          });
+
+          const isWin = !!matchingWin;
+          const userWonAmount = matchingWin ? parseFloat(matchingWin.amount || '0') : 0;
+          const cartelaMatch = (betTx.description || '').match(/(\d+)\s+cartela/i);
+          const cartelaCount = cartelaMatch ? parseInt(cartelaMatch[1], 10) : 1;
+
+          const syntheticRoundId = `tx_${betTx.id}`;
+          roundsMap.set(syntheticRoundId, {
+            roundId: syntheticRoundId,
+            roomId: 'room-history',
+            roomName,
+            roundNumber: 0,
+            phase: 'ended',
+            status: 'ended',
+            totalPot: isWin ? userWonAmount : betAmt * 2,
+            winnerPayout: isWin ? userWonAmount : 0,
+            winnerNames: isWin ? [req.user!.fullName || 'You'] : ['House Winner'],
+            winnerCartelas: [],
+            winnerUserIds: isWin ? [userId] : [],
+            drawnNumbers: [],
+            endedAt: betTx.created_at,
+            betTime: betTx.created_at,
+            tickets: Array.from({ length: cartelaCount }).map((_, i) => ({
+              id: `tx_ticket_${betTx.id}_${i + 1}`,
+              cartelaId: i + 1,
+              cardMatrix: [],
+              betAmount: betAmt / cartelaCount,
+              isWinner: isWin,
+              status: isWin ? 'won' : 'lost'
+            })),
+            totalStake: betAmt,
+            isWinner: isWin,
+            userWonAmount,
+            netPnl: userWonAmount - betAmt,
+            isLive: false
+          });
+        }
+      }
+    } catch (txReconcileErr) {
+      console.warn('⚠️ [Wallet Game History] Could not reconcile wallet transactions:', txReconcileErr);
+    }
+
+    // 4. Sort All Personal Rounds by Time Descending
+    const rounds = Array.from(roundsMap.values()).sort((a, b) => {
+      return new Date(b.betTime).getTime() - new Date(a.betTime).getTime();
+    });
+
+    // 5. Accurate Personal Metrics Calculation
     let totalGames = rounds.length;
     let totalWins = 0;
     let totalLosses = 0;
@@ -476,26 +606,37 @@ router.get('/game-history', requireAuth, async (req: AuthenticatedRequest, res) 
 
     for (const r of rounds) {
       totalStaked += r.totalStake;
-      if (r.winnerUserIds.includes(userId)) {
-        r.isWinner = true;
-      }
 
-      if (r.isWinner) {
-        totalWins++;
-        const userWinningCartelaCount = r.tickets.filter((t: any) => t.isWinner).length;
-        const totalWinningCards = r.winnerCartelas.length || 1;
-        const perCard = r.winnerPayout / totalWinningCards;
-        r.userWonAmount = (userWinningCartelaCount > 0 ? userWinningCartelaCount : 1) * perCard;
-        totalWon += r.userWonAmount;
+      if (r.phase === 'ended') {
+        if (r.winnerUserIds.includes(userId)) {
+          r.isWinner = true;
+        }
+
+        if (r.isWinner) {
+          totalWins++;
+          if (r.userWonAmount === 0) {
+            const userWinningCartelaCount = r.tickets.filter((t: any) => t.isWinner).length || 1;
+            const totalWinningCards = (r.winnerCartelas && r.winnerCartelas.length) || 1;
+            const perCard = r.winnerPayout / totalWinningCards;
+            r.userWonAmount = userWinningCartelaCount * perCard;
+          }
+          totalWon += r.userWonAmount;
+        } else {
+          totalLosses++;
+          r.userWonAmount = 0;
+        }
+        r.netPnl = r.userWonAmount - r.totalStake;
       } else {
-        totalLosses++;
-        r.userWonAmount = 0;
+        // Round is in-flight: 'playing', 'lobby', or 'queued'
+        r.status = r.phase === 'queued' ? 'queued' : 'in_progress';
+        r.isPending = true;
+        r.netPnl = 0;
       }
-      r.netPnl = r.userWonAmount - r.totalStake;
     }
 
     const netProfit = totalWon - totalStaked;
-    const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 1000) / 10 : 0;
+    const completedGames = totalWins + totalLosses;
+    const winRate = completedGames > 0 ? Math.round((totalWins / completedGames) * 1000) / 10 : 0;
 
     return res.json({
       success: true,

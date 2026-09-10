@@ -74,6 +74,7 @@ export interface GameRoomState {
   targetWinnerType: 'owner' | 'bot' | 'real';
   targetFinishBall?: number;
   waitingForPlayers: boolean;   // true when < 2 real users have tickets; countdown frozen
+  waitingForOtherHouses?: boolean; // true when this house finished early and waits for other active houses
   realPlayerCount: number;      // live count of distinct real users with tickets
 }
 
@@ -216,6 +217,7 @@ class BingoGameEngine {
       targetWinnerType: 'real',
       targetFinishBall: 15,
       waitingForPlayers: true,
+      waitingForOtherHouses: false,
       realPlayerCount: 0
     };
   }
@@ -388,17 +390,32 @@ class BingoGameEngine {
     roomId: string
   ): Promise<{ success: boolean; refunded?: number; error?: string }> {
     const room = this.getRoom(roomId);
-    if (!room || room.phase !== 'lobby') {
-      return { success: false, error: 'Cannot cancel tickets outside lobby phase' };
+    if (!room) {
+      return { success: false, error: 'Room not found' };
     }
 
     const userTickets = room.tickets.get(userId);
-    if (!userTickets || userTickets.length === 0) {
-      return { success: false, error: 'No active tickets in this room lobby' };
+    const userNextTickets = room.nextRoundTickets?.get(userId);
+
+    // If room is actively playing and user has active tickets in the current round, cannot cancel in-play cards
+    if (room.phase === 'playing' && room.mode === 'active' && userTickets && userTickets.length > 0) {
+      return { success: false, error: 'Cannot cancel tickets during active play' };
+    }
+
+    const ticketsToRefund: PlayerTicket[] = [];
+    if (room.phase === 'lobby' && userTickets) {
+      ticketsToRefund.push(...userTickets);
+    }
+    if (userNextTickets && userNextTickets.length > 0) {
+      ticketsToRefund.push(...userNextTickets);
+    }
+
+    if (ticketsToRefund.length === 0) {
+      return { success: false, error: 'No cancellable tickets in this room' };
     }
 
     let refundAmount = 0;
-    userTickets.forEach(t => { refundAmount += t.betAmount; });
+    ticketsToRefund.forEach(t => { refundAmount += t.betAmount; });
 
     if (refundAmount > 0) {
       try {
@@ -411,14 +428,19 @@ class BingoGameEngine {
           await client.query(
             `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, description)
              VALUES ($1, 'refund', $2, (SELECT balance FROM wallets WHERE user_id = $1), $3, 'completed', $4)`,
-            [userId, refundAmount, refCode, `Refunded ${userTickets.length} cartelas from ${room.name} lobby`]
+            [userId, refundAmount, refCode, `Refunded ${ticketsToRefund.length} cartelas from ${room.name}`]
           );
         });
 
-        room.tickets.delete(userId);
-        room.realPlayerCount = room.tickets.size;
-        room.waitingForPlayers = room.tickets.size < 2;
-        this.recalculatePot(room);
+        if (room.phase === 'lobby') {
+          room.tickets.delete(userId);
+          room.realPlayerCount = room.tickets.size;
+          room.waitingForPlayers = room.tickets.size < 2;
+          this.recalculatePot(room);
+        }
+        if (room.nextRoundTickets) {
+          room.nextRoundTickets.delete(userId);
+        }
         this.broadcastRoomState(room);
 
         io.emit(`user_${userId}_balance`, {
@@ -428,7 +450,7 @@ class BingoGameEngine {
         io.emit('user_balance_updated', { userId });
         io.emit('stake_rooms_summary', this.getStakeRoomsSummary());
 
-        console.log(`💸 [Lobby Refund] Refunded ${refundAmount} ETB to user ${userId} from ${room.name}`);
+        console.log(`💸 [Ticket Refund] Refunded ${refundAmount} ETB to user ${userId} from ${room.name}`);
         return { success: true, refunded: refundAmount };
       } catch (err: any) {
         console.error('❌ [GameEngine] Error in handleCancelTicketLobby:', err);
@@ -658,29 +680,25 @@ class BingoGameEngine {
       for (let i = 0; i < quantity; i++) {
         const reqId = requestedCartelaIds[i];
         if (reqId && reqId >= 1 && reqId <= 400) {
-          if (assignedIds.has(reqId)) {
-            return {
-              success: false,
-              preBoughtForNextRound: false,
-              tickets: [],
-              error: `Cartela #${reqId} is already taken in this arena. Please choose another cartela.`
-            };
-          }
-          if (!drawnIds.includes(reqId)) {
+          if (!assignedIds.has(reqId) && !drawnIds.includes(reqId)) {
             drawnIds.push(reqId);
+          } else {
+            // Concurrency Auto-Resolution: Requested cartela was claimed in a race condition.
+            // Automatically allocate the next available unique cartela so the player's purchase succeeds.
+            const altId = getNextUniqueCartelaId();
+            drawnIds.push(altId);
+            console.log(`🎯 [Cartela Race Resolved] Cartela #${reqId} was already taken in ${room.name}. Auto-assigned next available Cartela #${altId} to ${userName}`);
           }
         }
       }
     } else if (typeof requestedCartelaIds === 'number' && requestedCartelaIds >= 1 && requestedCartelaIds <= 400) {
-      if (assignedIds.has(requestedCartelaIds)) {
-        return {
-          success: false,
-          preBoughtForNextRound: false,
-          tickets: [],
-          error: `Cartela #${requestedCartelaIds} is already taken in this arena. Please choose another cartela.`
-        };
+      if (!assignedIds.has(requestedCartelaIds)) {
+        drawnIds.push(requestedCartelaIds);
+      } else {
+        const altId = getNextUniqueCartelaId();
+        drawnIds.push(altId);
+        console.log(`🎯 [Cartela Race Resolved] Cartela #${requestedCartelaIds} was already taken in ${room.name}. Auto-assigned next available Cartela #${altId} to ${userName}`);
       }
-      drawnIds.push(requestedCartelaIds);
     }
 
     // Fill any remaining required card slots with unique untaken cartelas
@@ -863,6 +881,7 @@ class BingoGameEngine {
       if (!room) continue;
 
       room.isProcessingVictory = false;
+      room.waitingForOtherHouses = false;
       room.phase = 'lobby';
       room.mode = 'active';
       room.lobbyCountdown = 45;
@@ -1035,6 +1054,43 @@ class BingoGameEngine {
         room.winnerPayout = 0;
         room.houseFee = 0;
         room.currentRoundId = null;
+
+        // Lone-Player Stake Protection: If a player placed a bet in this house but no opponent joined (< 2 players),
+        // safely rollover their tickets to next round so their stake is never lost or unplayed.
+        if (room.tickets.size > 0) {
+          console.log(`🛡️ [GameEngine] Lone-player stake protection in ${room.id}: rolling over tickets for ${room.tickets.size} player(s) to Round #${room.roundNumber + 1}`);
+          for (const [userId, tList] of room.tickets.entries()) {
+            const existing = room.nextRoundTickets.get(userId) || [];
+            room.nextRoundTickets.set(userId, [...existing, ...tList]);
+
+            const socketId = room.activeUserSockets.get(userId);
+            const noticePayload = {
+              roomId: room.id,
+              roundNumber: room.roundNumber,
+              nextRoundNumber: room.roundNumber + 1,
+              message: `Watching as Spectator • Your ticket is reserved for Round #${room.roundNumber + 1}`,
+              queuedTicketsCount: tList.length,
+              cartelaIds: tList.map(t => t.cartelaId)
+            };
+            if (socketId) {
+              io.to(socketId).emit('lone_player_spectating_notice', noticePayload);
+            }
+          }
+
+          const roomNoticePayload = {
+            roomId: room.id,
+            roundNumber: room.roundNumber,
+            nextRoundNumber: room.roundNumber + 1,
+            message: `Watching as Spectator • Unqualified house rolled over to Round #${room.roundNumber + 1}`
+          };
+          io.to(room.id).emit('lone_player_spectating_notice', roomNoticePayload);
+          if (room.id === 'room-10') {
+            io.to(ARENA_ROOM_ID).emit('lone_player_spectating_notice', { ...roomNoticePayload, roomId: ARENA_ROOM_ID });
+            io.to('default').emit('lone_player_spectating_notice', { ...roomNoticePayload, roomId: 'default' });
+          }
+
+          room.tickets.clear();
+        }
       }
     }
 
@@ -1399,7 +1455,8 @@ class BingoGameEngine {
       const winningPatternsIndices = [
         [0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24],
         [0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 18, 23], [4, 9, 14, 19, 24],
-        [0, 6, 12, 18, 24], [4, 8, 12, 16, 20]
+        [0, 6, 12, 18, 24], [4, 8, 12, 16, 20],
+        [0, 4, 20, 24]
       ];
 
       // Ensure every active house selects a strictly unique final winning ball
@@ -1634,10 +1691,12 @@ class BingoGameEngine {
       clearInterval(this.intervals.get('master_ball')!);
     }
 
+    let masterDrawnCount = 0;
+
     const interval = setInterval(async () => {
-      // 1. Check if all rooms are still playing
-      const sample = this.rooms.get('room-10');
-      if (sample && sample.phase !== 'playing') {
+      // 1. Check if any room is still playing
+      const anyStillPlaying = STAKE_ROOM_IDS.some(id => this.rooms.get(id)?.phase === 'playing');
+      if (!anyStillPlaying) {
         clearInterval(interval);
         return;
       }
@@ -1650,11 +1709,17 @@ class BingoGameEngine {
 
       const nextNum = masterBallSequence.pop()!;
       const col = getBallColumn(nextNum);
+      masterDrawnCount++;
 
-      // 2. Broadcast Ball Called to ALL 4 houses simultaneously
+      // 2. Broadcast Ball Called only to houses that are still playing (Audio & State Isolation)
       for (const roomId of STAKE_ROOM_IDS) {
         const room = this.rooms.get(roomId);
         if (!room) continue;
+
+        // Audio & Visual Isolation: Skip rooms that have already won and concluded their game!
+        if (room.phase === 'winner') {
+          continue;
+        }
 
         room.drawnNumbers.push(nextNum);
         room.lastBallTime = Date.now();
@@ -1748,7 +1813,7 @@ class BingoGameEngine {
       if (anyActiveHouse && !pendingActiveHouse) {
         clearInterval(interval);
         this.startMasterWinnerCelebrationTimer();
-      } else if (anyActiveHouse && sample && sample.drawnNumbers.length >= 26) {
+      } else if (anyActiveHouse && masterDrawnCount >= 26) {
         // Safety Guarantee: Force-complete any lingering active house that reached ball 26
         for (const roomId of STAKE_ROOM_IDS) {
           const r = this.rooms.get(roomId);
@@ -1761,10 +1826,10 @@ class BingoGameEngine {
         }
         clearInterval(interval);
         this.startMasterWinnerCelebrationTimer();
-      } else if (!anyActiveHouse && sample && sample.drawnNumbers.length >= 25) {
+      } else if (!anyActiveHouse && masterDrawnCount >= 25) {
         clearInterval(interval);
         this.startMasterWinnerCelebrationTimer();
-      } else if (sample && sample.drawnNumbers.length >= 75) {
+      } else if (masterDrawnCount >= 75) {
         clearInterval(interval);
         this.startMasterWinnerCelebrationTimer();
       }
@@ -1912,24 +1977,6 @@ class BingoGameEngine {
                 });
               }
             }
-
-            if (room.currentRoundId) {
-              await client.query(
-                `UPDATE game_rounds 
-                 SET phase = 'ended', 
-                     winner_user_ids = $1, 
-                     winner_cartelas = $2, 
-                     winner_names = $3, 
-                     ended_at = NOW() 
-                 WHERE id = $4`,
-                [
-                  JSON.stringify(Array.from(realWinnersByUser.keys())),
-                  JSON.stringify(winningCards.map(w => w.cartelaId)),
-                  JSON.stringify(winningCards.map(w => w.userName)),
-                  room.currentRoundId
-                ]
-              );
-            }
           });
         } catch (err) {
           console.error(`❌ [GameEngine Error processing winning payout in ${room.id}]:`, err);
@@ -2014,6 +2061,52 @@ class BingoGameEngine {
 
       room.winResult = winResult;
 
+      // Authoritative DB Finalization: Always record round winner & update tickets in Neon DB (for real, split, or bot victory)
+      if (room.currentRoundId) {
+        try {
+          const allWinningCartelas = winningCards.map(w => w.cartelaId);
+          const allWinningNames = Array.from(new Set(winningCards.map(w => w.userName)));
+          const allWinningUserIds = Array.from(new Set(realWinners.map(rw => rw.userId).filter(Boolean)));
+          const drawnBalls = room.calledBalls ? room.calledBalls.slice(0, ballIndex + 1) : [];
+
+          await query(
+            `UPDATE game_rounds 
+             SET phase = 'ended', 
+                 winner_user_ids = $1, 
+                 winner_cartelas = $2, 
+                 winner_names = $3, 
+                 drawn_numbers = $4,
+                 ended_at = NOW() 
+             WHERE id = $5`,
+            [
+              JSON.stringify(allWinningUserIds),
+              JSON.stringify(allWinningCartelas),
+              JSON.stringify(allWinningNames),
+              JSON.stringify(drawnBalls),
+              room.currentRoundId
+            ]
+          );
+
+          // Update game_tickets status for this round in Neon DB
+          if (allWinningCartelas.length > 0) {
+            await query(
+              `UPDATE game_tickets 
+               SET status = 'won' 
+               WHERE round_id = $1 AND cartela_id = ANY($2::int[])`,
+              [room.currentRoundId, allWinningCartelas]
+            );
+            await query(
+              `UPDATE game_tickets 
+               SET status = 'lost' 
+               WHERE round_id = $1 AND NOT (cartela_id = ANY($2::int[]))`,
+              [room.currentRoundId, allWinningCartelas]
+            );
+          }
+        } catch (dbFinalizeErr) {
+          console.error(`❌ [GameEngine Error finalizing game_rounds in DB for ${room.id}]:`, dbFinalizeErr);
+        }
+      }
+
       // Broadcast round winner to room
       io.to(room.id).emit('round_winner', winResult);
       if (room.id === 'room-10') {
@@ -2033,7 +2126,14 @@ class BingoGameEngine {
       return r && r.id !== room.id && r.mode === 'active' && !r.winResult;
     });
     if (!otherActivePending) {
+      for (const roomId of STAKE_ROOM_IDS) {
+        const r = this.rooms.get(roomId);
+        if (r) r.waitingForOtherHouses = false;
+      }
       this.startMasterWinnerCelebrationTimer();
+    } else {
+      room.waitingForOtherHouses = true;
+      this.broadcastRoomState(room);
     }
   }
 
@@ -2147,6 +2247,7 @@ class BingoGameEngine {
     for (const roomId of STAKE_ROOM_IDS) {
       const room = this.rooms.get(roomId);
       if (!room) continue;
+      room.waitingForOtherHouses = false;
       room.phase = 'winner';
       room.winnerCountdown = 8;
       this.broadcastRoomState(room);
@@ -2243,6 +2344,7 @@ class BingoGameEngine {
       currentCall: room.currentCall,
       winResult: room.winResult,
       waitingForPlayers: room.waitingForPlayers || false,
+      waitingForOtherHouses: room.waitingForOtherHouses || false,
       realPlayerCount: room.tickets.size,
       activeUsersCount: Math.max(room.activeUsers.size, room.activeSockets.size),
       occupiedCartelaIds: Array.from(occupiedCartelaIds)
@@ -2290,6 +2392,76 @@ class BingoGameEngine {
       recentOfflineWins: this.offlineWins.slice(0, 30),
       serverTimestamp: new Date().toISOString()
     };
+  }
+
+  // Live / In-Flight Personal Bet History Helper (Strictly Scoped to Calling User)
+  public getUserActiveTickets(userId: string): Array<{
+    roomId: string;
+    roomName: string;
+    roundNumber: number;
+    roundId: string | null;
+    phase: string;
+    isQueued: boolean;
+    totalPot: number;
+    winnerPayout: number;
+    stakeAmount: number;
+    tickets: Array<{
+      cartelaId: number;
+      cardMatrix: any[];
+      betAmount: number;
+      isAutoPlay: boolean;
+    }>;
+  }> {
+    const results: Array<any> = [];
+    if (!userId) return results;
+
+    for (const room of this.rooms.values()) {
+      // 1. Current active tickets in room.tickets (strictly for this userId)
+      const activeList = room.tickets.get(userId);
+      if (activeList && activeList.length > 0) {
+        results.push({
+          roomId: room.id,
+          roomName: room.name,
+          roundNumber: room.roundNumber,
+          roundId: room.currentRoundId || null,
+          phase: room.phase,
+          isQueued: false,
+          totalPot: room.totalPot,
+          winnerPayout: room.winnerPayout,
+          stakeAmount: room.stakeAmount,
+          tickets: activeList.map(t => ({
+            cartelaId: t.cartelaId,
+            cardMatrix: t.cardMatrix,
+            betAmount: t.betAmount,
+            isAutoPlay: !!t.isAutoPlay
+          }))
+        });
+      }
+
+      // 2. Queued tickets in room.nextRoundTickets (Pre-Bought or Lone-Player Rollover)
+      const queuedList = room.nextRoundTickets?.get(userId);
+      if (queuedList && queuedList.length > 0) {
+        results.push({
+          roomId: room.id,
+          roomName: room.name,
+          roundNumber: room.roundNumber + 1,
+          roundId: null,
+          phase: 'queued',
+          isQueued: true,
+          totalPot: queuedList.reduce((sum, t) => sum + t.betAmount, 0),
+          winnerPayout: 0,
+          stakeAmount: room.stakeAmount,
+          tickets: queuedList.map(t => ({
+            cartelaId: t.cartelaId,
+            cardMatrix: t.cardMatrix,
+            betAmount: t.betAmount,
+            isAutoPlay: !!t.isAutoPlay
+          }))
+        });
+      }
+    }
+
+    return results;
   }
 }
 

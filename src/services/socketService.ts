@@ -484,6 +484,11 @@ class SocketService {
     return this.subscribeEvent('stake_rooms_summary', callback);
   }
 
+  // Lone-Player Stake Protection Notice in Unqualified Houses (< 2 players)
+  public onLonePlayerSpectatingNotice(callback: (data: any) => void): () => void {
+    return this.subscribeEvent('lone_player_spectating_notice', callback);
+  }
+
   // Concurrent Session Termination (Single Active Device Policy)
   public onSessionTerminated(callback: (data: { reason: string; message: string }) => void): () => void {
     return this.subscribeEvent('session_terminated', callback);

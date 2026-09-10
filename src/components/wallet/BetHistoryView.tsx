@@ -29,6 +29,9 @@ interface RoundHistoryItem {
   roomName: string;
   roundNumber: number;
   phase: string;
+  status?: string;
+  isLive?: boolean;
+  isPending?: boolean;
   totalPot: number;
   winnerPayout: number;
   winnerNames: string[];
@@ -90,11 +93,27 @@ export const BetHistoryView: React.FC<BetHistoryViewProps> = ({ onBack }) => {
 
   useEffect(() => {
     fetchHistory();
+
+    const handleUpdate = () => {
+      fetchHistory();
+    };
+
+    window.addEventListener('lb_wallet_updated', handleUpdate);
+    window.addEventListener('round_ended', handleUpdate);
+    window.addEventListener('user_tickets_synced', handleUpdate);
+    window.addEventListener('user_balance_updated', handleUpdate);
+
+    return () => {
+      window.removeEventListener('lb_wallet_updated', handleUpdate);
+      window.removeEventListener('round_ended', handleUpdate);
+      window.removeEventListener('user_tickets_synced', handleUpdate);
+      window.removeEventListener('user_balance_updated', handleUpdate);
+    };
   }, [fetchHistory]);
 
   const filteredRounds = rounds.filter(r => {
-    if (filter === 'wins') return r.isWinner;
-    if (filter === 'losses') return !r.isWinner;
+    if (filter === 'wins') return r.isWinner && r.phase === 'ended';
+    if (filter === 'losses') return !r.isWinner && r.phase === 'ended';
     return true;
   });
 
@@ -243,10 +262,14 @@ export const BetHistoryView: React.FC<BetHistoryViewProps> = ({ onBack }) => {
             const userTickets = round.tickets || [];
             const selectedTicket = userTickets.find(t => t.id === selectedTicketId) || userTickets[0];
 
+            const isQueued = round.status === 'queued' || round.phase === 'queued';
+            const isInProgress = round.status === 'in_progress' || round.phase === 'playing' || round.phase === 'lobby';
+            const cardStateClass = isQueued ? 'queued' : isInProgress ? 'in-progress' : round.isWinner ? 'won' : 'lost';
+
             return (
               <div 
                 key={round.roundId} 
-                className={`bet-round-card ${round.isWinner ? 'won' : 'lost'} ${isExpanded ? 'expanded' : ''}`}
+                className={`bet-round-card ${cardStateClass} ${isExpanded ? 'expanded' : ''}`}
               >
                 {/* Round Header */}
                 <div className="round-card-top-row">
@@ -254,13 +277,25 @@ export const BetHistoryView: React.FC<BetHistoryViewProps> = ({ onBack }) => {
                     <span className="round-room-tag">
                       <i className="fa-solid fa-gamepad"></i> {round.roomName}
                     </span>
-                    <span className="round-number-tag">
-                      {t('history.round')} #{round.roundNumber}
-                    </span>
+                    {round.roundNumber > 0 && (
+                      <span className="round-number-tag">
+                        {t('history.round')} #{round.roundNumber}
+                      </span>
+                    )}
                   </div>
 
-                  <div className={`round-outcome-pill ${round.isWinner ? 'won' : 'lost'}`}>
-                    {round.isWinner ? (
+                  <div className={`round-outcome-pill ${cardStateClass}`}>
+                    {isQueued ? (
+                      <>
+                        <i className="fa-solid fa-ticket fa-beat"></i>
+                        <span>{lang === 'am' ? 'ለቀጣይ የተያዘ' : 'Queued for Next'}</span>
+                      </>
+                    ) : isInProgress ? (
+                      <>
+                        <i className="fa-solid fa-spinner fa-spin"></i>
+                        <span>{lang === 'am' ? 'በመካሄድ ላይ...' : 'In Progress...'}</span>
+                      </>
+                    ) : round.isWinner ? (
                       <>
                         <i className="fa-solid fa-trophy"></i>
                         <span>{t('history.won')} +{round.userWonAmount.toFixed(2)} ETB</span>
