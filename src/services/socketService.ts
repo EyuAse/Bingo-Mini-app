@@ -380,9 +380,7 @@ class SocketService {
 
   public updatePlayerMode(roomId: string, userId: string, isAutoPlay: boolean) {
     const sock = this.getSocket();
-    if (sock.connected) {
-      sock.emit('update_player_mode', { roomId, userId, isAutoPlay });
-    }
+    sock.emit('update_player_mode', { roomId, userId, isAutoPlay });
   }
 
   public claimBingo(

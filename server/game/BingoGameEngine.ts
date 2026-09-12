@@ -2,7 +2,7 @@ import { io } from '../io.ts';
 import { query, withTransaction } from '../db.ts';
 import { telegramBotService } from '../services/telegramBotService.ts';
 import {
-  BingoCell,
+  type BingoCell,
   generateCardFromId,
   checkWinningPattern,
   getAllWinningPatterns,
@@ -133,6 +133,9 @@ class BingoGameEngine {
 
   // Disconnect Protection: Rolling ledger of auto-credited wins
   private offlineWins: OfflineWinRecord[] = [];
+
+  // Player Auto/Manual Mode Preference Registry (userId -> isAutoPlay)
+  private playerModes: Map<string, boolean> = new Map();
 
   private constructor() {
     this.initializeUnifiedArena();
@@ -764,6 +767,10 @@ class BingoGameEngine {
       });
 
       // Register tickets in memory (strictly max 2 cartelas, all paid stake)
+      const resolvedAutoPlay = isAutoPlay !== undefined
+        ? (isAutoPlay !== false)
+        : (this.playerModes.has(userId) ? this.playerModes.get(userId)! : true);
+
       const playerTickets: PlayerTicket[] = drawnIds.map(id => ({
         userId,
         userName,
@@ -772,7 +779,7 @@ class BingoGameEngine {
         betAmount: stakePerCard,
         socketId,
         isBonus: false,
-        isAutoPlay: isAutoPlay !== false
+        isAutoPlay: resolvedAutoPlay
       }));
 
       const isPreBuy = room.phase !== 'lobby';
@@ -827,6 +834,7 @@ class BingoGameEngine {
    * Updates player's Auto/Manual mode for their active & queued tickets
    */
   public updatePlayerMode(roomId: string, userId: string, isAutoPlay: boolean) {
+    this.playerModes.set(userId, isAutoPlay);
     const room = this.getRoom(roomId);
     if (!room) return;
     const userTickets = room.tickets.get(userId);
@@ -894,6 +902,12 @@ class BingoGameEngine {
       // Seamless Activation of Anytime Pre-Bought Tickets
       if (room.nextRoundTickets && room.nextRoundTickets.size > 0) {
         room.tickets = new Map(room.nextRoundTickets);
+        for (const [uid, tList] of room.tickets.entries()) {
+          if (this.playerModes.has(uid)) {
+            const m = this.playerModes.get(uid)!;
+            tList.forEach(t => { t.isAutoPlay = m; });
+          }
+        }
         room.nextRoundTickets.clear();
         console.log(`🎟️ [Lobby ${room.id}] Activated pre-bought tickets for ${room.tickets.size} users for Round #${room.roundNumber}`);
         io.to(room.id).emit('prebought_tickets_activated', {
@@ -1654,6 +1668,8 @@ class BingoGameEngine {
 
     for (const [uid, tList] of room.tickets.entries()) {
       for (const t of tList) {
+        // Fallback auto-win only applies to auto-play tickets; manual players must claim manually
+        if (t.isAutoPlay === false) continue;
         const winCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
         const matches = t.cardMatrix.filter(c => typeof c.val === 'number' && room.drawnNumbers.includes(c.val)).length;
         if (!bestTicket || matches > bestTicket.matchCount) {
@@ -1765,10 +1781,12 @@ class BingoGameEngine {
             winningIndices: number[];
           }> = [];
 
-          // Check all Real Player tickets in this house
+          // Check all Real Player tickets in this house (Auto-Play ONLY)
           for (const [uid, tList] of room.tickets.entries()) {
             for (const t of tList) {
-              if (t.isAutoPlay !== false) {
+              // CRITICAL FIX: Only tickets with strict isAutoPlay === true are evaluated in the automated loop.
+              // Manual tickets (isAutoPlay === false) NEVER auto-claim here!
+              if (t.isAutoPlay === true) {
                 const winCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
                 if (winCheck.isWin) {
                   winningCards.push({

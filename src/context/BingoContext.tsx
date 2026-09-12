@@ -325,9 +325,17 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [calledNumbers, setCalledNumbers] = useState<number[]>([]);
   const [currentCall, setCurrentCall] = useState<CalledBall | null>(null);
 
-  // Auto-Play Engine
-  const [autoPlay, setAutoPlay] = useState<boolean>(true);
-  const autoPlayRef = useRef<boolean>(true);
+  // Auto-Play Engine (Persisted in localStorage so background app switches & reloads never reset to Auto)
+  const AUTOPLAY_STORAGE_KEY = 'betika_bingo_autoplay_mode';
+  const [autoPlay, setAutoPlay] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(AUTOPLAY_STORAGE_KEY);
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+  const autoPlayRef = useRef<boolean>(autoPlay);
   autoPlayRef.current = autoPlay;
 
   // Room State
@@ -574,6 +582,11 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const colLetter = lastNum <= 15 ? 'B' : lastNum <= 30 ? 'I' : lastNum <= 45 ? 'N' : lastNum <= 60 ? 'G' : 'O';
     setCurrentCall({ num: lastNum, col: colLetter });
 
+    if (!autoPlayRef.current) {
+      // In manual mode, fast-forward catchup updates called numbers & current call ONLY. Cards are NEVER auto-daubed!
+      return;
+    }
+
     const markMatching = (cells: BingoCell[]) => {
       return cells.map(c => {
         if (!c.marked && !c.isFree && drawnNums.includes(c.val as number)) {
@@ -583,11 +596,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       });
     };
 
-    if (autoPlayRef.current) {
-      setCartela1Data(prev => markMatching(prev));
-      setCartela2Data(prev => markMatching(prev));
-      setCartela3Data(prev => markMatching(prev));
-    }
+    setCartela1Data(prev => markMatching(prev));
+    setCartela2Data(prev => markMatching(prev));
+    setCartela3Data(prev => markMatching(prev));
   }, []);
 
   const roundPhaseRef = useRef(roundPhase);
@@ -692,7 +703,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       });
     }
 
-    // Manual mode: NEVER erase user daubs!
+    // Manual mode: Strictly mark only cells that were explicitly daubed by the user in this round!
     const manualSet = cartelaId && manualDaubedCellsRef.current[cartelaId]
       ? manualDaubedCellsRef.current[cartelaId]
       : new Set<number>();
@@ -703,16 +714,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
       const val = c.val as number;
       const isDrawn = drawnSet.has(val);
-      const wasMarkedInExisting = existingCells?.[idx]?.marked && isDrawn;
-      const wasMarkedInRef = manualSet.has(idx) && isDrawn;
-
-      if (wasMarkedInExisting || wasMarkedInRef) {
-        if (cartelaId) {
-          if (!manualDaubedCellsRef.current[cartelaId]) {
-            manualDaubedCellsRef.current[cartelaId] = new Set();
-          }
-          manualDaubedCellsRef.current[cartelaId].add(idx);
-        }
+      if (manualSet.has(idx) && isDrawn) {
         return { ...c, marked: true };
       }
       return { ...c, marked: false };
@@ -740,6 +742,11 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (ageMs < 15 * 60 * 1000) {
           if (typeof saved.betAmount === 'number') setBetAmountState(saved.betAmount);
           if (typeof saved.cardQuantity === 'number') setCardQuantityState(Math.max(1, Math.min(2, saved.cardQuantity)));
+          if (typeof saved.isAutoPlay === 'boolean') {
+            setAutoPlay(saved.isAutoPlay);
+            autoPlayRef.current = saved.isAutoPlay;
+            try { localStorage.setItem(AUTOPLAY_STORAGE_KEY, String(saved.isAutoPlay)); } catch {}
+          }
           if (Array.isArray(saved.selectedCartelaIds) && saved.selectedCartelaIds.length > 0) {
             setSelectedCartelaIds([
               saved.selectedCartelaIds[0] || selectedCartelaIds[0],
@@ -788,6 +795,11 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (typeof state.roundNumber === 'number' && state.roundNumber !== roundNumberRef.current) {
         console.log(`🔄 [BingoContext] Round transition: #${roundNumberRef.current} -> #${state.roundNumber}`);
         setRoundNumber(state.roundNumber);
+        clearManualMarks();
+        const currentIds = selectedCartelaIdsRef.current;
+        setCartela1Data(generateCardFromId(currentIds[0]));
+        setCartela2Data(generateCardFromId(currentIds[1]));
+        setCartela3Data(generateCardFromId(currentIds[2]));
       }
 
       if (state.phase) {
@@ -837,6 +849,15 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const drawn = (state.drawnNumbers && state.drawnNumbers.length > 0) ? state.drawnNumbers : calledNumbersRef.current;
         if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current, updatedIds[0], cartela1DataRef.current));
         if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current, updatedIds[1], cartela2DataRef.current));
+
+        // Keep player auto/manual mode synchronized with server ticket
+        if (tickets[0]?.isAutoPlay === false && autoPlayRef.current !== false) {
+          setAutoPlay(false);
+          autoPlayRef.current = false;
+          try { localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'false'); } catch {}
+        } else if (!autoPlayRef.current && tickets[0]?.isAutoPlay === true && userRef.current?.id) {
+          socketService.updatePlayerMode(roomId, userRef.current.id, false);
+        }
 
         if (state.isPreBuy || state.mode === 'spectating') {
           setHasPreBoughtNext(true);
@@ -921,6 +942,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (typeof data.roundNumber === 'number') {
         setRoundNumber(data.roundNumber);
       }
+      clearManualMarks();
       setRoundPhase('playing');
       setGameActive(true);
       setWaitingForPlayers(false);
@@ -1146,8 +1168,13 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const applyRoomSnapshot = useCallback((data: any) => {
     if (!data || !data.success) return;
 
-    if (typeof data.roundNumber === 'number') {
+    if (typeof data.roundNumber === 'number' && data.roundNumber !== roundNumberRef.current) {
       setRoundNumber(data.roundNumber);
+      clearManualMarks();
+      const currentIds = selectedCartelaIdsRef.current;
+      setCartela1Data(generateCardFromId(currentIds[0]));
+      setCartela2Data(generateCardFromId(currentIds[1]));
+      setCartela3Data(generateCardFromId(currentIds[2]));
     }
 
     if (data.phase) {
@@ -1211,6 +1238,16 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (tickets[0]?.cardMatrix) setCartela1Data(hydrateCardWithDrawn(tickets[0].cardMatrix, drawn, autoPlayRef.current, updatedIds[0], cartela1DataRef.current));
       if (tickets[1]?.cardMatrix) setCartela2Data(hydrateCardWithDrawn(tickets[1].cardMatrix, drawn, autoPlayRef.current, updatedIds[1], cartela2DataRef.current));
       if (tickets[2]?.cardMatrix) setCartela3Data(hydrateCardWithDrawn(tickets[2].cardMatrix, drawn, autoPlayRef.current, updatedIds[2], cartela3DataRef.current));
+
+      // Keep player auto/manual mode synchronized with server ticket
+      if (tickets[0]?.isAutoPlay === false && autoPlayRef.current !== false) {
+        setAutoPlay(false);
+        autoPlayRef.current = false;
+        try { localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'false'); } catch {}
+      } else if (!autoPlayRef.current && tickets[0]?.isAutoPlay === true && userRef.current?.id) {
+        const activeRoom = data.roomId || getActiveRoomId();
+        socketService.updatePlayerMode(activeRoom, userRef.current.id, false);
+      }
 
       if (data.isPreBuy || data.mode === 'spectating') {
         setHasPreBoughtNext(true);
@@ -1515,6 +1552,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const next = !autoPlay;
     setAutoPlay(next);
     autoPlayRef.current = next;
+    try {
+      localStorage.setItem(AUTOPLAY_STORAGE_KEY, String(next));
+    } catch {}
     if (next) {
       setCartela1Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
       setCartela2Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
@@ -1611,12 +1651,13 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         cardQuantity,
         selectedCartelaIds: activeIds,
         timestamp: Date.now(),
-        roundNumber: roundNumberRef.current
+        roundNumber: roundNumberRef.current,
+        isAutoPlay: autoPlayRef.current
       }));
     } catch {}
 
-    // If joining during playing phase, auto-daub any numbers already drawn
-    if (calledNumbers.length > 0) {
+    // If joining during playing phase, auto-daub any numbers already drawn ONLY if Auto-Play is active
+    if (autoPlayRef.current && calledNumbers.length > 0) {
       setCartela1Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
       setCartela2Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
       setCartela3Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
@@ -1642,7 +1683,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (user?.id) {
       const roomId = getActiveRoomId();
       const activeIds = selectedCartelaIds.slice(0, totalPlayableCards);
-      const res = await socketService.buyTicket(roomId, user.id, user.fullName, activeIds, betAmount);
+      const res = await socketService.buyTicket(roomId, user.id, user.fullName, activeIds, betAmount, autoPlayRef.current);
       if (!res.success) {
         showToast(`❌ ${res.error || 'Pre-buy failed'}`);
         return;
