@@ -646,13 +646,16 @@ class BingoGameEngine {
       quantity = Math.max(1, Math.min(2, requestedCartelaIds));
     }
 
-    // Multi-Device Protection: If user already has active tickets for this round, return existing tickets without deducting balance again
-    if (room.phase === 'lobby' && room.tickets.has(userId) && (room.tickets.get(userId)?.length || 0) > 0) {
-      const existing = room.tickets.get(userId)!;
-      console.log(`🎟️ [Multi-Device] User ${userName} (${userId}) already has ${existing.length} tickets for Round #${room.roundNumber}. Returning active cards.`);
+    // Multi-Device / Double-Click Protection: If user already has active or pre-bought tickets, return existing tickets without deducting balance again
+    const hasActiveLobbyTickets = room.phase === 'lobby' && room.tickets.has(userId) && (room.tickets.get(userId)?.length || 0) > 0;
+    const hasPreBoughtTickets = room.phase !== 'lobby' && room.nextRoundTickets && room.nextRoundTickets.has(userId) && (room.nextRoundTickets.get(userId)?.length || 0) > 0;
+
+    if (hasActiveLobbyTickets || hasPreBoughtTickets) {
+      const existing = hasActiveLobbyTickets ? room.tickets.get(userId)! : room.nextRoundTickets.get(userId)!;
+      console.log(`🎟️ [Multi-Device/Double-Click] User ${userName} (${userId}) already has ${existing.length} tickets (PreBuy: ${Boolean(hasPreBoughtTickets)}). Returning active cards.`);
       return {
         success: true,
-        preBoughtForNextRound: false,
+        preBoughtForNextRound: Boolean(hasPreBoughtTickets),
         tickets: existing
       };
     }
@@ -1840,6 +1843,32 @@ class BingoGameEngine {
             const fallbackWinner = this.findBestCardForFallbackWin(r);
             if (fallbackWinner) {
               await this.processRoundVictory(r, [fallbackWinner]);
+            } else {
+              // Manual players missed claiming Bingo by Ball 26: Players LOSE the round! House keeps stakes, cards are wiped!
+              console.log(`⏱️ [Ball 26 Cap] House ${r.id} reached safety cap with no claims. Players lose round, house collects stakes.`);
+              r.winResult = {
+                roomId: r.id,
+                winType: 'no_winner',
+                winnerName: 'No Winner (Time Expired)',
+                winnerNames: [],
+                winnerUserIds: [],
+                winningCartelaNumber: 0,
+                winningCartelas: [],
+                winningPattern: 'Unclaimed',
+                winningIndices: [],
+                totalPot: r.totalPot,
+                houseFee: r.totalPot,
+                netPrizePot: 0,
+                commissionPercent: 100,
+                winnerPayout: 0,
+                stakeAmount: r.stakeAmount,
+                sharePerWinner: 0,
+                userShare: 0,
+                coWinners: [],
+                isSplit: false,
+                winnersCount: 0
+              };
+              this.broadcastRoomState(r);
             }
           }
         }
@@ -2172,7 +2201,13 @@ class BingoGameEngine {
 
     const userTickets = room.tickets.get(userId) || [];
     const ticket = userTickets.find(t => t.cartelaId === cartelaId);
-    const cardMatrix = ticket ? ticket.cardMatrix : generateCardFromId(cartelaId);
+    if (!ticket) {
+      return {
+        success: false,
+        message: 'You do not hold an active ticket for this cartela in this room.'
+      };
+    }
+    const cardMatrix = ticket.cardMatrix;
 
     const allWins = getAllWinningPatterns(cardMatrix, room.drawnNumbers);
     if (allWins.length === 0) {

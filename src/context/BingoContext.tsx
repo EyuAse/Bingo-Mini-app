@@ -1797,11 +1797,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           const isCurrentBall = typeof cell.val === 'number' && cell.val === currentCall?.num;
           if (isCurrentBall) {
             console.log(`🎉 [ManualDaub] Winning line completed on Cartela #${selectedCartelaIds[cartelaIdx]} on active ball! Ready for manual claim via BINGO button.`);
-            soundEngine.playWinFanfare();
-            showToast('🎉 BINGO COMPLETED! Tap the BINGO button before the next number! ⚡');
           } else {
             console.log(`⚠️ [ManualDaub] Pattern marked on Cartela #${selectedCartelaIds[cartelaIdx]} for a past number.`);
-            showToast('⚠️ Pattern was completed on a past number! You must call BINGO on the active number. Keep playing for a new pattern!');
           }
         }
       } else {
