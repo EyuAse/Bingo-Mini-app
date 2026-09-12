@@ -62,25 +62,33 @@ export function generateCardFromId(cartelaId: number): BingoCell[] {
 
 /**
  * Server-Side Win Validation Engine
- * Validates whether a given card matrix has achieved a complete winning line against drawn balls
  */
-export function checkWinningPattern(
+export interface WinningPatternResult {
+  patternName: string;
+  indices: number[];
+  numbers: number[];
+}
+
+/**
+  * Returns all completed winning patterns for a card matrix against drawn balls
+  */
+export function getAllWinningPatterns(
   cardMatrix: BingoCell[],
   drawnNumbers: number[]
-): { isWin: boolean; winningPattern?: string; winningIndices?: number[] } {
+): WinningPatternResult[] {
   const drawnSet = new Set(drawnNumbers);
-
   const isMarked = (cell: BingoCell) => cell.isFree || (typeof cell.val === 'number' && drawnSet.has(cell.val));
+  const results: WinningPatternResult[] = [];
 
   // 1. Check 5 Horizontal Rows
   for (let row = 0; row < 5; row++) {
     const rowCells = cardMatrix.filter(c => c.row === row);
     if (rowCells.every(isMarked)) {
-      return {
-        isWin: true,
-        winningPattern: `Row ${row + 1}`,
-        winningIndices: rowCells.map(c => c.index)
-      };
+      results.push({
+        patternName: `Row ${row + 1}`,
+        indices: rowCells.map(c => c.index),
+        numbers: rowCells.filter(c => !c.isFree && typeof c.val === 'number').map(c => c.val as number)
+      });
     }
   }
 
@@ -88,45 +96,63 @@ export function checkWinningPattern(
   for (let col = 0; col < 5; col++) {
     const colCells = cardMatrix.filter(c => c.col === col);
     if (colCells.every(isMarked)) {
-      return {
-        isWin: true,
-        winningPattern: `Column ${['B', 'I', 'N', 'G', 'O'][col]}`,
-        winningIndices: colCells.map(c => c.index)
-      };
+      results.push({
+        patternName: `Column ${['B', 'I', 'N', 'G', 'O'][col]}`,
+        indices: colCells.map(c => c.index),
+        numbers: colCells.filter(c => !c.isFree && typeof c.val === 'number').map(c => c.val as number)
+      });
     }
   }
 
   // 3. Check Main Diagonal (\)
   const diag1 = cardMatrix.filter(c => c.row === c.col);
   if (diag1.every(isMarked)) {
-    return {
-      isWin: true,
-      winningPattern: 'Diagonal \\',
-      winningIndices: diag1.map(c => c.index)
-    };
+    results.push({
+      patternName: 'Diagonal \\',
+      indices: diag1.map(c => c.index),
+      numbers: diag1.filter(c => !c.isFree && typeof c.val === 'number').map(c => c.val as number)
+    });
   }
 
   // 4. Check Anti-Diagonal (/)
   const diag2 = cardMatrix.filter(c => c.row + c.col === 4);
   if (diag2.every(isMarked)) {
-    return {
-      isWin: true,
-      winningPattern: 'Diagonal /',
-      winningIndices: diag2.map(c => c.index)
-    };
+    results.push({
+      patternName: 'Diagonal /',
+      indices: diag2.map(c => c.index),
+      numbers: diag2.filter(c => !c.isFree && typeof c.val === 'number').map(c => c.val as number)
+    });
   }
 
   // 5. Check 4 Corners
   const cornerIndices = [0, 4, 20, 24];
   const cornerCells = cardMatrix.filter(c => cornerIndices.includes(c.index));
   if (cornerCells.length === 4 && cornerCells.every(isMarked)) {
-    return {
-      isWin: true,
-      winningPattern: 'Four Corners',
-      winningIndices: cornerIndices
-    };
+    results.push({
+      patternName: 'Four Corners',
+      indices: cornerIndices,
+      numbers: cornerCells.filter(c => !c.isFree && typeof c.val === 'number').map(c => c.val as number)
+    });
   }
 
+  return results;
+}
+
+/**
+ * Validates whether a given card matrix has achieved a complete winning line against drawn balls
+ */
+export function checkWinningPattern(
+  cardMatrix: BingoCell[],
+  drawnNumbers: number[]
+): { isWin: boolean; winningPattern?: string; winningIndices?: number[] } {
+  const all = getAllWinningPatterns(cardMatrix, drawnNumbers);
+  if (all.length > 0) {
+    return {
+      isWin: true,
+      winningPattern: all[0].patternName,
+      winningIndices: all[0].indices
+    };
+  }
   return { isWin: false };
 }
 

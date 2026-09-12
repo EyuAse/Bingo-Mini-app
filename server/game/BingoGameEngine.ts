@@ -5,6 +5,7 @@ import {
   BingoCell,
   generateCardFromId,
   checkWinningPattern,
+  getAllWinningPatterns,
   getBallColumn,
   generateRandomShuffledBalls
 } from './cartelaGenerator.ts';
@@ -2155,12 +2156,29 @@ class BingoGameEngine {
     const ticket = userTickets.find(t => t.cartelaId === cartelaId);
     const cardMatrix = ticket ? ticket.cardMatrix : generateCardFromId(cartelaId);
 
-    const winCheck = checkWinningPattern(cardMatrix, room.drawnNumbers);
-    if (!winCheck.isWin) {
+    const allWins = getAllWinningPatterns(cardMatrix, room.drawnNumbers);
+    if (allWins.length === 0) {
       return {
         success: false,
         message: 'Invalid Bingo claim. Not all numbers in a winning line have been drawn yet.'
       };
+    }
+
+    // Traditional Manual Bingo Rule: If a manual player claims, the winning pattern MUST contain the current/last drawn ball!
+    // If the next ball has already been called and no completed pattern contains that current ball, the claim is expired/slept.
+    const lastCalledNumber = room.currentCall?.num || room.drawnNumbers[room.drawnNumbers.length - 1];
+    let eligibleWin = allWins[0];
+
+    if (ticket && ticket.isAutoPlay === false) {
+      const activeWin = allWins.find(w => w.numbers.includes(lastCalledNumber));
+      if (!activeWin) {
+        console.log(`[ClaimBingo] Missed/Slept Bingo by ${userName} (${userId}) on Cartela #${cartelaId}. Completed patterns do not include current ball ${lastCalledNumber}. Play continues.`);
+        return {
+          success: false,
+          message: 'Missed Bingo! That pattern was completed on an earlier number. Keep playing to complete a new pattern!'
+        };
+      }
+      eligibleWin = activeWin;
     }
 
     const winningCards: Array<{
@@ -2176,8 +2194,8 @@ class BingoGameEngine {
         userName,
         cartelaId,
         isReal: true,
-        winningPattern: winCheck.winningPattern || 'Bingo Line',
-        winningIndices: winCheck.winningIndices || []
+        winningPattern: eligibleWin.patternName || 'Bingo Line',
+        winningIndices: eligibleWin.indices || []
       }
     ];
 

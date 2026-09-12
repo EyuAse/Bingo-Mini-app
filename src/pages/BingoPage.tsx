@@ -22,7 +22,7 @@ export const BingoPage: React.FC = () => {
   const {
     hasTicket, showWinModal, isMuted, toggleMute, triggerManualSync, isSyncing,
     roundPhase, waitingForPlayers, realPlayerCount, lobbyCountdown, cancelLobbyTicket,
-    autoPlay, hasWinningPattern, claimBingo, claimInProgress
+    autoPlay, hasWinningPattern, hasSleptPattern, claimBingo, claimInProgress
   } = useBingo();
   const { switchPage, showToast } = useApp();
   const [showVoiceTester, setShowVoiceTester] = useState<boolean>(false);
@@ -129,13 +129,15 @@ export const BingoPage: React.FC = () => {
                       if (claimInProgress) return;
                       if (hasWinningPattern) {
                         claimBingo();
+                      } else if (hasSleptPattern) {
+                        showToast("⚠️ Missed Bingo! The winning number has passed. Keep playing to complete a new pattern!");
                       } else {
                         showToast("Complete any 5-in-a-row line on your card to call BINGO!");
                       }
                     }}
-                    title={claimInProgress ? "Claiming your win..." : hasWinningPattern ? "Call Bingo to claim your victory!" : "Complete a 5-in-a-row line to call Bingo"}
+                    title={claimInProgress ? "Claiming your win..." : hasWinningPattern ? "Call Bingo to claim your victory!" : hasSleptPattern ? "Pattern expired on previous number. Continue playing for a new pattern!" : "Complete a 5-in-a-row line to call Bingo"}
                   >
-                    <i className={claimInProgress ? "fa-solid fa-spinner fa-spin" : hasWinningPattern ? "fa-solid fa-trophy fa-bounce" : "fa-solid fa-trophy"}></i>
+                    <i className={claimInProgress ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-trophy"}></i>
                     <span>{claimInProgress ? 'CLAIMING... ⚡' : hasWinningPattern ? 'CALL BINGO! ⚡' : 'BINGO! 🎯'}</span>
                   </button>
                 )}
