@@ -50,15 +50,127 @@ const COLUMN_I_BALLS: BallScriptItem[] = [
   { num: 30, col: 'I', amharic: 'አይ... ሰላሳ!', english: 'I... Thirty!' }
 ];
 
+const COLUMN_N_BALLS: BallScriptItem[] = [
+  { num: 31, col: 'N', amharic: 'ኤን... ሰላሳ አንድ!', english: 'N... Thirty-One!' },
+  { num: 32, col: 'N', amharic: 'ኤን... ሰላሳ ሁለት!', english: 'N... Thirty-Two!' },
+  { num: 33, col: 'N', amharic: 'ኤን... ሰላሳ ሶስት!', english: 'N... Thirty-Three!' },
+  { num: 34, col: 'N', amharic: 'ኤን... ሰላሳ አራት!', english: 'N... Thirty-Four!' },
+  { num: 35, col: 'N', amharic: 'ኤን... ሰላሳ አምስት!', english: 'N... Thirty-Five!' },
+  { num: 36, col: 'N', amharic: 'ኤን... ሰላሳ ስድስት!', english: 'N... Thirty-Six!' },
+  { num: 37, col: 'N', amharic: 'ኤን... ሰላሳ ሰባት!', english: 'N... Thirty-Seven!' },
+  { num: 38, col: 'N', amharic: 'ኤን... ሰላሳ ስምንት!', english: 'N... Thirty-Eight!' },
+  { num: 39, col: 'N', amharic: 'ኤን... ሰላሳ ዘጠኝ!', english: 'N... Thirty-Nine!' },
+  { num: 40, col: 'N', amharic: 'ኤን... አርባ!', english: 'N... Forty!' },
+  { num: 41, col: 'N', amharic: 'ኤን... አርባ አንድ!', english: 'N... Forty-One!' },
+  { num: 42, col: 'N', amharic: 'ኤን... አርባ ሁለት!', english: 'N... Forty-Two!' },
+  { num: 43, col: 'N', amharic: 'ኤን... አርባ ሶስት!', english: 'N... Forty-Three!' },
+  { num: 44, col: 'N', amharic: 'ኤን... አርባ አራት!', english: 'N... Forty-Four!' },
+  { num: 45, col: 'N', amharic: 'ኤን... አርባ አምስት!', english: 'N... Forty-Five!' }
+];
+
+const COLUMN_G_BALLS: BallScriptItem[] = [
+  { num: 46, col: 'G', amharic: 'ጂ... አርባ ስድስት!', english: 'G... Forty-Six!' },
+  { num: 47, col: 'G', amharic: 'ጂ... አርባ ሰባት!', english: 'G... Forty-Seven!' },
+  { num: 48, col: 'G', amharic: 'ጂ... አርባ ስምንት!', english: 'G... Forty-Eight!' },
+  { num: 49, col: 'G', amharic: 'ጂ... አርባ ዘጠኝ!', english: 'G... Forty-Nine!' },
+  { num: 50, col: 'G', amharic: 'ጂ... ሃምሳ!', english: 'G... Fifty!' },
+  { num: 51, col: 'G', amharic: 'ጂ... ሃምሳ አንድ!', english: 'G... Fifty-One!' },
+  { num: 52, col: 'G', amharic: 'ጂ... ሃምሳ ሁለት!', english: 'G... Fifty-Two!' },
+  { num: 53, col: 'G', amharic: 'ጂ... ሃምሳ ሶስት!', english: 'G... Fifty-Three!' },
+  { num: 54, col: 'G', amharic: 'ጂ... ሃምሳ አራት!', english: 'G... Fifty-Four!' },
+  { num: 55, col: 'G', amharic: 'ጂ... ሃምሳ አምስት!', english: 'G... Fifty-Five!' },
+  { num: 56, col: 'G', amharic: 'ጂ... ሃምሳ ስድስት!', english: 'G... Fifty-Six!' },
+  { num: 57, col: 'G', amharic: 'ጂ... ሃምሳ ሰባት!', english: 'G... Fifty-Seven!' },
+  { num: 58, col: 'G', amharic: 'ጂ... ሃምሳ ስምንት!', english: 'G... Fifty-Eight!' },
+  { num: 59, col: 'G', amharic: 'ጂ... ሃምሳ ዘጠኝ!', english: 'G... Fifty-Nine!' },
+  { num: 60, col: 'G', amharic: 'ጂ... ስልሳ!', english: 'G... Sixty!' }
+];
+
+const COLUMN_O_BALLS: BallScriptItem[] = [
+  { num: 61, col: 'O', amharic: 'ኦ... ስልሳ አንድ!', english: 'O... Sixty-One!' },
+  { num: 62, col: 'O', amharic: 'ኦ... ስልሳ ሁለት!', english: 'O... Sixty-Two!' },
+  { num: 63, col: 'O', amharic: 'ኦ... ስልሳ ሶስት!', english: 'O... Sixty-Three!' },
+  { num: 64, col: 'O', amharic: 'ኦ... ስልሳ አራት!', english: 'O... Sixty-Four!' },
+  { num: 65, col: 'O', amharic: 'ኦ... ስልሳ አምስት!', english: 'O... Sixty-Five!' },
+  { num: 66, col: 'O', amharic: 'ኦ... ስልሳ ስድስት!', english: 'O... Sixty-Six!' },
+  { num: 67, col: 'O', amharic: 'ኦ... ስልሳ ሰባት!', english: 'O... Sixty-Seven!' },
+  { num: 68, col: 'O', amharic: 'ኦ... ስልሳ ስምንት!', english: 'O... Sixty-Eight!' },
+  { num: 69, col: 'O', amharic: 'ኦ... ስልሳ ዘጠኝ!', english: 'O... Sixty-Nine!' },
+  { num: 70, col: 'O', amharic: 'ኦ... ሰባ!', english: 'O... Seventy!' },
+  { num: 71, col: 'O', amharic: 'ኦ... ሰባ አንድ!', english: 'O... Seventy-One!' },
+  { num: 72, col: 'O', amharic: 'ኦ... ሰባ ሁለት!', english: 'O... Seventy-Two!' },
+  { num: 73, col: 'O', amharic: 'ኦ... ሰባ ሶስት!', english: 'O... Seventy-Three!' },
+  { num: 74, col: 'O', amharic: 'ኦ... ሰባ አራት!', english: 'O... Seventy-Four!' },
+  { num: 75, col: 'O', amharic: 'ኦ... ሰባ አምስት!', english: 'O... Seventy-Five!' }
+];
+
+type BingoColumn = 'B' | 'I' | 'N' | 'G' | 'O';
+
+const COLUMN_CONFIG: Record<BingoColumn, {
+  range: string;
+  color: string;
+  borderActive: string;
+  bgActive: string;
+  textActive: string;
+  sphereGrad: string;
+  items: BallScriptItem[];
+}> = {
+  B: {
+    range: '1–15',
+    color: '#3b82f6',
+    borderActive: '2px solid #3b82f6',
+    bgActive: 'rgba(59, 130, 246, 0.2)',
+    textActive: '#93c5fd',
+    sphereGrad: 'radial-gradient(circle at 35% 35%, #60a5fa, #1e40af)',
+    items: COLUMN_B_BALLS
+  },
+  I: {
+    range: '16–30',
+    color: '#f43f5e',
+    borderActive: '2px solid #f43f5e',
+    bgActive: 'rgba(244, 63, 94, 0.2)',
+    textActive: '#fda4af',
+    sphereGrad: 'radial-gradient(circle at 35% 35%, #fb7185, #be123c)',
+    items: COLUMN_I_BALLS
+  },
+  N: {
+    range: '31–45',
+    color: '#f59e0b',
+    borderActive: '2px solid #f59e0b',
+    bgActive: 'rgba(245, 158, 11, 0.2)',
+    textActive: '#fcd34d',
+    sphereGrad: 'radial-gradient(circle at 35% 35%, #fbbf24, #b45309)',
+    items: COLUMN_N_BALLS
+  },
+  G: {
+    range: '46–60',
+    color: '#10b981',
+    borderActive: '2px solid #10b981',
+    bgActive: 'rgba(16, 185, 129, 0.2)',
+    textActive: '#6ee7b7',
+    sphereGrad: 'radial-gradient(circle at 35% 35%, #34d399, #047857)',
+    items: COLUMN_G_BALLS
+  },
+  O: {
+    range: '61–75',
+    color: '#a855f7',
+    borderActive: '2px solid #a855f7',
+    bgActive: 'rgba(168, 85, 247, 0.2)',
+    textActive: '#d8b4fe',
+    sphereGrad: 'radial-gradient(circle at 35% 35%, #c084fc, #7e22ce)',
+    items: COLUMN_O_BALLS
+  }
+};
+
 export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onClose }) => {
   const { isMuted, toggleMute } = useBingo();
   const [activePlayingNum, setActivePlayingNum] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'B' | 'I'>('I');
+  const [activeTab, setActiveTab] = useState<BingoColumn>('O');
 
   if (!isOpen) return null;
 
-  const currentBalls = activeTab === 'B' ? COLUMN_B_BALLS : COLUMN_I_BALLS;
-  const isColB = activeTab === 'B';
+  const currentConfig = COLUMN_CONFIG[activeTab];
+  const currentBalls = currentConfig.items;
 
   const handleTestBall = async (b: BallScriptItem) => {
     if (isMuted) {
@@ -96,13 +208,13 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
       <div
         style={{
           background: 'linear-gradient(145deg, #111827, #0f172a)',
-          border: isColB ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
+          border: `1px solid ${currentConfig.color}40`,
           borderRadius: '20px',
           width: '100%',
-          maxWidth: '520px',
+          maxWidth: '560px',
           maxHeight: '90vh',
           overflowY: 'auto',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 25px rgba(59, 130, 246, 0.15)',
+          boxShadow: `0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 25px ${currentConfig.color}25`,
           padding: '24px',
           color: '#ffffff'
         }}
@@ -113,12 +225,12 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '24px' }}>🎙️</span>
-              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: isColB ? '#60a5fa' : '#34d399' }}>
-                Column {activeTab} Voice Studio ({isColB ? '1–15' : '16–30'})
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: currentConfig.textActive }}>
+                Column {activeTab} Voice Studio ({currentConfig.range})
               </h2>
             </div>
             <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
-              Tap any ball to audition your real recorded voice clip
+              Tap any ball to audition your authentic human voice clip
             </p>
           </div>
           <button
@@ -141,53 +253,38 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
           </button>
         </div>
 
-        {/* Column Tab Selector */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
-          <button
-            type="button"
-            onClick={() => setActiveTab('B')}
-            style={{
-              padding: '10px',
-              borderRadius: '12px',
-              border: isColB ? '2px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.1)',
-              background: isColB ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-              color: isColB ? '#93c5fd' : '#94a3b8',
-              fontWeight: 800,
-              fontSize: '13px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <span>🔵 Column B (1–15)</span>
-            <span style={{ fontSize: '10px', background: '#10b981', color: '#ffffff', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>15/15</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('I')}
-            style={{
-              padding: '10px',
-              borderRadius: '12px',
-              border: !isColB ? '2px solid #10b981' : '1px solid rgba(255, 255, 255, 0.1)',
-              background: !isColB ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-              color: !isColB ? '#6ee7b7' : '#94a3b8',
-              fontWeight: 800,
-              fontSize: '13px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <span>🟢 Column I (16–30)</span>
-            <span style={{ fontSize: '10px', background: '#10b981', color: '#ffffff', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>15/15</span>
-          </button>
+        {/* 5-Column Tab Selector */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', marginBottom: '14px' }}>
+          {(['B', 'I', 'N', 'G', 'O'] as BingoColumn[]).map(col => {
+            const conf = COLUMN_CONFIG[col];
+            const isTabActive = activeTab === col;
+            return (
+              <button
+                key={col}
+                type="button"
+                onClick={() => setActiveTab(col)}
+                style={{
+                  padding: '8px 4px',
+                  borderRadius: '10px',
+                  border: isTabActive ? conf.borderActive : '1px solid rgba(255, 255, 255, 0.1)',
+                  background: isTabActive ? conf.bgActive : 'rgba(255, 255, 255, 0.04)',
+                  color: isTabActive ? conf.textActive : '#94a3b8',
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '2px',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>{col}</span>
+                <span style={{ fontSize: '9px', opacity: 0.8 }}>{conf.range}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Status Pill & Audio State */}
@@ -196,17 +293,17 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
+            background: `${currentConfig.color}15`,
+            border: `1px solid ${currentConfig.color}40`,
             borderRadius: '12px',
             padding: '10px 14px',
             marginBottom: '16px'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#34d399' }}>
-              15 of 15 Ready (100% Column {activeTab} Recorded)
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: currentConfig.color }}></span>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: currentConfig.textActive }}>
+              15 of 15 Ready (Column {activeTab}: Balls {currentConfig.range})
             </span>
           </div>
 
@@ -240,9 +337,6 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
         >
           {currentBalls.map((b) => {
             const isPlaying = activePlayingNum === b.num;
-            const ballSphereGradient = isColB
-              ? 'radial-gradient(circle at 35% 35%, #60a5fa, #1e40af)'
-              : 'radial-gradient(circle at 35% 35%, #34d399, #047857)';
 
             return (
               <button
@@ -251,10 +345,10 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
                 onClick={() => handleTestBall(b)}
                 style={{
                   background: isPlaying
-                    ? (isColB ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'linear-gradient(135deg, #059669, #047857)')
+                    ? `linear-gradient(135deg, ${currentConfig.color}, #0f172a)`
                     : 'rgba(255, 255, 255, 0.05)',
                   border: isPlaying
-                    ? (isColB ? '1px solid #60a5fa' : '1px solid #34d399')
+                    ? `1px solid ${currentConfig.color}`
                     : '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '14px',
                   padding: '12px 8px',
@@ -263,7 +357,7 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
                   alignItems: 'center',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
-                  boxShadow: isPlaying ? '0 0 15px rgba(16, 185, 129, 0.5)' : 'none',
+                  boxShadow: isPlaying ? `0 0 15px ${currentConfig.color}60` : 'none',
                   transform: isPlaying ? 'scale(0.97)' : 'scale(1)'
                 }}
               >
@@ -273,7 +367,7 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
                     width: '38px',
                     height: '38px',
                     borderRadius: '50%',
-                    background: ballSphereGradient,
+                    background: currentConfig.sphereGrad,
                     color: '#ffffff',
                     display: 'flex',
                     flexDirection: 'column',
@@ -303,7 +397,7 @@ export const VoiceTesterModal: React.FC<VoiceTesterModalProps> = ({ isOpen, onCl
                     marginTop: '6px',
                     fontSize: '9px',
                     fontWeight: 700,
-                    color: isPlaying ? '#93c5fd' : '#10b981',
+                    color: isPlaying ? '#93c5fd' : currentConfig.color,
                     display: 'flex',
                     alignItems: 'center',
                     gap: '3px'

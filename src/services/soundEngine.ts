@@ -441,17 +441,9 @@ class AudioEngineService {
       // 2. Decode into in-memory Web Audio AudioBuffer (0ms instant hardware playback)
       if (!this.voiceBufferMap.has(i)) {
         try {
-          const urls = [
-            `/assets/audio/am/${i}.mp3`,
-            `/assets/audio/am/${i}.wav`,
-            `/assets/audio/am/${i}.webm`
-          ];
-          for (const url of urls) {
-            const buf = await this.loadAudioBuffer(url);
-            if (buf) {
-              this.voiceBufferMap.set(i, buf);
-              break;
-            }
+          const buf = await this.loadAudioBuffer(`/assets/audio/am/${i}.mp3`);
+          if (buf) {
+            this.voiceBufferMap.set(i, buf);
           }
         } catch {}
       }

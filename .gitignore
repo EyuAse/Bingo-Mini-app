@@ -7,3 +7,4 @@ scratch
 .env
 .env.local
 backups/
+public/assets/audio_backup/
