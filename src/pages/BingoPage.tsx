@@ -118,12 +118,12 @@ export const BingoPage: React.FC = () => {
                       if (hasWinningPattern) {
                         claimBingo();
                       } else if (hasSleptPattern) {
-                        showToast("⚠️ Missed Bingo! The winning number has passed. Keep playing to complete a new pattern!");
+                        showToast("⚠️ Missed Bingo! That pattern expired because a subsequent number was called. Complete another 5-in-a-row line to call BINGO!");
                       } else {
                         showToast("Complete any 5-in-a-row line on your card to call BINGO!");
                       }
                     }}
-                    title={claimInProgress ? "Claiming your win..." : hasWinningPattern ? "Call Bingo to claim your victory!" : hasSleptPattern ? "Pattern expired on previous number. Continue playing for a new pattern!" : "Complete a 5-in-a-row line to call Bingo"}
+                    title={claimInProgress ? "Claiming your win..." : hasWinningPattern ? "Call Bingo to claim your victory!" : hasSleptPattern ? "Pattern expired on an earlier number. Complete another line to call Bingo!" : "Complete a 5-in-a-row line to call Bingo"}
                   >
                     <i className={claimInProgress ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-trophy"}></i>
                     <span>{claimInProgress ? 'CLAIMING... ⚡' : hasWinningPattern ? 'CALL BINGO! ⚡' : 'BINGO! 🎯'}</span>

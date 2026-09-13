@@ -834,19 +834,21 @@ class BingoGameEngine {
   }
 
   /**
-   * Updates player's Auto/Manual mode for their active & queued tickets
+   * Updates player's Auto/Manual mode for their active & queued tickets across all rooms
    */
   public updatePlayerMode(roomId: string, userId: string, isAutoPlay: boolean) {
     this.playerModes.set(userId, isAutoPlay);
-    const room = this.getRoom(roomId);
-    if (!room) return;
-    const userTickets = room.tickets.get(userId);
-    if (userTickets) {
-      userTickets.forEach(t => { t.isAutoPlay = isAutoPlay; });
-    }
-    const nextTickets = room.nextRoundTickets?.get(userId);
-    if (nextTickets) {
-      nextTickets.forEach(t => { t.isAutoPlay = isAutoPlay; });
+    for (const rid of STAKE_ROOM_IDS) {
+      const room = this.rooms.get(rid);
+      if (!room) continue;
+      const userTickets = room.tickets.get(userId);
+      if (userTickets) {
+        userTickets.forEach(t => { t.isAutoPlay = isAutoPlay; });
+      }
+      const nextTickets = room.nextRoundTickets?.get(userId);
+      if (nextTickets) {
+        nextTickets.forEach(t => { t.isAutoPlay = isAutoPlay; });
+      }
     }
   }
 
@@ -1003,6 +1005,14 @@ class BingoGameEngine {
       room.isProcessingVictory = false;
       room.lastBallTime = Date.now();
       this.recalculatePot(room);
+
+      // Mode Synchronization Guard: Ensure all tickets strictly reflect the player's true registered mode
+      for (const [uid, tList] of room.tickets.entries()) {
+        if (this.playerModes.has(uid)) {
+          const userMode = this.playerModes.get(uid)!;
+          tList.forEach(t => { t.isAutoPlay = userMode; });
+        }
+      }
 
       if (room.tickets.size >= 2) {
         // >= 2 players: Active Play Mode!
@@ -1736,8 +1746,8 @@ class BingoGameEngine {
         const room = this.rooms.get(roomId);
         if (!room) continue;
 
-        // Audio & Visual Isolation: Skip rooms that have already won and concluded their game!
-        if (room.phase === 'winner') {
+        // Audio & Visual Isolation: Skip rooms that have already won or are concluding victory!
+        if (room.phase === 'winner' || room.isProcessingVictory || room.winResult) {
           continue;
         }
 
@@ -2217,15 +2227,20 @@ class BingoGameEngine {
       };
     }
 
-    // Traditional Manual Bingo Rule: If a manual player claims, the winning pattern MUST contain the current/last drawn ball!
-    // If the next ball has already been called and no completed pattern contains that current ball, the claim is expired/slept.
-    const lastCalledNumber = room.currentCall?.num || room.drawnNumbers[room.drawnNumbers.length - 1];
+    // Traditional Manual Bingo Rule + 1-Ball Latency Buffer:
+    // If a manual player claims, the winning pattern MUST contain an eligible ball:
+    // 1) The Current Ball (Ball N), OR
+    // 2) The Immediately Preceding Ball (Ball N-1) to protect against network transit latency and human reaction time.
+    // If 2 or more balls have passed without claiming, the pattern is expired/slept.
+    const currentNum = room.currentCall?.num || room.drawnNumbers[room.drawnNumbers.length - 1];
+    const prevNum = room.drawnNumbers.length >= 2 ? room.drawnNumbers[room.drawnNumbers.length - 2] : null;
+    const eligibleBalls = [currentNum, prevNum].filter((n): n is number => typeof n === 'number');
     let eligibleWin = allWins[0];
 
     if (ticket && ticket.isAutoPlay === false) {
-      const activeWin = allWins.find(w => w.numbers.includes(lastCalledNumber));
+      const activeWin = allWins.find(w => eligibleBalls.some(b => w.numbers.includes(b)));
       if (!activeWin) {
-        console.log(`[ClaimBingo] Missed/Slept Bingo by ${userName} (${userId}) on Cartela #${cartelaId}. Completed patterns do not include current ball ${lastCalledNumber}. Play continues.`);
+        console.log(`[ClaimBingo] Missed/Slept Bingo by ${userName} (${userId}) on Cartela #${cartelaId}. Completed patterns do not include eligible balls [${eligibleBalls.join(', ')}]. Play continues.`);
         return {
           success: false,
           message: 'Missed Bingo! That pattern was completed on an earlier number. Keep playing to complete a new pattern!'
@@ -2258,6 +2273,15 @@ class BingoGameEngine {
         if (otherUid === userId && t.cartelaId === cartelaId) continue;
         const otherCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
         if (otherCheck.isWin) {
+          // If other player is manual (isAutoPlay === false), do NOT award them an automatic split pot
+          // unless their winning pattern ALSO includes one of the eligible balls (Ball N or Ball N-1)
+          if (t.isAutoPlay === false) {
+            const otherWins = getAllWinningPatterns(t.cardMatrix, room.drawnNumbers);
+            const otherActiveWin = otherWins.find(w => eligibleBalls.some(b => w.numbers.includes(b)));
+            if (!otherActiveWin) {
+              continue; // Manual player slept their pattern or didn't complete on eligible balls
+            }
+          }
           winningCards.push({
             userId: otherUid,
             userName: t.userName,

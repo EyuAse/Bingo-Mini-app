@@ -97,6 +97,7 @@ interface BingoContextType {
   activeCartelaIndex: number;
   setActiveCartelaIndex: (idx: number) => void;
   currentCall: CalledBall | null;
+  previousCall: CalledBall | null;
   calledNumbers: number[];
   autoPlay: boolean;
   toggleAutoPlay: () => void;
@@ -233,16 +234,22 @@ const checkWinningPatterns = (cells: BingoCell[]): number[] | null => {
   return null;
 };
 
-// Check if a card has a winning pattern specifically completed by/containing the CURRENT called ball
-const getActiveWinningPatternOnBall = (cells: BingoCell[], currentBallNum: number | null): number[] | null => {
-  if (!currentBallNum) return null;
+// Check if a card has a winning pattern specifically completed by/containing any of the eligible called balls
+const getActiveWinningPatternOnBall = (
+  cells: BingoCell[],
+  eligibleBallNums: (number | null | undefined)[] | number | null
+): number[] | null => {
+  const numsArray = Array.isArray(eligibleBallNums) ? eligibleBallNums : [eligibleBallNums];
+  const validNums = numsArray.filter((n): n is number => typeof n === 'number' && n > 0);
+  if (validNums.length === 0) return null;
+
   for (const line of WIN_PATTERNS) {
     if (line.every(idx => cells[idx]?.marked)) {
-      const containsCurrent = line.some(idx => {
+      const containsEligible = line.some(idx => {
         const cell = cells[idx];
-        return !cell?.isFree && typeof cell?.val === 'number' && cell.val === currentBallNum;
+        return !cell?.isFree && typeof cell?.val === 'number' && validNums.includes(cell.val);
       });
-      if (containsCurrent) return line;
+      if (containsEligible) return line;
     }
   }
   return null;
@@ -324,6 +331,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [gameActive, setGameActive] = useState<boolean>(false);
   const [calledNumbers, setCalledNumbers] = useState<number[]>([]);
   const [currentCall, setCurrentCall] = useState<CalledBall | null>(null);
+  const [previousCall, setPreviousCall] = useState<CalledBall | null>(null);
 
   // Auto-Play Engine (Persisted in localStorage so background app switches & reloads never reset to Auto)
   const AUTOPLAY_STORAGE_KEY = 'betika_bingo_autoplay_mode';
@@ -350,8 +358,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const lastDaubClickTimeRef = useRef<{ [key: string]: number }>({});
 
   // Reactive Winning Pattern Detection for Manual Mode BINGO Claim Button:
-  // In manual play: a pattern is ONLY active for claim on the ball that completed it.
-  // If the next ball is drawn without claiming, that pattern expires (slept bingo), and the user must complete a new pattern.
+  // In manual play: a pattern is active for claim on the ball that completed it,
+  // PLUS a 1-ball grace buffer (previous ball) to protect against network transit latency and human reaction time.
+  // If 2 or more balls pass without claiming, that pattern expires (slept bingo), and the user must complete a new pattern.
   const { hasWinningPattern, hasSleptPattern } = useMemo(() => {
     if (roundPhase !== 'playing') {
       return { hasWinningPattern: false, hasSleptPattern: false };
@@ -360,26 +369,29 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (autoPlay) {
       const win1 = cartela1Data.length > 0 ? checkWinningPatterns(cartela1Data) : null;
       const win2 = totalPlayableCards >= 2 && cartela2Data.length > 0 ? checkWinningPatterns(cartela2Data) : null;
-      return { hasWinningPattern: !!(win1 || win2), hasSleptPattern: false };
+      const win3 = totalPlayableCards >= 3 && cartela3Data.length > 0 ? checkWinningPatterns(cartela3Data) : null;
+      return { hasWinningPattern: !!(win1 || win2 || win3), hasSleptPattern: false };
     }
 
-    // Manual Mode: Check if any completed pattern contains the CURRENT active ball
-    const currentNum = currentCall?.num ?? null;
-    const active1 = cartela1Data.length > 0 ? getActiveWinningPatternOnBall(cartela1Data, currentNum) : null;
-    const active2 = totalPlayableCards >= 2 && cartela2Data.length > 0 ? getActiveWinningPatternOnBall(cartela2Data, currentNum) : null;
-    const hasActive = !!(active1 || active2);
+    // Manual Mode: Check if any completed pattern contains eligible balls (Current Ball N or Previous Ball N-1)
+    const eligibleBalls = [currentCall?.num, previousCall?.num].filter((n): n is number => typeof n === 'number' && n > 0);
+    const active1 = cartela1Data.length > 0 ? getActiveWinningPatternOnBall(cartela1Data, eligibleBalls) : null;
+    const active2 = totalPlayableCards >= 2 && cartela2Data.length > 0 ? getActiveWinningPatternOnBall(cartela2Data, eligibleBalls) : null;
+    const active3 = totalPlayableCards >= 3 && cartela3Data.length > 0 ? getActiveWinningPatternOnBall(cartela3Data, eligibleBalls) : null;
+    const hasActive = !!(active1 || active2 || active3);
 
     if (hasActive) {
       return { hasWinningPattern: true, hasSleptPattern: false };
     }
 
-    // If not active on current ball, check if player has any expired (slept) completed pattern from a past ball
+    // If not active on eligible balls, check if player has any expired (slept) completed pattern from older balls
     const all1 = cartela1Data.length > 0 ? checkWinningPatterns(cartela1Data) : null;
     const all2 = totalPlayableCards >= 2 && cartela2Data.length > 0 ? checkWinningPatterns(cartela2Data) : null;
-    const hasSlept = !!(all1 || all2);
+    const all3 = totalPlayableCards >= 3 && cartela3Data.length > 0 ? checkWinningPatterns(cartela3Data) : null;
+    const hasSlept = !!(all1 || all2 || all3);
 
     return { hasWinningPattern: false, hasSleptPattern: hasSlept };
-  }, [roundPhase, autoPlay, currentCall?.num, cartela1Data, cartela2Data, totalPlayableCards]);
+  }, [roundPhase, autoPlay, currentCall?.num, previousCall?.num, cartela1Data, cartela2Data, cartela3Data, totalPlayableCards]);
   const winModalDismissedForRoundRef = useRef<number | null>(null);
   const activeWinModalRoundRef = useRef<number | null>(null);
   const lastLiveWinRoundRef = useRef<number | null>(null);
@@ -547,7 +559,12 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Auto-daub helper when a number is called
   const applyDrawnNumber = useCallback((num: number, col: string) => {
-    setCurrentCall({ num, col });
+    setCurrentCall(prev => {
+      if (prev && prev.num !== num) {
+        setPreviousCall(prev);
+      }
+      return { num, col };
+    });
     setSpherePop(true);
     setTimeout(() => setSpherePop(false), 300);
 
@@ -581,6 +598,14 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const lastNum = drawnNums[drawnNums.length - 1];
     const colLetter = lastNum <= 15 ? 'B' : lastNum <= 30 ? 'I' : lastNum <= 45 ? 'N' : lastNum <= 60 ? 'G' : 'O';
     setCurrentCall({ num: lastNum, col: colLetter });
+
+    if (drawnNums.length >= 2) {
+      const prevNum = drawnNums[drawnNums.length - 2];
+      const prevColLetter = prevNum <= 15 ? 'B' : prevNum <= 30 ? 'I' : prevNum <= 45 ? 'N' : prevNum <= 60 ? 'G' : 'O';
+      setPreviousCall({ num: prevNum, col: prevColLetter });
+    } else {
+      setPreviousCall(null);
+    }
 
     if (!autoPlayRef.current) {
       // In manual mode, fast-forward catchup updates called numbers & current call ONLY. Cards are NEVER auto-daubed!
@@ -786,6 +811,9 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const roomId = getActiveRoomId();
     socketService.joinRoom(roomId, userRef.current?.id, userRef.current?.fullName);
+    if (userRef.current?.id) {
+      socketService.updatePlayerMode(roomId, userRef.current.id, autoPlayRef.current);
+    }
 
     // 1. Room State / Sync
     const unsubRoomState = socketService.onRoomState((state: any) => {
@@ -883,6 +911,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const currentRound = state.roundNumber || roundNumberRef.current;
         if (activeWinModalRoundRef.current !== currentRound) {
           activeWinModalRoundRef.current = currentRound;
+          isClaimingRef.current = false;
+          setClaimInProgress(false);
           const currentUser = userRef.current;
         const isRealUserWin = 
           Boolean(currentUser?.id && Array.isArray(state.winResult.winnerUserIds) && state.winResult.winnerUserIds.includes(currentUser.id)) ||
@@ -943,6 +973,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setRoundNumber(data.roundNumber);
       }
       clearManualMarks();
+      isClaimingRef.current = false;
+      setClaimInProgress(false);
       setRoundPhase('playing');
       setGameActive(true);
       setWaitingForPlayers(false);
@@ -955,6 +987,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
       setCalledNumbers([]);
       setCurrentCall(null);
+      setPreviousCall(null);
       setWinResult(null);
       winModalDismissedForRoundRef.current = null;
       setShowWinModal(false);
@@ -1830,21 +1863,25 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       else if (win2) { activeWinCardIdx = 1; detectedWinningLine = win2; }
       else if (win3) { activeWinCardIdx = 2; detectedWinningLine = win3; }
     } else {
-      const active1 = getActiveWinningPatternOnBall(c1, currentNum);
-      const active2 = totalPlayableCards >= 2 ? getActiveWinningPatternOnBall(c2, currentNum) : null;
-      const active3 = totalPlayableCards >= 3 ? getActiveWinningPatternOnBall(c3, currentNum) : null;
+      const eligibleBalls = [currentCall?.num, previousCall?.num].filter((n): n is number => typeof n === 'number' && n > 0);
+      const active1 = getActiveWinningPatternOnBall(c1, eligibleBalls);
+      const active2 = totalPlayableCards >= 2 ? getActiveWinningPatternOnBall(c2, eligibleBalls) : null;
+      const active3 = totalPlayableCards >= 3 ? getActiveWinningPatternOnBall(c3, eligibleBalls) : null;
       if (active1) { activeWinCardIdx = 0; detectedWinningLine = active1; }
       else if (active2) { activeWinCardIdx = 1; detectedWinningLine = active2; }
       else if (active3) { activeWinCardIdx = 2; detectedWinningLine = active3; }
       else {
-        // Player clicked BINGO in manual mode, but no pattern is active on current ball
+        // Player clicked BINGO in manual mode, but no pattern is active on eligible balls
         const any1 = checkWinningPatterns(c1);
         const any2 = totalPlayableCards >= 2 ? checkWinningPatterns(c2) : null;
-        if (any1 || any2) {
-          showToast("⚠️ Missed Bingo! That pattern expired because the next number was called. Keep playing to complete a new pattern!");
+        const any3 = totalPlayableCards >= 3 ? checkWinningPatterns(c3) : null;
+        if (any1 || any2 || any3) {
+          showToast("⚠️ Missed Bingo! That pattern expired because subsequent numbers were called. Keep playing to complete a new pattern!");
         } else {
           showToast("Complete any 5-in-a-row line on your card to call BINGO!");
         }
+        isClaimingRef.current = false;
+        setClaimInProgress(false);
         return;
       }
     }
@@ -1890,6 +1927,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           });
           setShowWinModal(true);
           soundEngine.playWinFanfare();
+          isClaimingRef.current = false;
+          setClaimInProgress(false);
         } catch (e) {
           console.error('Error in claimBingo:', e);
           isClaimingRef.current = false;
@@ -1913,9 +1952,13 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       });
       setShowWinModal(true);
       soundEngine.playWinFanfare();
+      isClaimingRef.current = false;
+      setClaimInProgress(false);
     } else {
       soundEngine.playPop();
       showToast('⚠️ Pattern not complete yet! Keep daubing!');
+      isClaimingRef.current = false;
+      setClaimInProgress(false);
     }
   };
 
@@ -1967,6 +2010,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         activeCartelaIndex,
         setActiveCartelaIndex,
         currentCall,
+        previousCall,
         calledNumbers,
         autoPlay,
         toggleAutoPlay,
