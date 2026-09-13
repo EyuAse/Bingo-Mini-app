@@ -15,10 +15,7 @@ export const CashierDesk: React.FC = () => {
   const {
     transactions,
     approveAndReleaseTransaction,
-    rejectTransaction,
-    addDepositRequest,
-    addWithdrawRequest,
-    users
+    rejectTransaction
   } = useAdmin();
 
   const { showToast } = useApp();
@@ -33,14 +30,6 @@ export const CashierDesk: React.FC = () => {
   const [rejectTargetTx, setRejectTargetTx] = useState<TransactionRequest | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('Invalid SMS Reference Code (Not found in Telebirr)');
   const [customRejectNote, setCustomRejectNote] = useState<string>('');
-  const [showManualTxModal, setShowManualTxModal] = useState(false);
-
-  // Manual Transaction Form
-  const [manualType, setManualType] = useState<'deposit' | 'withdrawal'>('deposit');
-  const [manualUser, setManualUser] = useState(users[0]?.id || '');
-  const [manualAmount, setManualAmount] = useState('500');
-  const [manualMethod, setManualMethod] = useState<'Telebirr' | 'CBE'>('Telebirr');
-  const [manualAccount, setManualAccount] = useState('0911234567');
 
   const effectiveTransactions = transactions || [];
 
@@ -110,42 +99,6 @@ export const CashierDesk: React.FC = () => {
     setCustomRejectNote('');
   };
 
-  const handleCreateManualOrder = (e: React.FormEvent) => {
-    e.preventDefault();
-    const amt = parseFloat(manualAmount);
-    if (!amt || amt <= 0) {
-      showToast('❌ Please enter a valid amount');
-      return;
-    }
-    const targetUser = users.find(u => u.id === manualUser) || users[0];
-    const targetUserId = targetUser?.id || 'usr-1';
-    const targetUserName = targetUser?.name || 'Manual Customer';
-    const targetUserPhone = targetUser?.phone || manualAccount;
-
-    if (manualType === 'deposit') {
-      addDepositRequest(
-        targetUserId,
-        targetUserName,
-        targetUserPhone,
-        amt,
-        manualMethod,
-        manualAccount
-      );
-    } else {
-      addWithdrawRequest(
-        targetUserId,
-        targetUserName,
-        targetUserPhone,
-        amt,
-        manualMethod,
-        manualAccount
-      );
-    }
-
-    showToast(`✓ Created manual ${manualType} order for ${targetUserName}`);
-    setShowManualTxModal(false);
-  };
-
   return (
     <div className="fresh-cashier-desk-container">
       {/* 1. Hero Desk Banner with Lemon Slice Artwork */}
@@ -186,15 +139,6 @@ export const CashierDesk: React.FC = () => {
               <circle cx="40" cy="40" r="5" fill="#ffffff" />
             </svg>
           </div>
-
-          <button
-            type="button"
-            className="btn-hero-new-order"
-            onClick={() => setShowManualTxModal(true)}
-          >
-            <i className="fa-solid fa-plus"></i>
-            <span>New Manual Order</span>
-          </button>
         </div>
       </div>
 
@@ -722,121 +666,6 @@ export const CashierDesk: React.FC = () => {
                 Cancel
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── New Manual Order Modal ── */}
-      {showManualTxModal && (
-        <div className="cashier-modal-backdrop" onClick={() => setShowManualTxModal(false)}>
-          <div className="cashier-manual-modal-card" onClick={e => e.stopPropagation()}>
-            <div className="manual-modal-header">
-              <h3>
-                <i className="fa-solid fa-plus gold" style={{ marginRight: 8 }}></i>
-                Create Manual Cashier Order
-              </h3>
-              <button
-                type="button"
-                className="btn-modal-close-round"
-                onClick={() => setShowManualTxModal(false)}
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateManualOrder} className="manual-order-form">
-              <div className="form-group-row">
-                <label>Order Type</label>
-                <div className="type-toggle-pill">
-                  <button
-                    type="button"
-                    className={`btn-type-tab ${manualType === 'deposit' ? 'active-green' : ''}`}
-                    onClick={() => setManualType('deposit')}
-                  >
-                    Deposit (+)
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn-type-tab ${manualType === 'withdrawal' ? 'active-red' : ''}`}
-                    onClick={() => setManualType('withdrawal')}
-                  >
-                    Withdrawal (−)
-                  </button>
-                </div>
-              </div>
-
-              <div className="form-group-row">
-                <label>Target Player Account</label>
-                <select
-                  value={manualUser}
-                  onChange={e => setManualUser(e.target.value)}
-                  className="manual-select-input"
-                >
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.name} ({u.phone}) — Balance: {u.balance} ETB
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group-row">
-                <label>Amount (ETB)</label>
-                <input
-                  type="number"
-                  min="10"
-                  step="10"
-                  value={manualAmount}
-                  onChange={e => setManualAmount(e.target.value)}
-                  className="manual-text-input"
-                  required
-                />
-              </div>
-
-              <div className="form-group-row">
-                <label>Payment Method</label>
-                <div className="method-toggle-pill">
-                  <button
-                    type="button"
-                    className={`btn-method-tab ${manualMethod === 'Telebirr' ? 'active' : ''}`}
-                    onClick={() => setManualMethod('Telebirr')}
-                  >
-                    Telebirr
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn-method-tab ${manualMethod === 'CBE' ? 'active' : ''}`}
-                    onClick={() => setManualMethod('CBE')}
-                  >
-                    CBE Bank
-                  </button>
-                </div>
-              </div>
-
-              <div className="form-group-row">
-                <label>Provider Account Number</label>
-                <input
-                  type="text"
-                  value={manualAccount}
-                  onChange={e => setManualAccount(e.target.value)}
-                  className="manual-text-input"
-                  required
-                />
-              </div>
-
-              <div className="manual-modal-footer">
-                <button type="submit" className="btn-manual-submit-gold">
-                  Create & Submit to Queue
-                </button>
-                <button
-                  type="button"
-                  className="btn-slip-close-gray"
-                  onClick={() => setShowManualTxModal(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

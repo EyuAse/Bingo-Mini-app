@@ -58,23 +58,6 @@ export const CashFlowAnalytics: React.FC = () => {
     showToast(`✓ Copied: ${text}`);
   };
 
-  const handleExportCSV = () => {
-    const headers = 'Reference,Type,Provider,Player,Phone,Amount,Status,SettledAt,AdminNote\n';
-    const rows = filteredLedger
-      .map(
-        tx =>
-          `"${tx.referenceNumber}","${tx.type}","${tx.method}","${tx.userName}","${tx.phone}",${tx.amount},"${tx.status}","${tx.processedAt || tx.createdAt}","${tx.adminNote || ''}"`
-      )
-      .join('\n');
-    const blob = new Blob([headers + rows], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `LomiBingo_Settlement_Ledger_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    showToast('📥 Downloaded settlement audit ledger CSV');
-  };
-
   return (
     <div className="cashflow-analytics-wrapper">
       {/* 1. Hero Revenue & Settlement Desk Banner */}
@@ -111,15 +94,6 @@ export const CashFlowAnalytics: React.FC = () => {
               <circle cx="32" cy="32" r="6" fill="#ffffff" stroke="#eab308" strokeWidth="1.5" />
             </svg>
           </div>
-
-          <button
-            type="button"
-            className="btn-cf-hero-export"
-            onClick={handleExportCSV}
-          >
-            <i className="fa-solid fa-file-arrow-down"></i>
-            <span>Export Audit CSV</span>
-          </button>
         </div>
       </div>
 

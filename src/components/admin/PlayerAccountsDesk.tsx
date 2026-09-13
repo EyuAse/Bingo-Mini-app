@@ -5,7 +5,6 @@ import { useApp } from '../../context/AppContext.tsx';
 export const PlayerAccountsDesk: React.FC = () => {
   const {
     users,
-    addUser,
     adjustUserBalance,
     toggleUserStatus,
     registerBonus
@@ -19,16 +18,8 @@ export const PlayerAccountsDesk: React.FC = () => {
   const [sortBy, setSortBy] = useState<'balance-desc' | 'deposit-desc' | 'referrals-desc' | 'newest'>('balance-desc');
 
   // Modal states
-  const [showAddModal, setShowAddModal] = useState(false);
   const [adjustTargetUser, setAdjustTargetUser] = useState<UserAccount | null>(null);
   const [dossierUser, setDossierUser] = useState<UserAccount | null>(null);
-
-  // New Player Form state
-  const [newName, setNewName] = useState('');
-  const [newPhone, setNewPhone] = useState('+251 9');
-  const [initialDeposit, setInitialDeposit] = useState('0');
-  const [applyWelcomeBonus, setApplyWelcomeBonus] = useState(true);
-  const [referrerPhone, setReferrerPhone] = useState('');
 
   // Adjust Balance Form state
   const [adjustType, setAdjustType] = useState<'add-cash' | 'add-bonus' | 'deduct-cash'>('add-cash');
@@ -76,36 +67,6 @@ export const PlayerAccountsDesk: React.FC = () => {
     showToast(`✓ Copied: ${text}`);
   };
 
-  const handleCreateUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newName.trim() || newPhone.length < 9) {
-      showToast('⚠️ Please provide a valid Name and Ethiopian Phone Number');
-      return;
-    }
-
-    const startCash = parseFloat(initialDeposit) || 0;
-    const startBonus = applyWelcomeBonus ? registerBonus : 0;
-
-    addUser({
-      name: newName.trim(),
-      phone: newPhone.trim(),
-      balance: startCash,
-      bonus: startBonus,
-      referredBy: referrerPhone.trim() || undefined,
-      referralCount: 0,
-      totalDeposited: startCash,
-      totalWithdrawn: 0,
-      status: 'active'
-    });
-
-    setShowAddModal(false);
-    setNewName('');
-    setNewPhone('+251 9');
-    setInitialDeposit('0');
-    setReferrerPhone('');
-    showToast(`🎉 Player Account "${newName.trim()}" registered successfully`);
-  };
-
   const handleExecuteAdjustBalance = (e: React.FormEvent) => {
     e.preventDefault();
     if (!adjustTargetUser) return;
@@ -128,23 +89,6 @@ export const PlayerAccountsDesk: React.FC = () => {
 
     setAdjustTargetUser(null);
     setAdjustAmount('100');
-  };
-
-  const handleExportCSV = () => {
-    const headers = 'ID,Name,Phone,CashBalance,BonusWallet,TotalDeposited,TotalWithdrawn,Referrals,Status,JoinedDate\n';
-    const rows = filteredUsers
-      .map(
-        u =>
-          `"${u.id}","${u.name}","${u.phone}",${u.balance},${u.bonus},${u.totalDeposited},${u.totalWithdrawn},${u.referralCount},"${u.status}","${u.createdAt}"`
-      )
-      .join('\n');
-    const blob = new Blob([headers + rows], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `LomiBingo_Player_Accounts_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    showToast('📥 Downloaded Player Accounts CSV');
   };
 
   return (
@@ -182,25 +126,6 @@ export const PlayerAccountsDesk: React.FC = () => {
               <path d="M48 16L16 48" stroke="#eab308" strokeWidth="2" strokeLinecap="round" />
               <circle cx="32" cy="32" r="6" fill="#ffffff" stroke="#eab308" strokeWidth="1.5" />
             </svg>
-          </div>
-
-          <div className="player-hero-action-buttons">
-            <button
-              type="button"
-              className="btn-player-hero-register"
-              onClick={() => setShowAddModal(true)}
-            >
-              <i className="fa-solid fa-user-plus"></i>
-              <span>Register Player</span>
-            </button>
-            <button
-              type="button"
-              className="btn-player-hero-export"
-              onClick={handleExportCSV}
-            >
-              <i className="fa-solid fa-file-arrow-down"></i>
-              <span>Export CSV</span>
-            </button>
           </div>
         </div>
       </div>
@@ -489,110 +414,6 @@ export const PlayerAccountsDesk: React.FC = () => {
           </table>
         </div>
       </div>
-
-      {/* ============================================================
-          MODAL 1: REGISTER NEW PLAYER
-          ============================================================ */}
-      {showAddModal && (
-        <div className="modal-overlay-light" onClick={() => setShowAddModal(false)}>
-          <div className="modal-box-light" onClick={e => e.stopPropagation()}>
-            <div className="modal-header-light">
-              <div className="modal-title-row">
-                <div className="modal-icon-gold">
-                  <i className="fa-solid fa-user-plus"></i>
-                </div>
-                <div>
-                  <h3 className="modal-heading">Register New Player Account</h3>
-                  <p className="modal-sub">Create verified user credentials and optional initial funding</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="modal-close-btn"
-                onClick={() => setShowAddModal(false)}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateUser} className="modal-form-body">
-              <div className="modal-form-group">
-                <label className="modal-label">Player Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Dawit Yohannes"
-                  value={newName}
-                  onChange={e => setNewName(e.target.value)}
-                  className="modal-input"
-                />
-              </div>
-
-              <div className="modal-form-group">
-                <label className="modal-label">Ethiopian Phone Number *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="+251 911 234 567"
-                  value={newPhone}
-                  onChange={e => setNewPhone(e.target.value)}
-                  className="modal-input"
-                />
-              </div>
-
-              <div className="modal-form-row">
-                <div className="modal-form-group">
-                  <label className="modal-label">Initial Cash Deposit (ETB)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="10"
-                    value={initialDeposit}
-                    onChange={e => setInitialDeposit(e.target.value)}
-                    className="modal-input"
-                  />
-                </div>
-
-                <div className="modal-form-group">
-                  <label className="modal-label">Referrer Phone (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="+251 9..."
-                    value={referrerPhone}
-                    onChange={e => setReferrerPhone(e.target.value)}
-                    className="modal-input"
-                  />
-                </div>
-              </div>
-
-              <div className="modal-checkbox-row">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={applyWelcomeBonus}
-                    onChange={e => setApplyWelcomeBonus(e.target.checked)}
-                  />
-                  <span>Credit Welcome Registration Bonus ({registerBonus} ETB Play-Only)</span>
-                </label>
-              </div>
-
-              <div className="modal-actions-row">
-                <button
-                  type="button"
-                  className="btn-modal-cancel"
-                  onClick={() => setShowAddModal(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn-modal-submit">
-                  <i className="fa-solid fa-user-check"></i>
-                  <span>Create Player Account</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ============================================================
           MODAL 2: ADJUST WALLET BALANCE
