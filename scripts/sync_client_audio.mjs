@@ -5,7 +5,7 @@ const ROOT_DIR = process.cwd();
 const AUDIO_SRC_DIR = path.join(ROOT_DIR, 'Audio');
 const PUBLIC_AUDIO_AM_DIR = path.join(ROOT_DIR, 'public', 'assets', 'audio', 'am');
 const PUBLIC_AUDIO_EN_DIR = path.join(ROOT_DIR, 'public', 'assets', 'audio', 'en');
-const BACKUP_DIR = path.join(ROOT_DIR, 'public', 'assets', 'audio_backup');
+const BACKUP_DIR = path.join(ROOT_DIR, 'backups', 'audio_backup_legacy');
 
 console.log('======================================================');
 console.log('Synchronizing Client Audio Sound Pack (75 Bingo Balls)');

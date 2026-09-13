@@ -8,9 +8,8 @@ import { BingoGrid } from '../components/bingo/BingoGrid.tsx';
 import { BettingBar } from '../components/bingo/BettingBar.tsx';
 import { WinModal, WinModalEmergencyFallback } from '../components/bingo/WinModal.tsx';
 import { InsufficientBalanceModal } from '../components/bingo/InsufficientBalanceModal.tsx';
-import { VoiceTesterModal } from '../components/bingo/VoiceTesterModal.tsx';
 import { ConfettiCanvas } from '../components/common/ConfettiCanvas.tsx';
-import { NetworkStatusBanner, NetworkLatencyPill } from '../components/bingo/NetworkStatusBanner.tsx';
+import { NetworkStatusBanner } from '../components/bingo/NetworkStatusBanner.tsx';
 import { MasterBoard75 } from '../components/bingo/MasterBoard75.tsx';
 import { LeaveConfirmModal } from '../components/bingo/LeaveConfirmModal.tsx';
 import { CartelaPickerModal } from '../components/bingo/CartelaPickerModal.tsx';
@@ -20,13 +19,11 @@ import { telegramService } from '../services/telegramService.ts';
 export const BingoPage: React.FC = () => {
   const isDesktop = telegramService.isDesktopPlatform();
   const {
-    hasTicket, showWinModal, isMuted, toggleMute, triggerManualSync, isSyncing,
+    hasTicket, showWinModal,
     roundPhase, waitingForPlayers, realPlayerCount, lobbyCountdown, cancelLobbyTicket,
     autoPlay, hasWinningPattern, hasSleptPattern, claimBingo, claimInProgress
   } = useBingo();
   const { switchPage, showToast } = useApp();
-  const [showVoiceTester, setShowVoiceTester] = useState<boolean>(false);
-  const [showMenuDrawer, setShowMenuDrawer] = useState<boolean>(false);
   const [showLeaveModal, setShowLeaveModal] = useState<boolean>(false);
 
   // Safe Back Handler: If player is waiting in lobby with bought ticket, auto-refund on exit
@@ -69,15 +66,6 @@ export const BingoPage: React.FC = () => {
 
           {/* 5-Box Game Status Strip from Image 2 */}
           <StatsStrip />
-
-          <button
-            type="button"
-            className="btn-bingo-mini-menu"
-            onClick={() => setShowMenuDrawer(true)}
-            title="Settings & Tools"
-          >
-            <i className="fa-solid fa-bars"></i>
-          </button>
         </div>
 
         {/* Real-Time Network Resilience Alerts */}
@@ -157,73 +145,6 @@ export const BingoPage: React.FC = () => {
         onCancel={() => setShowLeaveModal(false)}
       />
 
-      {/* Settings & Tools Modal Drawer — keeps top bar 100% clean without overlapping buttons */}
-      {showMenuDrawer && (
-        <div className="bingo-menu-drawer-backdrop" onClick={() => setShowMenuDrawer(false)}>
-          <div className="bingo-menu-drawer" onClick={e => e.stopPropagation()}>
-            <div className="bingo-drawer-hdr">
-              <h4>Game Settings & Tools</h4>
-              <button
-                type="button"
-                className="btn-drawer-close"
-                onClick={() => setShowMenuDrawer(false)}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="bingo-drawer-content">
-              {/* Mute/Unmute */}
-              <button
-                type="button"
-                className="drawer-action-btn"
-                onClick={() => {
-                  toggleMute();
-                }}
-              >
-                <i className={`fa-solid ${isMuted ? 'fa-volume-xmark' : 'fa-volume-high'}`}></i>
-                <span>{isMuted ? 'Unmute Audio' : 'Mute Audio'}</span>
-                <span className="drawer-btn-sub">{isMuted ? 'Audio is OFF' : 'Audio is ON'}</span>
-              </button>
-
-              {/* 1-Tap Sync */}
-              <button
-                type="button"
-                className="drawer-action-btn"
-                onClick={() => {
-                  triggerManualSync();
-                }}
-                disabled={isSyncing}
-              >
-                <i className={`fa-solid fa-arrows-rotate ${isSyncing ? 'fa-spin' : ''}`}></i>
-                <span>Resynchronize Game</span>
-                <span className="drawer-btn-sub">{isSyncing ? 'Syncing...' : 'Fetch latest state'}</span>
-              </button>
-
-              {/* Column B Voice Studio */}
-              <button
-                type="button"
-                className="drawer-action-btn"
-                onClick={() => {
-                  setShowMenuDrawer(false);
-                  setShowVoiceTester(true);
-                }}
-              >
-                <i className="fa-solid fa-microphone"></i>
-                <span>Column B Voice Studio</span>
-                <span className="drawer-btn-sub">Test 1–15 voice samples</span>
-              </button>
-
-              {/* Connection Quality */}
-              <div className="drawer-latency-wrap">
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Network Latency:</span>
-                <NetworkLatencyPill />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 400 Cartela Selection Modal */}
       <CartelaPickerModal />
 
@@ -234,9 +155,6 @@ export const BingoPage: React.FC = () => {
 
       {/* Insufficient Balance Pop-Up Alert Modal */}
       <InsufficientBalanceModal />
-
-      {/* Column B Real Voice Tester Modal */}
-      <VoiceTesterModal isOpen={showVoiceTester} onClose={() => setShowVoiceTester(false)} />
     </div>
   );
 };

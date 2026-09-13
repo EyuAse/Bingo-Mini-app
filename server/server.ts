@@ -177,10 +177,18 @@ const distPath = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath, {
     setHeaders: (res, filePath) => {
-      if (filePath.includes(path.join('assets', ''))) {
+      const normalizedPath = filePath.replace(/\\/g, '/');
+      const isHashedAsset = /-[a-zA-Z0-9_-]{8,}\.(js|css|woff2?)$/i.test(normalizedPath);
+      const isAudio = normalizedPath.includes('/assets/audio/') || /\.(mp3|wav|ogg|webm|m4a)$/i.test(normalizedPath);
+
+      if (isHashedAsset) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      } else if (filePath.endsWith('.html')) {
+      } else if (isAudio) {
+        res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400, must-revalidate');
+      } else if (normalizedPath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=86400');
       }
     }
   }));

@@ -13,6 +13,7 @@ import { telegramService } from './telegramService.ts';
  * - Two-Stage Live Human Caller Cadence ("Letter... 220ms Pause... Number!")
  * - Automatic SpeechSynthesis fallback if custom audio file is missing
  */
+export const AUDIO_PACK_VERSION = 'v2_client_human_20260913_2';
 
 class AudioEngineService {
   private ctx: AudioContext | null = null;
@@ -134,7 +135,13 @@ class AudioEngineService {
   }
 
   setVoiceLang(lang: 'en' | 'am') {
-    this.voiceLang = lang;
+    if (this.voiceLang !== lang) {
+      this.voiceLang = lang;
+      this.preloadedAudios.clear();
+      this.voiceBufferMap.clear();
+      this.audioBufferCache.clear();
+      this.preloadVoicePack('ALL', 75);
+    }
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       if (this.speechTimeoutRef) {
@@ -145,6 +152,16 @@ class AudioEngineService {
 
   getVoiceLang(): 'en' | 'am' {
     return this.voiceLang;
+  }
+
+  public getBallAudioUrl(num: number): string {
+    const lang = this.voiceLang || 'am';
+    return `/assets/audio/${lang}/${num}.mp3?v=${AUDIO_PACK_VERSION}`;
+  }
+
+  public getPhraseAudioUrl(phraseKey: string, ext: string = 'mp3'): string {
+    const lang = this.voiceLang || 'am';
+    return `/assets/audio/${lang}/${phraseKey}.${ext}?v=${AUDIO_PACK_VERSION}`;
   }
 
   private getNativeAmharicVoice(): SpeechSynthesisVoice | null {
@@ -428,10 +445,11 @@ class AudioEngineService {
     if (typeof window === 'undefined') return;
 
     for (let i = 1; i <= count; i++) {
+      const audioUrl = this.getBallAudioUrl(i);
       // 1. Preload HTML5 Audio (Universal MP3 with WAV/WebM fallback)
       if (!this.preloadedAudios.has(i) && typeof Audio !== 'undefined') {
         try {
-          const audio = new Audio(`/assets/audio/am/${i}.mp3`);
+          const audio = new Audio(audioUrl);
           audio.preload = 'auto';
           audio.volume = 1.0;
           this.preloadedAudios.set(i, audio);
@@ -441,7 +459,7 @@ class AudioEngineService {
       // 2. Decode into in-memory Web Audio AudioBuffer (0ms instant hardware playback)
       if (!this.voiceBufferMap.has(i)) {
         try {
-          const buf = await this.loadAudioBuffer(`/assets/audio/am/${i}.mp3`);
+          const buf = await this.loadAudioBuffer(audioUrl);
           if (buf) {
             this.voiceBufferMap.set(i, buf);
           }
@@ -466,6 +484,8 @@ class AudioEngineService {
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
     }
+
+    const audioUrl = this.getBallAudioUrl(num);
 
     // Tier 1: Direct Native Hardware Audio (100% pure human voice, zero radio/filter coloration)
     const preloaded = this.preloadedAudios.get(num);
@@ -492,11 +512,14 @@ class AudioEngineService {
     }
 
     // Tier 2: Direct fresh HTML5 Audio instance (guaranteed native hardware DAC playback)
-    const directPlayed = await this.playAudioDirect(`/assets/audio/am/${num}.mp3`);
+    const directPlayed = await this.playAudioDirect(audioUrl);
     if (directPlayed) return;
 
     // Tier 3: In-memory Web Audio Buffer directly connected to hardware destination (bypassing all filters)
-    const cachedBuffer = this.voiceBufferMap.get(num);
+    let cachedBuffer = this.voiceBufferMap.get(num);
+    if (!cachedBuffer) {
+      cachedBuffer = (await this.loadAudioBuffer(audioUrl)) || undefined;
+    }
     if (cachedBuffer) {
       try {
         this.initCtx();
@@ -521,11 +544,12 @@ class AudioEngineService {
   async speakPhrase(phraseKey: 'start' | 'solo_win' | 'split_win' | 'opp_win' | 'one_to_go') {
     if (this.isMuted) return;
 
+    // Prioritize MP3 (studio recordings) before older fallback formats
     const possibleUrls = [
-      `/assets/audio/${this.voiceLang}/${phraseKey}.webm`,
-      `/assets/audio/${this.voiceLang}/${phraseKey}.mp3`,
-      `/assets/audio/${this.voiceLang}/${phraseKey}.m4a`,
-      `/assets/audio/${this.voiceLang}/${phraseKey}.wav`
+      this.getPhraseAudioUrl(phraseKey, 'mp3'),
+      this.getPhraseAudioUrl(phraseKey, 'm4a'),
+      this.getPhraseAudioUrl(phraseKey, 'wav'),
+      this.getPhraseAudioUrl(phraseKey, 'webm')
     ];
 
     for (const customUrl of possibleUrls) {
