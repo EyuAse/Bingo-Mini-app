@@ -40,11 +40,11 @@ export const CurrentCallBanner: React.FC = () => {
     ? `col-${currentCall.col.toLowerCase()}`
     : 'col-none';
 
-  // Determine matchmaking status in lobby: countdown is strictly active for 2+ ticketed players!
-  const isCountdown = roundPhase === 'lobby' && !waitingForPlayers && realPlayerCount >= 2;
-  const is1Ready = roundPhase === 'lobby' && (waitingForPlayers || realPlayerCount < 2) && (realPlayerCount === 1 || hasTicket);
-  const isMultipleInRoom = roundPhase === 'lobby' && (waitingForPlayers || realPlayerCount < 2) && !is1Ready && activeUsersCount >= 2;
-  const isWaitingAlone = roundPhase === 'lobby' && (waitingForPlayers || realPlayerCount < 2) && !is1Ready && !isMultipleInRoom;
+  // Determine matchmaking status in lobby: countdown is strictly active when not waitingForPlayers!
+  const isCountdown = roundPhase === 'lobby' && !waitingForPlayers;
+  const is1Ready = roundPhase === 'lobby' && waitingForPlayers && (realPlayerCount >= 1 || hasTicket);
+  const isMultipleInRoom = roundPhase === 'lobby' && waitingForPlayers && !is1Ready && activeUsersCount >= 2;
+  const isWaitingAlone = roundPhase === 'lobby' && waitingForPlayers && !is1Ready && !isMultipleInRoom;
 
   return (
     <div className="compact-current-call-block">

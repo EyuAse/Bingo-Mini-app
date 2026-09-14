@@ -84,7 +84,7 @@ export const BettingBar: React.FC = () => {
                 BET PLACED · {cardQuantity === 1 ? '1 CARD' : '2 CARDS'} ({totalCost} ETB)
               </span>
               <span className="lobby-matchmaking-hint">
-                {waitingForPlayers || realPlayerCount < 2
+                {waitingForPlayers
                   ? (activeUsersCount >= 2
                       ? (lang === 'am' ? `👥 ተጫዋች በመጠበቅ ላይ...` : `👥 Waiting for 2nd player...`)
                       : (lang === 'am' ? '⏳ ተጫዋች በመጠበቅ ላይ... (1/2)' : '⏳ Waiting for opponent (1/2)'))
@@ -107,7 +107,7 @@ export const BettingBar: React.FC = () => {
         <div className="compact-lobby-buy-wrapper">
           {/* Matchmaking guidance indicator when in lobby before buying ticket */}
           <div className="compact-lobby-presence-strip">
-            {waitingForPlayers || realPlayerCount < 2 ? (
+            {waitingForPlayers ? (
               realPlayerCount >= 1 ? (
                 <span className="presence-hint ready-waiting">
                   <i className="fa-solid fa-bell"></i> {lang === 'am' ? '1 ተጫዋች ዝግጁ ነው! ካርቴላ ይግዙ' : '1 player ready! Buy ticket to start!'}

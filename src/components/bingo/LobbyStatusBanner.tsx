@@ -47,7 +47,8 @@ export const LobbyStatusBanner: React.FC = () => {
     return null;
   }
 
-  const isWaitingState = waitingForPlayers || realPlayerCount < 2;
+  const isWaitingState = waitingForPlayers;
+  const waitingPlayersCount = (hasTicket || realPlayerCount >= 1) ? 1 : 0;
 
   return (
     <div className="lobby-status-banner-wrap">
@@ -85,7 +86,7 @@ export const LobbyStatusBanner: React.FC = () => {
                   {lang === 'am' ? 'ተጫዋቾችን በመጠበቅ ላይ' : 'Waiting for Players'}
                 </span>
                 <span className="waiting-count-pill">
-                  <i className="fa-solid fa-users"></i> {displayPlayerCount} / 2 {lang === 'am' ? 'ያስፈልጋል' : 'Needed'}
+                  <i className="fa-solid fa-users"></i> {waitingPlayersCount} / 2 {lang === 'am' ? 'ያስፈልጋል' : 'Needed'}
                 </span>
               </div>
               <p className="waiting-subtext">

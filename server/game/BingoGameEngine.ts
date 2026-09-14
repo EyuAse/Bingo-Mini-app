@@ -293,7 +293,7 @@ class BingoGameEngine {
       name: nameOverride || r.name,
       stakeAmount: r.stakeAmount,
       phase: r.phase,
-      mode: r.mode || (this.getRealCartelaCount(r) >= 2 ? 'active' : 'spectating'),
+      mode: r.mode || (r.tickets.size >= 2 ? 'active' : 'spectating'),
       lobbyCountdown: r.lobbyCountdown,
       winnerCountdown: r.winnerCountdown,
       playersCount: this.getRoomPlayersCount(r),
@@ -346,11 +346,8 @@ class BingoGameEngine {
     }
     const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
     const cartelasCount = this.getRealCartelaCount(room);
-    if (cartelasCount >= 2) {
-      room.waitingForPlayers = false;
-    } else {
-      room.waitingForPlayers = true;
-    }
+    room.realPlayerCount = cartelasCount;
+    room.waitingForPlayers = room.tickets.size < 2;
     this.broadcastRoomState(room);
 
     // Notify other players in the room that a player entered the room
@@ -387,7 +384,7 @@ class BingoGameEngine {
     // Only set waitingForPlayers flag — do NOT reset the countdown timer.
     // The lobby interval's own freeze logic handles keeping the timer paused.
     // Hard-resetting to 45 here causes visible jumps when a user briefly disconnects/reconnects.
-    if (activeInRoom < 2 && room.tickets.size < 2) {
+    if (room.tickets.size < 2) {
       room.waitingForPlayers = true;
       // lobbyCountdown intentionally NOT reset here — the interval freeze handles it
     }
@@ -448,7 +445,7 @@ class BingoGameEngine {
         if (room.phase === 'lobby') {
           room.tickets.delete(userId);
           room.realPlayerCount = this.getRealCartelaCount(room);
-          room.waitingForPlayers = room.realPlayerCount < 2;
+          room.waitingForPlayers = room.tickets.size < 2;
           this.recalculatePot(room);
         }
         if (room.nextRoundTickets) {
@@ -563,7 +560,7 @@ class BingoGameEngine {
       // 1. Remove from old room
       oldRoom.tickets.delete(userId);
       oldRoom.realPlayerCount = this.getRealCartelaCount(oldRoom);
-      oldRoom.waitingForPlayers = oldRoom.realPlayerCount < 2;
+      oldRoom.waitingForPlayers = oldRoom.tickets.size < 2;
       this.recalculatePot(oldRoom);
       this.broadcastRoomState(oldRoom);
 
@@ -577,7 +574,7 @@ class BingoGameEngine {
       // 3. Register in new room
       newRoom.tickets.set(userId, transferredTickets);
       newRoom.realPlayerCount = this.getRealCartelaCount(newRoom);
-      newRoom.waitingForPlayers = newRoom.realPlayerCount < 2;
+      newRoom.waitingForPlayers = newRoom.tickets.size < 2;
       this.recalculatePot(newRoom);
       this.broadcastRoomState(newRoom);
 
@@ -587,7 +584,7 @@ class BingoGameEngine {
         userName,
         realPlayerCount: newRoom.realPlayerCount,
         waitingForPlayers: newRoom.waitingForPlayers,
-        countdownStarted: newRoom.realPlayerCount >= 2,
+        countdownStarted: newRoom.tickets.size >= 2,
         roomId: newRoom.id
       });
       if (newRoom.id === 'room-10') {
@@ -595,7 +592,7 @@ class BingoGameEngine {
           userName,
           realPlayerCount: newRoom.realPlayerCount,
           waitingForPlayers: newRoom.waitingForPlayers,
-          countdownStarted: newRoom.realPlayerCount >= 2,
+          countdownStarted: newRoom.tickets.size >= 2,
           roomId: ARENA_ROOM_ID
         });
       }
@@ -808,7 +805,7 @@ class BingoGameEngine {
         // Immediately active in current lobby
         room.tickets.set(userId, playerTickets);
         room.realPlayerCount = this.getRealCartelaCount(room);
-        room.waitingForPlayers = room.realPlayerCount < 2;
+        room.waitingForPlayers = room.tickets.size < 2;
         this.recalculatePot(room);
         this.broadcastRoomState(room);
 
@@ -817,7 +814,7 @@ class BingoGameEngine {
           userName,
           realPlayerCount: room.realPlayerCount,
           waitingForPlayers: room.waitingForPlayers,
-          countdownStarted: room.realPlayerCount >= 2,
+          countdownStarted: room.tickets.size >= 2,
           totalPot: room.totalPot,
           winnerPayout: room.winnerPayout,
           stakeAmount: room.stakeAmount,
@@ -957,10 +954,10 @@ class BingoGameEngine {
         return;
       }
 
-      // Check: Does AT LEAST ONE house have >= 2 real cartelas (player units) with confirmed purchased tickets?
+      // Check: Does AT LEAST ONE house have >= 2 distinct real human players with confirmed purchased tickets?
       const anyHouseReady = STAKE_ROOM_IDS.some(id => {
         const r = this.rooms.get(id);
-        return r && this.getRealCartelaCount(r) >= 2;
+        return r && r.tickets.size >= 2;
       });
 
       for (const roomId of STAKE_ROOM_IDS) {
@@ -975,10 +972,10 @@ class BingoGameEngine {
           room.lobbyCountdown = 45;
           this.broadcastRoomState(room);
         } else {
-          // If any house has 2+ cartelas, game clock ticks for ALL houses together!
-          // Houses with >= 2 cartelas are active participants
-          // Houses with < 2 cartelas are marked waiting (will spectate if no 2nd cartela joins)
-          room.waitingForPlayers = cartelasCount < 2;
+          // If any house has >= 2 real players, game clock ticks for ALL houses together!
+          // Houses with >= 2 real players are active participants
+          // Houses with < 2 real players are marked waiting (will spectate if no 2nd player joins)
+          room.waitingForPlayers = room.tickets.size < 2;
           room.lobbyCountdown = Math.max(0, currentLobbyCountdown - 1);
           this.broadcastRoomState(room);
         }
@@ -1031,8 +1028,9 @@ class BingoGameEngine {
       }
 
       const realCartelaCount = this.getRealCartelaCount(room);
-      if (realCartelaCount >= 2) {
-        // >= 2 cartelas: Active Play Mode!
+      const distinctRealPlayers = room.tickets.size;
+      if (distinctRealPlayers >= 2) {
+        // >= 2 distinct real human players: Active Play Mode!
         room.mode = 'active';
         room.waitingForPlayers = false;
 
@@ -2440,7 +2438,7 @@ class BingoGameEngine {
       success: true,
       roomId: room.id,
       phase: room.phase,
-      mode: room.mode || (this.getRealCartelaCount(room) >= 2 ? 'active' : 'spectating'),
+      mode: room.mode || (room.tickets.size >= 2 ? 'active' : 'spectating'),
       roundNumber: room.roundNumber,
       lobbyCountdown: room.lobbyCountdown,
       winnerCountdown: room.winnerCountdown,
