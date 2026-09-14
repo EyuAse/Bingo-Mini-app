@@ -260,11 +260,19 @@ class BingoGameEngine {
     return this.rooms.get('room-10') || this.rooms.get(ARENA_ROOM_ID)!;
   }
 
+  public getRealCartelaCount(room: GameRoomState): number {
+    let count = 0;
+    if (room.tickets) {
+      room.tickets.forEach(list => { count += list.length; });
+    }
+    return count;
+  }
+
   public getStakeRoomsSummary(): Record<number, number> {
     const getCount = (roomId: string) => {
       const r = this.rooms.get(roomId);
       if (!r) return 0;
-      return r.phase === 'playing' ? r.realPlayerCount : r.tickets.size;
+      return r.phase === 'playing' ? r.realPlayerCount : this.getRealCartelaCount(r);
     };
     return {
       10: getCount('room-10'),
@@ -285,11 +293,11 @@ class BingoGameEngine {
       name: nameOverride || r.name,
       stakeAmount: r.stakeAmount,
       phase: r.phase,
-      mode: r.mode || (r.tickets.size >= 2 ? 'active' : 'spectating'),
+      mode: r.mode || (this.getRealCartelaCount(r) >= 2 ? 'active' : 'spectating'),
       lobbyCountdown: r.lobbyCountdown,
       winnerCountdown: r.winnerCountdown,
       playersCount: this.getRoomPlayersCount(r),
-      realPlayerCount: r.tickets.size,
+      realPlayerCount: this.getRealCartelaCount(r),
       totalPot: r.totalPot,
       winnerPayout: r.winnerPayout,
       winResult: r.winResult
@@ -304,11 +312,11 @@ class BingoGameEngine {
     ];
   }
 
-  // Returns live count of real players + active bots (unlimited, no 50 cap)
+  // Returns live count of real player cartelas + active bots (unlimited, no 50 cap)
   public getRoomPlayersCount(room: GameRoomState): number {
-    const realCount = room.tickets.size;
+    const realCartelas = this.getRealCartelaCount(room);
     const botCount = room.opponentCards ? room.opponentCards.length : 0;
-    return realCount + botCount;
+    return realCartelas + botCount;
   }
 
   // Admin Controls: System Lock (House Commission)
@@ -337,7 +345,8 @@ class BingoGameEngine {
       room.activeUserSockets.set(userId, socketId);
     }
     const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
-    if (room.tickets.size >= 2) {
+    const cartelasCount = this.getRealCartelaCount(room);
+    if (cartelasCount >= 2) {
       room.waitingForPlayers = false;
     } else {
       room.waitingForPlayers = true;
@@ -349,7 +358,7 @@ class BingoGameEngine {
       userId,
       userName: userName || 'A player',
       activeUsersCount: activeInRoom,
-      realPlayerCount: room.tickets.size,
+      realPlayerCount: cartelasCount,
       waitingForPlayers: room.waitingForPlayers,
       roomId: room.id
     });
@@ -358,7 +367,7 @@ class BingoGameEngine {
         userId,
         userName: userName || 'A player',
         activeUsersCount: activeInRoom,
-        realPlayerCount: room.tickets.size,
+        realPlayerCount: cartelasCount,
         waitingForPlayers: room.waitingForPlayers,
         roomId: ARENA_ROOM_ID
       });
@@ -438,8 +447,8 @@ class BingoGameEngine {
 
         if (room.phase === 'lobby') {
           room.tickets.delete(userId);
-          room.realPlayerCount = room.tickets.size;
-          room.waitingForPlayers = room.tickets.size < 2;
+          room.realPlayerCount = this.getRealCartelaCount(room);
+          room.waitingForPlayers = room.realPlayerCount < 2;
           this.recalculatePot(room);
         }
         if (room.nextRoundTickets) {
@@ -553,8 +562,8 @@ class BingoGameEngine {
 
       // 1. Remove from old room
       oldRoom.tickets.delete(userId);
-      oldRoom.realPlayerCount = oldRoom.tickets.size;
-      oldRoom.waitingForPlayers = oldRoom.tickets.size < 2;
+      oldRoom.realPlayerCount = this.getRealCartelaCount(oldRoom);
+      oldRoom.waitingForPlayers = oldRoom.realPlayerCount < 2;
       this.recalculatePot(oldRoom);
       this.broadcastRoomState(oldRoom);
 
@@ -567,8 +576,8 @@ class BingoGameEngine {
 
       // 3. Register in new room
       newRoom.tickets.set(userId, transferredTickets);
-      newRoom.realPlayerCount = newRoom.tickets.size;
-      newRoom.waitingForPlayers = newRoom.tickets.size < 2;
+      newRoom.realPlayerCount = this.getRealCartelaCount(newRoom);
+      newRoom.waitingForPlayers = newRoom.realPlayerCount < 2;
       this.recalculatePot(newRoom);
       this.broadcastRoomState(newRoom);
 
@@ -576,17 +585,17 @@ class BingoGameEngine {
       const userName = userTickets[0]?.userName || 'Player';
       io.to(newRoom.id).emit('player_joined', {
         userName,
-        realPlayerCount: newRoom.tickets.size,
-        waitingForPlayers: newRoom.tickets.size < 2,
-        countdownStarted: newRoom.tickets.size >= 2,
+        realPlayerCount: newRoom.realPlayerCount,
+        waitingForPlayers: newRoom.waitingForPlayers,
+        countdownStarted: newRoom.realPlayerCount >= 2,
         roomId: newRoom.id
       });
       if (newRoom.id === 'room-10') {
         io.to(ARENA_ROOM_ID).emit('player_joined', {
           userName,
-          realPlayerCount: newRoom.tickets.size,
-          waitingForPlayers: newRoom.tickets.size < 2,
-          countdownStarted: newRoom.tickets.size >= 2,
+          realPlayerCount: newRoom.realPlayerCount,
+          waitingForPlayers: newRoom.waitingForPlayers,
+          countdownStarted: newRoom.realPlayerCount >= 2,
           roomId: ARENA_ROOM_ID
         });
       }
@@ -774,6 +783,9 @@ class BingoGameEngine {
         ? (isAutoPlay !== false)
         : (this.playerModes.has(userId) ? this.playerModes.get(userId)! : true);
 
+      // Persist player mode preference immediately so round transitions and reconnects never overwrite it
+      this.playerModes.set(userId, resolvedAutoPlay);
+
       const playerTickets: PlayerTicket[] = drawnIds.map(id => ({
         userId,
         userName,
@@ -795,17 +807,17 @@ class BingoGameEngine {
       } else {
         // Immediately active in current lobby
         room.tickets.set(userId, playerTickets);
-        room.realPlayerCount = room.tickets.size;
-        room.waitingForPlayers = room.tickets.size < 2;
+        room.realPlayerCount = this.getRealCartelaCount(room);
+        room.waitingForPlayers = room.realPlayerCount < 2;
         this.recalculatePot(room);
         this.broadcastRoomState(room);
 
         // Notify room clients a new real player joined (for lobby join feed UI)
         const playerJoinedPayload = {
           userName,
-          realPlayerCount: room.tickets.size,
-          waitingForPlayers: room.tickets.size < 2,
-          countdownStarted: room.tickets.size >= 2,
+          realPlayerCount: room.realPlayerCount,
+          waitingForPlayers: room.waitingForPlayers,
+          countdownStarted: room.realPlayerCount >= 2,
           totalPot: room.totalPot,
           winnerPayout: room.winnerPayout,
           stakeAmount: room.stakeAmount,
@@ -854,10 +866,13 @@ class BingoGameEngine {
 
   // Recalculates pot from actual bets placed + sliding commission tiers
   private recalculatePot(room: GameRoomState) {
-    const R = room.tickets.size; // distinct real users with tickets
+    const totalCartelas = this.getRoomPlayersCount(room);
+    room.realPlayerCount = this.getRealCartelaCount(room);
 
-    // Commission tier based on real player count
-    if (R <= 5) {
+    // Commission tier based on total cartelas count:
+    // <= 5 cartelas: 0% commission (Derash is 100% of pot)
+    // > 5 cartelas: 20% commission cut
+    if (totalCartelas <= 5) {
       room.commissionEnabled = false;
       room.commissionPercent = 0;
     } else {
@@ -942,27 +957,28 @@ class BingoGameEngine {
         return;
       }
 
-      // Check: Does AT LEAST ONE house have >= 2 real players with confirmed purchased tickets?
+      // Check: Does AT LEAST ONE house have >= 2 real cartelas (player units) with confirmed purchased tickets?
       const anyHouseReady = STAKE_ROOM_IDS.some(id => {
         const r = this.rooms.get(id);
-        return r && r.tickets.size >= 2;
+        return r && this.getRealCartelaCount(r) >= 2;
       });
 
       for (const roomId of STAKE_ROOM_IDS) {
         const room = this.rooms.get(roomId);
         if (!room) continue;
 
-        room.realPlayerCount = room.tickets.size;
+        const cartelasCount = this.getRealCartelaCount(room);
+        room.realPlayerCount = cartelasCount;
 
         if (!anyHouseReady) {
           room.waitingForPlayers = true;
           room.lobbyCountdown = 45;
           this.broadcastRoomState(room);
         } else {
-          // If any house has 2+ players, game clock ticks for ALL houses together!
-          // Houses with >= 2 players are active participants
-          // Houses with < 2 players are marked waiting (will spectate if no 2nd player joins)
-          room.waitingForPlayers = room.tickets.size < 2;
+          // If any house has 2+ cartelas, game clock ticks for ALL houses together!
+          // Houses with >= 2 cartelas are active participants
+          // Houses with < 2 cartelas are marked waiting (will spectate if no 2nd cartela joins)
+          room.waitingForPlayers = cartelasCount < 2;
           room.lobbyCountdown = Math.max(0, currentLobbyCountdown - 1);
           this.broadcastRoomState(room);
         }
@@ -1008,20 +1024,21 @@ class BingoGameEngine {
 
       // Mode Synchronization Guard: Ensure all tickets strictly reflect the player's true registered mode
       for (const [uid, tList] of room.tickets.entries()) {
-        if (this.playerModes.has(uid)) {
-          const userMode = this.playerModes.get(uid)!;
+        const userMode = this.playerModes.has(uid) ? this.playerModes.get(uid)! : tList[0]?.isAutoPlay;
+        if (typeof userMode === 'boolean') {
           tList.forEach(t => { t.isAutoPlay = userMode; });
         }
       }
 
-      if (room.tickets.size >= 2) {
-        // >= 2 players: Active Play Mode!
+      const realCartelaCount = this.getRealCartelaCount(room);
+      if (realCartelaCount >= 2) {
+        // >= 2 cartelas: Active Play Mode!
         room.mode = 'active';
         room.waitingForPlayers = false;
 
-        // Bot injection if 11+ real players in this house
+        // Bot injection if 11+ real cartelas in this house
         room.opponentCards = [];
-        if (room.tickets.size >= 11) {
+        if (realCartelaCount >= 11) {
           if (this.botAccounts.length < 3) await this.loadBotAccounts();
           const botPool = this.botAccounts.length >= 3 ? this.botAccounts : REGISTERED_3_BOTS;
           const assignedIds = new Set<number>();
@@ -1137,13 +1154,14 @@ class BingoGameEngine {
       room.phase = 'playing';
 
       const realTicketsCount = Array.from(room.tickets.values()).reduce((sum, t) => sum + t.length, 0);
+      room.realPlayerCount = realTicketsCount;
       const roundStartedPayload = {
         roundId: room.currentRoundId,
         roundNumber: room.roundNumber,
         totalPot: room.totalPot,
         winnerPayout: room.winnerPayout,
         playersCount: realTicketsCount + room.opponentCards.length,
-        realPlayerCount: room.tickets.size,
+        realPlayerCount: room.realPlayerCount,
         waitingForPlayers: room.waitingForPlayers,
         mode: room.mode,
         roomId: room.id
@@ -2227,23 +2245,19 @@ class BingoGameEngine {
       };
     }
 
-    // Traditional Manual Bingo Rule + 1-Ball Latency Buffer:
-    // If a manual player claims, the winning pattern MUST contain an eligible ball:
-    // 1) The Current Ball (Ball N), OR
-    // 2) The Immediately Preceding Ball (Ball N-1) to protect against network transit latency and human reaction time.
-    // If 2 or more balls have passed without claiming, the pattern is expired/slept.
+    // Traditional Manual Bingo Rule (Strict Current-Ball Only):
+    // If a manual player claims, the winning pattern MUST contain the current/last drawn ball (Ball N)!
+    // Once that number has passed and the next number has been called, it is no longer possible to close using the previous number.
     const currentNum = room.currentCall?.num || room.drawnNumbers[room.drawnNumbers.length - 1];
-    const prevNum = room.drawnNumbers.length >= 2 ? room.drawnNumbers[room.drawnNumbers.length - 2] : null;
-    const eligibleBalls = [currentNum, prevNum].filter((n): n is number => typeof n === 'number');
     let eligibleWin = allWins[0];
 
     if (ticket && ticket.isAutoPlay === false) {
-      const activeWin = allWins.find(w => eligibleBalls.some(b => w.numbers.includes(b)));
+      const activeWin = allWins.find(w => w.numbers.includes(currentNum));
       if (!activeWin) {
-        console.log(`[ClaimBingo] Missed/Slept Bingo by ${userName} (${userId}) on Cartela #${cartelaId}. Completed patterns do not include eligible balls [${eligibleBalls.join(', ')}]. Play continues.`);
+        console.log(`[ClaimBingo] Missed/Slept Bingo by ${userName} (${userId}) on Cartela #${cartelaId}. Completed patterns do not include current ball ${currentNum}. Play continues.`);
         return {
           success: false,
-          message: 'Missed Bingo! That pattern was completed on an earlier number. Keep playing to complete a new pattern!'
+          message: 'Missed Bingo! That pattern expired because a subsequent number was called. Complete another 5-in-a-row line to call BINGO!'
         };
       }
       eligibleWin = activeWin;
@@ -2274,12 +2288,12 @@ class BingoGameEngine {
         const otherCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
         if (otherCheck.isWin) {
           // If other player is manual (isAutoPlay === false), do NOT award them an automatic split pot
-          // unless their winning pattern ALSO includes one of the eligible balls (Ball N or Ball N-1)
+          // unless their winning pattern ALSO includes the exact current ball (Ball N)
           if (t.isAutoPlay === false) {
             const otherWins = getAllWinningPatterns(t.cardMatrix, room.drawnNumbers);
-            const otherActiveWin = otherWins.find(w => eligibleBalls.some(b => w.numbers.includes(b)));
+            const otherActiveWin = otherWins.find(w => w.numbers.includes(currentNum));
             if (!otherActiveWin) {
-              continue; // Manual player slept their pattern or didn't complete on eligible balls
+              continue; // Manual player slept their pattern or didn't complete on current ball
             }
           }
           winningCards.push({
@@ -2426,7 +2440,7 @@ class BingoGameEngine {
       success: true,
       roomId: room.id,
       phase: room.phase,
-      mode: room.mode || (room.tickets.size >= 2 ? 'active' : 'spectating'),
+      mode: room.mode || (this.getRealCartelaCount(room) >= 2 ? 'active' : 'spectating'),
       roundNumber: room.roundNumber,
       lobbyCountdown: room.lobbyCountdown,
       winnerCountdown: room.winnerCountdown,
@@ -2440,7 +2454,7 @@ class BingoGameEngine {
       winResult: room.winResult,
       waitingForPlayers: room.waitingForPlayers || false,
       waitingForOtherHouses: room.waitingForOtherHouses || false,
-      realPlayerCount: room.tickets.size,
+      realPlayerCount: this.getRealCartelaCount(room),
       activeUsersCount: Math.max(room.activeUsers.size, room.activeSockets.size),
       occupiedCartelaIds: Array.from(occupiedCartelaIds)
     };

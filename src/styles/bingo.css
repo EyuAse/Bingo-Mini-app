@@ -983,6 +983,7 @@
 }
 .btn-claim-bingo-gold.can-claim-pulsing {
   box-shadow: 0 4px 14px rgba(234,179,8,0.4);
+  animation: none !important;
 }
 
 /* Auto-claimed indicator */
@@ -4872,18 +4873,7 @@
 }
 
 .new-card-status-pill {
-  padding: 1px 4px;
-  border-radius: 999px;
-  font-size: 0.55rem;
-  font-weight: 950;
-}
-.new-card-status-pill.hot {
-  background: #ef4444;
-  color: #ffffff;
-}
-.new-card-status-pill.bingo {
-  background: #22c55e;
-  color: #ffffff;
+  display: none !important;
 }
 
 .new-card-body {
@@ -5643,6 +5633,7 @@
   cursor: pointer;
   font-weight: 950;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  animation: none !important;
 }
 
 .btn-in-game-bingo.claiming {

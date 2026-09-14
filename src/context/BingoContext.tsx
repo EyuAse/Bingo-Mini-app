@@ -373,25 +373,25 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return { hasWinningPattern: !!(win1 || win2 || win3), hasSleptPattern: false };
     }
 
-    // Manual Mode: Check if any completed pattern contains eligible balls (Current Ball N or Previous Ball N-1)
-    const eligibleBalls = [currentCall?.num, previousCall?.num].filter((n): n is number => typeof n === 'number' && n > 0);
-    const active1 = cartela1Data.length > 0 ? getActiveWinningPatternOnBall(cartela1Data, eligibleBalls) : null;
-    const active2 = totalPlayableCards >= 2 && cartela2Data.length > 0 ? getActiveWinningPatternOnBall(cartela2Data, eligibleBalls) : null;
-    const active3 = totalPlayableCards >= 3 && cartela3Data.length > 0 ? getActiveWinningPatternOnBall(cartela3Data, eligibleBalls) : null;
+    // Manual Mode: Check if any completed pattern contains the exact CURRENT ball
+    const currentBallNum = currentCall?.num;
+    const active1 = cartela1Data.length > 0 && currentBallNum ? getActiveWinningPatternOnBall(cartela1Data, [currentBallNum]) : null;
+    const active2 = totalPlayableCards >= 2 && cartela2Data.length > 0 && currentBallNum ? getActiveWinningPatternOnBall(cartela2Data, [currentBallNum]) : null;
+    const active3 = totalPlayableCards >= 3 && cartela3Data.length > 0 && currentBallNum ? getActiveWinningPatternOnBall(cartela3Data, [currentBallNum]) : null;
     const hasActive = !!(active1 || active2 || active3);
 
     if (hasActive) {
       return { hasWinningPattern: true, hasSleptPattern: false };
     }
 
-    // If not active on eligible balls, check if player has any expired (slept) completed pattern from older balls
+    // If not active on the current ball, check if player has any completed pattern from older balls (slept/missed)
     const all1 = cartela1Data.length > 0 ? checkWinningPatterns(cartela1Data) : null;
     const all2 = totalPlayableCards >= 2 && cartela2Data.length > 0 ? checkWinningPatterns(cartela2Data) : null;
     const all3 = totalPlayableCards >= 3 && cartela3Data.length > 0 ? checkWinningPatterns(cartela3Data) : null;
     const hasSlept = !!(all1 || all2 || all3);
 
     return { hasWinningPattern: false, hasSleptPattern: hasSlept };
-  }, [roundPhase, autoPlay, currentCall?.num, previousCall?.num, cartela1Data, cartela2Data, cartela3Data, totalPlayableCards]);
+  }, [roundPhase, autoPlay, currentCall?.num, cartela1Data, cartela2Data, cartela3Data, totalPlayableCards]);
   const winModalDismissedForRoundRef = useRef<number | null>(null);
   const activeWinModalRoundRef = useRef<number | null>(null);
   const lastLiveWinRoundRef = useRef<number | null>(null);
@@ -1573,28 +1573,21 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const toggleAutoPlay = () => {
-    if (roundPhase === 'playing') {
-      showToast(
-        autoPlay
-          ? '🔒 Auto-Play is locked during active game! You can change to Manual in the next game.'
-          : '🔒 Manual Mode is locked during active game! You can change to Auto-Play in the next game.'
-      );
-      return;
-    }
-
     const next = !autoPlay;
     setAutoPlay(next);
     autoPlayRef.current = next;
     try {
       localStorage.setItem(AUTOPLAY_STORAGE_KEY, String(next));
     } catch {}
+
     if (next) {
+      // Switched to Auto-Play: auto-daub all numbers already drawn
       setCartela1Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
       setCartela2Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
       setCartela3Data(prev => prev.map(c => (!c.marked && !c.isFree && calledNumbers.includes(c.val as number) ? { ...c, marked: true } : c)));
-      showToast('⚡ Auto-Play Selected (Active for next game)');
+      showToast('⚡ Auto-Play Activated');
     } else {
-      showToast('✋ Manual Mode Selected (Active for next game)');
+      showToast('✋ Manual Mode Activated');
     }
 
     if (user?.id) {
@@ -1673,7 +1666,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setHasTicket(true);
     setGameActive(true);
     setPrizePool(prev => Math.max(prev, betAmount * cardQuantity, prev + (roundPhase === 'lobby' ? betAmount * cardQuantity : 0)));
-    setRealPlayerCount(prev => Math.max(prev, 1));
+    setRealPlayerCount(prev => Math.max(cardQuantity, prev + (roundPhase === 'lobby' ? cardQuantity : 0)));
     refreshBalance();
 
     // Persist active ticket session so app reload / close does not lose ticket or money

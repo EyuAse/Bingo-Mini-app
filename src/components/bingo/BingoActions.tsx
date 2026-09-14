@@ -24,7 +24,7 @@ export const BingoActions: React.FC = () => {
         onClick={toggleAutoPlay}
         title={autoPlay ? 'Auto-Play is ON — click to go manual' : 'Turn on Auto-Play'}
       >
-        <i className={`fa-solid ${autoPlay ? 'fa-bolt' : 'fa-hand-pointer'} autoplay-icon`}></i>
+        <i className={`fa-solid ${autoPlay ? 'fa-robot' : 'fa-hand-pointer'} autoplay-icon`}></i>
         <div className={`autoplay-switch ${autoPlay ? 'on' : ''}`} />
         <span className="autoplay-label">{autoPlay ? 'AUTO ON' : 'MANUAL'}</span>
       </button>
@@ -32,7 +32,7 @@ export const BingoActions: React.FC = () => {
       {/* 2. BINGO! Call Button — disabled when in lobby or when auto-play on or claim in progress */}
       <button
         type="button"
-        className={`btn-claim-bingo-gold ${canWin && !autoPlay && isPlaying ? 'can-claim-pulsing' : ''} ${autoPlay ? 'auto-claimed' : ''} ${isLobby ? 'lobby-waiting' : ''} ${claimInProgress ? 'claiming' : ''}`}
+        className={`btn-claim-bingo-gold ${autoPlay ? 'auto-claimed' : ''} ${isLobby ? 'lobby-waiting' : ''} ${claimInProgress ? 'claiming' : ''}`}
         onClick={autoPlay || !isPlaying || claimInProgress ? undefined : claimBingo}
         disabled={!isPlaying || claimInProgress}
         title={isLobby ? `Round starts in ${lobbyCountdown}s` : autoPlay ? 'Auto-Play will claim BINGO automatically!' : claimInProgress ? 'Claiming your victory...' : 'Claim BINGO'}
@@ -44,7 +44,7 @@ export const BingoActions: React.FC = () => {
           </>
         ) : autoPlay ? (
           <>
-            <i className="fa-solid fa-bolt"></i>
+            <i className="fa-solid fa-robot"></i>
             <span>AUTO</span>
           </>
         ) : claimInProgress ? (
@@ -54,9 +54,8 @@ export const BingoActions: React.FC = () => {
           </>
         ) : (
           <>
-            <i className="fa-solid fa-star"></i>
+            <i className="fa-solid fa-trophy"></i>
             <span>BINGO!</span>
-            <i className="fa-solid fa-star"></i>
           </>
         )}
       </button>
@@ -64,8 +63,8 @@ export const BingoActions: React.FC = () => {
       {/* 3. Called count badge (replaced "Pick" button) */}
       <div className="btn-manual-mode">
         <i className="fa-solid fa-dice" style={{ fontSize: '0.875rem', color: '#94a3b8' }}></i>
-        <span style={{ fontWeight: 900, fontSize: '0.5625rem', color: canWin ? '#dc2626' : '#64748b' }}>
-          {canWin && !autoPlay ? '1 TO GO!' : 'MATCH'}
+        <span style={{ fontWeight: 900, fontSize: '0.5625rem', color: '#64748b' }}>
+          MATCH
         </span>
       </div>
     </div>

@@ -117,7 +117,7 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     success: true,
     roomId: room.id,
     phase: room.phase,
-    mode: room.mode || (room.tickets.size >= 2 ? 'active' : 'spectating'),
+    mode: room.mode || (gameEngine.getRealCartelaCount(room) >= 2 ? 'active' : 'spectating'),
     roundNumber: room.roundNumber,
     lobbyCountdown: room.lobbyCountdown,
     winnerCountdown: room.winnerCountdown,
@@ -133,7 +133,7 @@ app.get('/api/rooms/:id/sync', (req, res) => {
     isPreBuy,
     waitingForPlayers: room.waitingForPlayers || false,
     waitingForOtherHouses: room.waitingForOtherHouses || false,
-    realPlayerCount: room.tickets.size,
+    realPlayerCount: gameEngine.getRealCartelaCount(room),
     activeUsersCount: Math.max(room.activeUsers.size, room.activeSockets.size),
     occupiedCartelaIds,
     stakeRoomsSummary: gameEngine.getStakeRoomsSummary(),
@@ -184,9 +184,11 @@ if (fs.existsSync(distPath)) {
       if (isHashedAsset) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       } else if (isAudio) {
-        res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400, must-revalidate');
+        res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=600, must-revalidate');
       } else if (normalizedPath.endsWith('.html')) {
-        res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
       } else {
         res.setHeader('Cache-Control', 'public, max-age=86400');
       }
@@ -197,7 +199,9 @@ if (fs.existsSync(distPath)) {
       return next();
     }
     if (req.method === 'GET') {
-      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       return res.sendFile(path.join(distPath, 'index.html'));
     }
     next();

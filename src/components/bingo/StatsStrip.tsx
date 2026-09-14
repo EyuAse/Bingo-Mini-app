@@ -15,6 +15,7 @@ export const StatsStrip: React.FC = () => {
     roundPhase,
     waitingForPlayers,
     hasTicket,
+    cardQuantity,
     roomMode
   } = useBingo();
   const { lang } = useLanguage();
@@ -22,13 +23,13 @@ export const StatsStrip: React.FC = () => {
 
   const isSpectatingHouse = roomMode === 'spectating' && !hasTicket;
   const currentPlayers = realPlayerCount > 0 ? realPlayerCount : playersCount;
-  // Effective player count — always ≥ 1 when user has a ticket, prevents "0/0" display lag
-  const effectivePlayerCount = hasTicket ? Math.max(currentPlayers, 1) : currentPlayers;
+  // Effective player count — always ≥ cardQuantity when user has a ticket, prevents display lag
+  const effectivePlayerCount = hasTicket ? Math.max(currentPlayers, cardQuantity || 1) : currentPlayers;
   // Dynamic Real-Flow Derash Calculation:
-  // Computes the expected pot from confirmed ticketed players across any stake room (10, 20, 50, 100 ETB)
+  // Computes the expected pot from confirmed ticketed cartelas across any stake room (10, 20, 50, 100 ETB)
   const expectedPot = effectivePlayerCount * betAmount;
   const calculatedPrize = effectivePlayerCount <= 5 ? expectedPot : Math.floor(expectedPot * 0.8);
-  const currentPrize = Math.max(prizePool, calculatedPrize);
+  const currentPrize = prizePool > 0 ? prizePool : calculatedPrize;
   const prizeDisplay = isSpectatingHouse && roundPhase === 'playing'
     ? '0'
     : (currentPrize >= 1000 ? `${(currentPrize / 1000).toFixed(1)}K` : `${currentPrize}`);
@@ -38,16 +39,16 @@ export const StatsStrip: React.FC = () => {
 
   // Matchmaking player display for clarity: never show misleading "0/2" when players are in room
   const isLobbyWaiting = roundPhase === 'lobby' && (waitingForPlayers || effectivePlayerCount < 2);
-  const effectiveInRoom = Math.max(activeUsersCount, currentPlayers, hasTicket ? 1 : 0);
+  const effectiveInRoom = Math.max(activeUsersCount, currentPlayers, hasTicket ? (cardQuantity || 1) : 0);
   const playersDisplay = isLobbyWaiting
     ? (effectivePlayerCount >= 1 || hasTicket
-        ? `${Math.max(effectivePlayerCount, 1)}/2 ⏳`
+        ? `${Math.max(effectivePlayerCount, cardQuantity || 1)}/2 ⏳`
         : (effectiveInRoom >= 2
             ? (lang === 'am' ? `${effectiveInRoom} ተጫዋች` : `${effectiveInRoom} in Room`)
             : (lang === 'am' ? 'ይጠብቁ ⏳' : 'Waiting ⏳')))
     : (isSpectatingHouse && roundPhase === 'playing'
         ? (lang === 'am' ? 'እይታ 👁️' : 'Spectate 👁️')
-        : `${Math.max(currentPlayers, hasTicket ? 1 : 0)}`);
+        : `${Math.max(currentPlayers, hasTicket ? (cardQuantity || 1) : 0)}`);
 
   const canSwitchStake = roundPhase === 'lobby' || !hasTicket;
 

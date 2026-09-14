@@ -126,7 +126,7 @@ export const BingoPage: React.FC = () => {
                     title={claimInProgress ? "Claiming your win..." : hasWinningPattern ? "Call Bingo to claim your victory!" : hasSleptPattern ? "Pattern expired on an earlier number. Complete another line to call Bingo!" : "Complete a 5-in-a-row line to call Bingo"}
                   >
                     <i className={claimInProgress ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-trophy"}></i>
-                    <span>{claimInProgress ? 'CLAIMING... ⚡' : hasWinningPattern ? 'CALL BINGO! ⚡' : 'BINGO! 🎯'}</span>
+                    <span>{claimInProgress ? 'CLAIMING...' : hasWinningPattern ? 'CALL BINGO!' : 'BINGO!'}</span>
                   </button>
                 )}
               </div>

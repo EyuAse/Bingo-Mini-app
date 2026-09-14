@@ -11,43 +11,6 @@ const CARD_COLUMNS = [
   { letter: 'O', colClass: 'col-o' },
 ];
 
-// ── Win patterns (Standard 75-Ball: 5 Rows, 5 Columns, 2 Diagonals, 4 Corners) ──
-const WIN_PATTERNS = [
-  // 5 Rows
-  [0, 1, 2, 3, 4],
-  [5, 6, 7, 8, 9],
-  [10, 11, 12, 13, 14],
-  [15, 16, 17, 18, 19],
-  [20, 21, 22, 23, 24],
-  // 5 Columns
-  [0, 5, 10, 15, 20],
-  [1, 6, 11, 16, 21],
-  [2, 7, 12, 17, 22],
-  [3, 8, 13, 18, 23],
-  [4, 9, 14, 19, 24],
-  // 2 Diagonals
-  [0, 6, 12, 18, 24],
-  [4, 8, 12, 16, 20],
-  // 4 Corners
-  [0, 4, 20, 24]
-];
-
-// ── Card status helper ─────────────────────────────────────
-const getCardStatus = (cells: BingoCell[]) => {
-  if (!Array.isArray(cells) || !cells.length) return { label: '2 TO GO', hot: false };
-  let minNeeded = 5;
-  for (const p of WIN_PATTERNS) {
-    const markedCount = p.filter((idx: number) => cells[idx]?.marked).length;
-    const needed = p.length - markedCount;
-    if (needed < minNeeded) minNeeded = needed;
-  }
-  if (minNeeded === 0) return { label: 'BINGO! 🎉', hot: true };
-  if (minNeeded === 1) return { label: '1 TO GO! 🔥', hot: true };
-  if (minNeeded === 2) return { label: '2 TO GO', hot: false };
-  if (minNeeded === 3) return { label: '3 TO GO', hot: false };
-  return { label: '4 TO GO', hot: false };
-};
-
 const NewCard5x5: React.FC<{
   cells: BingoCell[];
   cardIndex: number;
@@ -66,7 +29,6 @@ const NewCard5x5: React.FC<{
   isSingleCard, isPreview, onOpenPicker
 }) => {
   const { lang } = useLanguage();
-  const status = getCardStatus(cells || []);
 
   // ── Unselected Cartela Placeholder (When user hasn't chosen cartelas yet) ──
   if (isPreview && (!cartelaId || cartelaId === 0 || !cells || cells.length === 0)) {
@@ -131,11 +93,6 @@ const NewCard5x5: React.FC<{
           >
             🎟️ Pick
           </button>
-        )}
-        {!isPreview && status.hot && (
-          <span className={`new-card-status-pill ${status.label.includes('BINGO') ? 'bingo' : 'hot'}`}>
-            {status.label}
-          </span>
         )}
       </div>
 

@@ -110,15 +110,37 @@ export class TelegramBotService {
   }
 
   /**
+   * Helper to ensure all Web App URLs are properly version-busted so Telegram Webview
+   * always fetches the fresh human audio pack and code bundle identically for direct search and invitation links.
+   */
+  public getVersionedWebAppUrl(baseUrl: string, param?: string): string {
+    const versionTag = 'v=20260914_1';
+    if (!baseUrl) return '';
+    let url = baseUrl;
+    if (param) {
+      url = url.includes('?')
+        ? `${url}&startapp=${encodeURIComponent(param)}`
+        : `${url}?startapp=${encodeURIComponent(param)}`;
+    } else {
+      url = url.includes('?')
+        ? (url.includes('v=') ? url : `${url}&${versionTag}`)
+        : `${url}?${versionTag}`;
+    }
+    return url;
+  }
+
+  /**
    * Configure persistent "Play Bingo" Menu Button in Telegram Chat
    */
   public async setChatMenuButton(webAppUrl?: string): Promise<{ success: boolean; message: string }> {
     const cfg = await this.getConfig();
-    const url = webAppUrl || cfg.webAppUrl;
+    const rawUrl = webAppUrl || cfg.webAppUrl;
 
-    if (!url) {
+    if (!rawUrl) {
       return { success: false, message: 'Web App URL is required to set chat menu button' };
     }
+
+    const url = this.getVersionedWebAppUrl(rawUrl);
 
     const res = await this.callApi('setChatMenuButton', {
       menu_button: {
@@ -611,12 +633,7 @@ export class TelegramBotService {
     if (text.startsWith('/start') || text === '/play') {
       const parts = text.split(' ');
       const startParam = parts.length > 1 ? parts[1].trim() : '';
-      let playAppUrl = webAppUrl;
-      if (startParam) {
-        playAppUrl = webAppUrl.includes('?')
-          ? `${webAppUrl}&startapp=${encodeURIComponent(startParam)}`
-          : `${webAppUrl}?startapp=${encodeURIComponent(startParam)}`;
-      }
+      const playAppUrl = this.getVersionedWebAppUrl(webAppUrl, startParam);
 
       let welcomeText = 
 `👋 <b>እንኳን ወደ ሎሚ ቢንጎ በደህና መጡ!</b> 🍋🎯
@@ -675,7 +692,7 @@ Tap below to jump into the arena:`;
 
       await this.sendMessage(chatId, helpText, {
         inlineKeyboard: [
-          [{ text: '🎮 Open Bingo Arena', web_app: { url: webAppUrl } }]
+          [{ text: '🎮 Open Bingo Arena', web_app: { url: this.getVersionedWebAppUrl(webAppUrl) } }]
         ]
       });
       return true;
@@ -691,7 +708,7 @@ Open the game below to claim your free welcome bonus cartela! 👇`;
 
       await this.sendMessage(chatId, bonusText, {
         inlineKeyboard: [
-          [{ text: '🎁 Claim 10 ETB & Play Now', web_app: { url: webAppUrl } }]
+          [{ text: '🎁 Claim 10 ETB & Play Now', web_app: { url: this.getVersionedWebAppUrl(webAppUrl) } }]
         ]
       });
       return true;

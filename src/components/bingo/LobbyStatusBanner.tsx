@@ -10,14 +10,15 @@ export const LobbyStatusBanner: React.FC = () => {
     waitingForPlayers,
     realPlayerCount,
     hasTicket,
+    cardQuantity,
     joinFeed,
     betAmount,
     setBetAmount,
     stakeRoomsSummary
   } = useBingo();
 
-  // Never show 0 when local user holds a ticket (server broadcast may not have arrived yet)
-  const displayPlayerCount = Math.max(realPlayerCount, hasTicket ? 1 : 0);
+  // Never show less than held cartelas when local user holds tickets (server broadcast may not have arrived yet)
+  const displayPlayerCount = Math.max(realPlayerCount, hasTicket ? (cardQuantity || 1) : 0);
 
   const suggestedStake = Object.entries(stakeRoomsSummary)
     .map(([stakeStr, count]) => ({ stake: Number(stakeStr), count }))
