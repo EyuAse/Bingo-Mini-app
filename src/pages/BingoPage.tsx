@@ -112,21 +112,21 @@ export const BingoPage: React.FC = () => {
                   <button
                     type="button"
                     disabled={claimInProgress}
-                    className={`btn-in-game-bingo ${claimInProgress ? 'claiming' : hasWinningPattern ? 'active-claim-ready' : 'inactive'}`}
+                    className={`btn-in-game-bingo ${claimInProgress ? 'claiming' : ''}`}
                     onClick={() => {
                       if (claimInProgress) return;
                       if (hasWinningPattern) {
                         claimBingo();
                       } else if (hasSleptPattern) {
-                        showToast("⚠️ Missed Bingo! That pattern expired because a subsequent number was called. Complete another 5-in-a-row line to call BINGO!");
+                        showToast("⚠️ Missed Bingo! That pattern expired because subsequent numbers were called. Complete another 5-in-a-row line to call BINGO!");
                       } else {
                         showToast("Complete any 5-in-a-row line on your card to call BINGO!");
                       }
                     }}
-                    title={claimInProgress ? "Claiming your win..." : hasWinningPattern ? "Call Bingo to claim your victory!" : hasSleptPattern ? "Pattern expired on an earlier number. Complete another line to call Bingo!" : "Complete a 5-in-a-row line to call Bingo"}
+                    title={claimInProgress ? "Claiming your win..." : "Call BINGO to claim your win"}
                   >
                     <i className={claimInProgress ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-trophy"}></i>
-                    <span>{claimInProgress ? 'CLAIMING...' : hasWinningPattern ? 'CALL BINGO!' : 'BINGO!'}</span>
+                    <span>{claimInProgress ? 'CLAIMING...' : 'BINGO'}</span>
                   </button>
                 )}
               </div>

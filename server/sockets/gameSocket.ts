@@ -211,8 +211,19 @@ export function setupGameSockets(io: Server) {
 
     // 2.2 Update Player Auto/Manual Mode Event
     socket.on('update_player_mode', (data: { roomId: string; userId: string; isAutoPlay: boolean }) => {
-      if (data?.roomId && data?.userId && isAuthorizedSession(socket.id, data.userId)) {
-        gameEngine.updatePlayerMode(data.roomId, data.userId, data.isAutoPlay);
+      if (!data?.userId) return;
+      const targetUserId = data.userId;
+      const targetRoomId = data.roomId || currentRoomId || 'room-10';
+      const isAuto = Boolean(data.isAutoPlay);
+
+      if (authUserId === targetUserId || isAuthorizedSession(socket.id, targetUserId)) {
+        if (!activeUserSessions.has(targetUserId)) {
+          activeUserSessions.set(targetUserId, { socketId: socket.id, connectedAt: Date.now() });
+        }
+        gameEngine.updatePlayerMode(targetRoomId, targetUserId, isAuto);
+        console.log(`🎮 [PlayerMode] User ${targetUserId} set mode to ${isAuto ? 'AUTO ⚡' : 'MANUAL ✋'}`);
+      } else {
+        console.warn(`⚠️ [PlayerMode] Ignored mode switch for user ${targetUserId} from unauthorized socket ${socket.id}`);
       }
     });
 

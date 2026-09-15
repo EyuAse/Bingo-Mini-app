@@ -5483,37 +5483,21 @@
   user-select: none;
   cursor: pointer;
   box-sizing: border-box;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-  animation: none !important;
-}
-
-.btn-in-game-bingo.inactive {
-  background: #f8fafc;
-  border: 1.5px solid #cbd5e1;
-  color: #475569;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  animation: none !important;
-}
-
-.btn-in-game-bingo.inactive:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-  color: #0f172a;
-}
-
-.btn-in-game-bingo.active-claim-ready {
   background: #16a34a;
   border: 1.5px solid #15803d;
   color: #ffffff;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-  cursor: pointer;
-  font-weight: 950;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   animation: none !important;
 }
 
-.btn-in-game-bingo.active-claim-ready:hover {
+.btn-in-game-bingo:hover {
   background: #15803d;
   border-color: #166534;
+}
+
+.btn-in-game-bingo:active {
+  transform: scale(0.98);
 }
 
 .btn-in-game-bingo.claiming {
@@ -5524,10 +5508,6 @@
   cursor: not-allowed;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   animation: none !important;
-}
-
-.btn-in-game-bingo.active-claim-ready:active {
-  transform: scale(0.98);
 }
 
 /* ── MATCHMAKING WAITING & LOBBY STATUS STYLES ── */

@@ -373,25 +373,25 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return { hasWinningPattern: !!(win1 || win2 || win3), hasSleptPattern: false };
     }
 
-    // Manual Mode: Check if any completed pattern contains the exact CURRENT ball
-    const currentBallNum = currentCall?.num;
-    const active1 = cartela1Data.length > 0 && currentBallNum ? getActiveWinningPatternOnBall(cartela1Data, [currentBallNum]) : null;
-    const active2 = totalPlayableCards >= 2 && cartela2Data.length > 0 && currentBallNum ? getActiveWinningPatternOnBall(cartela2Data, [currentBallNum]) : null;
-    const active3 = totalPlayableCards >= 3 && cartela3Data.length > 0 && currentBallNum ? getActiveWinningPatternOnBall(cartela3Data, [currentBallNum]) : null;
+    // Manual Mode: Check if any completed pattern contains the current ball OR previous ball (1-ball grace window)
+    const eligibleBalls = [currentCall?.num, previousCall?.num].filter((n): n is number => typeof n === 'number' && n > 0);
+    const active1 = cartela1Data.length > 0 && eligibleBalls.length > 0 ? getActiveWinningPatternOnBall(cartela1Data, eligibleBalls) : null;
+    const active2 = totalPlayableCards >= 2 && cartela2Data.length > 0 && eligibleBalls.length > 0 ? getActiveWinningPatternOnBall(cartela2Data, eligibleBalls) : null;
+    const active3 = totalPlayableCards >= 3 && cartela3Data.length > 0 && eligibleBalls.length > 0 ? getActiveWinningPatternOnBall(cartela3Data, eligibleBalls) : null;
     const hasActive = !!(active1 || active2 || active3);
 
     if (hasActive) {
       return { hasWinningPattern: true, hasSleptPattern: false };
     }
 
-    // If not active on the current ball, check if player has any completed pattern from older balls (slept/missed)
+    // If not active on eligible balls, check if player has any completed pattern from older balls (slept/missed)
     const all1 = cartela1Data.length > 0 ? checkWinningPatterns(cartela1Data) : null;
     const all2 = totalPlayableCards >= 2 && cartela2Data.length > 0 ? checkWinningPatterns(cartela2Data) : null;
     const all3 = totalPlayableCards >= 3 && cartela3Data.length > 0 ? checkWinningPatterns(cartela3Data) : null;
     const hasSlept = !!(all1 || all2 || all3);
 
     return { hasWinningPattern: false, hasSleptPattern: hasSlept };
-  }, [roundPhase, autoPlay, currentCall?.num, cartela1Data, cartela2Data, cartela3Data, totalPlayableCards]);
+  }, [roundPhase, autoPlay, currentCall?.num, previousCall?.num, cartela1Data, cartela2Data, cartela3Data, totalPlayableCards]);
   const winModalDismissedForRoundRef = useRef<number | null>(null);
   const activeWinModalRoundRef = useRef<number | null>(null);
   const lastLiveWinRoundRef = useRef<number | null>(null);
