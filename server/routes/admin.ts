@@ -566,6 +566,13 @@ router.post('/fairness-config', requireAdmin, async (req: AuthenticatedRequest, 
       botWinRate: typeof botWinRate === 'number' ? botWinRate : undefined,
       roomCapacity: typeof roomCapacity === 'number' ? roomCapacity : undefined
     });
+    return res.json({ success: true, config: gameEngine.getFairnessConfig() });
+  } catch (error: any) {
+    console.error('❌ [Admin Fairness Config POST Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to update fairness config' });
+  }
+});
+
 /**
  * Live Neon PostgreSQL Health & Storage Quota Monitor
  */
