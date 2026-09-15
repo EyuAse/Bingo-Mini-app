@@ -114,19 +114,15 @@ export class TelegramBotService {
    * always fetches the fresh human audio pack and code bundle identically for direct search and invitation links.
    */
   public getVersionedWebAppUrl(baseUrl: string, param?: string): string {
-    const versionTag = 'v=20260914_1';
+    const versionTag = 'v=20260915_2';
     if (!baseUrl) return '';
-    let url = baseUrl;
+    // Strip any older version parameter like v=20260914_1 if present in baseUrl
+    const cleanUrl = baseUrl.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
+    const sep = cleanUrl.includes('?') ? '&' : '?';
     if (param) {
-      url = url.includes('?')
-        ? `${url}&startapp=${encodeURIComponent(param)}`
-        : `${url}?startapp=${encodeURIComponent(param)}`;
-    } else {
-      url = url.includes('?')
-        ? (url.includes('v=') ? url : `${url}&${versionTag}`)
-        : `${url}?${versionTag}`;
+      return `${cleanUrl}${sep}${versionTag}&startapp=${encodeURIComponent(param)}`;
     }
-    return url;
+    return `${cleanUrl}${sep}${versionTag}`;
   }
 
   /**

@@ -18,5 +18,15 @@
   Pragma: no-cache
   Expires: 0
 
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
 /assets/audio/*
   Cache-Control: public, max-age=300, must-revalidate

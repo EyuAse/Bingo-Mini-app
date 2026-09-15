@@ -15,6 +15,7 @@ import adminRouter from './routes/admin.ts';
 import telegramBotRouter from './routes/telegramBot.ts';
 import { setupGameSockets } from './sockets/gameSocket.ts';
 import { gameEngine } from './game/BingoGameEngine.ts';
+import { telegramBotService } from './services/telegramBotService.ts';
 
 import rateLimit from 'express-rate-limit';
 
@@ -231,6 +232,9 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`🚀 [Lomi Bingo Server] Running on http://localhost:${PORT}`);
     console.log(`📊 [Neon PostgreSQL] Connection Pool Active`);
     console.log(`🎮 [Bingo Engine] 4 Game Rooms Initialized`);
+    telegramBotService.setChatMenuButton().catch(err => {
+      console.warn('⚠️ [TelegramBotService] Auto-sync chat menu button deferred:', err.message || err);
+    });
   });
 }
 

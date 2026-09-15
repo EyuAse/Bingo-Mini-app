@@ -8,6 +8,7 @@ import { BingoProvider } from './context/BingoContext.tsx';
 import { AdminProvider } from './context/AdminContext.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
 import { ErrorBoundary } from './components/common/ErrorBoundary.tsx';
+import './services/versionService.ts';
 
 // FontAwesome Local Bundle
 import '@fortawesome/fontawesome-free/css/all.min.css';

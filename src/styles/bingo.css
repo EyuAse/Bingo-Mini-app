@@ -387,27 +387,14 @@
   box-shadow: 0 4px 12px rgba(234,179,8,0.4);
 }
 
-/* TO GO Pill Badge */
-.cartela-togo-badge {
-  background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
-  border: 1px solid #facc15;
-  border-radius: 9999px;
-  padding: 2px 7px;
-  font-size: 0.5625rem;
-  font-weight: 900;
-  color: #854d0e;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(234,179,8,0.25);
-  flex-shrink: 0;
-}
+/* TO GO Pill Badge Suppressed */
+.cartela-togo-badge,
 .cartela-togo-badge.hot {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  border-color: #ef4444;
-  color: #b91c1c;
-  animation: pulseRadar 1s infinite;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Full-width cartela backward-compatibility */
@@ -720,22 +707,13 @@
 }
 .gold { color: #ca8a04; }
 
-.cartela-radar-badge {
-  background: #fef9c3;
-  color: #854d0e;
-  font-size: 0.5625rem;
-  font-weight: 900;
-  padding: 2px 7px;
-  border-radius: 9999px;
-}
+.cartela-radar-badge,
 .cartela-radar-badge.radar-hot {
-  background: #fee2e2;
-  color: #dc2626;
-  animation: pulseRadar 1s infinite;
-}
-@keyframes pulseRadar {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
 }
 
 /* ── 5x5 Matrix ─────────────────────────────────────────── */
@@ -982,7 +960,7 @@
   animation: none !important;
 }
 .btn-claim-bingo-gold.can-claim-pulsing {
-  box-shadow: 0 4px 14px rgba(234,179,8,0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   animation: none !important;
 }
 
@@ -2575,120 +2553,13 @@
    ══════════════════════════════════════════════════════════════ */
 
 .one-to-go-alert-banner {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(234, 179, 8, 0.32) 100%);
-  border: 1.5px solid #facc15;
-  border-radius: 14px;
-  padding: 10px 14px;
-  margin: 4px 0;
-  box-shadow: 0 0 16px rgba(250, 204, 21, 0.35);
-  animation: pulseOneToGo 1.5s infinite alternate ease-in-out;
-  backdrop-filter: blur(8px);
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
 }
 
-@keyframes pulseOneToGo {
-  0% {
-    box-shadow: 0 0 10px rgba(250, 204, 21, 0.25);
-    border-color: rgba(250, 204, 21, 0.7);
-  }
-  100% {
-    box-shadow: 0 0 22px rgba(250, 204, 21, 0.55);
-    border-color: #facc15;
-  }
-}
-
-.one-to-go-flame-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
-  flex-shrink: 0;
-  animation: bounceFlame 0.8s infinite alternate;
-}
-
-@keyframes bounceFlame {
-  from { transform: scale(0.92) rotate(-6deg); }
-  to { transform: scale(1.08) rotate(6deg); }
-}
-
-.one-to-go-content {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex: 1;
-}
-
-.one-to-go-heading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.one-to-go-title {
-  color: #fef08a;
-  font-size: 0.875rem;
-  font-weight: 950;
-  letter-spacing: 0.5px;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
-}
-
-.one-to-go-card-pill {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(250, 204, 21, 0.5);
-  color: #fde047;
-  font-size: 0.6875rem;
-  font-weight: 800;
-  padding: 1px 7px;
-  border-radius: 10px;
-}
-
-.one-to-go-needed-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.one-to-go-sub {
-  color: #fefce8;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.needed-balls-chips {
-  display: inline-flex;
-  gap: 4px;
-}
-
-.needed-ball-chip {
-  padding: 2px 7px;
-  border-radius: 6px;
-  font-size: 0.6875rem;
-  font-weight: 950;
-  color: #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-}
-
-.needed-ball-chip.col-b { background: #3b82f6; }
-.needed-ball-chip.col-i { background: #ef4444; }
-.needed-ball-chip.col-n { background: #a855f7; }
-.needed-ball-chip.col-g { background: #22c55e; }
-.needed-ball-chip.col-o { background: #f59e0b; }
-
-.one-to-go-suffix {
-  color: #fef08a;
-  font-size: 0.75rem;
-  font-weight: 800;
-}
 
 /* ============================================================
    PHASE 1 — NEW UI REDESIGN: DARK THEME DESIGN SYSTEM
@@ -4874,6 +4745,10 @@
 
 .new-card-status-pill {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
 }
 
 .new-card-body {
@@ -5608,45 +5483,51 @@
   user-select: none;
   cursor: pointer;
   box-sizing: border-box;
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  animation: none !important;
 }
 
 .btn-in-game-bingo.inactive {
   background: #f8fafc;
-  border: 2px solid #cbd5e1;
-  color: #334155;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  border: 1.5px solid #cbd5e1;
+  color: #475569;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  animation: none !important;
 }
 
 .btn-in-game-bingo.inactive:hover {
   background: #f1f5f9;
   border-color: #94a3b8;
   color: #0f172a;
-  transform: translateY(-1px);
 }
 
 .btn-in-game-bingo.active-claim-ready {
-  background: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #eab308 100%);
-  border: 2px solid #86efac;
+  background: #16a34a;
+  border: 1.5px solid #15803d;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.45);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   font-weight: 950;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
   animation: none !important;
 }
 
+.btn-in-game-bingo.active-claim-ready:hover {
+  background: #15803d;
+  border-color: #166534;
+}
+
 .btn-in-game-bingo.claiming {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  border: 2px solid #38bdf8;
+  background: #0284c7;
+  border: 1.5px solid #0369a1;
   color: #ffffff;
-  opacity: 0.85;
+  opacity: 0.9;
   cursor: not-allowed;
-  box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  animation: none !important;
 }
 
 .btn-in-game-bingo.active-claim-ready:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
 }
 
 /* ── MATCHMAKING WAITING & LOBBY STATUS STYLES ── */
