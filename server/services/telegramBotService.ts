@@ -308,6 +308,91 @@ export class TelegramBotService {
   }
 
   /**
+   * Delete a single message by ID in a chat or channel
+   */
+  public async deleteMessage(chatId: string | number, messageId: number): Promise<{ ok: boolean; description?: string }> {
+    return await this.callApi('deleteMessage', {
+      chat_id: chatId,
+      message_id: messageId
+    });
+  }
+
+  /**
+   * Delete multiple messages in a chat or channel (up to 100 per call)
+   */
+  public async deleteMessages(chatId: string | number, messageIds: number[]): Promise<{ ok: boolean; description?: string }> {
+    return await this.callApi('deleteMessages', {
+      chat_id: chatId,
+      message_ids: messageIds
+    });
+  }
+
+  /**
+   * Purge legacy posts from a Telegram Channel so players cannot click stale buttons.
+   * Sends a probe to discover the current latest message ID, then deletes past messages.
+   */
+  public async purgeChannelPosts(targetChat?: string, maxScan: number = 100): Promise<{
+    success: boolean;
+    channel: string;
+    deletedCount: number;
+    scannedCount: number;
+    message: string;
+  }> {
+    const cfg = await this.getConfig();
+    const channel = (targetChat || cfg.channelId || '@lomibingo_official').trim();
+
+    if (!channel) {
+      return { success: false, channel: '', deletedCount: 0, scannedCount: 0, message: 'No target channel specified' };
+    }
+
+    // Step 1: Send a lightweight probe message to find the latest message_id
+    const probeRes = await this.sendMessage(channel, '🧹 <i>Cleaning older promotional announcements...</i>');
+    if (!probeRes.ok || !probeRes.result?.message_id) {
+      return {
+        success: false,
+        channel,
+        deletedCount: 0,
+        scannedCount: 0,
+        message: `Failed to access channel ${channel}: ${probeRes.description || 'Ensure bot is channel Administrator with Delete Messages permission.'}`
+      };
+    }
+
+    const latestId = probeRes.result.message_id;
+    // Delete the probe immediately
+    await this.deleteMessage(channel, latestId);
+
+    let deletedCount = 0;
+    let scannedCount = 0;
+
+    // Scan backwards from latestId - 1
+    const startId = latestId - 1;
+    const endId = Math.max(1, latestId - maxScan);
+
+    console.log(`🧹 [TelegramBot] Purging channel posts in ${channel} from ID ${startId} down to ${endId}...`);
+
+    for (let id = startId; id >= endId; id--) {
+      scannedCount++;
+      const delRes = await this.deleteMessage(channel, id);
+      if (delRes.ok) {
+        deletedCount++;
+        console.log(`  ✓ Deleted message #${id} in ${channel}`);
+      }
+      // Avoid Telegram flood limits (small pause every 10 calls)
+      if (scannedCount % 10 === 0) {
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+
+    return {
+      success: true,
+      channel,
+      deletedCount,
+      scannedCount,
+      message: `Successfully purged ${deletedCount} older messages from ${channel}.`
+    };
+  }
+
+  /**
    * Execute Broadcast Campaign:
    * Supports Channel / Group posting, direct 1-on-1 player broadcasts, or test messages.
    */
