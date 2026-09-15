@@ -126,30 +126,61 @@ export class TelegramBotService {
   }
 
   /**
-   * Configure persistent "Play Bingo" Menu Button in Telegram Chat
+   * Configure persistent Menu Button in Telegram Chat.
+   * - buttonType: 'commands' (default) displays the persistent blue [ ☰ Menu ] button beside the input box (no need to type /)
+   * - buttonType: 'web_app' displays a direct Mini App button
    */
-  public async setChatMenuButton(webAppUrl?: string): Promise<{ success: boolean; message: string }> {
-    const cfg = await this.getConfig();
-    const rawUrl = webAppUrl || cfg.webAppUrl;
+  public async setChatMenuButton(
+    arg1?: 'commands' | 'web_app' | string,
+    webAppUrl?: string
+  ): Promise<{ success: boolean; message: string }> {
+    let buttonType: 'commands' | 'web_app' = 'commands';
+    let targetUrl = webAppUrl;
 
-    if (!rawUrl) {
-      return { success: false, message: 'Web App URL is required to set chat menu button' };
+    if (typeof arg1 === 'string') {
+      if (arg1 === 'commands' || arg1 === 'web_app') {
+        buttonType = arg1;
+      } else if (arg1.startsWith('http')) {
+        buttonType = 'web_app';
+        targetUrl = arg1;
+      }
     }
 
-    const url = this.getVersionedWebAppUrl(rawUrl);
+    let menuButtonPayload: any;
 
-    const res = await this.callApi('setChatMenuButton', {
-      menu_button: {
+    if (buttonType === 'commands') {
+      menuButtonPayload = {
+        type: 'commands'
+      };
+    } else {
+      const cfg = await this.getConfig();
+      const rawUrl = targetUrl || cfg.webAppUrl;
+
+      if (!rawUrl) {
+        return { success: false, message: 'Web App URL is required to set web_app menu button' };
+      }
+
+      const url = this.getVersionedWebAppUrl(rawUrl);
+      menuButtonPayload = {
         type: 'web_app',
         text: '🎮 Play Bingo',
         web_app: {
           url
         }
-      }
+      };
+    }
+
+    const res = await this.callApi('setChatMenuButton', {
+      menu_button: menuButtonPayload
     });
 
     if (res.ok) {
-      return { success: true, message: 'Persistent Mini App Menu Button configured successfully on Telegram!' };
+      return { 
+        success: true, 
+        message: buttonType === 'commands'
+          ? 'Persistent blue [ ☰ Menu ] button configured successfully on Telegram!'
+          : 'Persistent Mini App Menu Button configured successfully on Telegram!'
+      };
     }
     return { success: false, message: res.description || 'Failed to set chat menu button' };
   }
@@ -303,22 +334,28 @@ export class TelegramBotService {
       if (btnUrl) {
         if (opts.targetType === 'channel' || opts.targetType === 'group') {
           // In channels/groups, use native Telegram Mini App direct link https://t.me/<bot>/play
-          let channelBtnUrl = opts.buttonUrl;
-          if (!channelBtnUrl) {
+          let channelBtnUrl = (opts.buttonUrl || '').trim();
+          if (!channelBtnUrl || channelBtnUrl.includes('onrender.com') || channelBtnUrl === cfg.webAppUrl) {
             channelBtnUrl = `https://t.me/${botUser}/play`;
+          } else if (channelBtnUrl.startsWith('http') && !channelBtnUrl.includes('t.me')) {
+            channelBtnUrl = this.getVersionedWebAppUrl(channelBtnUrl);
           }
           inlineKeyboard.push([
             { text: opts.buttonText, url: channelBtnUrl }
           ]);
         } else {
           // In direct 1-on-1 chats between user and bot, web_app is fully supported
-          if (opts.buttonText.toLowerCase().includes('play') || opts.buttonText.toLowerCase().includes('bingo')) {
+          const isPlayAction = opts.buttonText.toLowerCase().includes('play') || opts.buttonText.toLowerCase().includes('bingo') || opts.buttonText.toLowerCase().includes('game') || opts.buttonText.toLowerCase().includes('bonus');
+          if (isPlayAction) {
+            const versionedUrl = this.getVersionedWebAppUrl(btnUrl);
             inlineKeyboard.push([
-              { text: opts.buttonText, web_app: { url: btnUrl } }
+              { text: opts.buttonText, web_app: { url: versionedUrl } }
             ]);
           } else {
+            const isWeb = btnUrl.startsWith('http') && !btnUrl.includes('t.me');
+            const targetUrl = isWeb ? this.getVersionedWebAppUrl(btnUrl) : btnUrl;
             inlineKeyboard.push([
-              { text: opts.buttonText, url: btnUrl }
+              { text: opts.buttonText, url: targetUrl }
             ]);
           }
         }
@@ -446,6 +483,10 @@ export class TelegramBotService {
 
     // Persist as active in-bot promotion for /promo
     try {
+      let activeBtnUrl = (opts.buttonUrl || '').trim();
+      if (!activeBtnUrl || activeBtnUrl.includes('onrender.com') || activeBtnUrl === cfg.webAppUrl) {
+        activeBtnUrl = `https://t.me/${botUser}/play`;
+      }
       await query(
         `INSERT INTO admin_settings (key, value, updated_at)
          VALUES 
@@ -455,7 +496,7 @@ export class TelegramBotService {
            ('telegram_active_promo_button_text', $4, NOW()),
            ('telegram_active_promo_button_url', $5, NOW())
          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-        [opts.title, opts.messageText, opts.photoUrl || '', opts.buttonText || '', opts.buttonUrl || '']
+        [opts.title, opts.messageText, opts.photoUrl || '', opts.buttonText || '', activeBtnUrl]
       );
     } catch (e) {
       console.warn('Could not save active promo settings:', e);
@@ -736,9 +777,12 @@ Open the game below to claim your free welcome bonus cartela! 👇`;
         }
       } catch {}
 
-      const inlineKeyboard = [
-        [{ text: btnText, url: btnUrl }]
-      ];
+      const isHttpWebApp = btnUrl.startsWith('http') && !btnUrl.includes('t.me');
+      const finalBtnUrl = isHttpWebApp ? this.getVersionedWebAppUrl(btnUrl) : btnUrl;
+
+      const inlineKeyboard = isHttpWebApp
+        ? [[{ text: btnText, web_app: { url: finalBtnUrl } }]]
+        : [[{ text: btnText, url: finalBtnUrl }]];
 
       if (promoPhoto) {
         await this.sendPhoto(chatId, promoPhoto, promoText, { inlineKeyboard });

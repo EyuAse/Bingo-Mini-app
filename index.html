@@ -9,6 +9,24 @@
   <meta http-equiv="Expires" content="0">
   <title>Lomi Bingo • B I N G O •</title>
 
+  <!-- Cache-Busting Version Guard (Immediate Telegram CEF & WebView2 Cache Invalidation) -->
+  <script>
+    (function() {
+      try {
+        var LATEST_V = '20260915_2';
+        var params = new URLSearchParams(window.location.search);
+        var currentV = params.get('v');
+        if (!currentV || currentV !== LATEST_V) {
+          params.set('v', LATEST_V);
+          var target = window.location.pathname + '?' + params.toString() + window.location.hash;
+          window.location.replace(target);
+        }
+      } catch (e) {
+        console.warn('Version guard error:', e);
+      }
+    })();
+  </script>
+
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="alternate icon" href="/favicon.svg">

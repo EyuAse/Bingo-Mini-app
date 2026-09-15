@@ -128,8 +128,8 @@ router.post('/configure', async (req, res) => {
  */
 router.post('/set-menu-button', async (req, res) => {
   try {
-    const { webAppUrl } = req.body;
-    const result = await telegramBotService.setChatMenuButton(webAppUrl);
+    const { webAppUrl, buttonType } = req.body;
+    const result = await telegramBotService.setChatMenuButton(buttonType || 'commands', webAppUrl);
     if (result.success) {
       return res.json({ success: true, message: result.message });
     }
