@@ -4,7 +4,7 @@ console.log('================================================================');
 console.log('🧪 Testing Phase 2: Client-Side Head Version Guard Logic');
 console.log('================================================================\n');
 
-const LATEST_V = '20260919_3';
+const LATEST_V = '20260919_4';
 
 function simulateHeadGuard(fullUrl: string): { redirected: boolean; target?: string } {
   const urlObj = new URL(fullUrl, 'https://bingo-mini-app-30pe.onrender.com');
@@ -22,29 +22,29 @@ function simulateHeadGuard(fullUrl: string): { redirected: boolean; target?: str
 // Case 1: Unversioned root (e.g. from old bot promo message link)
 const r1 = simulateHeadGuard('https://bingo-mini-app-30pe.onrender.com/');
 assert.strictEqual(r1.redirected, true);
-assert.strictEqual(r1.target, '/?v=20260919_3');
-console.log('✅ PASS Case 1: Root / redirects to /?v=20260919_3');
+assert.strictEqual(r1.target, '/?v=20260919_4');
+console.log('✅ PASS Case 1: Root / redirects to /?v=20260919_4');
 
 // Case 2: Link with startapp parameter (e.g. referral from old post)
 const r2 = simulateHeadGuard('https://bingo-mini-app-30pe.onrender.com/?startapp=ref_abc123');
 assert.strictEqual(r2.redirected, true);
-assert.strictEqual(r2.target, '/?startapp=ref_abc123&v=20260919_3');
-console.log('✅ PASS Case 2: Preserves ?startapp and adds v=20260919_3');
+assert.strictEqual(r2.target, '/?startapp=ref_abc123&v=20260919_4');
+console.log('✅ PASS Case 2: Preserves ?startapp and adds v=20260919_4');
 
 // Case 3: Link with older version tag
 const r3 = simulateHeadGuard('https://bingo-mini-app-30pe.onrender.com/?v=20260914_1');
 assert.strictEqual(r3.redirected, true);
-assert.strictEqual(r3.target, '/?v=20260919_3');
-console.log('✅ PASS Case 3: Upgrades stale ?v=20260914_1 to v=20260919_3');
+assert.strictEqual(r3.target, '/?v=20260919_4');
+console.log('✅ PASS Case 3: Upgrades stale ?v=20260914_1 to v=20260919_4');
 
 // Case 4: Link with Telegram webapp hash data
 const r4 = simulateHeadGuard('https://bingo-mini-app-30pe.onrender.com/#tgWebAppData=user_xyz');
 assert.strictEqual(r4.redirected, true);
-assert.strictEqual(r4.target, '/?v=20260919_3#tgWebAppData=user_xyz');
+assert.strictEqual(r4.target, '/?v=20260919_4#tgWebAppData=user_xyz');
 console.log('✅ PASS Case 4: Preserves #tgWebAppData hash fragment on redirect');
 
 // Case 5: Already on latest version
-const r5 = simulateHeadGuard('https://bingo-mini-app-30pe.onrender.com/?v=20260919_3');
+const r5 = simulateHeadGuard('https://bingo-mini-app-30pe.onrender.com/?v=20260919_4');
 assert.strictEqual(r5.redirected, false);
 console.log('✅ PASS Case 5: Already on latest version -> No redirect (200 execution)');
 

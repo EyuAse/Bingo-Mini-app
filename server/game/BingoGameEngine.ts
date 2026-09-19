@@ -1727,7 +1727,7 @@ class BingoGameEngine {
       }
     }
 
-    if (!bestTicket && room.opponentCards.length > 0) {
+    if (!bestTicket && room.tickets.size === 0 && room.opponentCards.length > 0) {
       const opp = room.opponentCards[0];
       return {
         userName: opp.opponentName,
@@ -1928,10 +1928,9 @@ class BingoGameEngine {
         }
       }
 
-      // ── EXTENDED DRAW: After Ball 25, also check ALL player cards (including Manual) ──
+      // ── EXTENDED DRAW: After Ball 25, check Auto-Play cards (Manual players must claim via BINGO button) ──
       // This activates only in extended draw territory (beyond normal finish window).
-      // Manual players' cards are checked server-side for completed patterns.
-      // The first card to complete a line wins the pot naturally.
+      // Manual players are NOT auto-awarded; balls continue drawing until a manual player claims or Auto completes.
       for (const roomId of STAKE_ROOM_IDS) {
         const room = this.rooms.get(roomId);
         if (!room || room.mode !== 'active') continue;
@@ -1946,9 +1945,14 @@ class BingoGameEngine {
           winningIndices: number[];
         }> = [];
 
-        // Check ALL real player tickets (auto AND manual)
+        // Check ONLY confirmed Auto-Play player tickets in extended draw
         for (const [uid, tList] of room.tickets.entries()) {
+          const registeredAuto = this.playerModes.get(uid);
           for (const t of tList) {
+            const isEligibleAuto = (registeredAuto !== undefined ? registeredAuto : t.isAutoPlay) === true && t.isAutoPlay === true;
+            if (!isEligibleAuto) {
+              continue; // Manual players (isAutoPlay === false) NEVER auto-claim; must explicitly tap BINGO!
+            }
             const winCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
             if (winCheck.isWin) {
               extendedWinners.push({
@@ -2459,21 +2463,20 @@ class BingoGameEngine {
       }
     ];
 
-    // Check if other real players also completed a winning line on this ball (simultaneous split pot)
+    // Check if other confirmed AUTO-PLAY real players also completed a winning line on this ball (simultaneous split pot)
     for (const [otherUid, tList] of room.tickets.entries()) {
+      const regAuto = this.playerModes.get(otherUid);
       for (const t of tList) {
         if (otherUid === userId && t.cartelaId === cartelaId) continue;
+        const isEligibleAuto = (regAuto !== undefined ? regAuto : t.isAutoPlay) === true && t.isAutoPlay === true;
+
+        // STRICT INVARIANT: Manual players (isAutoPlay === false) NEVER get an automatic split pot without clicking BINGO!
+        if (!isEligibleAuto) {
+          continue;
+        }
+
         const otherCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
         if (otherCheck.isWin) {
-          // If other player is manual (isAutoPlay === false), do NOT award them an automatic split pot
-          // unless their winning pattern ALSO includes one of the eligible balls
-          if (t.isAutoPlay === false) {
-            const otherWins = getAllWinningPatterns(t.cardMatrix, room.drawnNumbers);
-            const otherActiveWin = otherWins.find(w => w.numbers.some(n => eligibleBalls.includes(n)));
-            if (!otherActiveWin) {
-              continue; // Manual player slept their pattern or didn't complete on eligible balls
-            }
-          }
           winningCards.push({
             userId: otherUid,
             userName: t.userName,
