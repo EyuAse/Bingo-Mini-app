@@ -419,13 +419,19 @@ router.get('/game-history', requireAuth, async (req: AuthenticatedRequest, res) 
           ? row.drawn_numbers
           : (typeof row.drawn_numbers === 'string' ? JSON.parse(row.drawn_numbers || '[]') : []);
 
+        const betTimeMs = new Date(row.bet_time || Date.now()).getTime();
+        const ageMs = Date.now() - betTimeMs;
+        const isStale = row.phase === 'playing' && ageMs > 2 * 60 * 1000;
+        const resolvedPhase = isStale ? 'ended' : row.phase;
+        const isRefunded = row.ticket_status === 'refunded' || winnerNames.includes('Refunded');
+
         roundsMap.set(row.round_id, {
           roundId: row.round_id,
           roomId: row.room_id,
           roomName: row.room_name,
           roundNumber: row.round_number,
-          phase: row.phase,
-          status: row.phase === 'ended' ? 'ended' : 'in_progress',
+          phase: resolvedPhase,
+          status: isRefunded ? 'refunded' : (resolvedPhase === 'ended' ? 'ended' : 'in_progress'),
           totalPot: parseFloat(row.total_pot || '0'),
           winnerPayout: parseFloat(row.winner_payout || '0'),
           winnerNames,
@@ -439,7 +445,7 @@ router.get('/game-history', requireAuth, async (req: AuthenticatedRequest, res) 
           isWinner: false,
           userWonAmount: 0,
           netPnl: 0,
-          isLive: row.phase !== 'ended'
+          isLive: resolvedPhase !== 'ended' && !isRefunded
         });
       }
 
@@ -607,7 +613,11 @@ router.get('/game-history', requireAuth, async (req: AuthenticatedRequest, res) 
     for (const r of rounds) {
       totalStaked += r.totalStake;
 
-      if (r.phase === 'ended') {
+      if (r.status === 'refunded') {
+        r.isWinner = false;
+        r.userWonAmount = 0;
+        r.netPnl = 0;
+      } else if (r.phase === 'ended') {
         if (r.winnerUserIds.includes(userId)) {
           r.isWinner = true;
         }

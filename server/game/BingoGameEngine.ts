@@ -1769,6 +1769,32 @@ class BingoGameEngine {
         console.error(`❌ [Refund Error] Failed to refund ${refundAmount} to ${userId}:`, err);
       }
     }
+
+    // Authoritative DB Finalization for Refunded Round in Neon DB
+    if (room.currentRoundId) {
+      try {
+        await query(
+          `UPDATE game_rounds 
+           SET phase = 'ended', 
+               winner_user_ids = '[]'::jsonb, 
+               winner_cartelas = '[]'::jsonb, 
+               winner_names = '["Refunded"]'::jsonb, 
+               drawn_numbers = $1,
+               ended_at = NOW() 
+           WHERE id = $2`,
+          [JSON.stringify(room.drawnNumbers || []), room.currentRoundId]
+        );
+        await query(
+          `UPDATE game_tickets 
+           SET status = 'refunded' 
+           WHERE round_id = $1`,
+          [room.currentRoundId]
+        );
+        console.log(`✅ [GameEngine] DB Finalized refunded Round #${room.roundNumber} (Round ID: ${room.currentRoundId}) in ${room.id}`);
+      } catch (dbErr) {
+        console.error(`❌ [GameEngine Error finalizing refunded game_rounds in DB for ${room.id}]:`, dbErr);
+      }
+    }
   }
 
   /**
@@ -2035,6 +2061,23 @@ class BingoGameEngine {
                 isSplit: false,
                 winnersCount: 0
               };
+              if (r.currentRoundId) {
+                try {
+                  await query(
+                    `UPDATE game_rounds 
+                     SET phase = 'ended', 
+                         winner_user_ids = '[]'::jsonb, 
+                         winner_cartelas = '[]'::jsonb, 
+                         winner_names = '["No Winner"]'::jsonb, 
+                         drawn_numbers = $1,
+                         ended_at = NOW() 
+                     WHERE id = $2`,
+                    [JSON.stringify(r.drawnNumbers || []), r.currentRoundId]
+                  );
+                } catch (dbErr) {
+                  console.error(`❌ [GameEngine Error finalizing empty game_rounds in DB for ${r.id}]:`, dbErr);
+                }
+              }
               this.broadcastRoomState(r);
             }
           }
@@ -2321,7 +2364,7 @@ class BingoGameEngine {
           const allWinningCartelas = winningCards.map(w => w.cartelaId);
           const allWinningNames = Array.from(new Set(winningCards.map(w => w.userName)));
           const allWinningUserIds = Array.from(new Set(realWinners.map(rw => rw.userId).filter(Boolean)));
-          const drawnBalls = room.calledBalls ? room.calledBalls.slice(0, ballIndex + 1) : [];
+          const drawnBalls = room.drawnNumbers || [];
 
           await query(
             `UPDATE game_rounds 

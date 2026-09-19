@@ -263,8 +263,9 @@ export const BetHistoryView: React.FC<BetHistoryViewProps> = ({ onBack }) => {
             const selectedTicket = userTickets.find(t => t.id === selectedTicketId) || userTickets[0];
 
             const isQueued = round.status === 'queued' || round.phase === 'queued';
-            const isInProgress = round.status === 'in_progress' || round.phase === 'playing' || round.phase === 'lobby';
-            const cardStateClass = isQueued ? 'queued' : isInProgress ? 'in-progress' : round.isWinner ? 'won' : 'lost';
+            const isRefunded = round.status === 'refunded' || round.tickets?.every(t => t.status === 'refunded');
+            const isInProgress = (round.status === 'in_progress' || round.phase === 'playing' || round.phase === 'lobby') && !isRefunded;
+            const cardStateClass = isQueued ? 'queued' : isRefunded ? 'refunded' : isInProgress ? 'in-progress' : round.isWinner ? 'won' : 'lost';
 
             return (
               <div 
@@ -289,6 +290,11 @@ export const BetHistoryView: React.FC<BetHistoryViewProps> = ({ onBack }) => {
                       <>
                         <i className="fa-solid fa-ticket fa-beat"></i>
                         <span>{lang === 'am' ? 'ለቀጣይ የተያዘ' : 'Queued for Next'}</span>
+                      </>
+                    ) : isRefunded ? (
+                      <>
+                        <i className="fa-solid fa-rotate-left"></i>
+                        <span>{lang === 'am' ? 'ተመላሽ የተደረገ' : 'Stake Refunded'} (0.00 ETB)</span>
                       </>
                     ) : isInProgress ? (
                       <>

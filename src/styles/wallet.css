@@ -3800,6 +3800,12 @@
   border: 1px solid #bae6fd;
 }
 
+.round-outcome-pill.refunded {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
 .round-meta-row {
   display: flex;
   flex-wrap: wrap;
