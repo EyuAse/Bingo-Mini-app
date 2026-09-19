@@ -1422,8 +1422,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       if (roundPhase === 'playing') {
         const elapsedSinceLastBall = Date.now() - lastBallTimeRef.current;
-        // Normal cadence is 3.5s. If > 4.5s has elapsed without a ball event:
-        if (elapsedSinceLastBall > 4500) {
+        // Normal cadence is 3.0s. If > 3.8s has elapsed without a ball event:
+        if (elapsedSinceLastBall > 3800) {
           console.warn(`⚠️ [Bingo Watchdog] No ball event for ${(elapsedSinceLastBall / 1000).toFixed(1)}s. Running silent sync...`);
           const data = await fetchRoomSyncWithTimeout(roomId, 4000, userRef.current?.id);
           if (data) {

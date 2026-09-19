@@ -76,7 +76,7 @@ export interface GameRoomState {
   targetFinishBall?: number;
   waitingForPlayers: boolean;   // true when < 2 real users have tickets; countdown frozen
   waitingForOtherHouses?: boolean; // true when this house finished early and waits for other active houses
-  isHoldingClaimWindow?: boolean;  // true when holding 3.5s window for manual player simultaneous claim
+  isHoldingClaimWindow?: boolean;  // true when holding 3.0s window for manual player simultaneous claim
   realPlayerCount: number;      // live count of distinct real users with tickets
 }
 
@@ -1742,7 +1742,37 @@ class BingoGameEngine {
   }
 
   /**
-   * Synchronized 3.5s Master Ball Drawing Loop across all 4 houses (10, 20, 50, 100 ETB)
+   * Fair Resolution: Refund all real player stakes when round expires with no winner.
+   * Only used as an absolute last resort (Ball 75 exhausted — virtually impossible).
+   */
+  private async refundAllPlayerStakes(room: GameRoomState) {
+    for (const [userId, tList] of room.tickets.entries()) {
+      const refundAmount = tList.reduce((sum, t) => sum + t.betAmount, 0);
+      if (refundAmount <= 0) continue;
+      try {
+        await withTransaction(async (client) => {
+          await client.query(
+            'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
+            [refundAmount, userId]
+          );
+          const refCode = `REFUND-EXP-${Date.now().toString().slice(-6)}`;
+          await client.query(
+            `INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_code, status, description)
+             VALUES ($1, 'refund', $2, (SELECT balance FROM wallets WHERE user_id = $1), $3, 'completed', $4)`,
+            [userId, refundAmount, refCode, `Round expired refund in ${room.name} (Round #${room.roundNumber})`]
+          );
+        });
+        io.emit(`user_${userId}_balance`, { type: 'round_refund', refundAmount });
+        io.emit('user_balance_updated', { userId });
+        console.log(`💸 [Refund] Refunded ${refundAmount} ETB to user ${userId} in ${room.name}`);
+      } catch (err) {
+        console.error(`❌ [Refund Error] Failed to refund ${refundAmount} to ${userId}:`, err);
+      }
+    }
+  }
+
+  /**
+   * Synchronized 3.0s Master Ball Drawing Loop across all 4 houses (10, 20, 50, 100 ETB)
    */
   private startMasterBallCallingLoop(masterBallSequence: number[]) {
     if (this.intervals.has('master_ball')) {
@@ -1881,20 +1911,75 @@ class BingoGameEngine {
             }
 
             if (hasEligibleManualPlayer) {
-              // Industry standard: Pause room ball drawing and hold a 3.5s claim window
+              // Industry standard: Pause room ball drawing and hold a 3.0s claim window
               // so the manual player has the ball call interval to click BINGO for a fair Split Pot.
               room.isHoldingClaimWindow = true;
-              console.log(`⏱️ [Claim Window] Auto player won on ball ${currentNum}, but manual player also completed a line! Holding 3.5s claim window for room ${room.id}...`);
+              console.log(`⏱️ [Claim Window] Auto player won on ball ${currentNum}, but manual player also completed a line! Holding 3.0s claim window for room ${room.id}...`);
               setTimeout(async () => {
                 room.isHoldingClaimWindow = false;
                 if (room.mode === 'active' && !room.winResult) {
                   await this.processRoundVictory(room, winningCards);
                 }
-              }, 3500);
+              }, 3000);
             } else {
               await this.processRoundVictory(room, winningCards);
             }
           }
+        }
+      }
+
+      // ── EXTENDED DRAW: After Ball 25, also check ALL player cards (including Manual) ──
+      // This activates only in extended draw territory (beyond normal finish window).
+      // Manual players' cards are checked server-side for completed patterns.
+      // The first card to complete a line wins the pot naturally.
+      for (const roomId of STAKE_ROOM_IDS) {
+        const room = this.rooms.get(roomId);
+        if (!room || room.mode !== 'active') continue;
+        if (room.drawnNumbers.length <= 25 || room.winResult || room.isProcessingVictory || room.isHoldingClaimWindow) continue;
+
+        const extendedWinners: Array<{
+          userId?: string;
+          userName: string;
+          cartelaId: number;
+          isReal: boolean;
+          winningPattern: string;
+          winningIndices: number[];
+        }> = [];
+
+        // Check ALL real player tickets (auto AND manual)
+        for (const [uid, tList] of room.tickets.entries()) {
+          for (const t of tList) {
+            const winCheck = checkWinningPattern(t.cardMatrix, room.drawnNumbers);
+            if (winCheck.isWin) {
+              extendedWinners.push({
+                userId: uid,
+                userName: t.userName,
+                cartelaId: t.cartelaId,
+                isReal: true,
+                winningPattern: winCheck.winningPattern || 'Bingo Line',
+                winningIndices: winCheck.winningIndices || []
+              });
+            }
+          }
+        }
+
+        // Also check bot cards in extended draw
+        for (const opp of room.opponentCards) {
+          const winCheck = checkWinningPattern(opp.cardMatrix, room.drawnNumbers);
+          if (winCheck.isWin) {
+            extendedWinners.push({
+              userName: opp.opponentName,
+              cartelaId: opp.cartelaId,
+              isReal: false,
+              winningPattern: winCheck.winningPattern || 'Bingo Line',
+              winningIndices: winCheck.winningIndices || []
+            });
+          }
+        }
+
+        if (extendedWinners.length > 0) {
+          console.log(`🎉 [Extended Draw] Winner found on Ball #${room.drawnNumbers.length} in ${room.id}: ${extendedWinners[0].userName} (Cartela #${extendedWinners[0].cartelaId})`);
+          await this.processRoundVictory(room, extendedWinners);
         }
       }
 
@@ -1916,18 +2001,23 @@ class BingoGameEngine {
             const fallbackWinner = this.findBestCardForFallbackWin(r);
             if (fallbackWinner) {
               await this.processRoundVictory(r, [fallbackWinner]);
+            } else if (r.tickets.size > 0) {
+              // EXTENDED DRAW: Real players are active — keep drawing until someone wins naturally
+              console.log(`🔄 [Extended Draw] House ${r.id} has ${r.tickets.size} active player(s) but no winner by Ball 26. Continuing ball draw...`);
+              // Don't set winResult, don't end the room — the ball loop continues
+              // Phase 2's extended draw scan will pick up winners on subsequent balls
             } else {
-              // Manual players missed claiming Bingo by Ball 26: Players LOSE the round! House keeps stakes, cards are wiped!
-              console.log(`⏱️ [Ball 26 Cap] House ${r.id} reached safety cap with no claims. Players lose round, house collects stakes.`);
+              // No real players at all — safe to end with no winner
+              console.log(`⏱️ [Ball 26 Cap] House ${r.id} has no active players. Ending round.`);
               r.winResult = {
                 roomId: r.id,
                 winType: 'no_winner',
-                winnerName: 'No Winner (Time Expired)',
+                winnerName: 'No Winner',
                 winnerNames: [],
                 winnerUserIds: [],
                 winningCartelaNumber: 0,
                 winningCartelas: [],
-                winningPattern: 'Unclaimed',
+                winningPattern: 'No Players',
                 winningIndices: [],
                 totalPot: r.totalPot,
                 houseFee: r.totalPot,
@@ -1945,16 +2035,55 @@ class BingoGameEngine {
             }
           }
         }
-        clearInterval(interval);
-        this.startMasterWinnerCelebrationTimer();
+        // Only stop the loop if ALL active houses have resolved (no pending rooms in extended draw)
+        const allHousesResolved = !STAKE_ROOM_IDS.some(id => {
+          const rm = this.rooms.get(id);
+          return rm && rm.mode === 'active' && !rm.winResult;
+        });
+        if (allHousesResolved) {
+          clearInterval(interval);
+          this.startMasterWinnerCelebrationTimer();
+        }
+        // Otherwise: ball loop continues — extended draw rooms will resolve via Phase 2 scan
       } else if (!anyActiveHouse && masterDrawnCount >= 25) {
         clearInterval(interval);
         this.startMasterWinnerCelebrationTimer();
       } else if (masterDrawnCount >= 75) {
+        // Safety net: All 75 balls drawn — refund any unresolved rooms
+        for (const roomId of STAKE_ROOM_IDS) {
+          const r = this.rooms.get(roomId);
+          if (r && r.mode === 'active' && !r.winResult && r.tickets.size > 0) {
+            console.log(`🛡️ [Ball 75 Safety] All balls drawn in ${r.id} with no winner. Refunding ${r.tickets.size} player stake(s).`);
+            await this.refundAllPlayerStakes(r);
+            r.winResult = {
+              roomId: r.id,
+              winType: 'refunded',
+              winnerName: 'Round Complete — Stakes Refunded',
+              winnerNames: [],
+              winnerUserIds: [],
+              winningCartelaNumber: 0,
+              winningCartelas: [],
+              winningPattern: 'Refunded',
+              winningIndices: [],
+              totalPot: r.totalPot,
+              houseFee: 0,
+              netPrizePot: 0,
+              commissionPercent: 0,
+              winnerPayout: 0,
+              stakeAmount: r.stakeAmount,
+              sharePerWinner: 0,
+              userShare: 0,
+              coWinners: [],
+              isSplit: false,
+              winnersCount: 0
+            };
+            this.broadcastRoomState(r);
+          }
+        }
         clearInterval(interval);
         this.startMasterWinnerCelebrationTimer();
       }
-    }, 3500);
+    }, 3000);
 
     this.intervals.set('master_ball', interval);
   }
@@ -2292,7 +2421,7 @@ class BingoGameEngine {
 
     // Commercial Bingo Rule (Current Ball or 1-Ball Reaction Grace Window):
     // The winning pattern must contain either the current ball OR the immediately preceding ball.
-    // This provides a critical 3.5s human reaction time & network transit buffer.
+    // This provides a critical 3.0s human reaction time & network transit buffer.
     // If 2 or more subsequent balls pass without claiming, the pattern is slept (expired).
     const currentNum = room.currentCall?.num || room.drawnNumbers[room.drawnNumbers.length - 1];
     const prevNum = room.drawnNumbers.length >= 2 ? room.drawnNumbers[room.drawnNumbers.length - 2] : null;

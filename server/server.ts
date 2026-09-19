@@ -176,15 +176,15 @@ app.use('/api/telegram', telegramBotRouter);
 // Serve Static Frontend Bundle in Production (Single-port hosting) with Optimized Caching
 const distPath = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(distPath)) {
-  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20260915_2
+  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20260919_3
   // so Telegram Webview never serves stale CEF/WebView2 disk cache from old bot posts
   app.use((req, res, next) => {
     if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) {
       const v = req.query.v;
-      if (v !== '20260915_2') {
+      if (v !== '20260919_3') {
         const cleanUrl = req.url.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
         const sep = cleanUrl.includes('?') ? '&' : '?';
-        const redirectUrl = `${cleanUrl}${sep}v=20260915_2`;
+        const redirectUrl = `${cleanUrl}${sep}v=20260919_3`;
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');

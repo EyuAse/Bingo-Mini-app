@@ -26,10 +26,10 @@ function simulateRedirectMiddleware(req: { method: string; path: string; url: st
   // Exact logic from server.ts
   if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) {
     const v = req.query.v;
-    if (v !== '20260915_2') {
+    if (v !== '20260919_3') {
       const cleanUrl = req.url.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
       const sep = cleanUrl.includes('?') ? '&' : '?';
-      const redirectUrl = `${cleanUrl}${sep}v=20260915_2`;
+      const redirectUrl = `${cleanUrl}${sep}v=20260919_3`;
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
@@ -45,27 +45,27 @@ function simulateRedirectMiddleware(req: { method: string; path: string; url: st
 const t1 = simulateRedirectMiddleware({ method: 'GET', path: '/', url: '/', query: {} });
 assert.strictEqual(t1.redirected, true, 'Unversioned root request must be redirected');
 assert.strictEqual(t1.redirectStatus, 302, 'Redirect status must be 302');
-assert.strictEqual(t1.redirectLocation, '/?v=20260915_2', 'Location must append v=20260915_2');
+assert.strictEqual(t1.redirectLocation, '/?v=20260919_3', 'Location must append v=20260919_3');
 assert.strictEqual(t1.headers['Cache-Control'], 'no-cache, no-store, must-revalidate', 'Cache-Control header set');
-console.log('✅ PASS Case 1: GET / -> 302 to /?v=20260915_2');
+console.log('✅ PASS Case 1: GET / -> 302 to /?v=20260919_3');
 
 // Test Case 2: Invitation / referral link without version (e.g. /?startapp=ref_998877)
 const t2 = simulateRedirectMiddleware({ method: 'GET', path: '/', url: '/?startapp=ref_998877', query: { startapp: 'ref_998877' } });
 assert.strictEqual(t2.redirected, true, 'Invitation link must be redirected');
-assert.strictEqual(t2.redirectLocation, '/?startapp=ref_998877&v=20260915_2', 'Preserves startapp and appends v=20260915_2');
-console.log('✅ PASS Case 2: GET /?startapp=ref_998877 -> 302 to /?startapp=ref_998877&v=20260915_2');
+assert.strictEqual(t2.redirectLocation, '/?startapp=ref_998877&v=20260919_3', 'Preserves startapp and appends v=20260919_3');
+console.log('✅ PASS Case 2: GET /?startapp=ref_998877 -> 302 to /?startapp=ref_998877&v=20260919_3');
 
 // Test Case 3: Stale older version tag (e.g. /?v=20260914_1)
 const t3 = simulateRedirectMiddleware({ method: 'GET', path: '/', url: '/?v=20260914_1', query: { v: '20260914_1' } });
 assert.strictEqual(t3.redirected, true, 'Older version tag must be replaced');
-assert.strictEqual(t3.redirectLocation, '/?v=20260915_2', 'Replaces stale tag with current v=20260915_2');
-console.log('✅ PASS Case 3: GET /?v=20260914_1 -> 302 to /?v=20260915_2');
+assert.strictEqual(t3.redirectLocation, '/?v=20260919_3', 'Replaces stale tag with current v=20260919_3');
+console.log('✅ PASS Case 3: GET /?v=20260914_1 -> 302 to /?v=20260919_3');
 
-// Test Case 4: Already on latest version (e.g. /?v=20260915_2)
-const t4 = simulateRedirectMiddleware({ method: 'GET', path: '/', url: '/?v=20260915_2', query: { v: '20260915_2' } });
+// Test Case 4: Already on latest version (e.g. /?v=20260919_3)
+const t4 = simulateRedirectMiddleware({ method: 'GET', path: '/', url: '/?v=20260919_3', query: { v: '20260919_3' } });
 assert.strictEqual(t4.redirected, false, 'Latest version must NOT be redirected');
 assert.strictEqual(t4.nextCalled, true, 'Calls next() to serve index.html');
-console.log('✅ PASS Case 4: GET /?v=20260915_2 -> 200 OK (Served directly)');
+console.log('✅ PASS Case 4: GET /?v=20260919_3 -> 200 OK (Served directly)');
 
 // Test Case 5: API routes must NEVER be redirected
 const t5 = simulateRedirectMiddleware({ method: 'GET', path: '/api/admin/telegram/status', url: '/api/admin/telegram/status', query: {} });
