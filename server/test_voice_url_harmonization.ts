@@ -8,7 +8,7 @@ async function runVoiceHarmonizationTests() {
   // Test 1: AUDIO_PACK_VERSION check
   console.log('--- Test 1: Verify AUDIO_PACK_VERSION Bump ---');
   console.log(`   AUDIO_PACK_VERSION: ${AUDIO_PACK_VERSION}`);
-  assert.strictEqual(AUDIO_PACK_VERSION, 'v3_client_human_20260919_4', 'Audio pack version must be bumped to v3 20260919_4');
+  assert.strictEqual(AUDIO_PACK_VERSION, 'v3_client_human_20260921_1', 'Audio pack version must be bumped to v3 20260921_1');
   console.log('✅ Test 1 Passed!\n');
 
   // Test 2: SoundEngine URLs
@@ -21,9 +21,9 @@ async function runVoiceHarmonizationTests() {
   console.log(`   Ball 75 URL: ${ball75Url}`);
   console.log(`   Start Phrase URL: ${startPhraseUrl}`);
 
-  assert(ball1Url.includes('?v=v3_client_human_20260919_4'), 'Ball 1 URL must have v3 cache-busting version');
-  assert(ball75Url.includes('?v=v3_client_human_20260919_4'), 'Ball 75 URL must have v3 cache-busting version');
-  assert(startPhraseUrl.includes('?v=v3_client_human_20260919_4'), 'Phrase URL must have v3 cache-busting version');
+  assert(ball1Url.includes('?v=v3_client_human_20260921_1'), 'Ball 1 URL must have v3 cache-busting version');
+  assert(ball75Url.includes('?v=v3_client_human_20260921_1'), 'Ball 75 URL must have v3 cache-busting version');
+  assert(startPhraseUrl.includes('?v=v3_client_human_20260921_1'), 'Phrase URL must have v3 cache-busting version');
   console.log('✅ Test 2 Passed!\n');
 
   // Test 3: Telegram Bot Launch URL Harmonization (Direct Bot Search vs Invitation Link)
@@ -33,12 +33,12 @@ async function runVoiceHarmonizationTests() {
   // Direct bot search (no startParam)
   const directUrl = telegramBotService.getVersionedWebAppUrl(baseUrl);
   console.log(`   Direct Bot Search URL: ${directUrl}`);
-  assert(directUrl.includes('?v=20260919_4'), 'Direct bot launch URL must have cache-busting parameter');
+  assert(directUrl.includes('?v=20260921_1'), 'Direct bot launch URL must have cache-busting parameter');
 
   // Invitation link (with startParam ref_12345)
   const inviteUrl = telegramBotService.getVersionedWebAppUrl(baseUrl, 'ref_12345');
   console.log(`   Invitation Link URL: ${inviteUrl}`);
-  assert(inviteUrl.includes('v=20260919_4'), 'Invitation link URL must have cache-busting version parameter');
+  assert(inviteUrl.includes('v=20260921_1'), 'Invitation link URL must have cache-busting version parameter');
   assert(inviteUrl.includes('startapp=ref_12345'), 'Invitation link URL must have startapp parameter');
 
   // Menu button URL
