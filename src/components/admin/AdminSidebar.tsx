@@ -9,9 +9,7 @@ export type AdminTab =
   | 'users'
   | 'bots'
   | 'cartelas'
-  | 'network'
-  | 'telegram-bot'
-  | 'settings';
+  | 'telegram-bot';
 
 interface AdminSidebarProps {
   activeTab: AdminTab;
@@ -202,25 +200,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             )}
           </button>
 
-          {/* 7. Network Health & Disconnects */}
-          <button
-            type="button"
-            className={`light-nav-item ${activeTab === 'network' ? 'active' : ''}`}
-            onClick={() => handleSelectTab('network')}
-            title="Live Network Health & Disconnect Protection"
-          >
-            <div className="light-nav-icon">
-              <i className="fa-solid fa-tower-broadcast"></i>
-            </div>
-            {!isSidebarCollapsed && (
-              <>
-                <span className="light-nav-text">Network Health</span>
-                <span className="light-nav-badge green-badge">🛡️ Live</span>
-              </>
-            )}
-          </button>
-
-          {/* 8. Telegram Bot & Ads Broadcast Center */}
+          {/* 7. Telegram Bot & Ads Broadcast Center */}
           <button
             type="button"
             className={`light-nav-item ${activeTab === 'telegram-bot' ? 'active' : ''}`}
@@ -236,19 +216,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 <span className="light-nav-badge" style={{ background: '#e0f2fe', color: '#0369a1' }}>📢 Ads</span>
               </>
             )}
-          </button>
-
-          {/* 9. Settings */}
-          <button
-            type="button"
-            className={`light-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => handleSelectTab('settings')}
-            title="System & Commission Settings"
-          >
-            <div className="light-nav-icon">
-              <i className="fa-solid fa-gear"></i>
-            </div>
-            {!isSidebarCollapsed && <span className="light-nav-text">Settings</span>}
           </button>
         </nav>
 

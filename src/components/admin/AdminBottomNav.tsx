@@ -64,10 +64,10 @@ export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({
       iconClass: 'fa-solid fa-layer-group'
     },
     {
-      id: 'settings',
-      label: 'Settings',
-      amharicLabel: 'ማስተካከያ',
-      iconClass: 'fa-solid fa-gear'
+      id: 'telegram-bot',
+      label: 'Telegram Bot',
+      amharicLabel: 'ቴሌግራም',
+      iconClass: 'fa-brands fa-telegram'
     }
   ];
 

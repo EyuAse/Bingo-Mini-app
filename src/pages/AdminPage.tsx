@@ -11,8 +11,6 @@ import { PlayerAccountsDesk } from '../components/admin/PlayerAccountsDesk.tsx';
 import { BotsSimulatorDesk } from '../components/admin/BotsSimulatorDesk.tsx';
 import { BotAccountsDesk } from '../components/admin/BotAccountsDesk.tsx';
 import { CartelasDesk } from '../components/admin/CartelasDesk.tsx';
-import { AdminSettings } from '../components/admin/AdminSettings.tsx';
-import { NetworkHealthDesk } from '../components/admin/NetworkHealthDesk.tsx';
 import { TelegramBotDesk } from '../components/admin/TelegramBotDesk.tsx';
 import '../styles/admin.css';
 
@@ -58,9 +56,7 @@ export const AdminPage: React.FC = () => {
                 {activeTab === 'users' && 'Player Accounts & Wallets Directory'}
                 {activeTab === 'bots' && '200 Bot Player Accounts & Wallets'}
                 {activeTab === 'cartelas' && '400 Serial Cartela Cards Library'}
-                {activeTab === 'network' && 'Live Network Health & Disconnect Protection Desk'}
                 {activeTab === 'telegram-bot' && 'Telegram Bot & Ads Broadcast Center'}
-                {activeTab === 'settings' && 'System & Commission Settings'}
               </h2>
               <p className="viewport-page-amharic-sub">
                 {activeTab === 'cashier' && 'ተወራራጅ ክፍያዎችን ያጽድቁ እና ገንዘቦችን በቀጥታ ባንክ ይላኩ'}
@@ -69,9 +65,7 @@ export const AdminPage: React.FC = () => {
                 {activeTab === 'users' && 'የተመዘገቡ ተጫዋቾች፣ የዋሌት ቀሪ ሂሳብ እና የቦነስ ማበረታቻዎች'}
                 {activeTab === 'bots' && 'እውነተኛ የውሂብ ጎታ ያላቸው 200 የቦቶች ዋሌቶች፣ ራስ-ሰር ተወራራጅነት እና የቀጥታ አሸናፊነት መዝገብ'}
                 {activeTab === 'cartelas' && '400 የቢንጎ ካርቴላ ካርዶች ቤተ-መጽሐፍት'}
-                {activeTab === 'network' && 'የቀጥታ ሶኬት ፍጥነት፣ የኔትዎርክ ጤንነት እና የራስ-ሰር አሸናፊነት መዝገብ'}
                 {activeTab === 'telegram-bot' && 'የቴሌግራም ቦት ማስተዋወቂያ፣ የቻናል ልጥፎች እና የተጠቃሚዎች ማስታወቂያ ማዕከል'}
-                {activeTab === 'settings' && 'የኮሚሽን ተመን፣ የጨዋታ ህጎች እና የአስተዳዳሪ ደህንነት'}
               </p>
             </div>
           </div>
@@ -128,14 +122,8 @@ export const AdminPage: React.FC = () => {
           {/* TAB 6: 400 SERIAL CARTELA CARDS LIBRARY */}
           {activeTab === 'cartelas' && <CartelasDesk />}
 
-          {/* TAB 7: LIVE NETWORK HEALTH & DISCONNECT PROTECTION */}
-          {activeTab === 'network' && <NetworkHealthDesk />}
-
-          {/* TAB 8: TELEGRAM BOT & ADS BROADCAST CENTER */}
+          {/* TAB 7: TELEGRAM BOT & ADS BROADCAST CENTER */}
           {activeTab === 'telegram-bot' && <TelegramBotDesk />}
-
-          {/* TAB 9: SYSTEM & COMMISSION SETTINGS */}
-          {activeTab === 'settings' && <AdminSettings />}
         </main>
 
         {/* 3. Mobile App-Style Bottom Navigation Bar (< 768px) */}
