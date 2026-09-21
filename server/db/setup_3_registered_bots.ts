@@ -99,13 +99,15 @@ export async function setup3RegisteredBots() {
   }
 }
 
-// Direct execution
-setup3RegisteredBots()
-  .then(() => {
-    console.log('🚀 Database bot setup finished successfully.');
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.error('❌ Bot setup error:', err);
-    process.exit(1);
-  });
+// Direct execution guard
+if (process.argv[1]?.includes('setup_3_registered_bots')) {
+  setup3RegisteredBots()
+    .then(() => {
+      console.log('🚀 Database bot setup finished successfully.');
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('❌ Bot setup error:', err);
+      process.exit(1);
+    });
+}
