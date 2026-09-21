@@ -36,45 +36,43 @@ if (!isClaimValidA) {
 }
 console.log('✅ PASS: Immediate claim on Ball N accepted.');
 
-// Scenario B: Next ball drawn (Ball N+1) before manual claim packet arrives (Network Latency)
+// Scenario B: Next ball drawn (Ball N+1) before manual claim packet arrives -> EXPIRED
 const nextBallB = 33; // not in diagonal
 const drawnBallsAtNext = [...drawnBallsAtWin, nextBallB];
 const currentBallB = nextBallB;
-const prevBallB = winningBall; // winningBall is now Ball N-1!
-const eligibleBallsB = [currentBallB, prevBallB];
+const eligibleBallsB = [currentBallB]; // Strictly current ball!
 
 const allWinsB = getAllWinningPatterns(card1, drawnBallsAtNext);
 const isClaimValidB = allWinsB.some(w => eligibleBallsB.some(b => w.numbers.includes(b)));
 
-console.log('\n--- Scenario B: Claim arrives on next ball (Ball N+1) due to 100-300ms transit latency ---');
-console.log(`Current Ball: ${currentBallB}, Prev Ball (Buffer): ${prevBallB}`);
+console.log('\n--- Scenario B: Claim arrives on next ball (Ball N+1) ---');
+console.log(`Current Ball: ${currentBallB}`);
 console.log(`Eligible Balls: [${eligibleBallsB.join(', ')}]`);
-console.log('Is Claim Accepted under 1-Ball Buffer?:', isClaimValidB);
-if (!isClaimValidB) {
-  console.error('❌ FAIL: 1-Ball buffer must accept claims from the immediately preceding ball!');
+console.log('Is Claim Accepted?:', isClaimValidB);
+if (isClaimValidB) {
+  console.error('❌ FAIL: Claim on next ball must be rejected under strict single-ball rule!');
   process.exit(1);
 }
-console.log('✅ PASS: Latency-buffered claim on Ball N-1 successfully accepted!');
+console.log('✅ PASS: Claim on next ball correctly expired and rejected!');
 
 // Scenario C: 2 or more balls have passed (Ball N+2) without claiming -> SLEEPING BINGO
 const ballTwoPassed = 61; // another unrelated ball
 const drawnBallsTwoPassed = [...drawnBallsAtNext, ballTwoPassed];
 const currentBallC = ballTwoPassed;
-const prevBallC = nextBallB; // winningBall is now Ball N-2, OUTSIDE 1-ball buffer
-const eligibleBallsC = [currentBallC, prevBallC];
+const eligibleBallsC = [currentBallC];
 
 const allWinsC = getAllWinningPatterns(card1, drawnBallsTwoPassed);
 const isClaimValidC = allWinsC.some(w => eligibleBallsC.some(b => w.numbers.includes(b)));
 
 console.log('\n--- Scenario C: Claim arrives 2 balls later (Ball N+2) -> Sleeping Bingo ---');
-console.log(`Current Ball: ${currentBallC}, Prev Ball: ${prevBallC}`);
+console.log(`Current Ball: ${currentBallC}`);
 console.log(`Eligible Balls: [${eligibleBallsC.join(', ')}]`);
 console.log('Is Claim Accepted after 2 balls?:', isClaimValidC);
 if (isClaimValidC) {
   console.error('❌ FAIL: Sleeping pattern must be rejected when 2 or more balls pass!');
   process.exit(1);
 }
-console.log('✅ PASS: Sleeping Bingo correctly rejected after 1-ball window expires.');
+console.log('✅ PASS: Sleeping Bingo correctly rejected.');
 
 // Scenario D: Manual Split Pot Guard
 // Player 1 claims legitimately on eligible ball

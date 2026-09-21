@@ -118,7 +118,7 @@ export const BingoPage: React.FC = () => {
                       if (hasWinningPattern) {
                         claimBingo();
                       } else if (hasSleptPattern) {
-                        showToast("⚠️ Missed Bingo! That pattern expired because subsequent numbers were called. Complete another 5-in-a-row line to call BINGO!");
+                        showToast("⚠️ Missed Bingo! That pattern expired because the next number was called. Complete another 5-in-a-row line to call BINGO!");
                       } else {
                         showToast("Complete any 5-in-a-row line on your card to call BINGO!");
                       }

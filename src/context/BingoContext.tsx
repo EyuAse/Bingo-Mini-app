@@ -358,9 +358,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const lastDaubClickTimeRef = useRef<{ [key: string]: number }>({});
 
   // Reactive Winning Pattern Detection for Manual Mode BINGO Claim Button:
-  // In manual play: a pattern is active for claim on the ball that completed it,
-  // PLUS a 1-ball grace buffer (previous ball) to protect against network transit latency and human reaction time.
-  // If 2 or more balls pass without claiming, that pattern expires (slept bingo), and the user must complete a new pattern.
+  // In manual play: a pattern is active for claim STRICTLY on the active ball that completed it.
+  // As soon as the next number is called without claiming, that pattern expires (slept bingo), and the user must complete a new pattern.
   const { hasWinningPattern, hasSleptPattern } = useMemo(() => {
     if (roundPhase !== 'playing') {
       return { hasWinningPattern: false, hasSleptPattern: false };
@@ -373,8 +372,8 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return { hasWinningPattern: !!(win1 || win2 || win3), hasSleptPattern: false };
     }
 
-    // Manual Mode: Check if any completed pattern contains the current ball OR previous ball (1-ball grace window)
-    const eligibleBalls = [currentCall?.num, previousCall?.num].filter((n): n is number => typeof n === 'number' && n > 0);
+    // Manual Mode: Check if any completed pattern contains the current active ball
+    const eligibleBalls = typeof currentCall?.num === 'number' && currentCall.num > 0 ? [currentCall.num] : [];
     const active1 = cartela1Data.length > 0 && eligibleBalls.length > 0 ? getActiveWinningPatternOnBall(cartela1Data, eligibleBalls) : null;
     const active2 = totalPlayableCards >= 2 && cartela2Data.length > 0 && eligibleBalls.length > 0 ? getActiveWinningPatternOnBall(cartela2Data, eligibleBalls) : null;
     const active3 = totalPlayableCards >= 3 && cartela3Data.length > 0 && eligibleBalls.length > 0 ? getActiveWinningPatternOnBall(cartela3Data, eligibleBalls) : null;
@@ -391,7 +390,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const hasSlept = !!(all1 || all2 || all3);
 
     return { hasWinningPattern: false, hasSleptPattern: hasSlept };
-  }, [roundPhase, autoPlay, currentCall?.num, previousCall?.num, cartela1Data, cartela2Data, cartela3Data, totalPlayableCards]);
+  }, [roundPhase, autoPlay, currentCall?.num, cartela1Data, cartela2Data, cartela3Data, totalPlayableCards]);
   const winModalDismissedForRoundRef = useRef<number | null>(null);
   const activeWinModalRoundRef = useRef<number | null>(null);
   const lastLiveWinRoundRef = useRef<number | null>(null);
@@ -1856,7 +1855,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       else if (win2) { activeWinCardIdx = 1; detectedWinningLine = win2; }
       else if (win3) { activeWinCardIdx = 2; detectedWinningLine = win3; }
     } else {
-      const eligibleBalls = [currentCall?.num, previousCall?.num].filter((n): n is number => typeof n === 'number' && n > 0);
+      const eligibleBalls = typeof currentCall?.num === 'number' && currentCall.num > 0 ? [currentCall.num] : [];
       const active1 = getActiveWinningPatternOnBall(c1, eligibleBalls);
       const active2 = totalPlayableCards >= 2 ? getActiveWinningPatternOnBall(c2, eligibleBalls) : null;
       const active3 = totalPlayableCards >= 3 ? getActiveWinningPatternOnBall(c3, eligibleBalls) : null;
@@ -1864,12 +1863,12 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       else if (active2) { activeWinCardIdx = 1; detectedWinningLine = active2; }
       else if (active3) { activeWinCardIdx = 2; detectedWinningLine = active3; }
       else {
-        // Player clicked BINGO in manual mode, but no pattern is active on eligible balls
+        // Player clicked BINGO in manual mode, but no pattern is active on the current ball
         const any1 = checkWinningPatterns(c1);
         const any2 = totalPlayableCards >= 2 ? checkWinningPatterns(c2) : null;
         const any3 = totalPlayableCards >= 3 ? checkWinningPatterns(c3) : null;
         if (any1 || any2 || any3) {
-          showToast("⚠️ Missed Bingo! That pattern expired because subsequent numbers were called. Keep playing to complete a new pattern!");
+          showToast("⚠️ Missed Bingo! That pattern expired because the next number was called. Keep playing to complete a new pattern!");
         } else {
           showToast("Complete any 5-in-a-row line on your card to call BINGO!");
         }

@@ -39,14 +39,14 @@ function simulateClaimBingo(
     return { success: false, isSplit: false, winnerNames: [], message: 'No winning pattern' };
   }
 
-  const prevNum = drawnNumbers.length >= 2 ? drawnNumbers[drawnNumbers.length - 2] : null;
-  const eligibleBalls = [currentCallNum, prevNum].filter((n): n is number => typeof n === 'number' && n > 0);
+  // Strict Single-Ball Rule: Only current active ball is eligible for manual claims
+  const eligibleBalls = typeof currentCallNum === 'number' && currentCallNum > 0 ? [currentCallNum] : [];
 
   // Manual player claim check
   if (!claimant.isAutoPlay) {
     const activeWin = allWins.find(w => w.numbers.some(n => eligibleBalls.includes(n)));
     if (!activeWin) {
-      return { success: false, isSplit: false, winnerNames: [], message: 'Slept Bingo' };
+      return { success: false, isSplit: false, winnerNames: [], message: 'Missed Bingo! That pattern expired because the next number was called.' };
     }
   }
 
@@ -298,6 +298,58 @@ async function runAllScenarios() {
     assert(!isSplit, 'Scenario 4: Result is 100% Solo Win for Auto Player (no unearned split pot awarded to non-clicking manual player)');
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // SCENARIO 5: STRICT SINGLE-BALL EXPIRATION (Ball B-2 completes, claim on next ball fails)
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    console.log('\n' + '─'.repeat(78));
+    console.log('  SCENARIO 5: Strict Single-Ball Expiration (Claim on current ball wins; claim on next ball fails)');
+    console.log('─'.repeat(78));
+
+    const manualPlayer: SimPlayer = {
+      userId: 'user_timing_test',
+      userName: 'Speedy_Clicker',
+      cartelaId: 12,
+      cardMatrix: generateCardFromId(12),
+      isAutoPlay: false
+    };
+
+    const balls = generateRandomShuffledBalls();
+    const drawn: number[] = [];
+    let winningBallIndex = -1;
+
+    for (let i = 0; i < balls.length; i++) {
+      drawn.push(balls[i]);
+      if (checkWinningPattern(manualPlayer.cardMatrix, drawn).isWin) {
+        winningBallIndex = i;
+        break;
+      }
+    }
+
+    const winningBall = drawn[winningBallIndex];
+    // 1. Claim while active ball is the winning ball -> SUCCESS
+    const currentBallClaim = simulateClaimBingo(manualPlayer, [manualPlayer], drawn, winningBall);
+    assert(currentBallClaim.success, `Scenario 5: Manual claim ON active completing ball (${winningBall}) succeeds`);
+
+    // 2. Next ball is called (e.g. drawn[winningBallIndex + 1])
+    if (winningBallIndex + 1 < balls.length) {
+      const nextBall = balls[winningBallIndex + 1];
+      const drawnAfterNext = [...drawn, nextBall];
+      // Try to claim with old pattern when currentCall is nextBall
+      const nextBallClaim = simulateClaimBingo(manualPlayer, [manualPlayer], drawnAfterNext, nextBall);
+      
+      // If the next ball didn't coincidentally create a brand new winning pattern on this card:
+      const winsWithNext = getAllWinningPatterns(manualPlayer.cardMatrix, drawnAfterNext);
+      const nextBallCompletesNewLine = winsWithNext.some(w => w.numbers.includes(nextBall));
+      if (!nextBallCompletesNewLine) {
+        assert(!nextBallClaim.success, `Scenario 5: Manual claim AFTER next ball (${nextBall}) is called STRICTLY FAILS (expired/slept)`);
+        assert(nextBallClaim.message.includes('expired'), 'Scenario 5: Received proper expiry feedback message');
+      } else {
+        assert(true, 'Scenario 5: Next ball happened to form an independent new winning line');
+      }
+    }
+  }
+
   console.log('\n' + '═'.repeat(78));
   console.log(`  RESULTS: ${passedAssertions} Passed, ${failedAssertions} Failed`);
   console.log('═'.repeat(78));
@@ -305,7 +357,7 @@ async function runAllScenarios() {
   if (failedAssertions > 0) {
     process.exit(1);
   } else {
-    console.log('🎉 ALL 4 STRICT MANUAL CLAIM SCENARIOS PASSED PERFECTLY ✅\n');
+    console.log('🎉 ALL 5 STRICT MANUAL CLAIM & TIMING SCENARIOS PASSED PERFECTLY ✅\n');
   }
 }
 

@@ -18,32 +18,29 @@ const allWins16 = getAllWinningPatterns(card, drawnBall16);
 assert.strictEqual(allWins16.length > 0, true, 'Pattern completed on Ball 16');
 
 const currentNumA = 71;
-const prevNumA = 53;
-const eligibleBallsA = [currentNumA, prevNumA];
+const eligibleBallsA = [currentNumA];
 
 const winOnCurrentBall = allWins16.find(w => w.numbers.some(n => eligibleBallsA.includes(n)));
 assert.ok(winOnCurrentBall, 'Manual claim on current ball (Ball 16) is strictly valid');
 console.log('✅ PASS Case A: Manual claim on current ball is VALID');
 
-// Case B: Ball 44 is called next on Ball 17 (1-Ball Reaction Grace Window)
+// Case B: Ball 44 is called next on Ball 17 (Next Ball Called -> Previous Ball Expired/Slept)
 const drawnBall17 = [...drawnBall16, 44];
 const allWins17 = getAllWinningPatterns(card, drawnBall17);
 
 const currentNumB = 44;
-const prevNumB = 71; // Preceding ball!
-const eligibleBallsB = [currentNumB, prevNumB];
+const eligibleBallsB = [currentNumB]; // Strictly current ball!
 
 const winOnGraceBall = allWins17.find(w => w.numbers.some(n => eligibleBallsB.includes(n)));
-assert.ok(winOnGraceBall, 'Manual claim on 1-ball grace window (Ball 17) is strictly valid');
-console.log('✅ PASS Case B: Manual claim on 1-ball grace window is VALID');
+assert.strictEqual(winOnGraceBall, undefined, 'Manual claim on next ball is strictly rejected (Missed/Slept)');
+console.log('✅ PASS Case B: Manual claim on next ball is correctly REJECTED (Missed/Slept)');
 
 // Case C: Ball 88 is called next on Ball 18 (2 Balls Later -> Slept/Missed)
 const drawnBall18 = [...drawnBall17, 88];
 const allWins18 = getAllWinningPatterns(card, drawnBall18);
 
 const currentNumC = 88;
-const prevNumC = 44;
-const eligibleBallsC = [currentNumC, prevNumC]; // Neither is 71!
+const eligibleBallsC = [currentNumC]; // Strictly current ball!
 
 const winOnExpiredBall = allWins18.find(w => w.numbers.some(n => eligibleBallsC.includes(n)));
 assert.strictEqual(winOnExpiredBall, undefined, 'Manual claim 2 balls later is slept/expired');

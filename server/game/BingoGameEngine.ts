@@ -2466,23 +2466,21 @@ class BingoGameEngine {
       };
     }
 
-    // Commercial Bingo Rule (Current Ball or 1-Ball Reaction Grace Window):
-    // The winning pattern must contain either the current ball OR the immediately preceding ball.
-    // This provides a critical 3.0s human reaction time & network transit buffer.
-    // If 2 or more subsequent balls pass without claiming, the pattern is slept (expired).
+    // Strict Single-Ball Rule for Manual Players:
+    // The winning pattern must contain the current active ball.
+    // If the next number is called before claiming, the pattern expires (slept bingo).
     const currentNum = room.currentCall?.num || room.drawnNumbers[room.drawnNumbers.length - 1];
-    const prevNum = room.drawnNumbers.length >= 2 ? room.drawnNumbers[room.drawnNumbers.length - 2] : null;
-    const eligibleBalls = [currentNum, prevNum].filter((n): n is number => typeof n === 'number' && n > 0);
+    const eligibleBalls = typeof currentNum === 'number' && currentNum > 0 ? [currentNum] : [];
 
     let eligibleWin = allWins[0];
 
     if (ticket && ticket.isAutoPlay === false) {
       const activeWin = allWins.find(w => w.numbers.some(n => eligibleBalls.includes(n)));
       if (!activeWin) {
-        console.log(`[ClaimBingo] Missed/Slept Bingo by ${userName} (${userId}) on Cartela #${cartelaId}. Pattern did not include eligible balls (${eligibleBalls.join(', ')}). Play continues.`);
+        console.log(`[ClaimBingo] Missed/Slept Bingo by ${userName} (${userId}) on Cartela #${cartelaId}. Pattern did not include active ball (${eligibleBalls.join(', ')}). Play continues.`);
         return {
           success: false,
-          message: 'Missed Bingo! That pattern expired because subsequent numbers were called. Complete another 5-in-a-row line to call BINGO!'
+          message: 'Missed Bingo! That pattern expired because the next number was called. Complete another 5-in-a-row line to call BINGO!'
         };
       }
       eligibleWin = activeWin;
