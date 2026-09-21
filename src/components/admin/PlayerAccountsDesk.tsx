@@ -275,7 +275,7 @@ export const PlayerAccountsDesk: React.FC = () => {
               <i className="fa-solid fa-magnifying-glass search-icon"></i>
               <input
                 type="text"
-                placeholder="Search player name, phone or ID..."
+                placeholder="Search player name or ID..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
@@ -289,7 +289,6 @@ export const PlayerAccountsDesk: React.FC = () => {
             <thead>
               <tr>
                 <th>Player Identity</th>
-                <th>Phone Number</th>
                 <th>Real Cash Balance</th>
                 <th>Promo Bonus</th>
                 <th>Lifetime Flow (In / Out)</th>
@@ -301,7 +300,7 @@ export const PlayerAccountsDesk: React.FC = () => {
             <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="empty-player-cell">
+                  <td colSpan={7} className="empty-player-cell">
                     <div className="empty-player-wrap">
                       <i className="fa-solid fa-user-slash"></i>
                       <span>No player accounts matching the selected criteria.</span>
@@ -330,17 +329,6 @@ export const PlayerAccountsDesk: React.FC = () => {
                             <span className="player-joined-tag">Joined {user.createdAt}</span>
                           </div>
                         </div>
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-phone-copy"
-                          onClick={() => handleCopy(user.phone)}
-                          title="Click to copy Phone"
-                        >
-                          <span>{user.phone}</span>
-                          <i className="fa-regular fa-copy copy-icon"></i>
-                        </button>
                       </td>
                       <td>
                         <strong className="player-balance-cash">
@@ -428,7 +416,7 @@ export const PlayerAccountsDesk: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="modal-heading">Adjust Player Wallet Balance</h3>
-                  <p className="modal-sub">Account: <strong>{adjustTargetUser.name}</strong> ({adjustTargetUser.phone})</p>
+                  <p className="modal-sub">Account: <strong>{adjustTargetUser.name}</strong></p>
                 </div>
               </div>
               <button
@@ -567,7 +555,6 @@ export const PlayerAccountsDesk: React.FC = () => {
                     )}
                   </div>
                   <div className="dossier-meta-chips">
-                    <span>📱 {dossierUser.phone}</span>
                     <span>🆔 {dossierUser.id}</span>
                     <span>📅 Joined {dossierUser.createdAt}</span>
                     {dossierUser.referredBy && <span>🤝 Referred by {dossierUser.referredBy}</span>}
