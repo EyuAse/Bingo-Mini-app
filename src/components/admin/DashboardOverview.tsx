@@ -125,27 +125,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           </div>
         </div>
 
-        {/* Card 2: Active Players */}
-        <div className="dashboard-kpi-card purple">
-          <div className="kpi-card-header">
-            <span className="kpi-card-title">Active Live Players</span>
-            <div className="kpi-card-icon-box purple">
-              <i className="fa-solid fa-users"></i>
-            </div>
-          </div>
-          <div className="kpi-card-value purple">
-            {simulatedPlayerCount} <span className="kpi-unit">Online</span>
-          </div>
-          <div className="kpi-card-footer">
-            <span className="kpi-badge purple">
-              <i className="fa-solid fa-robot"></i>
-              260+ Bot Identities Active
-            </span>
-            <span className="kpi-micro-text">{botWinRate}% Win Target</span>
-          </div>
-        </div>
-
-        {/* Card 3: Registered Accounts */}
+        {/* Card 2: Registered Accounts */}
         <div className="dashboard-kpi-card green">
           <div className="kpi-card-header">
             <span className="kpi-card-title">Registered Accounts</span>
