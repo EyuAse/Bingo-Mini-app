@@ -847,6 +847,26 @@ class BingoGameEngine {
    * Updates player's Auto/Manual mode for their active & queued tickets across all rooms
    */
   public updatePlayerMode(roomId: string, userId: string, isAutoPlay: boolean) {
+    const isPlayingMidGame = Array.from(this.rooms.values()).some(
+      r => (r.phase === 'playing' || r.phase === 'locked') && (r.tickets.get(userId)?.length ?? 0) > 0
+    );
+
+    // MID-GAME MODE LOCK: If player is currently participating in an active round, do NOT alter active tickets/mode
+    if (isPlayingMidGame) {
+      console.warn(`🔒 [PlayerMode] Blocked mid-game mode switch for user ${userId} while game is active`);
+      // Update queued nextRoundTickets only, so their preference takes effect in the next round
+      const roomsToUpdate = new Set<string>([...STAKE_ROOM_IDS, roomId, ARENA_ROOM_ID].filter(Boolean));
+      for (const rid of roomsToUpdate) {
+        const room = this.rooms.get(rid);
+        if (!room) continue;
+        const nextTickets = room.nextRoundTickets?.get(userId);
+        if (nextTickets) {
+          nextTickets.forEach(t => { t.isAutoPlay = isAutoPlay; });
+        }
+      }
+      return;
+    }
+
     this.playerModes.set(userId, isAutoPlay);
     const roomsToUpdate = new Set<string>([...STAKE_ROOM_IDS, roomId, ARENA_ROOM_ID].filter(Boolean));
     for (const rid of roomsToUpdate) {

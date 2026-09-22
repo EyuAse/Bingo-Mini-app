@@ -16,6 +16,7 @@ import { useWallet } from './WalletContext.tsx';
 import { useAuth } from './AuthContext.tsx';
 import { useApp } from './AppContext.tsx';
 import { useAdmin } from './AdminContext.tsx';
+import { useLanguage } from './LanguageContext.tsx';
 
 export interface BingoCell {
   index: number;
@@ -100,6 +101,7 @@ interface BingoContextType {
   previousCall: CalledBall | null;
   calledNumbers: number[];
   autoPlay: boolean;
+  isAutoModeLocked: boolean;
   toggleAutoPlay: () => void;
   playersCount: number;
   prizePool: number;
@@ -278,6 +280,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const { deductBalance, addBalance, refreshBalance, balance, bonus } = useWallet();
   const { user } = useAuth();
   const { currentPage, showToast } = useApp();
+  const { lang } = useLanguage();
   const {
     commissionRate,
     simulatedPlayerCount,
@@ -345,6 +348,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   });
   const autoPlayRef = useRef<boolean>(autoPlay);
   autoPlayRef.current = autoPlay;
+  const isAutoModeLocked = roundPhase === 'playing' || roundPhase === 'locked';
 
   // Room State
   const [playersCount, setPlayersCount] = useState<number>(0);
@@ -1572,6 +1576,16 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const toggleAutoPlay = () => {
+    // MID-GAME LOCK: Prevent mode switching while game is in progress
+    if (isAutoModeLocked) {
+      showToast(
+        lang === 'am'
+          ? '🔒 ጨዋታው እየተካሄደ ስለሆነ ሞድ መቀየር አይቻልም'
+          : '🔒 Mode is locked while game is in progress'
+      );
+      return;
+    }
+
     const next = !autoPlay;
     setAutoPlay(next);
     autoPlayRef.current = next;
@@ -2005,6 +2019,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         previousCall,
         calledNumbers,
         autoPlay,
+        isAutoModeLocked,
         toggleAutoPlay,
         playersCount,
         prizePool,

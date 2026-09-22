@@ -27,6 +27,7 @@ export const CurrentCallBanner: React.FC = () => {
     isMuted,
     toggleMute,
     autoPlay,
+    isAutoModeLocked,
     toggleAutoPlay,
     waitingForOtherHouses,
     winnerCountdown
@@ -166,12 +167,19 @@ export const CurrentCallBanner: React.FC = () => {
 
         <button
           type="button"
-          className={`btn-compact-auto ${autoPlay ? 'on' : 'off'}`}
+          className={`btn-compact-auto ${autoPlay ? 'on' : 'off'} ${isAutoModeLocked ? 'locked' : ''}`}
           onClick={toggleAutoPlay}
-          title={autoPlay ? 'Auto Daub ON' : 'Auto Daub OFF'}
+          title={
+            isAutoModeLocked
+              ? (lang === 'am' ? '🔒 ጨዋታው እየተካሄደ ስለሆነ ሞድ መቀየር አይቻልም' : '🔒 Mode is locked while game is in progress')
+              : (autoPlay ? 'Auto Daub ON — Click to switch' : 'Auto Daub OFF — Click to switch')
+          }
         >
-          <span className="auto-lbl">Auto</span>
-          <span className={`auto-switch-pill ${autoPlay ? 'on' : 'off'}`}>
+          <span className="auto-lbl">
+            {isAutoModeLocked && <i className="fa-solid fa-lock auto-lock-icon"></i>}
+            Auto
+          </span>
+          <span className={`auto-switch-pill ${autoPlay ? 'on' : 'off'} ${isAutoModeLocked ? 'locked' : ''}`}>
             {autoPlay ? 'ON' : 'OFF'}
           </span>
         </button>

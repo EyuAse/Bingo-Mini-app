@@ -4,6 +4,7 @@ import { useBingo } from '../../context/BingoContext.tsx';
 export const BingoActions: React.FC = () => {
   const {
     autoPlay,
+    isAutoModeLocked,
     toggleAutoPlay,
     claimBingo,
     claimInProgress,
@@ -20,13 +21,22 @@ export const BingoActions: React.FC = () => {
       {/* 1. Auto-Play Toggle */}
       <button
         type="button"
-        className={`btn-autoplay-toggle ${autoPlay ? 'autoplay-on' : ''}`}
+        className={`btn-autoplay-toggle ${autoPlay ? 'autoplay-on' : ''} ${isAutoModeLocked ? 'locked' : ''}`}
         onClick={toggleAutoPlay}
-        title={autoPlay ? 'Auto-Play is ON — click to go manual' : 'Turn on Auto-Play'}
+        title={
+          isAutoModeLocked
+            ? 'Mode is locked while game is in progress'
+            : autoPlay
+            ? 'Auto-Play is ON — click to go manual'
+            : 'Turn on Auto-Play'
+        }
       >
-        <i className={`fa-solid ${autoPlay ? 'fa-robot' : 'fa-hand-pointer'} autoplay-icon`}></i>
-        <div className={`autoplay-switch ${autoPlay ? 'on' : ''}`} />
-        <span className="autoplay-label">{autoPlay ? 'AUTO ON' : 'MANUAL'}</span>
+        <i className={`fa-solid ${isAutoModeLocked ? 'fa-lock' : autoPlay ? 'fa-robot' : 'fa-hand-pointer'} autoplay-icon`}></i>
+        <div className={`autoplay-switch ${autoPlay ? 'on' : ''} ${isAutoModeLocked ? 'locked' : ''}`} />
+        <span className="autoplay-label">
+          {autoPlay ? 'AUTO ON' : 'MANUAL'}
+          {isAutoModeLocked ? ' 🔒' : ''}
+        </span>
       </button>
 
       {/* 2. BINGO! Call Button — disabled when in lobby or when auto-play on or claim in progress */}
