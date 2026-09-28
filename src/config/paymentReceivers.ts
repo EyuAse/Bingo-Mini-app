@@ -25,16 +25,16 @@ export const CBE_BIRR_RECEIVER: PaymentReceiver = {
 };
 
 // 2. Official Telebirr Swapping Accounts
-// Account 1: Girma Ulfata (Presented first)
+// Account 1: Abduurehim Sheycho (Presented first)
 // Account 2: Mekonen Woldekidane (Presented next)
 export const TELEBIRR_RECEIVERS: PaymentReceiver[] = [
   {
-    id: 'tb_girma',
+    id: 'tb_abduurehim',
     provider: 'Telebirr',
     serviceName: 'Telebirr',
     accountNumber: '0952013863',
     formattedNumber: '09 52 01 38 63',
-    accountName: 'Girma Ulfata',
+    accountName: 'Abduurehim Sheycho',
     badge: 'Account 1'
   },
   {

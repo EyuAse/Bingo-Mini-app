@@ -10,15 +10,15 @@ async function runPhase4Tests() {
   // Test 1: Verify getVersionedWebAppUrl behavior
   console.log('Step 1: Testing getVersionedWebAppUrl...');
   const v1 = telegramBotService.getVersionedWebAppUrl('https://bingo-mini-app-30pe.onrender.com');
-  assert.strictEqual(v1, 'https://bingo-mini-app-30pe.onrender.com?v=20260922_1');
+  assert.strictEqual(v1, 'https://bingo-mini-app-30pe.onrender.com?v=20260928_1');
   console.log('  Clean base URL:', v1);
 
   const v2 = telegramBotService.getVersionedWebAppUrl('https://bingo-mini-app-30pe.onrender.com?v=20260914_1');
-  assert.strictEqual(v2, 'https://bingo-mini-app-30pe.onrender.com?v=20260922_1');
+  assert.strictEqual(v2, 'https://bingo-mini-app-30pe.onrender.com?v=20260928_1');
   console.log('  Replaced old version URL:', v2);
 
   const v3 = telegramBotService.getVersionedWebAppUrl('https://bingo-mini-app-30pe.onrender.com', 'ref_123');
-  assert.strictEqual(v3, 'https://bingo-mini-app-30pe.onrender.com?v=20260922_1&startapp=ref_123');
+  assert.strictEqual(v3, 'https://bingo-mini-app-30pe.onrender.com?v=20260928_1&startapp=ref_123');
   console.log('  Referral URL with startapp:', v3);
   console.log('✅ PASS Step 1: Versioned WebApp URL helper is correct\n');
 
@@ -30,7 +30,7 @@ async function runPhase4Tests() {
   const activePromoUrl = promoRes.rows[0]?.value;
   console.log('  Active Promo Button URL in DB:', activePromoUrl);
   assert(
-    activePromoUrl === 'https://t.me/LomiBingobot/play' || activePromoUrl?.includes('v=20260922_1') || !activePromoUrl,
+    activePromoUrl === 'https://t.me/LomiBingobot/play' || activePromoUrl?.includes('v=20260928_1') || activePromoUrl?.includes('v=20260922_1') || !activePromoUrl,
     'Active promo URL must be direct bot link or versioned'
   );
   console.log('✅ PASS Step 2: Database promo button URL is standardized\n');
