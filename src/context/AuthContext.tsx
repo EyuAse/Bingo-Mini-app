@@ -34,9 +34,76 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { lang } = useLanguage();
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem('lomi_user');
+      if (!stored) return null;
+      const parsed = JSON.parse(stored);
+      if (!parsed || !parsed.id) return null;
+
+      // Check explicit logout
+      if (parsed.telegramId && localStorage.getItem(`lomi_explicit_logout_${parsed.telegramId}`) === 'true') {
+        return null;
+      }
+      if (localStorage.getItem('lomi_explicit_logout') === 'true') {
+        return null;
+      }
+
+      // Check if inside Telegram with a different account
+      const tgUser = (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user;
+      if (tgUser && tgUser.id && parsed.telegramId) {
+        if (String(parsed.telegramId) !== String(tgUser.id)) {
+          return null; // Different Telegram account on same phone
+        }
+      }
+
+      return parsed;
+    } catch {
+      return null;
+    }
+  });
+
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem('lomi_user');
+      if (!stored) return null;
+      const parsed = JSON.parse(stored);
+      if (parsed?.telegramId && localStorage.getItem(`lomi_explicit_logout_${parsed.telegramId}`) === 'true') {
+        return null;
+      }
+      if (localStorage.getItem('lomi_explicit_logout') === 'true') {
+        return null;
+      }
+      return localStorage.getItem('lomi_auth_token');
+    } catch {
+      return null;
+    }
+  });
+
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      const stored = localStorage.getItem('lomi_user');
+      const storedToken = localStorage.getItem('lomi_auth_token');
+      if (stored && storedToken) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.telegramId && localStorage.getItem(`lomi_explicit_logout_${parsed.telegramId}`) === 'true') {
+          return true;
+        }
+        if (localStorage.getItem('lomi_explicit_logout') === 'true') {
+          return true;
+        }
+        const tgUser = (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user;
+        if (tgUser && tgUser.id && parsed?.telegramId && String(parsed.telegramId) !== String(tgUser.id)) {
+          return true;
+        }
+        return false; // Valid cached session exists — instant frame-1 auth
+      }
+    } catch {}
+    return true;
+  });
   const [isInsideTelegram, setIsInsideTelegram] = useState<boolean>(false);
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
   const [isFirstTimeTelegramUser, setIsFirstTimeTelegramUser] = useState<boolean>(false);
@@ -176,7 +243,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
               setUser(mappedUser);
               setToken(apiResult.token);
+              setIsFirstTimeTelegramUser(!!apiResult.isNewUser);
               localStorage.setItem('lomi_user', JSON.stringify(mappedUser));
+              localStorage.setItem('lomi_auth_token', apiResult.token);
               if (apiResult.wallet) {
                 localStorage.setItem('lomi_live_balance', apiResult.wallet.balance.toFixed(2));
                 localStorage.setItem('lomi_live_bonus', apiResult.wallet.bonus.toFixed(2));
@@ -185,22 +254,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               return;
             }
           } catch (err) {
-            const errMsg = (err as any)?.message || '';
-            if (errMsg.includes('Too many')) {
-              // Rate limited on auto-auth — fall back to cached session silently
-              console.warn('⚠️ Rate limited on init auth. Using cached session if available.');
-              const cachedUser = localStorage.getItem('lomi_user');
-              const cachedToken = localStorage.getItem('lomi_auth_token');
-              if (cachedUser && cachedToken) {
-                try {
-                  const parsed = JSON.parse(cachedUser);
+            console.warn('⚠️ Server auth check notice:', (err as any)?.message || err);
+            // Fall back to existing cached session on any network/server glitch so existing user is never kicked to sign-up
+            const cachedUser = localStorage.getItem('lomi_user');
+            const cachedToken = localStorage.getItem('lomi_auth_token');
+            if (cachedUser && cachedToken) {
+              try {
+                const parsed = JSON.parse(cachedUser);
+                if (parsed && parsed.id) {
                   setUser(parsed);
                   setToken(cachedToken);
-                  return; // Silently use cached session — user sees no error
-                } catch {}
-              }
-            } else {
-              console.warn('⚠️ Server auth check error:', err);
+                  return; // Silently use cached session — user sees their real balance & game
+                }
+              } catch {}
             }
           }
         }
@@ -342,6 +408,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
       setUser(mappedUser);
       setToken(apiResult.token);
+      localStorage.setItem('lomi_user', JSON.stringify(mappedUser));
+      localStorage.setItem('lomi_auth_token', apiResult.token);
       return mappedUser;
     } catch {
       const result = await authService.login(payload);
@@ -399,6 +467,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setUser(mappedUser);
       setToken(apiResult.token);
+      localStorage.setItem('lomi_user', JSON.stringify(mappedUser));
+      localStorage.setItem('lomi_auth_token', apiResult.token);
       if (apiResult.wallet) {
         localStorage.setItem('lomi_live_balance', apiResult.wallet.balance.toFixed(2));
         localStorage.setItem('lomi_live_bonus', apiResult.wallet.bonus.toFixed(2));

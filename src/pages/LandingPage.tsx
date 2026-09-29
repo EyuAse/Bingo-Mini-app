@@ -23,16 +23,49 @@ export const LandingPage: React.FC = () => {
   const [createdUser, setCreatedUser] = useState<User | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  const [isExistingAccount, setIsExistingAccount] = useState(false);
+  const [isExistingAccount, setIsExistingAccount] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const storedUser = localStorage.getItem('lomi_user');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (parsed && (parsed.id || parsed.telegramId)) {
+          return true;
+        }
+      }
+    } catch {}
+    return false;
+  });
 
-  // Derive from auth state — AuthContext already checks existence on init
+  // Dynamically verify existing account state from auth context or local cache
   useEffect(() => {
     if (user && (user.telegramId || user.id)) {
       setIsExistingAccount(true);
-    } else {
-      setIsExistingAccount(false);
+      return;
     }
-  }, [user]);
+
+    if (typeof window !== 'undefined') {
+      try {
+        const storedUser = localStorage.getItem('lomi_user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          if (parsed && (parsed.id || parsed.telegramId)) {
+            setIsExistingAccount(true);
+            return;
+          }
+        }
+      } catch {}
+
+      // Check if user previously logged out from Telegram on this device
+      const tgId = telegramUser?.id || (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+      if (tgId && localStorage.getItem(`lomi_explicit_logout_${tgId}`) === 'true') {
+        setIsExistingAccount(true);
+        return;
+      }
+    }
+
+    setIsExistingAccount(false);
+  }, [user, telegramUser]);
 
   // When new user taps "Claim 10 ETB Bonus" on Slide 3 -> Open clean registration modal
   const handleOpenRegisterModal = () => {
@@ -43,7 +76,8 @@ export const LandingPage: React.FC = () => {
   const handleConfirmRegistration = async () => {
     setIsLoading(true);
     try {
-      const { user, isNewUser } = await loginWithTelegram(telegramUser || undefined);
+      const activeTg = telegramUser || (typeof window !== 'undefined' ? (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user : undefined);
+      const { user, isNewUser } = await loginWithTelegram(activeTg || undefined);
 
       setShowRegisterModal(false);
 
@@ -80,7 +114,8 @@ export const LandingPage: React.FC = () => {
   const handleExistingUserLogin = async () => {
     setIsLoading(true);
     try {
-      const { user } = await loginWithTelegram(telegramUser || undefined);
+      const activeTg = telegramUser || (typeof window !== 'undefined' ? (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user : undefined);
+      const { user } = await loginWithTelegram(activeTg || undefined);
       showToast(
         lang === 'am'
           ? `እንኳን ደህና መጡ፣ ${user.fullName}!`
@@ -94,9 +129,10 @@ export const LandingPage: React.FC = () => {
     }
   };
 
-  const displayName = telegramUser
-    ? `${telegramUser.first_name || ''} ${telegramUser.last_name || ''}`.trim() || `@${telegramUser.username}`
-    : 'Telegram Player';
+  const activeTgUser = telegramUser || (typeof window !== 'undefined' ? (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user : null);
+  const displayName = activeTgUser
+    ? `${activeTgUser.first_name || ''} ${activeTgUser.last_name || ''}`.trim() || `@${activeTgUser.username}`
+    : (user?.fullName || 'Telegram Player');
 
   return (
     <div className="page active page-landing-fresh" id="page-landing">

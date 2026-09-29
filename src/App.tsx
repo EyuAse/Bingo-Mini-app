@@ -27,10 +27,11 @@ import { AccountInfoPage } from './pages/AccountInfoPage.tsx';
 import { HelpCenterPage } from './pages/HelpCenterPage.tsx';
 import { AboutLomiPage } from './pages/AboutLomiPage.tsx';
 import { AdminPage } from './pages/AdminPage.tsx';
+import { AppSplashScreen } from './components/common/AppSplashScreen.tsx';
 
 export const App: React.FC = () => {
   const { currentPage, switchPage } = useApp();
-  const { user, isAuthenticated, isFirstTimeTelegramUser, dismissFirstTimeModal, concurrentSessionNotice } = useAuth();
+  const { user, isAuthenticated, isLoading, isFirstTimeTelegramUser, dismissFirstTimeModal, concurrentSessionNotice } = useAuth();
   const { addUser, registerBonus } = useAdmin();
   const { addBonus } = useWallet();
 
@@ -74,6 +75,11 @@ export const App: React.FC = () => {
         <Toast />
       </div>
     );
+  }
+
+  // Phase 2: Show sleek splash screen while initial auth resolves (prevents flash of onboarding)
+  if (isLoading && !user) {
+    return <AppSplashScreen />;
   }
 
   const isStandalonePage =
