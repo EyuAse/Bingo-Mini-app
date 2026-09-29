@@ -30,6 +30,9 @@ export { io };
 const app = express();
 const server = http.createServer(app);
 
+// Trust Render's reverse proxy so rate limiting tracks real client IPs
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 5000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
@@ -152,7 +155,7 @@ app.post('/api/rooms/reset', (req, res) => {
 // Rate Limiters for DoS and Brute-Force Hardening
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 30, // Limit each IP to 30 requests per windowMs
+  limit: 100, // Telegram Mini Apps auto-auth on every open; 30 was too aggressive
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { success: false, error: 'Too many authentication attempts. Please try again in 15 minutes.' }
@@ -160,7 +163,7 @@ const authLimiter = rateLimit({
 
 const walletLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  limit: 60, // Limit each IP to 60 requests per minute
+  limit: 120, // Account for fallback polling during socket disconnection
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { success: false, error: 'Too many requests. Please slow down.' }
@@ -176,15 +179,15 @@ app.use('/api/telegram', telegramBotRouter);
 // Serve Static Frontend Bundle in Production (Single-port hosting) with Optimized Caching
 const distPath = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(distPath)) {
-  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20260928_1
+  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20260929_2
   // so Telegram Webview never serves stale CEF/WebView2 disk cache from old bot posts
   app.use((req, res, next) => {
     if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) {
       const v = req.query.v;
-      if (v !== '20260928_1') {
+      if (v !== '20260929_2') {
         const cleanUrl = req.url.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
         const sep = cleanUrl.includes('?') ? '&' : '?';
-        const redirectUrl = `${cleanUrl}${sep}v=20260928_1`;
+        const redirectUrl = `${cleanUrl}${sep}v=20260929_2`;
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');

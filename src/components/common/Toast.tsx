@@ -22,6 +22,9 @@ export const Toast: React.FC = () => {
   } else if (
     lower.includes('warning') ||
     lower.includes('wait') ||
+    lower.includes('too many') ||
+    lower.includes('slow down') ||
+    lower.includes('attempts') ||
     lower.includes('select') ||
     lower.includes('pick') ||
     lower.includes('caution') ||

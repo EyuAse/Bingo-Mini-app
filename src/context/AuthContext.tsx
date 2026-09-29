@@ -142,11 +142,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const isExplicitlyLoggedOut =
             typeof window !== 'undefined' && localStorage.getItem(`lomi_explicit_logout_${tgUser.id}`) === 'true';
 
-          // Check live Neon DB for this specific Telegram account
+          // Auto-authenticate: loginWithTelegram handles both login + registration
           try {
-            const exists = await apiClient.auth.checkTelegramExists(tgUser.id);
-            if (exists && !isExplicitlyLoggedOut) {
-              // Existing account: auto restore session
+            if (!isExplicitlyLoggedOut) {
               const apiResult = await apiClient.auth.loginWithTelegram(tgUser);
               const rawPhone = apiResult.user.phone;
               const tgIdStr = String(tgUser.id);
@@ -187,7 +185,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               return;
             }
           } catch (err) {
-            console.warn('⚠️ Server auth check error:', err);
+            const errMsg = (err as any)?.message || '';
+            if (errMsg.includes('Too many')) {
+              // Rate limited on auto-auth — fall back to cached session silently
+              console.warn('⚠️ Rate limited on init auth. Using cached session if available.');
+              const cachedUser = localStorage.getItem('lomi_user');
+              const cachedToken = localStorage.getItem('lomi_auth_token');
+              if (cachedUser && cachedToken) {
+                try {
+                  const parsed = JSON.parse(cachedUser);
+                  setUser(parsed);
+                  setToken(cachedToken);
+                  return; // Silently use cached session — user sees no error
+                } catch {}
+              }
+            } else {
+              console.warn('⚠️ Server auth check error:', err);
+            }
           }
         }
 
@@ -394,8 +408,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       telegramService.triggerHaptic('success');
       return { user: mappedUser, isNewUser: apiResult.isNewUser };
     } catch (err: any) {
-      console.error('❌ [Database Login Error]:', err);
-      throw new Error(err?.message || 'Failed to connect to database. Please retry.');
+      console.error('❌ [Login Error]:', err);
+      const msg = err?.message || '';
+      // Show simple, user-friendly messages — no technical jargon
+      if (msg.includes('Too many')) {
+        throw new Error(
+          lang === 'am'
+            ? '⏳ በጣም ብዙ ሙከራዎች። እባክዎ ከ2 ደቂቃ በኋላ እንደገና ይሞክሩ።'
+            : '⏳ Too many attempts. Please wait 2 minutes and try again.'
+        );
+      }
+      throw new Error(
+        lang === 'am'
+          ? '⚠️ ግንኙነት አልተሳካም። እባክዎ እንደገና ይሞክሩ።'
+          : '⚠️ Connection failed. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }

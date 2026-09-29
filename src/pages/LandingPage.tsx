@@ -8,7 +8,6 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { useAdmin } from '../context/AdminContext.tsx';
 import { useWallet } from '../context/WalletContext.tsx';
 import { authService } from '../services/authService.ts';
-import { apiClient } from '../services/apiClient.ts';
 import { TelegramRegisterModal } from '../components/auth/TelegramRegisterModal.tsx';
 import { NewPlayerWelcomeModal } from '../components/auth/NewPlayerWelcomeModal.tsx';
 import { User } from '../types/auth.ts';
@@ -16,7 +15,7 @@ import { User } from '../types/auth.ts';
 export const LandingPage: React.FC = () => {
   const { switchPage, showToast } = useApp();
   const { t, lang } = useLanguage();
-  const { loginWithTelegram, telegramUser } = useAuth();
+  const { loginWithTelegram, telegramUser, user } = useAuth();
   const { addUser, registerBonus } = useAdmin();
   const { addBonus } = useWallet();
 
@@ -26,26 +25,14 @@ export const LandingPage: React.FC = () => {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [isExistingAccount, setIsExistingAccount] = useState(false);
 
+  // Derive from auth state — AuthContext already checks existence on init
   useEffect(() => {
-    let isMounted = true;
-    const checkUser = async () => {
-      if (telegramUser?.id) {
-        // Check live Neon DB for real account existence
-        const exists = await apiClient.auth.checkTelegramExists(telegramUser.id);
-        if (isMounted) {
-          setIsExistingAccount(exists);
-        }
-      } else {
-        if (isMounted) {
-          setIsExistingAccount(false);
-        }
-      }
-    };
-    checkUser();
-    return () => {
-      isMounted = false;
-    };
-  }, [telegramUser]);
+    if (user && (user.telegramId || user.id)) {
+      setIsExistingAccount(true);
+    } else {
+      setIsExistingAccount(false);
+    }
+  }, [user]);
 
   // When new user taps "Claim 10 ETB Bonus" on Slide 3 -> Open clean registration modal
   const handleOpenRegisterModal = () => {

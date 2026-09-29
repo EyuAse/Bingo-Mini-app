@@ -32,6 +32,8 @@ async function fetchWithRetry(url: string, options?: RequestInit, retries = 3, d
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(url, options);
+      // Never retry rate-limited responses — retrying makes it worse
+      if (res.status === 429) return res;
       return res;
     } catch (err) {
       if (i === retries - 1) throw err;
