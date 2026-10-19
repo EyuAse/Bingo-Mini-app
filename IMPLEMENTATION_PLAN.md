@@ -79,5 +79,44 @@ The deposit system utilizes a centralized configuration for official merchant an
 | **Deposit Modal & Page Binding** | **COMPLETED** | Dynamic receiver binding & swap actions operational |
 | **Bilingual Sound Engine** | **COMPLETED** | Amharic and English voice packs integrated |
 | **PostgreSQL Atomic Ledger** | **COMPLETED** | Complete audit trails on all wallet mutations |
+| **Broadcast Primary Key Fix** | **COMPLETED** | Auto-healing sequence for `telegram_broadcasts_pkey` |
 | **Automated SMS/Webhook Listener** | *Planned* | Direct Telebirr API webhook for instant approval |
 | **Dynamic Room Scaler** | *Planned* | Auto-scaling rooms based on concurrent active players |
+
+---
+
+## 7. Incident Resolution: Telegram Broadcast Primary Key Constraint Fix
+
+### 7.1 Problem Description
+When administrators or clients attempted to publish an announcement, ad campaign, or promotional message to Telegram bots or channels via the Admin Dashboard (`TelegramBotDesk.tsx`), the action failed with:
+> **Campaign Broadcast Issue**
+> `duplicate key value violates unique constraint "telegram_broadcasts_pkey"`
+
+### 7.2 Root Cause Analysis
+1. In PostgreSQL, the `telegram_broadcasts` table uses an auto-incrementing `id SERIAL PRIMARY KEY` backed by the internal sequence `telegram_broadcasts_id_seq`.
+2. Following historical backups, migrations, or database restores (`npm run db:restore`), rows with explicit IDs (IDs 1 through 22) were inserted, but PostgreSQL does not automatically advance the sequence pointer.
+3. The sequence remained desynchronized at `last_value = 9`.
+4. When a new broadcast was initiated, PostgreSQL called `nextval('telegram_broadcasts_id_seq')` which returned `10`.
+5. Since a record with `id = 10` already existed in the table, the database rejected the insertion with a unique primary key constraint violation.
+
+### 7.3 Multi-Layer Resolution & Resilience Architecture
+
+1. **Live Neon Database Sequence Realignment**:
+   - Directly synchronized the sequence counter to match the maximum existing record ID:
+     ```sql
+     SELECT setval('telegram_broadcasts_id_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM telegram_broadcasts), 1), true);
+     ```
+   - Verified that subsequent inserts cleanly generate IDs starting at `23+` without collisions.
+
+2. **Self-Healing Backend Service (`server/services/telegramBotService.ts`)**:
+   - Implemented `healBroadcastSequence()` helper.
+   - Wrapped both channel broadcasts and batch player broadcasts in resilient `try/catch` handlers. If any `telegram_broadcasts_pkey` collision is encountered, the service automatically realigns the sequence and seamlessly retries the operation without failing the admin request.
+
+3. **Server Startup Alignment (`server/server.ts`)**:
+   - Added automatic sequence healing to `server.listen()`, guaranteeing proper sequence calibration whenever the server boots or restarts on Render.
+
+4. **Database Restore Tooling (`server/scripts/restore_database.ts`)**:
+   - Added sequence synchronization immediately following table row restorations, ensuring future database restores never leave sequences desynchronized.
+
+5. **Operational NPM Utility (`package.json`)**:
+   - Registered `npm run db:fix-broadcast-seq` (`server/scripts/fix_broadcast_sequence.ts`) as a 1-click diagnostic and sequence repair utility.

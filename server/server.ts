@@ -179,15 +179,15 @@ app.use('/api/telegram', telegramBotRouter);
 // Serve Static Frontend Bundle in Production (Single-port hosting) with Optimized Caching
 const distPath = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(distPath)) {
-  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20260929_3
+  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20261019_1
   // so Telegram Webview never serves stale CEF/WebView2 disk cache from old bot posts
   app.use((req, res, next) => {
     if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) {
       const v = req.query.v;
-      if (v !== '20260929_3') {
+      if (v !== '20261019_1') {
         const cleanUrl = req.url.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
         const sep = cleanUrl.includes('?') ? '&' : '?';
-        const redirectUrl = `${cleanUrl}${sep}v=20260929_3`;
+        const redirectUrl = `${cleanUrl}${sep}v=20261019_1`;
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
@@ -253,6 +253,9 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`🚀 [Lomi Bingo Server] Running on http://localhost:${PORT}`);
     console.log(`📊 [Neon PostgreSQL] Connection Pool Active`);
     console.log(`🎮 [Bingo Engine] 4 Game Rooms Initialized`);
+    telegramBotService.healBroadcastSequence().catch(err => {
+      console.warn('⚠️ [TelegramBotService] Sequence auto-sync deferred:', err.message || err);
+    });
     telegramBotService.setMyCommands().catch(err => {
       console.warn('⚠️ [TelegramBotService] Auto-sync bot commands deferred:', err.message || err);
     });

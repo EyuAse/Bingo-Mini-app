@@ -14,6 +14,7 @@
     "db:restore": "tsx server/scripts/restore_database.ts",
     "db:status": "tsx server/scripts/check_neon_limits.ts",
     "db:clean-handover": "tsx server/scripts/clean_production_client_handover.ts",
+    "db:fix-broadcast-seq": "tsx server/scripts/fix_broadcast_sequence.ts",
     "preview": "vite preview"
   },
   "dependencies": {

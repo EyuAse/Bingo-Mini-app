@@ -34,6 +34,24 @@ export class TelegramBotService {
   }
 
   /**
+   * Resets and heals the PostgreSQL sequence for telegram_broadcasts table
+   * Prevents 'duplicate key value violates unique constraint "telegram_broadcasts_pkey"' errors.
+   */
+  public async healBroadcastSequence(): Promise<void> {
+    try {
+      await query(`
+        SELECT setval(
+          'telegram_broadcasts_id_seq', 
+          GREATEST((SELECT COALESCE(MAX(id), 1) FROM telegram_broadcasts), 1), 
+          true
+        )
+      `);
+    } catch (e: any) {
+      console.warn('⚠️ [TelegramBotService] Failed to auto-heal broadcast sequence:', e.message);
+    }
+  }
+
+  /**
    * Authoritative Config Resolution:
    * Prioritizes dynamic settings saved in DB (admin_settings),
    * falling back to environment variables in .env
@@ -114,7 +132,7 @@ export class TelegramBotService {
    * always fetches the fresh human audio pack and code bundle identically for direct search and invitation links.
    */
   public getVersionedWebAppUrl(baseUrl: string, param?: string): string {
-    const versionTag = 'v=20260929_3';
+    const versionTag = 'v=20261019_1';
     if (!baseUrl) return '';
     // Strip any older version parameter if present in baseUrl
     const cleanUrl = baseUrl.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
@@ -494,27 +512,57 @@ export class TelegramBotService {
         }
       }
 
-      // Save record in database
-      const insertRes = await query(
-        `INSERT INTO telegram_broadcasts 
-         (title, message_text, photo_url, button_text, button_url, target_type, target_id, pin_message, total_recipients, sent_count, failed_count, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-         RETURNING id`,
-        [
-          opts.title,
-          opts.messageText,
-          opts.photoUrl || null,
-          opts.buttonText || null,
-          opts.buttonUrl || null,
-          opts.targetType,
-          targetChat,
-          opts.pinMessage || false,
-          1,
-          sent,
-          failed,
-          res.ok ? 'completed' : 'failed'
-        ]
-      );
+      // Save record in database with automatic sequence self-healing
+      let insertRes;
+      try {
+        insertRes = await query(
+          `INSERT INTO telegram_broadcasts 
+           (title, message_text, photo_url, button_text, button_url, target_type, target_id, pin_message, total_recipients, sent_count, failed_count, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+           RETURNING id`,
+          [
+            opts.title,
+            opts.messageText,
+            opts.photoUrl || null,
+            opts.buttonText || null,
+            opts.buttonUrl || null,
+            opts.targetType,
+            targetChat,
+            opts.pinMessage || false,
+            1,
+            sent,
+            failed,
+            res.ok ? 'completed' : 'failed'
+          ]
+        );
+      } catch (err: any) {
+        if (err.message && err.message.includes('telegram_broadcasts_pkey')) {
+          console.warn('⚠️ [telegram_broadcasts_pkey sequence desync detected]. Auto-repairing sequence and retrying...');
+          await this.healBroadcastSequence();
+          insertRes = await query(
+            `INSERT INTO telegram_broadcasts 
+             (title, message_text, photo_url, button_text, button_url, target_type, target_id, pin_message, total_recipients, sent_count, failed_count, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+             RETURNING id`,
+            [
+              opts.title,
+              opts.messageText,
+              opts.photoUrl || null,
+              opts.buttonText || null,
+              opts.buttonUrl || null,
+              opts.targetType,
+              targetChat,
+              opts.pinMessage || false,
+              1,
+              sent,
+              failed,
+              res.ok ? 'completed' : 'failed'
+            ]
+          );
+        } else {
+          throw err;
+        }
+      }
 
       return {
         success: res.ok,
@@ -587,26 +635,55 @@ export class TelegramBotService {
       console.warn('Could not save active promo settings:', e);
     }
 
-    // Insert broadcast entry in 'sending' state
-    const insertRes = await query(
-      `INSERT INTO telegram_broadcasts 
-       (title, message_text, photo_url, button_text, button_url, target_type, target_id, pin_message, total_recipients, sent_count, failed_count, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'sending')
-       RETURNING id`,
-      [
-        opts.title,
-        opts.messageText,
-        opts.photoUrl || null,
-        opts.buttonText || null,
-        opts.buttonUrl || null,
-        opts.targetType,
-        'all_users',
-        false,
-        totalRecipients,
-        0,
-        0
-      ]
-    );
+    // Insert broadcast entry in 'sending' state with sequence self-healing
+    let insertRes;
+    try {
+      insertRes = await query(
+        `INSERT INTO telegram_broadcasts 
+         (title, message_text, photo_url, button_text, button_url, target_type, target_id, pin_message, total_recipients, sent_count, failed_count, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'sending')
+         RETURNING id`,
+        [
+          opts.title,
+          opts.messageText,
+          opts.photoUrl || null,
+          opts.buttonText || null,
+          opts.buttonUrl || null,
+          opts.targetType,
+          'all_users',
+          false,
+          totalRecipients,
+          0,
+          0
+        ]
+      );
+    } catch (err: any) {
+      if (err.message && err.message.includes('telegram_broadcasts_pkey')) {
+        console.warn('⚠️ [telegram_broadcasts_pkey sequence desync detected]. Auto-repairing sequence and retrying...');
+        await this.healBroadcastSequence();
+        insertRes = await query(
+          `INSERT INTO telegram_broadcasts 
+           (title, message_text, photo_url, button_text, button_url, target_type, target_id, pin_message, total_recipients, sent_count, failed_count, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'sending')
+           RETURNING id`,
+          [
+            opts.title,
+            opts.messageText,
+            opts.photoUrl || null,
+            opts.buttonText || null,
+            opts.buttonUrl || null,
+            opts.targetType,
+            'all_users',
+            false,
+            totalRecipients,
+            0,
+            0
+          ]
+        );
+      } else {
+        throw err;
+      }
+    }
     const campaignId = insertRes.rows[0]?.id;
 
     // Asynchronous batch dispatch (Telegram 30 msgs/sec rate-limit friendly)

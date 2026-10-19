@@ -142,6 +142,12 @@ export async function restoreDatabaseToTarget(options: RestoreOptions) {
     const bCount = await insertTableRows('telegram_broadcasts', backup.tables.telegram_broadcasts || []);
     console.log(`  ✓ Restored 'telegram_broadcasts': ${bCount} rows`);
 
+    // Reset sequence so future auto-increment IDs do not collide with restored IDs
+    await client.query(`
+      SELECT setval('telegram_broadcasts_id_seq', GREATEST(COALESCE((SELECT MAX(id) FROM telegram_broadcasts), 1), 1), true)
+    `);
+    console.log(`  ✓ Synchronized 'telegram_broadcasts_id_seq' sequence.`);
+
     // Step L: Re-link users.referred_by
     for (const u of rawUsers) {
       if (u.referred_by) {
