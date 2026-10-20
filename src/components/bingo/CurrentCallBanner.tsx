@@ -24,6 +24,7 @@ export const CurrentCallBanner: React.FC = () => {
     realPlayerCount,
     activeUsersCount,
     hasTicket,
+    betAmount,
     isMuted,
     toggleMute,
     autoPlay,
@@ -84,11 +85,13 @@ export const CurrentCallBanner: React.FC = () => {
                   ? 'ready-waiting'
                   : isMultipleInRoom
                   ? 'players-in-room'
+                  : betAmount === 10
+                  ? 'ready-waiting'
                   : 'waiting-match'
               }`}
             >
               <span className="call-ball-col">
-                {isCountdown ? '⏱️' : is1Ready ? '🟡' : isMultipleInRoom ? '👥' : '⏳'}
+                {isCountdown ? '⏱️' : (is1Ready || betAmount === 10) ? '🟡' : isMultipleInRoom ? '👥' : '⏳'}
               </span>
               <span className="call-ball-num lobby-status-text">
                 {isCountdown
@@ -97,6 +100,8 @@ export const CurrentCallBanner: React.FC = () => {
                   ? (lang === 'am' ? '1/2 ዝግጁ' : '1/2 Ready')
                   : isMultipleInRoom
                   ? (lang === 'am' ? `${activeUsersCount} ተጫዋች` : `${activeUsersCount} in Room`)
+                  : betAmount === 10
+                  ? (lang === 'am' ? '5 ዝግጁ' : '5 Ready')
                   : (lang === 'am' ? 'በመጠበቅ...' : 'Waiting...')}
               </span>
             </div>
@@ -136,6 +141,10 @@ export const CurrentCallBanner: React.FC = () => {
               ) : isMultipleInRoom ? (
                 <span className="matchmaking-guide text-blue">
                   👥 {lang === 'am' ? `${activeUsersCount} ተጫዋቾች አሉ! ካርቴላ ይግዙ` : `${activeUsersCount} players in room! Buy ticket to play!`}
+                </span>
+              ) : betAmount === 10 ? (
+                <span className="matchmaking-guide text-amber">
+                  🟡 {lang === 'am' ? '5 ተጫዋቾች በመጠባበቅ ላይ! ካርቴላ ይግዙ' : '5 players waiting · Buy ticket to start match!'}
                 </span>
               ) : (
                 <span className="matchmaking-guide text-muted">

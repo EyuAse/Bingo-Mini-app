@@ -73,6 +73,9 @@ export function setupGameSockets(io: Server) {
         if (room.nextRoundTickets) {
           room.nextRoundTickets.forEach(list => list.forEach(t => occupiedCartelaIds.push(t.cartelaId)));
         }
+        if (room.opponentCards && room.opponentCards.length > 0) {
+          room.opponentCards.forEach(o => occupiedCartelaIds.push(o.cartelaId));
+        }
 
         // Send immediate authoritative room snapshot to joining player
         socket.emit('room_sync', {

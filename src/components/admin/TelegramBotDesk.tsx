@@ -1033,24 +1033,51 @@ export const TelegramBotDesk: React.FC = () => {
               {/* Target ID / Channel Username */}
               {targetType === 'channel' && (
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                    Channel Username or Chat ID (e.g. @lomibingo or -100xxxxxxx)
-                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                      Channel Username or Chat ID (e.g. @lomibingo_official or -100xxxxxxx)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setTargetChatId('@lomibingo_official')}
+                      style={{
+                        background: '#e0f2fe',
+                        color: '#0369a1',
+                        border: '1px solid #bae6fd',
+                        borderRadius: '6px',
+                        padding: '3px 8px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <i className="fa-solid fa-bullhorn" style={{ fontSize: '10px' }}></i> Set to @lomibingo_official
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={targetChatId}
                     onChange={(e) => setTargetChatId(e.target.value)}
-                    placeholder="@your_channel_name"
+                    placeholder={channelId || '@lomibingo_official'}
                     style={{
                       width: '100%',
                       padding: '10px 14px',
                       borderRadius: '10px',
-                      border: '1.5px solid #cbd5e1',
+                      border: targetChatId && /^\d+$/.test(targetChatId.trim()) ? '1.5px solid #ef4444' : '1.5px solid #cbd5e1',
                       fontSize: '14px',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
                   />
+                  {targetChatId && /^\d+$/.test(targetChatId.trim()) && (
+                    <div style={{ marginTop: '6px', color: '#dc2626', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <i className="fa-solid fa-triangle-exclamation"></i>
+                      Notice: "{targetChatId}" is an individual user ID. Telegram Channel usernames must start with @ (e.g. @lomibingo_official) or negative chat IDs starting with -100.
+                    </div>
+                  )}
                   <div style={{
                     marginTop: '8px',
                     padding: '12px 14px',
@@ -1086,7 +1113,7 @@ export const TelegramBotDesk: React.FC = () => {
                   <i className="fa-solid fa-users"></i> Direct 1-on-1 Broadcast to Registered Players
                 </div>
                 <div>
-                  This sends the promotional card directly into the private Telegram chat of all <b>{status?.metrics?.totalTelegramUsers || 0} registered players</b> with Mini App CTA buttons.
+                  This sends the promotional card directly into the private Telegram chat of all <b>{status?.metrics?.activeBotSubscribers || 0} active bot subscribers</b> with instant Mini App launch buttons.
                 </div>
               </div>
             )}

@@ -24,7 +24,7 @@ export class TelegramBotService {
   private cachedConfig: BotConfig | null = null;
   private lastConfigFetch: number = 0;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): TelegramBotService {
     if (!TelegramBotService.instance) {
@@ -81,6 +81,13 @@ export class TelegramBotService {
       // Table might still be initializing, use env vars
     }
 
+    // In development mode, strictly prioritize local .env credentials so local testing 
+    // never interferes with or impersonates the live production bot.
+    if (process.env.NODE_ENV === 'development') {
+      if (process.env.TELEGRAM_BOT_TOKEN) token = process.env.TELEGRAM_BOT_TOKEN;
+      if (process.env.TELEGRAM_WEBAPP_URL) webAppUrl = process.env.TELEGRAM_WEBAPP_URL;
+    }
+
     this.cachedConfig = {
       token: token.trim(),
       webAppUrl: webAppUrl.trim(),
@@ -132,7 +139,7 @@ export class TelegramBotService {
    * always fetches the fresh human audio pack and code bundle identically for direct search and invitation links.
    */
   public getVersionedWebAppUrl(baseUrl: string, param?: string): string {
-    const versionTag = 'v=20261019_1';
+    const versionTag = 'v=20261020_PROD';
     if (!baseUrl) return '';
     // Strip any older version parameter if present in baseUrl
     const cleanUrl = baseUrl.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
@@ -193,8 +200,8 @@ export class TelegramBotService {
     });
 
     if (res.ok) {
-      return { 
-        success: true, 
+      return {
+        success: true,
         message: buttonType === 'commands'
           ? 'Persistent blue [ ☰ Menu ] button configured successfully on Telegram!'
           : 'Persistent Mini App Menu Button configured successfully on Telegram!'
@@ -232,6 +239,43 @@ export class TelegramBotService {
     const res = await this.callApi('getMyDescription', {});
     if (res.ok) {
       return { ok: true, description: res.result?.description || '' };
+    }
+    return { ok: false, error: res.description };
+  }
+
+  /**
+   * Register Webhook with Telegram API
+   */
+  public async setWebhook(customWebhookUrl?: string): Promise<{ success: boolean; message: string }> {
+    const cfg = await this.getConfig();
+    let rawUrl = customWebhookUrl || (cfg.webAppUrl ? `${cfg.webAppUrl}/api/telegram-webhook` : '');
+    if (!rawUrl) {
+      return { success: false, message: 'Webhook URL is required (configure TELEGRAM_WEBAPP_URL in Admin Desk or .env)' };
+    }
+    rawUrl = rawUrl.replace(/\/+$/, '');
+    if (!rawUrl.endsWith('/api/telegram-webhook') && !rawUrl.endsWith('/api/telegram/webhook') && !rawUrl.endsWith('/telegram-webhook')) {
+      rawUrl = `${rawUrl}/api/telegram-webhook`;
+    }
+
+    const res = await this.callApi('setWebhook', {
+      url: rawUrl,
+      drop_pending_updates: false,
+      allowed_updates: ['message', 'my_chat_member']
+    });
+
+    if (res.ok) {
+      return { success: true, message: `Telegram Webhook registered successfully to ${rawUrl}!` };
+    }
+    return { success: false, message: res.description || 'Failed to register webhook' };
+  }
+
+  /**
+   * Get Webhook Info from Telegram API
+   */
+  public async getWebhookInfo(): Promise<{ ok: boolean; result?: any; error?: string }> {
+    const res = await this.callApi('getWebhookInfo', {});
+    if (res.ok) {
+      return { ok: true, result: res.result };
     }
     return { ok: false, error: res.description };
   }
@@ -450,16 +494,29 @@ export class TelegramBotService {
           // In direct 1-on-1 chats between user and bot, web_app is fully supported
           const isPlayAction = opts.buttonText.toLowerCase().includes('play') || opts.buttonText.toLowerCase().includes('bingo') || opts.buttonText.toLowerCase().includes('game') || opts.buttonText.toLowerCase().includes('bonus');
           if (isPlayAction) {
-            const versionedUrl = this.getVersionedWebAppUrl(btnUrl);
+            // Telegram Bot API Rule: web_app.url MUST be an HTTPS web page (e.g. cfg.webAppUrl), NEVER a t.me link!
+            let startParam: string | undefined;
+            if (btnUrl.includes('startapp=')) {
+              const match = btnUrl.match(/startapp=([^&]+)/);
+              if (match) startParam = decodeURIComponent(match[1]);
+            }
+            const targetWebUrl = (!btnUrl || btnUrl.includes('t.me')) ? (cfg.webAppUrl || 'https://bingo-mini-app-30pe.onrender.com') : btnUrl;
+            const versionedUrl = this.getVersionedWebAppUrl(targetWebUrl, startParam);
             inlineKeyboard.push([
               { text: opts.buttonText, web_app: { url: versionedUrl } }
             ]);
           } else {
             const isWeb = btnUrl.startsWith('http') && !btnUrl.includes('t.me');
-            const targetUrl = isWeb ? this.getVersionedWebAppUrl(btnUrl) : btnUrl;
-            inlineKeyboard.push([
-              { text: opts.buttonText, url: targetUrl }
-            ]);
+            if (isWeb) {
+              const targetUrl = this.getVersionedWebAppUrl(btnUrl);
+              inlineKeyboard.push([
+                { text: opts.buttonText, web_app: { url: targetUrl } }
+              ]);
+            } else {
+              inlineKeyboard.push([
+                { text: opts.buttonText, url: btnUrl }
+              ]);
+            }
           }
         }
       }
@@ -470,6 +527,17 @@ export class TelegramBotService {
       const targetChat = (opts.targetId || cfg.channelId || '').trim();
       if (!targetChat) {
         return { success: false, totalRecipients: 0, sentCount: 0, failedCount: 0, message: 'Target channel or group username/ID is missing' };
+      }
+
+      // Guardrail 1: Block positive numeric user IDs (Telegram channels always use @username or negative IDs starting with -100)
+      if (/^\d+$/.test(targetChat)) {
+        return {
+          success: false,
+          totalRecipients: 0,
+          sentCount: 0,
+          failedCount: 1,
+          message: `Cannot post to '${targetChat}'. That is an individual Telegram user ID, not a Channel. Telegram Channel usernames start with '@' (e.g. @lomibingo_official) or channel chat IDs start with -100 (e.g. -100xxxxxxx).`
+        };
       }
 
       // Check if user accidentally entered the bot's own username as the channel
@@ -509,6 +577,8 @@ export class TelegramBotService {
           friendlyError = `@${botUser} is not an Administrator of ${targetChat}. Open Channel Info -> Administrators -> Add Admin -> search @${botUser} and enable 'Post Messages'.`;
         } else if (desc.includes("can't send messages to the bot")) {
           friendlyError = `A bot cannot post messages to itself. Please specify a Telegram Channel (e.g. @YourChannel) where @${botUser} is an Administrator, or select 'All Players (Direct)'.`;
+        } else if (desc.includes('bot was blocked by the user') || desc.includes("can't initiate conversation")) {
+          friendlyError = `Failed to post to '${targetChat}': The target identifier belongs to an individual user who blocked the bot. Telegram Channels start with @ (e.g. @lomibingo_official) or -100.`;
         }
       }
 
@@ -588,22 +658,32 @@ export class TelegramBotService {
         res = await this.sendMessage(testChatId, opts.messageText, { inlineKeyboard });
       }
 
+      let testErrorMessage = res.description || 'Test send failed';
+      if (!res.ok) {
+        const desc = (res.description || '').toLowerCase();
+        if (desc.includes('bot was blocked by the user')) {
+          testErrorMessage = `Telegram user ${testChatId} has blocked or stopped @${botUser}. Please open @${botUser} on Telegram, tap Start or Unblock, and try again.`;
+        } else if (desc.includes("can't initiate conversation") || desc.includes('chat not found')) {
+          testErrorMessage = `Bot cannot initiate chat with user ${testChatId}. Please open @${botUser} on Telegram, send /start, and try again.`;
+        }
+      }
+
       return {
         success: res.ok,
         totalRecipients: 1,
         sentCount: res.ok ? 1 : 0,
         failedCount: res.ok ? 0 : 1,
-        message: res.ok ? 'Test ad preview delivered successfully to your Telegram!' : (res.description || 'Test send failed')
+        message: res.ok ? 'Test ad preview delivered successfully to your Telegram!' : testErrorMessage
       };
     }
 
-    // 3. Mass Broadcast to all registered bot players
+    // 3. Mass Broadcast to all active bot players (who have opened/started chat with the bot)
     const usersRes = await query(
       `SELECT DISTINCT telegram_id 
        FROM users 
        WHERE telegram_id IS NOT NULL 
          AND telegram_id > 0
-         AND (bot_started = TRUE OR telegram_id < 8000000000)
+         AND bot_started = TRUE
        ORDER BY telegram_id ASC`
     );
 
@@ -708,6 +788,11 @@ export class TelegramBotService {
                 sentCount++;
               } else {
                 failedCount++;
+                const desc = (res.description || '').toLowerCase();
+                // If user blocked bot or deactivated account, mark bot_started = false so future broadcasts skip them
+                if (desc.includes('bot was blocked by the user') || desc.includes('user is deactivated')) {
+                  query('UPDATE users SET bot_started = FALSE WHERE telegram_id = $1', [chatId]).catch(() => { });
+                }
               }
             } catch {
               failedCount++;
@@ -755,8 +840,8 @@ export class TelegramBotService {
       return;
     }
 
-    const text = 
-`🏆 <b>MEGA WINNER IN LOMI BINGO!</b> 🍋🎉
+    const text =
+      `🏆 <b>MEGA WINNER IN LOMI BINGO!</b> 🍋🎉
 
 💰 <b>Player:</b> ${winnerName}
 💵 <b>Winning Amount:</b> <b>+${amount.toFixed(2)} ETB!</b>
@@ -790,22 +875,47 @@ export class TelegramBotService {
   public async handleWebhookUpdate(update: any): Promise<boolean> {
     if (!update) return false;
 
-    // Auto-detect when bot is added as Administrator to a Channel or Group
+    // Auto-detect when bot is added as Administrator to a Channel or Supergroup
     if (update.my_chat_member?.chat) {
       const chat = update.my_chat_member.chat;
-      const targetIdentifier = chat.username ? `@${chat.username}` : String(chat.id);
-      console.log(`📢 [Telegram Bot added to Chat/Channel]:`, chat.title, targetIdentifier);
-      try {
-        await query(
-          `INSERT INTO admin_settings (key, value, updated_at)
-           VALUES ('telegram_channel_id', $1, NOW())
-           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-          [targetIdentifier]
-        );
-        this.clearConfigCache();
-      } catch (e) {
-        console.warn('Failed to auto-save channel id from my_chat_member:', e);
+      const chatType = chat.type;
+      const newStatus = update.my_chat_member.new_chat_member?.status;
+
+      // 1. ONLY legitimate Channels or Supergroups can update the global telegram_channel_id
+      if ((chatType === 'channel' || chatType === 'supergroup') &&
+        (newStatus === 'administrator' || newStatus === 'creator')) {
+        const targetIdentifier = chat.username ? `@${chat.username}` : String(chat.id);
+        console.log(`📢 [Telegram Bot added to Channel/Group]:`, chat.title, targetIdentifier);
+        try {
+          await query(
+            `INSERT INTO admin_settings (key, value, updated_at)
+             VALUES ('telegram_channel_id', $1, NOW())
+             ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+            [targetIdentifier]
+          );
+          this.clearConfigCache();
+        } catch (e) {
+          console.warn('Failed to auto-save channel id from my_chat_member:', e);
+        }
+        return true;
       }
+
+      // 2. Private 1-on-1 User chats: Track user block / unblock lifecycle
+      if (chatType === 'private' && chat.id) {
+        try {
+          if (newStatus === 'kicked') {
+            await query('UPDATE users SET bot_started = FALSE WHERE telegram_id = $1', [chat.id]);
+            console.log(`👤 [Telegram User blocked/stopped bot]: ${chat.id} marked as bot_started=FALSE`);
+          } else if (newStatus === 'member') {
+            await query('UPDATE users SET bot_started = TRUE WHERE telegram_id = $1', [chat.id]);
+            console.log(`👤 [Telegram User started/unblocked bot]: ${chat.id} marked as bot_started=TRUE`);
+          }
+        } catch (e) {
+          console.warn('Failed to update player bot_started status from my_chat_member:', e);
+        }
+        return true;
+      }
+
       return true;
     }
 
@@ -813,6 +923,8 @@ export class TelegramBotService {
     const msg = update.message;
     const chatId = msg.chat?.id;
     const text = (msg.text || '').trim();
+
+    console.log(`📩 [Telegram Webhook] Received from ${chatId} (${msg.from?.username || msg.from?.first_name}): "${text}"`);
 
     if (!chatId) return false;
 
@@ -826,7 +938,7 @@ export class TelegramBotService {
           'UPDATE users SET bot_started = TRUE WHERE telegram_id = $1',
           [msg.from.id]
         );
-      } catch {}
+      } catch { }
     }
 
     if (text.startsWith('/start') || text === '/play') {
@@ -834,8 +946,8 @@ export class TelegramBotService {
       const startParam = parts.length > 1 ? parts[1].trim() : '';
       const playAppUrl = this.getVersionedWebAppUrl(webAppUrl, startParam);
 
-      let welcomeText = 
-`👋 <b>እንኳን ወደ ሎሚ ቢንጎ በደህና መጡ!</b> 🍋🎯
+      let welcomeText =
+        `👋 <b>እንኳን ወደ ሎሚ ቢንጎ በደህና መጡ!</b> 🍋🎯
 <b>Welcome to Lomi / Betika Bingo!</b>
 
 🇪🇹 Ethiopia's #1 Real-Time Multiplayer Live Bingo in Telegram!
@@ -879,8 +991,8 @@ Tap the button below to launch the game and start winning! 👇`;
     }
 
     if (text === '/help') {
-      const helpText = 
-`📖 <b>Lomi Bingo Help & Guides</b> 🍋
+      const helpText =
+        `📖 <b>Lomi Bingo Help & Guides</b> 🍋
 
 1️⃣ <b>Select a Room:</b> Choose 10, 20, 50, or 100 ETB stake room.
 2️⃣ <b>Pick Cartelas:</b> Choose 1 or 2 cartelas from 400 serial numbers.
@@ -898,8 +1010,8 @@ Tap below to jump into the arena:`;
     }
 
     if (text === '/bonus') {
-      const bonusText = 
-`🎁 <b>የአዲስ ደንበኛ 10 ETB ነፃ ቦነስ!</b> 🍋
+      const bonusText =
+        `🎁 <b>የአዲስ ደንበኛ 10 ETB ነፃ ቦነስ!</b> 🍋
 <b>10 ETB Welcome Bonus for New Players!</b>
 
 ካርቴላ ለመቁረጥ እና ለማሸነፍ አሁኑኑ ጨዋታውን ይክፈቱ!
@@ -914,8 +1026,8 @@ Open the game below to claim your free welcome bonus cartela! 👇`;
     }
 
     if (text === '/promo' || text === '/promotion' || text === '/promotions') {
-      let promoText = 
-`🎁 <b>የሎሚ ቢንጎ ልዩ ማስተዋወቂያዎች!</b> 🍋✨
+      let promoText =
+        `🎁 <b>የሎሚ ቢንጎ ልዩ ማስተዋወቂያዎች!</b> 🍋✨
 <b>Active Lomi Bingo Promotions:</b>
 
 🎉 <b>1. 10 ETB የነፃ ቦነስ ስጦታ</b> ለሁሉም አዳዲስ ደንበኞች!
@@ -937,7 +1049,7 @@ Open the game below to claim your free welcome bonus cartela! 👇`;
           if (row.key === 'telegram_active_promo_button_text' && row.value?.trim()) btnText = row.value.trim();
           if (row.key === 'telegram_active_promo_button_url' && row.value?.trim()) btnUrl = row.value.trim();
         }
-      } catch {}
+      } catch { }
 
       const isHttpWebApp = btnUrl.startsWith('http') && !btnUrl.includes('t.me');
       const finalBtnUrl = isHttpWebApp ? this.getVersionedWebAppUrl(btnUrl) : btnUrl;

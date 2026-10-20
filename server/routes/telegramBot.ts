@@ -140,6 +140,36 @@ router.post('/set-menu-button', async (req, res) => {
 });
 
 /**
+ * 3a. Register / Sync Webhook with Telegram API
+ * POST /api/admin/telegram/set-webhook
+ */
+router.post('/set-webhook', async (req, res) => {
+  try {
+    const { webhookUrl } = req.body || {};
+    const result = await telegramBotService.setWebhook(webhookUrl);
+    if (result.success) {
+      return res.json({ success: true, message: result.message });
+    }
+    return res.status(400).json({ success: false, error: result.message });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to register webhook' });
+  }
+});
+
+/**
+ * 3a-2. Query Current Webhook Status from Telegram API
+ * GET /api/admin/telegram/webhook-info
+ */
+router.get('/webhook-info', async (_req, res) => {
+  try {
+    const result = await telegramBotService.getWebhookInfo();
+    return res.json({ success: result.ok, ...result });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to retrieve webhook info' });
+  }
+});
+
+/**
  * 3b. Configure Bot Greeting & Welcome Message for /start
  * POST /api/admin/telegram/welcome-message
  */

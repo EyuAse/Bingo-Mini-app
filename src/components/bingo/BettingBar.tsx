@@ -88,7 +88,7 @@ export const BettingBar: React.FC = () => {
                   ? (activeUsersCount >= 2
                       ? (lang === 'am' ? `👥 ተጫዋች በመጠበቅ ላይ...` : `👥 Waiting for 2nd player...`)
                       : (lang === 'am' ? '⏳ ተጫዋች በመጠበቅ ላይ... (1/2)' : '⏳ Waiting for opponent (1/2)'))
-                  : (lang === 'am' ? `🟢 ዝግጁ! በ ${lobbyCountdown} ሰከንድ ይጀምራል` : `🟢 Ready! Starts in ${lobbyCountdown}s (${Math.max(realPlayerCount, 2)}P)`)}
+                  : (lang === 'am' ? `🟢 ዝግጁ! በ ${lobbyCountdown} ሰከንድ ይጀምራል` : `🟢 Ready! Starts in ${lobbyCountdown}s (${betAmount === 10 ? 6 : Math.max(realPlayerCount, 2)}P)`)}
               </span>
             </div>
           </div>
@@ -108,7 +108,11 @@ export const BettingBar: React.FC = () => {
           {/* Matchmaking guidance indicator when in lobby before buying ticket */}
           <div className="compact-lobby-presence-strip">
             {waitingForPlayers ? (
-              realPlayerCount >= 1 ? (
+              betAmount === 10 ? (
+                <span className="presence-hint ready-waiting">
+                  <i className="fa-solid fa-users"></i> {lang === 'am' ? '5 ተጫዋቾች በመጠባበቅ ላይ! ካርቴላ ይግዙ' : '5 players waiting · Buy ticket to start!'}
+                </span>
+              ) : realPlayerCount >= 1 ? (
                 <span className="presence-hint ready-waiting">
                   <i className="fa-solid fa-bell"></i> {lang === 'am' ? '1 ተጫዋች ዝግጁ ነው! ካርቴላ ይግዙ' : '1 player ready! Buy ticket to start!'}
                 </span>
@@ -123,7 +127,7 @@ export const BettingBar: React.FC = () => {
               )
             ) : (
               <span className="presence-hint countdown-active">
-                <i className="fa-solid fa-clock"></i> {lang === 'am' ? `${Math.max(realPlayerCount, 2)} ተጫዋቾች ዝግጁ ናቸው! በ ${lobbyCountdown}s ይጀምራል` : `${Math.max(realPlayerCount, 2)} ready! Starts in ${lobbyCountdown}s`}
+                <i className="fa-solid fa-clock"></i> {lang === 'am' ? `${betAmount === 10 ? 6 : Math.max(realPlayerCount, 2)} ተጫዋቾች ዝግጁ ናቸው! በ ${lobbyCountdown}s ይጀምራል` : `${betAmount === 10 ? 6 : Math.max(realPlayerCount, 2)} ready! Starts in ${lobbyCountdown}s`}
               </span>
             )}
           </div>

@@ -2,7 +2,10 @@ import React from 'react';
 import { useBingo } from '../../context/BingoContext.tsx';
 
 export const LivePlayers: React.FC = () => {
-  const { opponents, playersCount, prizePool } = useBingo();
+  const { opponents, playersCount, prizePool, totalPot, betAmount } = useBingo();
+  const poolDisplay = betAmount === 10
+    ? (totalPot > 0 ? totalPot : (playersCount * 10 || 60))
+    : prizePool;
 
   return (
     <div className="bingo-live-players-panel" id="bingo-live-players-panel">
@@ -14,7 +17,7 @@ export const LivePlayers: React.FC = () => {
           </span>
         </div>
         <span className="lp-subtitle">
-          Competing for <strong className="gold" id="live-pool-display">{prizePool.toLocaleString()} ETB</strong>
+          Competing for <strong className="gold" id="live-pool-display">{poolDisplay.toLocaleString()} ETB</strong>
         </span>
       </div>
 

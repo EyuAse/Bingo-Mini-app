@@ -8,6 +8,7 @@ export const StatsStrip: React.FC = () => {
     betAmount,
     setBetAmount,
     prizePool,
+    totalPot,
     playersCount,
     realPlayerCount,
     activeUsersCount,
@@ -22,14 +23,21 @@ export const StatsStrip: React.FC = () => {
   const [showStakeModal, setShowStakeModal] = useState<boolean>(false);
 
   const isSpectatingHouse = roomMode === 'spectating' && !hasTicket;
-  const currentPlayers = realPlayerCount > 0 ? realPlayerCount : playersCount;
+  const currentPlayers = betAmount === 10 ? playersCount : (realPlayerCount > 0 ? realPlayerCount : playersCount);
   // Effective player count — always ≥ cardQuantity when user has a ticket, prevents display lag
   const effectivePlayerCount = hasTicket ? Math.max(currentPlayers, cardQuantity || 1) : currentPlayers;
   // Dynamic Real-Flow Derash Calculation:
   // Computes the expected pot from confirmed ticketed cartelas across any stake room (10, 20, 50, 100 ETB)
   const expectedPot = effectivePlayerCount * betAmount;
   const calculatedPrize = effectivePlayerCount <= 5 ? expectedPot : Math.floor(expectedPot * 0.8);
-  const currentPrize = prizePool > 0 ? prizePool : calculatedPrize;
+
+  // For Room 10: Derash displays the full gross pot of 60 ETB (from 6 players) while playing.
+  // The 20% platform commission (12 ETB) is cut at victory settlement to award 48 ETB net to the winner.
+  // For Rooms 20, 50, 100: Strictly preserves untouched calculation.
+  const room10Prize = totalPot > 0 ? totalPot : (effectivePlayerCount > 0 ? effectivePlayerCount * 10 : 50);
+  const otherRoomsPrize = prizePool > 0 ? prizePool : calculatedPrize;
+  const currentPrize = betAmount === 10 ? room10Prize : otherRoomsPrize;
+
   const prizeDisplay = isSpectatingHouse && roundPhase === 'playing'
     ? '0'
     : (currentPrize >= 1000 ? `${(currentPrize / 1000).toFixed(1)}K` : `${currentPrize}`);
@@ -41,11 +49,13 @@ export const StatsStrip: React.FC = () => {
   const isLobbyWaiting = roundPhase === 'lobby' && waitingForPlayers;
   const effectiveInRoom = Math.max(activeUsersCount, currentPlayers, hasTicket ? (cardQuantity || 1) : 0);
   const playersDisplay = isLobbyWaiting
-    ? (effectivePlayerCount >= 1 || hasTicket
-        ? '1/2 ⏳'
-        : (effectiveInRoom >= 2
-            ? (lang === 'am' ? `${effectiveInRoom} ተጫዋች` : `${effectiveInRoom} in Room`)
-            : (lang === 'am' ? 'ይጠብቁ ⏳' : 'Waiting ⏳')))
+    ? (betAmount === 10
+        ? '5'
+        : (effectivePlayerCount >= 1 || hasTicket
+            ? '1/2 ⏳'
+            : (effectiveInRoom >= 2
+                ? (lang === 'am' ? `${effectiveInRoom} ተጫዋች` : `${effectiveInRoom} in Room`)
+                : (lang === 'am' ? 'ይጠብቁ ⏳' : 'Waiting ⏳'))))
     : (isSpectatingHouse && roundPhase === 'playing'
         ? (lang === 'am' ? 'እይታ 👁️' : 'Spectate 👁️')
         : `${Math.max(currentPlayers, hasTicket ? (cardQuantity || 1) : 0)}`);

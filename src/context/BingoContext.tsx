@@ -105,6 +105,7 @@ interface BingoContextType {
   toggleAutoPlay: () => void;
   playersCount: number;
   prizePool: number;
+  totalPot: number;
   opponents: Opponent[];
   canWin: boolean;
   winResult: WinResult | null;
@@ -353,6 +354,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Room State
   const [playersCount, setPlayersCount] = useState<number>(0);
   const [prizePool, setPrizePool] = useState<number>(0);
+  const [totalPot, setTotalPot] = useState<number>(0);
   const [opponents, setOpponents] = useState<Opponent[]>([]);
   const [canWin, setCanWin] = useState<boolean>(false);
   const [winResult, setWinResult] = useState<WinResult | null>(null);
@@ -852,6 +854,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (typeof state.lobbyCountdown === 'number') setLobbyCountdown(state.lobbyCountdown);
       if (typeof state.winnerCountdown === 'number') setWinnerCountdown(state.winnerCountdown);
       if (typeof state.playersCount === 'number') setPlayersCount(state.playersCount);
+      if (typeof state.totalPot === 'number') setTotalPot(state.totalPot);
       if (typeof state.winnerPayout === 'number') setPrizePool(state.winnerPayout);
       else if (typeof state.totalPot === 'number') setPrizePool(state.totalPot);
 
@@ -1242,6 +1245,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (typeof data.lobbyCountdown === 'number') setLobbyCountdown(data.lobbyCountdown);
     if (typeof data.winnerCountdown === 'number') setWinnerCountdown(data.winnerCountdown);
     if (typeof data.playersCount === 'number') setPlayersCount(data.playersCount);
+    if (typeof data.totalPot === 'number') setTotalPot(data.totalPot);
     if (typeof data.winnerPayout === 'number') setPrizePool(data.winnerPayout);
     else if (typeof data.totalPot === 'number') setPrizePool(data.totalPot);
     if (typeof data.waitingForPlayers === 'boolean') setWaitingForPlayers(data.waitingForPlayers);
@@ -2023,6 +2027,7 @@ export const BingoProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         toggleAutoPlay,
         playersCount,
         prizePool,
+        totalPot,
         opponents,
         canWin,
         winResult,

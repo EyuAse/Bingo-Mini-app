@@ -115,6 +115,9 @@ app.get('/api/rooms/:id/sync', (req, res) => {
   if (room.nextRoundTickets) {
     room.nextRoundTickets.forEach(list => list.forEach(t => occupiedCartelaIds.push(t.cartelaId)));
   }
+  if (room.opponentCards && room.opponentCards.length > 0) {
+    room.opponentCards.forEach(o => occupiedCartelaIds.push(o.cartelaId));
+  }
 
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.json({
@@ -176,18 +179,29 @@ app.use('/api/admin', adminRouter);
 app.use('/api/admin/telegram', telegramBotRouter);
 app.use('/api/telegram', telegramBotRouter);
 
+// Public Inbound Telegram Webhook aliases (accepts /api/telegram-webhook, /api/telegram/webhook, /telegram-webhook)
+app.post(['/api/telegram-webhook', '/api/telegram/webhook', '/telegram-webhook'], async (req, res) => {
+  try {
+    await telegramBotService.handleWebhookUpdate(req.body);
+    return res.status(200).send('OK');
+  } catch (err) {
+    console.warn('Telegram webhook warning:', err);
+    return res.status(200).send('OK');
+  }
+});
+
 // Serve Static Frontend Bundle in Production (Single-port hosting) with Optimized Caching
 const distPath = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(distPath)) {
-  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20261019_1
+  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20261020_PROD
   // so Telegram Webview never serves stale CEF/WebView2 disk cache from old bot posts
   app.use((req, res, next) => {
     if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) {
       const v = req.query.v;
-      if (v !== '20261019_1') {
+      if (v !== '20261020_PROD') {
         const cleanUrl = req.url.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
         const sep = cleanUrl.includes('?') ? '&' : '?';
-        const redirectUrl = `${cleanUrl}${sep}v=20261019_1`;
+        const redirectUrl = `${cleanUrl}${sep}v=20261020_PROD`;
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
@@ -206,7 +220,7 @@ if (fs.existsSync(distPath)) {
       if (isHashedAsset) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       } else if (isAudio) {
-        res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=600, must-revalidate');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
       } else if (normalizedPath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
@@ -259,8 +273,11 @@ if (process.env.NODE_ENV !== 'test') {
     telegramBotService.setMyCommands().catch(err => {
       console.warn('⚠️ [TelegramBotService] Auto-sync bot commands deferred:', err.message || err);
     });
-    telegramBotService.setChatMenuButton('commands').catch(err => {
+    telegramBotService.setChatMenuButton('web_app').catch(err => {
       console.warn('⚠️ [TelegramBotService] Auto-sync chat menu button deferred:', err.message || err);
+    });
+    telegramBotService.setWebhook().catch(err => {
+      console.warn('⚠️ [TelegramBotService] Auto-sync webhook deferred:', err.message || err);
     });
   });
 }

@@ -14,14 +14,20 @@ export const getBackendOrigin = (): string => {
 
   const hostname = window.location.hostname;
 
-  // Local development environments
+  // Local development environments & test tunnels (e.g. loca.lt, ngrok)
   if (
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname.startsWith('192.168.') ||
-    hostname.endsWith('.local')
+    hostname.endsWith('.local') ||
+    hostname.endsWith('.loca.lt') ||
+    hostname.endsWith('.trycloudflare.com') ||
+    hostname.endsWith('.lhr.life') ||
+    hostname.includes('pinggy') ||
+    hostname.includes('ngrok') ||
+    hostname.includes('localtunnel')
   ) {
-    return 'http://localhost:5000';
+    return window.location.origin;
   }
 
   // Allow explicit override via environment variable if defined
@@ -47,7 +53,12 @@ export const getApiBase = (): string => {
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname.startsWith('192.168.') ||
-    hostname.endsWith('.local')
+    hostname.endsWith('.local') ||
+    hostname.endsWith('.loca.lt') ||
+    hostname.endsWith('.trycloudflare.com') ||
+    hostname.endsWith('.lhr.life') ||
+    hostname.includes('ngrok') ||
+    hostname.includes('localtunnel')
   ) {
     return '/api';
   }
