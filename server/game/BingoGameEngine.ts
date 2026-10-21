@@ -139,6 +139,13 @@ class BingoGameEngine {
   // Player Auto/Manual Mode Preference Registry (userId -> isAutoPlay)
   private playerModes: Map<string, boolean> = new Map();
 
+  // Phase 2: Room 10 Anti-Churn & Loss-Streak Session Tracker (userId -> streak stats)
+  private playerSessionStreaks: Map<string, { consecutiveLosses: number; recentWins: number; lastActive: number }> = new Map();
+
+  public getPlayerSessionStreak(userId: string) {
+    return this.playerSessionStreaks.get(userId);
+  }
+
   private constructor() {
     this.initializeUnifiedArena();
     this.loadBotAccounts();
@@ -1263,13 +1270,34 @@ class BingoGameEngine {
           }
         }
 
-        if (isRoom10 && distinctRealPlayers === 1) {
-          // Room 10 Calibrated 50/50 Win Engine:
-          // The single real player has a calibrated 50% probability of winning;
-          // the 5 standby bots collectively share a 50% probability of winning.
-          room.targetWinnerType = Math.random() < 0.50 ? 'real' : 'bot';
+        if (isRoom10) {
+          // Room 10 Fair Ticket-Proportional Lottery Engine:
+          // Every active card (real player tickets + standby bots) has an equal probability to win.
+          // For 1 real player + 5 bots (6 cards): Real win prob = 1/6 ≈ 16.67%, Bot win prob = 5/6 ≈ 83.33%.
+          // House EV = (5/6)*(+10) + (1/6)*(-38) = +2.00 ETB profit per game (+20% rake).
+          // For 2 real players + 5 bots (7 cards): Real win prob = 2/7 ≈ 28.57% (14.28% per player).
+          // House EV = (5/7)*(+20) + (2/7)*(-36) = +4.00 ETB profit per game (+20% rake).
+          const botCount = room.opponentCards.length;
+          const totalCards = realCartelaCount + botCount;
+          const baseRealWinProb = totalCards > 0 ? (realCartelaCount / totalCards) : 0.1667;
+          let effectiveRealWinProb = baseRealWinProb;
+
+          // Phase 2: In-Memory Loss-Streak & Session Anti-Churn Guard (Room 10 Single Player)
+          if (distinctRealPlayers === 1) {
+            const singleUserId = room.tickets.keys().next().value;
+            if (singleUserId) {
+              const streak = this.playerSessionStreaks.get(singleUserId);
+              // If single player has experienced 5 or more consecutive losses, softly boost win probability
+              // to ~25% so they hit a win, recover stake, and stay engaged without bleeding house profit.
+              if (streak && streak.consecutiveLosses >= 5) {
+                effectiveRealWinProb = 0.25;
+              }
+            }
+          }
+
+          room.targetWinnerType = Math.random() < effectiveRealWinProb ? 'real' : 'bot';
         } else {
-          // Standard odds for all other configurations (rooms 20, 50, 100 or multi-player room 10)
+          // Rooms 20, 50, 100 logic flow and odds remain 100% UNTOUCHED
           room.targetWinnerType = room.opponentCards.length > 0
             ? (Math.random() < 0.20 ? 'bot' : 'real')
             : 'real';
@@ -2567,6 +2595,36 @@ class BingoGameEngine {
       };
 
       room.winResult = winResult;
+
+      // Phase 2: In-Memory Loss-Streak & Session Anti-Churn Tracker (Room 10 ONLY)
+      const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID;
+      if (isRoom10) {
+        const winningUserIds = new Set(realWinners.map(rw => rw.userId).filter(Boolean));
+        const now = Date.now();
+
+        for (const userId of room.tickets.keys()) {
+          const streak = this.playerSessionStreaks.get(userId) || { consecutiveLosses: 0, recentWins: 0, lastActive: now };
+          streak.lastActive = now;
+
+          if (winningUserIds.has(userId)) {
+            streak.consecutiveLosses = 0;
+            streak.recentWins += 1;
+          } else {
+            streak.consecutiveLosses += 1;
+          }
+          this.playerSessionStreaks.set(userId, streak);
+        }
+
+        // Periodic cleanup: keep memory bounded by removing sessions inactive for > 2 hours
+        if (this.playerSessionStreaks.size > 200) {
+          const twoHoursAgo = now - 2 * 60 * 60 * 1000;
+          for (const [uid, data] of this.playerSessionStreaks.entries()) {
+            if (data.lastActive < twoHoursAgo) {
+              this.playerSessionStreaks.delete(uid);
+            }
+          }
+        }
+      }
 
       // Authoritative DB Finalization: Always record round winner & update tickets in Neon DB (for real, split, or bot victory)
       if (room.currentRoundId) {

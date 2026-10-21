@@ -660,6 +660,66 @@ Following live testing on `@lomibingo_dev_bot`, the user identified key UX obser
   4. **Post-Game Transition**: After winner celebration, room returns to lobby with 5 standby bots (not "2 in Room").
   5. **Other Rooms Isolation**: Rooms 20, 50, 100 strictly maintain 0 bots and require 2 human players.
 
+---
+
+## 14. Section 14: Room 10 Win Probability & Bankroll Protection Engine (Phase-by-Phase)
+
+> **Non-Negotiable Directives**:
+> 1. **ZERO UI Changes**: No frontend components, no banners, no text changes, no cards, no buttons are touched. The user interface remains 100% identical.
+> 2. **ZERO Impact on Rooms 20, 50, 100**: Rooms 20, 50, and 100 ETB remain strictly human-only, 0 bots, peer-to-peer matchmaking, and 100% untouched.
+> 3. **Pure Backend Calculation**: The entire fix is isolated to server-side win probability calculation in `server/game/BingoGameEngine.ts` for Room 10.
+
+### 14.1 Mathematical Root Cause Analysis
+- **Current Leak**: In `server/game/BingoGameEngine.ts` (lines 1266–1276), Room 10 awards a **50% win probability to a single real player** against 5 standby bots, and an **80% win probability to 2 real players**.
+- **The Financial Deficit**:
+  - For 1 player: 
+    - Real player bet: 10 ETB. Net winner payout: 48 ETB.
+    - When Bot wins (50%): House makes $+10\text{ ETB}$.
+    - When Real player wins (50%): House pays 48 ETB while collecting 10 ETB (Net: $-38\text{ ETB}$).
+    - **Expected House Loss**: $0.50(+10) + 0.50(-38) = \mathbf{-14.00\text{ ETB per game}}$.
+  - For 2 players:
+    - Real players bet: 20 ETB. Net winner payout: 56 ETB.
+    - Real player win rate = 80%!
+    - **Expected House Loss**: $0.20(+20) + 0.80(-36) = \mathbf{-24.80\text{ ETB per game}}$.
+
+### 14.2 Phase-by-Phase Implementation Steps
+
+#### Phase 1: Server-Side Ticket-Proportional Probability Engine (Room 10 ONLY)
+- **Target File**: `server/game/BingoGameEngine.ts`
+- **Target Function**: `startMasterRound()` (Lines 1266–1276)
+- **Changes**:
+  - Replace the hardcoded `0.50` (1 real) and `0.20` (2 real) odds with the **lottery ticket-proportional formula**:
+    $$P(\text{Real Win}) = \frac{N_{\text{real}}}{N_{\text{real}} + N_{\text{bot}}}$$
+  - Guarded strictly with `if (isRoom10) { ... } else { /* Rooms 20, 50, 100 untouched */ }`.
+  - Result: 1 Real + 5 Bots = **$1/6$ ($16.67\%$)** $\rightarrow$ **+2.00 ETB house profit per game (+20% rake)**.
+  - Result: 2 Real + 5 Bots = **$2/7$ ($28.57\%$)** $\rightarrow$ **+4.00 ETB house profit per game (+20% rake)**.
+
+#### Phase 2: In-Memory Loss-Streak & Session Anti-Churn Guard
+- **Target File**: `server/game/BingoGameEngine.ts`
+- **Changes**:
+  - Add `playerSessionStreaks = new Map<string, { consecutiveLosses: number; recentWins: number }>()`.
+  - In `startMasterRound()`: if active real player has $\ge 4$ consecutive losses, softly boost their odds to $35\% - 40\%$ so they hit a win and recover stake.
+  - In `processRoundVictory()`: reset consecutive losses on win; increment on loss.
+
+#### Phase 3: Multi-Player Real Winner Selection & Tie-Breaking
+- **Target File**: `server/game/BingoGameEngine.ts`
+- **Changes**:
+  - When `room.targetWinnerType === 'real'` and multiple real players participate, choose the winning real card uniformly at random among all real player cards.
+
+#### Phase 4: Automated Mathematical Simulation Test Suite
+- **Target File**: `server/scripts/test_win_probability_simulation.ts` (New Script)
+- **Verification Tests**:
+  - 1,000 games simulation with 1 player: verify win rate $\sim 16.7\% - 20\%$ and strictly positive house profit ($+1,800$ to $+2,100$ ETB).
+  - 1,000 games simulation with 2 players: verify win rate $\sim 28.5\%$ and strictly positive house profit ($+3,700$ to $+4,100$ ETB).
+  - Streak test: verify 4 losses triggers soft boost.
+  - Isolation test: verify Rooms 20, 50, 100 odds, flows, and 0 bots are 100% untouched.
+
+#### Phase 5: TypeScript Check & Verification
+- Run `npx tsc --noEmit` (0 errors).
+- Run `npm run build` (clean Vite bundle).
+- Run full suite of test scripts to guarantee zero regressions.
+
+
 
 
 
