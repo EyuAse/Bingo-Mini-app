@@ -19,6 +19,7 @@ export const BettingBar: React.FC = () => {
     roundPhase,
     waitingForPlayers,
     realPlayerCount,
+    playersCount,
     activeUsersCount,
     lobbyCountdown,
     hasTicket,
@@ -88,7 +89,7 @@ export const BettingBar: React.FC = () => {
                   ? (activeUsersCount >= 2
                       ? (lang === 'am' ? `👥 ተጫዋች በመጠበቅ ላይ...` : `👥 Waiting for 2nd player...`)
                       : (lang === 'am' ? '⏳ ተጫዋች በመጠበቅ ላይ... (1/2)' : '⏳ Waiting for opponent (1/2)'))
-                  : (lang === 'am' ? `🟢 ዝግጁ! በ ${lobbyCountdown} ሰከንድ ይጀምራል` : `🟢 Ready! Starts in ${lobbyCountdown}s (${betAmount === 10 ? 6 : Math.max(realPlayerCount, 2)}P)`)}
+                  : (lang === 'am' ? `🟢 ዝግጁ! በ ${lobbyCountdown} ሰከንድ ይጀምራል` : `🟢 Ready! Starts in ${lobbyCountdown}s (${betAmount === 10 ? Math.max(playersCount, 6) : Math.max(realPlayerCount, 2)}P)`)}
               </span>
             </div>
           </div>
@@ -127,7 +128,7 @@ export const BettingBar: React.FC = () => {
               )
             ) : (
               <span className="presence-hint countdown-active">
-                <i className="fa-solid fa-clock"></i> {lang === 'am' ? `${betAmount === 10 ? 6 : Math.max(realPlayerCount, 2)} ተጫዋቾች ዝግጁ ናቸው! በ ${lobbyCountdown}s ይጀምራል` : `${betAmount === 10 ? 6 : Math.max(realPlayerCount, 2)} ready! Starts in ${lobbyCountdown}s`}
+                <i className="fa-solid fa-clock"></i> {lang === 'am' ? `${betAmount === 10 ? Math.max(playersCount, 6) : Math.max(realPlayerCount, 2)} ተጫዋቾች ዝግጁ ናቸው! በ ${lobbyCountdown}s ይጀምራል` : `${betAmount === 10 ? Math.max(playersCount, 6) : Math.max(realPlayerCount, 2)} ready! Starts in ${lobbyCountdown}s`}
               </span>
             )}
           </div>

@@ -29,14 +29,10 @@ export const StatsStrip: React.FC = () => {
   // Dynamic Real-Flow Derash Calculation:
   // Computes the expected pot from confirmed ticketed cartelas across any stake room (10, 20, 50, 100 ETB)
   const expectedPot = effectivePlayerCount * betAmount;
-  const calculatedPrize = effectivePlayerCount <= 5 ? expectedPot : Math.floor(expectedPot * 0.8);
+  const calculatedPrize = effectivePlayerCount <= 5 ? (betAmount === 10 ? Math.floor(expectedPot * 0.8) : expectedPot) : Math.floor(expectedPot * 0.8);
 
-  // For Room 10: Derash displays the full gross pot of 60 ETB (from 6 players) while playing.
-  // The 20% platform commission (12 ETB) is cut at victory settlement to award 48 ETB net to the winner.
-  // For Rooms 20, 50, 100: Strictly preserves untouched calculation.
-  const room10Prize = totalPot > 0 ? totalPot : (effectivePlayerCount > 0 ? effectivePlayerCount * 10 : 50);
-  const otherRoomsPrize = prizePool > 0 ? prizePool : calculatedPrize;
-  const currentPrize = betAmount === 10 ? room10Prize : otherRoomsPrize;
+  // Derash strictly displays the net prize pool after platform commission (e.g. 48 ETB on 60 ETB pot)
+  const currentPrize = prizePool > 0 ? prizePool : calculatedPrize;
 
   const prizeDisplay = isSpectatingHouse && roundPhase === 'playing'
     ? '0'

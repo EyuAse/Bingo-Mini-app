@@ -560,6 +560,106 @@ Following live testing on `@lomibingo_dev_bot`, the user identified key UX obser
   7. **Next Round**: Verify 5 new bots and 5 new random cartelas appear (dynamic rotation working).
   8. **Multi-Room Check**: Open Room 20, 50, or 100 — verify strictly 0 bots and waiting for real human players.
 
+---
+
+## 14. Room 10 Multi-Player Standby Bot Retention, UI Presence Unification & Net Derash (80%) Payout Architecture
+
+> [!IMPORTANT]
+> ### 🎯 Problem Diagnosis & User Issue Summary
+> Testing across multiple devices in Room 10 revealed four interrelated discrepancies:
+> 1. **The 2-Player Bot Disappearance Bug**:
+>    - *Symptom*: When entering Room 10, the lobby shows 5 players (standby bots). When Player 1 bets, it correctly increases to 6 players. When Player 2 connects on another device, it shows 6 players until Player 2 places a bet. However, the moment Player 2 bets, the player count abruptly drops from 6 down to 2 players!
+>    - *Root Cause*: In `BingoGameEngine.ts` (`syncRoom10StandbyBots`), an outdated rule `if (distinctRealPlayers <= 1) { ... } else { room.opponentCards = []; }` was actively executed when `distinctRealPlayers >= 2`. The engine mistakenly assumed standby bots should "yield completely" and leave the room once two human players joined, wiping all 5 bots and dumping total cartelas from 7 (2 human + 5 bots) down to 2 (2 human + 0 bots).
+> 2. **Presence vs. Bot Count Discrepancy ("2 in Room" bug)**:
+>    - *Symptom*: When 2 devices enter Room 10 without betting, the top header bar shows `PLAYERS: 5`, while the matchmaking status pill simultaneously displays `🟡 2 in Room`, the banner announces `👥 2 players in room! Buy ticket to play!`, and the bottom buy bar shows `5 players waiting`.
+>    - *Root Cause*: In `CurrentCallBanner.tsx`, `isMultipleInRoom` evaluated `activeUsersCount >= 2` before considering Room 10's standby bots (`betAmount === 10`). It displayed raw socket connection presence (`activeUsersCount = 2`) instead of recognizing that Room 10 has 5 standby bots already pre-seeded and waiting.
+> 3. **Post-Game Reset Discrepancy ("2 in Room" after round finishes)**:
+>    - *Symptom*: When the round finishes and transitions from the winner celebration back to the lobby, the UI shows `2 in Room`, only counting the connected human sockets instead of showing the 5 standby bots + players.
+>    - *Root Cause*: On lobby reset, `room.tickets` is cleared and `waitingForPlayers` is set to `true`. Because the 2 connected devices remained in the room, `activeUsersCount >= 2` triggered the presence banner rather than the Room 10 standby bot lobby state.
+> 4. **Derash (ደራሽ) Showing Gross Pot (60 ETB) Instead of Exact Net Winner Payout (48 ETB)**:
+>    - *Symptom*: In Room 10, when 6 players participate (1 human + 5 bots = 60 ETB pot), the top bar displayed `DERASH: 60`. When the player won, the actual wallet payout was 48 ETB (after the 20% platform commission).
+>    - *Root Cause*: In `StatsStrip.tsx` and `LivePlayers.tsx`, `room10Prize` explicitly overrode `prizePool` (`winnerPayout`) to display `totalPot` (the gross pot, 60 ETB). In Ethiopian Bingo, "Derash" (ደራሽ) strictly represents the **net take-home prize** that the winner receives after the house commission (e.g., 60 ETB gross * 80% = 48 ETB net Derash).
+
+---
+
+### Core Architecture Invariants
+
+1. **Persistent Standby Bots in Room 10**:
+   - The 5 authentic Ethiopian standby bots **never leave** Room 10. They remain active and participate alongside all real human players:
+     - 0 real players with tickets: **5 standby bots** waiting in lobby (5 Players).
+     - 1 real player with 1 ticket: 1 real + 5 bots = **6 Players** (Gross: 60 ETB, Net Derash: **48 ETB**).
+     - 2 real players with 1 ticket each: 2 real + 5 bots = **7 Players** (Gross: 70 ETB, Net Derash: **56 ETB**).
+     - 3 real players with 1 ticket each: 3 real + 5 bots = **8 Players** (Gross: 80 ETB, Net Derash: **64 ETB**).
+     - 1 real player with 2 tickets: 2 tickets + 5 bots = **7 Cartelas** (Gross: 70 ETB, Net Derash: **56 ETB**).
+2. **Individual Cartela Yielding Priority**:
+   - If a real human player manually selects a cartela ID currently held by a bot, the bot automatically yields that specific cartela to the human and re-rolls to a random untaken number (1 to 400). All 5 bots remain in the match.
+3. **Accurate Net Derash Display (80% Take-Home Rule)**:
+   - Derash (`status-strip-val text-green` in `StatsStrip.tsx`, `live-pool-display` in `LivePlayers.tsx`, and victory modals) **must strictly display the net winner payout** after the 20% platform fee:
+     $$\text{Derash} = \text{Total Pot} - \text{House Fee} = \text{Total Cartelas} \times 10 \times 0.80$$
+   - 5 Cartelas (Lobby Standby): 40 ETB (or 48 ETB projected starting prize).
+   - 6 Cartelas: **48 ETB**.
+   - 7 Cartelas: **56 ETB**.
+   - 8 Cartelas: **64 ETB**.
+4. **Unified Lobby Presence & Matchmaking Messaging**:
+   - No conflicting counters. In Room 10, the UI must never show "2 in Room" while simultaneously showing "5 players waiting".
+   - Total player counters always use `playersCount` (real cartelas + active standby bots).
+   - Banner and button hints in `BettingBar.tsx` dynamically display `playersCount` (e.g., "7 ready! Starts in 35s" when 2 players bet), removing legacy hardcoded `6`.
+5. **Strict Multi-Room Isolation**:
+   - Rooms 20, 50, and 100 ETB remain **100% human-only**: 0 bots, 0 pre-seeded pot, and require $\ge 2$ distinct real human players to begin the countdown.
+
+---
+
+### Implementation Phases
+
+#### Phase 1: Server Standby Bot Retention in Room 10
+- **Target File**: `server/game/BingoGameEngine.ts`
+- **Changes**:
+  1. Modify `syncRoom10StandbyBots(room: GameRoomState, forceRotate: boolean = false)`:
+     - Remove the `distinctRealPlayers <= 1` condition that wiped `room.opponentCards = []`.
+     - Ensure Room 10 **always maintains exactly 5 standby bots**, whether `room.tickets.size` is 0, 1, 2, or more.
+     - When real players buy tickets, standby bots only adjust their cartela numbers if there is a direct ID collision with a player's selection (bot yielding).
+  2. Modify `startMasterRound()`:
+     - Ensure `this.syncRoom10StandbyBots(room)` is invoked for Room 10 regardless of whether `distinctRealPlayers === 1` or `distinctRealPlayers >= 2`.
+     - Bot cards stay in `room.opponentCards`, and real player tickets stay in `room.tickets`.
+     - Recalculate total pot and net winner payout based on all participating cartelas (real + bots).
+
+#### Phase 2: Server-Side Net Derash & Commission Tier Synchronization
+- **Target File**: `server/game/BingoGameEngine.ts`
+- **Changes**:
+  1. In `recalculatePot(room: GameRoomState)`:
+     - For Room 10 (`room.id === 'room-10' || room.id === ARENA_ROOM_ID`), ensure the 20% platform commission is properly applied so `room.winnerPayout` reflects the net 80% payout (48 ETB on 60 ETB pot, 56 ETB on 70 ETB pot, 64 ETB on 80 ETB pot).
+     - Ensure `broadcastRoomState` transmits both `totalPot` (gross) and `winnerPayout` (net Derash).
+
+#### Phase 3: Frontend Net Derash (ደራሽ) Display Alignment
+- **Target Files**: `src/components/bingo/StatsStrip.tsx`, `src/components/bingo/LivePlayers.tsx`
+- **Changes**:
+  1. In `StatsStrip.tsx`:
+     - Replace `const room10Prize = totalPot > 0 ? totalPot : ...` with `prizePool` (`winnerPayout`).
+     - Derash in the top status bar will now accurately display the net prize (e.g., 48 ETB for 6 players, 56 ETB for 7 players) instead of the gross pot.
+  2. In `LivePlayers.tsx`:
+     - Replace `const poolDisplay = betAmount === 10 ? (totalPot > 0 ? totalPot : ...) : prizePool` with `prizePool`.
+
+#### Phase 4: Frontend Presence & Matchmaking Guide Unification
+- **Target Files**: `src/components/bingo/CurrentCallBanner.tsx`, `src/components/bingo/BettingBar.tsx`
+- **Changes**:
+  1. In `CurrentCallBanner.tsx`:
+     - Update lobby status logic so Room 10 prioritizes its 5 standby bots.
+     - Eliminate misleading "2 in Room" display when 2 devices are connected in Room 10.
+     - When in lobby waiting: display "5 Ready" / "5 Players Waiting · Buy ticket to play!".
+     - When countdown starts with 2 real players: display "Game starts in Xs! (7 Players)".
+  2. In `BettingBar.tsx`:
+     - Replace hardcoded `${betAmount === 10 ? 6 : Math.max(realPlayerCount, 2)}` with dynamic `playersCount` (which reflects real cartelas + 5 bots = 6, 7, 8, etc.).
+     - Update lobby matchmaking hints to be consistent with Room 10 standby bots.
+
+#### Phase 5: Verification & Automated Regression Suite
+- **Target Files**: `server/scripts/test_phase4_pot_commission.ts`, `server/scripts/test_section11_lobby_flow.ts`, `server/scripts/simulate_room10_multi_real_players.ts`
+- **Verification Checklist**:
+  1. **Idle Lobby**: Room 10 shows 5 standby bots, 0 real players.
+  2. **1 Player Bets**: Player count increases to 6, Derash shows 48 ETB, countdown begins.
+  3. **2 Players Bet (Multi-Device)**: Player count increases to 7 (2 real + 5 bots), Derash shows 56 ETB (70 ETB * 80%). Standby bots do NOT disappear.
+  4. **Post-Game Transition**: After winner celebration, room returns to lobby with 5 standby bots (not "2 in Room").
+  5. **Other Rooms Isolation**: Rooms 20, 50, 100 strictly maintain 0 bots and require 2 human players.
+
 
 
 

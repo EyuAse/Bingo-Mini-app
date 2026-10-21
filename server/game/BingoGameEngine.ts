@@ -279,7 +279,7 @@ class BingoGameEngine {
       if (!r) return 0;
       const isRoom10 = roomId === 'room-10' || roomId === ARENA_ROOM_ID;
       if (isRoom10) {
-        if (r.opponentCards.length === 0 && r.tickets.size <= 1) {
+        if (r.opponentCards.length === 0) {
           this.syncRoom10StandbyBots(r);
         }
         return this.getRoomPlayersCount(r);
@@ -974,14 +974,21 @@ class BingoGameEngine {
     room.realPlayerCount = this.getRealCartelaCount(room);
 
     // Commission tier based on total cartelas count:
-    // <= 5 cartelas: 0% commission (Derash is 100% of pot)
-    // > 5 cartelas: 20% commission cut
-    if (totalCartelas <= 5) {
-      room.commissionEnabled = false;
-      room.commissionPercent = 0;
-    } else {
+    // Room 10 operates with 5 standby bots + players with standard 20% platform commission,
+    // ensuring net winner payout is strictly 80% (48 ETB on 60 ETB, 56 ETB on 70 ETB, etc.)
+    // Rooms 20, 50, 100 logic flow remains 100% UNTOUCHED (0% when <= 5 cartelas, 20% when > 5)
+    const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID;
+    if (isRoom10) {
       room.commissionEnabled = true;
       room.commissionPercent = 20;
+    } else {
+      if (totalCartelas <= 5) {
+        room.commissionEnabled = false;
+        room.commissionPercent = 0;
+      } else {
+        room.commissionEnabled = true;
+        room.commissionPercent = 20;
+      }
     }
 
     // Sum all actual bets placed by real players + bots (if any)
@@ -996,10 +1003,10 @@ class BingoGameEngine {
 
   /**
    * Synchronizes Room 10 standby bots in real-time.
-   * When <= 1 real player is present, ensures exactly 5 distinct Ethiopian standby bots
-   * are persistently pre-seeded in the lobby with non-overlapping cartelas.
-   * When >= 2 real human players join, standby bots yield cleanly to real players.
-   * Rooms 20, 50, 100 are strictly excluded from this logic.
+   * Ensures exactly 5 distinct Ethiopian standby bots are persistently pre-seeded
+   * in Room 10 with non-overlapping cartelas, regardless of whether 0, 1, 2, or more real players join.
+   * If real players choose cartelas held by bots, bots automatically yield and re-roll.
+   * Rooms 20, 50, 100 are strictly excluded from this logic (strictly 0 bots).
    */
   private syncRoom10StandbyBots(room: GameRoomState, forceRotate: boolean = false) {
     const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID;
@@ -1008,35 +1015,50 @@ class BingoGameEngine {
       return;
     }
 
-    const distinctRealPlayers = room.tickets.size;
-    if (distinctRealPlayers <= 1) {
-      if (forceRotate || room.opponentCards.length !== 5 || !room.opponentCards.every(o => isStandbyBotId(o.botUserId))) {
-        room.opponentCards = [];
-        const sampledBots = sampleStandbyBots(5);
-        const assignedIds = new Set<number>();
-        room.tickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
+    // Room 10 persistently maintains 5 authentic Ethiopian standby bots
+    if (forceRotate || room.opponentCards.length !== 5 || !room.opponentCards.every(o => isStandbyBotId(o.botUserId))) {
+      room.opponentCards = [];
+      const sampledBots = sampleStandbyBots(5);
+      const assignedIds = new Set<number>();
+      room.tickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
+      if (room.nextRoundTickets) {
+        room.nextRoundTickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
+      }
 
-        for (let i = 0; i < sampledBots.length; i++) {
-          let botCartelaId = Math.floor(1 + Math.random() * 400);
-          while (assignedIds.has(botCartelaId)) {
-            botCartelaId = Math.floor(1 + Math.random() * 400);
-          }
-          assignedIds.add(botCartelaId);
-          const botProfile = sampledBots[i];
-          room.opponentCards.push({
-            botUserId: botProfile.id,
-            cartelaId: botCartelaId,
-            cardMatrix: generateCardFromId(botCartelaId),
-            opponentName: botProfile.name,
-            stakeAmount: room.stakeAmount,
-            isHouseBot: i === 0
-          });
+      for (let i = 0; i < sampledBots.length; i++) {
+        let botCartelaId = Math.floor(1 + Math.random() * 400);
+        while (assignedIds.has(botCartelaId)) {
+          botCartelaId = Math.floor(1 + Math.random() * 400);
         }
+        assignedIds.add(botCartelaId);
+        const botProfile = sampledBots[i];
+        room.opponentCards.push({
+          botUserId: botProfile.id,
+          cartelaId: botCartelaId,
+          cardMatrix: generateCardFromId(botCartelaId),
+          opponentName: botProfile.name,
+          stakeAmount: room.stakeAmount,
+          isHouseBot: i === 0
+        });
       }
     } else {
-      // >= 2 real human players: Standby bots yield cleanly to real players
-      if (room.opponentCards.some(o => isStandbyBotId(o.botUserId))) {
-        room.opponentCards = [];
+      // Standby bots are already present; ensure none of their cartela IDs conflict with real player tickets
+      const assignedIds = new Set<number>();
+      room.tickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
+      if (room.nextRoundTickets) {
+        room.nextRoundTickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
+      }
+
+      for (const bot of room.opponentCards) {
+        if (assignedIds.has(bot.cartelaId)) {
+          let newBotCartelaId = Math.floor(1 + Math.random() * 400);
+          while (assignedIds.has(newBotCartelaId) || room.opponentCards.some(o => o !== bot && o.cartelaId === newBotCartelaId)) {
+            newBotCartelaId = Math.floor(1 + Math.random() * 400);
+          }
+          console.log(`🤝 [Room 10 Bot Auto-Yield] Bot "${bot.opponentName}" yielded colliding Cartela #${bot.cartelaId} -> new Cartela #${newBotCartelaId}`);
+          bot.cartelaId = newBotCartelaId;
+          bot.cardMatrix = generateCardFromId(newBotCartelaId);
+        }
       }
     }
     this.recalculatePot(room);
@@ -1208,11 +1230,12 @@ class BingoGameEngine {
         // Rooms 20, 50, 100 strictly require >= 2 real human players.
         room.mode = 'active';
         room.waitingForPlayers = false;
-        if (isRoom10 && distinctRealPlayers === 1) {
+        if (isRoom10) {
           // Room 10 Dynamic Standby Bot Matchmaker:
           // Ensure the 5 standby bots from the 200 roster are active and calibrated
           this.syncRoom10StandbyBots(room);
         } else {
+          // Rooms 20, 50, 100 logic flow remains 100% UNTOUCHED
           room.opponentCards = [];
           if (realCartelaCount >= 11) {
             if (this.botAccounts.length < 3) await this.loadBotAccounts();

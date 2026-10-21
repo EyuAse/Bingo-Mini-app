@@ -45,7 +45,7 @@ export const CurrentCallBanner: React.FC = () => {
   // Determine matchmaking status in lobby: countdown is strictly active when not waitingForPlayers!
   const isCountdown = roundPhase === 'lobby' && !waitingForPlayers;
   const is1Ready = roundPhase === 'lobby' && waitingForPlayers && (realPlayerCount >= 1 || hasTicket);
-  const isMultipleInRoom = roundPhase === 'lobby' && waitingForPlayers && !is1Ready && activeUsersCount >= 2;
+  const isMultipleInRoom = roundPhase === 'lobby' && waitingForPlayers && !is1Ready && activeUsersCount >= 2 && betAmount !== 10;
   const isWaitingAlone = roundPhase === 'lobby' && waitingForPlayers && !is1Ready && !isMultipleInRoom;
 
   return (
