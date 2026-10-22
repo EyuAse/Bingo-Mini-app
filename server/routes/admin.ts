@@ -527,22 +527,48 @@ router.post('/withdrawals/:id/reject', requireAdmin, async (req: AuthenticatedRe
  */
 router.get('/stats', requireAdmin, async (_req, res) => {
   try {
-    const userCountRes = await query(
-      "SELECT COUNT(*) as count FROM users WHERE role = 'player' AND (is_bot IS NULL OR is_bot = false) AND full_name NOT LIKE 'Synthetic%'"
-    );
-    const depositSumRes = await query("SELECT COALESCE(SUM(amount), 0) as total FROM deposit_requests WHERE status = 'approved'");
-    const withdrawSumRes = await query("SELECT COALESCE(SUM(amount), 0) as total FROM withdrawal_requests WHERE status = 'approved'");
-    const gamesCountRes = await query("SELECT COUNT(*) as count FROM game_rounds WHERE phase = 'ended'");
-    const houseProfRes = await query("SELECT COALESCE(SUM(platform_fee), 0) as total FROM game_rounds");
+    const [userCountRes, depositSumRes, withdrawSumRes, roundsStatsRes, netCashRes] = await Promise.all([
+      query(
+        "SELECT COUNT(*) as count FROM users WHERE role = 'player' AND (is_bot IS NULL OR is_bot = false) AND full_name NOT LIKE 'Synthetic%'"
+      ),
+      query("SELECT COALESCE(SUM(amount), 0) as total FROM deposit_requests WHERE status = 'approved'"),
+      query("SELECT COALESCE(SUM(amount), 0) as total FROM withdrawal_requests WHERE status = 'approved'"),
+      query(`
+        SELECT 
+          COUNT(*) as total_games_played,
+          COUNT(*) FILTER (WHERE started_at >= CURRENT_DATE) as today_games_played,
+          COALESCE(SUM(platform_fee), 0) as total_house_revenue,
+          COALESCE(SUM(platform_fee) FILTER (WHERE started_at >= CURRENT_DATE), 0) as today_house_revenue
+        FROM game_rounds
+      `),
+      query(`
+        SELECT 
+          COALESCE(SUM(amount) FILTER (WHERE wt.type = 'bet'), 0) -
+          COALESCE(SUM(amount) FILTER (WHERE wt.type = 'win'), 0) -
+          COALESCE(SUM(amount) FILTER (WHERE wt.type = 'refund'), 0) as today_net_cash_profit
+        FROM wallet_transactions wt
+        JOIN users u ON wt.user_id = u.id
+        WHERE wt.created_at >= CURRENT_DATE
+          AND u.role = 'player'
+          AND (u.is_bot IS NULL OR u.is_bot = false)
+      `)
+    ]);
+
+    const rStats = roundsStatsRes.rows[0] || {};
+    const netCash = parseFloat(netCashRes.rows[0]?.today_net_cash_profit || '0');
 
     return res.json({
       success: true,
       stats: {
-        totalPlayers: parseInt(userCountRes.rows[0].count),
-        totalDeposits: parseFloat(depositSumRes.rows[0].total),
-        totalWithdrawals: parseFloat(withdrawSumRes.rows[0].total),
-        totalGamesPlayed: parseInt(gamesCountRes.rows[0].count),
-        totalHouseRevenue: parseFloat(houseProfRes.rows[0].total)
+        totalPlayers: parseInt(userCountRes.rows[0]?.count || '0', 10),
+        totalDeposits: parseFloat(depositSumRes.rows[0]?.total || '0'),
+        totalWithdrawals: parseFloat(withdrawSumRes.rows[0]?.total || '0'),
+        totalGamesPlayed: parseInt(rStats.total_games_played || '0', 10),
+        todayGamesPlayed: parseInt(rStats.today_games_played || '0', 10),
+        totalHouseRevenue: parseFloat(rStats.total_house_revenue || '0'),
+        todayHouseRevenue: parseFloat(rStats.today_house_revenue || '0'),
+        todayNetCashProfit: netCash,
+        defaultCommissionRate: 20
       }
     });
   } catch (error: any) {

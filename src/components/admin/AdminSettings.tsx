@@ -132,7 +132,7 @@ export const AdminSettings: React.FC = () => {
                   </span>
                 </div>
                 <p className="control-desc">
-                  Automatically reserve a commission percentage from each round's prize pool before winner payout (Default: 10%).
+                  Automatically reserve a commission percentage from each round's prize pool before winner payout (Default: 20%).
                 </p>
               </div>
               <label className="dash-toggle-switch">
@@ -156,7 +156,7 @@ export const AdminSettings: React.FC = () => {
                   <span className="control-val-pill gold">{commissionRate}% Cut</span>
                 </div>
                 <p className="control-desc">
-                  Adjust platform profit percentage cut per 75-ball game round (Default: 10%).
+                  Adjust platform profit percentage cut per 75-ball game round (Default: 20%).
                 </p>
               </div>
               <div className="settings-slider-box">

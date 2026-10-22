@@ -8,6 +8,7 @@ export const CashFlowAnalytics: React.FC = () => {
     totalDepositedToday,
     totalWithdrawnToday,
     totalHouseProfit,
+    todayHouseProfit,
     commissionRate,
     transactions
   } = useAdmin();
@@ -175,7 +176,7 @@ export const CashFlowAnalytics: React.FC = () => {
               <i className="fa-solid fa-crown"></i>
               {commissionRate}% System House Cut
             </span>
-            <span className="cf-kpi-micro-text">Auto-Credited</span>
+            <span className="cf-kpi-micro-text">+{todayHouseProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB Today</span>
           </div>
         </div>
       </div>

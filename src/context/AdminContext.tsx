@@ -143,6 +143,9 @@ interface AdminContextType {
   totalDepositedToday: number;
   totalWithdrawnToday: number;
   totalHouseProfit: number;
+  todayHouseProfit: number;
+  todayGamesPlayed: number;
+  todayNetCashProfit: number;
   pendingTransactionsCount: number;
   refreshAdminData: () => Promise<void>;
 }
@@ -236,9 +239,9 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return sessionStorage.getItem('lomibingo_admin_auth') === 'true';
   });
 
-  // 10% System Lock (House Commission) Default
+  // 20% System Lock (House Commission) Default
   const [houseCommissionEnabled, setHouseCommissionEnabledState] = useState<boolean>(true);
-  const [commissionRate, setCommissionRateState] = useState<number>(10);
+  const [commissionRate, setCommissionRateState] = useState<number>(20);
 
   // Stakes: 10, 20, 50, 100 ETB
   const [stakes, setStakes] = useState<number[]>([10, 20, 50, 100]);
@@ -283,6 +286,10 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [transactions, setTransactions] = useState<TransactionRequest[]>([]);
   const [totalDepositedToday, setTotalDepositedToday] = useState<number>(0);
   const [totalWithdrawnToday, setTotalWithdrawnToday] = useState<number>(0);
+  const [totalHouseProfit, setTotalHouseProfit] = useState<number>(0);
+  const [todayHouseProfit, setTodayHouseProfit] = useState<number>(0);
+  const [todayGamesPlayed, setTodayGamesPlayed] = useState<number>(0);
+  const [todayNetCashProfit, setTodayNetCashProfit] = useState<number>(0);
 
   // Fetch Live Real Data from Neon PostgreSQL
   const refreshAdminData = useCallback(async () => {
@@ -371,6 +378,18 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (statsRes.stats) {
         setTotalDepositedToday(statsRes.stats.totalDeposits || 0);
         setTotalWithdrawnToday(statsRes.stats.totalWithdrawals || 0);
+        if (typeof statsRes.stats.totalHouseRevenue === 'number') {
+          setTotalHouseProfit(statsRes.stats.totalHouseRevenue);
+        }
+        if (typeof statsRes.stats.todayHouseRevenue === 'number') {
+          setTodayHouseProfit(statsRes.stats.todayHouseRevenue);
+        }
+        if (typeof statsRes.stats.todayGamesPlayed === 'number') {
+          setTodayGamesPlayed(statsRes.stats.todayGamesPlayed);
+        }
+        if (typeof statsRes.stats.todayNetCashProfit === 'number') {
+          setTodayNetCashProfit(statsRes.stats.todayNetCashProfit);
+        }
       }
     } catch (err) {
       console.warn('⚠️ Admin data refresh notice:', err);
@@ -645,7 +664,10 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         addWithdrawRequest,
         totalDepositedToday,
         totalWithdrawnToday,
-        totalHouseProfit: Math.round(totalDepositedToday * 0.15),
+        totalHouseProfit,
+        todayHouseProfit,
+        todayGamesPlayed,
+        todayNetCashProfit,
         pendingTransactionsCount,
         refreshAdminData
       }}

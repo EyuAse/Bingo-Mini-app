@@ -11,6 +11,8 @@ interface DashboardOverviewProps {
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigateTab }) => {
   const {
     totalHouseProfit,
+    todayHouseProfit,
+    todayGamesPlayed,
     houseCommissionEnabled,
     setHouseCommissionEnabled,
     commissionRate,
@@ -116,14 +118,16 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             </div>
           </div>
           <div className="kpi-card-value gold">
-            {totalHouseProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="kpi-unit">ETB</span>
+            {todayHouseProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="kpi-unit">ETB Today</span>
           </div>
           <div className="kpi-card-footer">
             <span className="kpi-badge gold">
-              <i className="fa-solid fa-percent"></i>
-              {houseCommissionEnabled ? `${commissionRate}% House Cut Active` : 'Cut Paused'}
+              <i className="fa-solid fa-coins"></i>
+              Total: {totalHouseProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
             </span>
-            <span className="kpi-micro-text">20% of all played pools</span>
+            <span className="kpi-micro-text">
+              {todayGamesPlayed > 0 ? `${todayGamesPlayed} rounds today (${commissionRate}% Cut)` : `${commissionRate}% Cut Active`}
+            </span>
           </div>
         </div>
 

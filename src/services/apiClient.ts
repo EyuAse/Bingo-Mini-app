@@ -433,7 +433,20 @@ export const apiClient = {
       const res = await fetch(`${API_BASE}/admin/stats`, {
         headers: { ...adminHeaders }
       });
-      return handleResponse<{ success: boolean; stats: any }>(res);
+      return handleResponse<{
+        success: boolean;
+        stats: {
+          totalPlayers: number;
+          totalDeposits: number;
+          totalWithdrawals: number;
+          totalGamesPlayed: number;
+          todayGamesPlayed: number;
+          totalHouseRevenue: number;
+          todayHouseRevenue: number;
+          todayNetCashProfit: number;
+          defaultCommissionRate: number;
+        };
+      }>(res);
     },
 
     async getBotUsers() {
