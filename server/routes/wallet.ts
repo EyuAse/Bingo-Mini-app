@@ -3,6 +3,7 @@ import { query, withTransaction } from '../db.ts';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.ts';
 import { io } from '../io.ts';
 import { gameEngine } from '../game/BingoGameEngine.ts';
+import { generateCardFromId } from '../game/cartelaGenerator.ts';
 
 const router = Router();
 
@@ -430,13 +431,12 @@ router.get('/game-history', requireAuth, async (req: AuthenticatedRequest, res) 
   try {
     const userId = req.user!.id;
 
-    // 1. Authoritative Personal Tickets from Neon DB
+    // 1. Authoritative Personal Tickets from Neon DB (Phase 4: omit heavy card_matrix)
     const ticketsRes = await query(`
       SELECT 
         gt.id as ticket_id,
         gt.round_id,
         gt.cartela_id,
-        gt.card_matrix,
         gt.bet_amount,
         gt.status as ticket_status,
         gt.created_at as bet_time,
@@ -515,14 +515,8 @@ router.get('/game-history', requireAuth, async (req: AuthenticatedRequest, res) 
         round.isWinner = true;
       }
 
-      let cardMatrix = row.card_matrix;
-      if (typeof cardMatrix === 'string') {
-        try {
-          cardMatrix = JSON.parse(cardMatrix);
-        } catch {
-          cardMatrix = [];
-        }
-      }
+      // Phase 4: Deterministic RAM Reconstruction (drops ~2 KB per ticket over Neon connection)
+      const cardMatrix = row.cartela_id ? generateCardFromId(Number(row.cartela_id)) : [];
 
       round.tickets.push({
         id: row.ticket_id,
