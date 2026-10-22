@@ -18,6 +18,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     setSimulatedPlayerCount,
     botWinRate,
     users,
+    totalUsersCount,
+    userStats,
     transactions,
     approveAndReleaseTransaction,
     rejectTransaction
@@ -27,7 +29,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
   const pendingTransactions = transactions.filter(t => t.status === 'pending');
   const playersOnly = users.filter(u => u.role !== 'admin');
-  const activeUsersCount = playersOnly.filter(u => u.status === 'active').length;
+  const activeUsersCount = userStats?.activePlayers ?? playersOnly.filter(u => u.status === 'active').length;
 
   // Real Dynamic Financial Cash Flow Barometer Calculations
   const todayDeposits = transactions
@@ -134,7 +136,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             </div>
           </div>
           <div className="kpi-card-value green">
-            {users.length} <span className="kpi-unit">Accounts</span>
+            {(totalUsersCount || users.length)} <span className="kpi-unit">Accounts</span>
           </div>
           <div className="kpi-card-footer">
             <span className="kpi-badge green">

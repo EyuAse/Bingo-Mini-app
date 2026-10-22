@@ -81,6 +81,16 @@ export const TelegramBotDesk: React.FC = () => {
     message: string;
   } | null>(null);
 
+  // Channel Health Verification State
+  const [channelHealth, setChannelHealth] = useState<{
+    loading: boolean;
+    ok: boolean;
+    canPost: boolean;
+    title?: string;
+    channel?: string;
+    description?: string;
+  } | null>(null);
+
   // Bot Profile & Welcome Greeting State
   const [botDescription, setBotDescription] = useState<string>(
     "🍋 Welcome to Lomi Bingo! Ethiopia's #1 Live Real-Time Multiplayer Bingo in Telegram. 10 ETB Welcome Gift, 400 Cartelas, Instant Cashier Payouts!"
@@ -229,6 +239,7 @@ export const TelegramBotDesk: React.FC = () => {
           if (!adButtonUrl) {
             setAdButtonUrl(`https://t.me/${botUsername}/play`);
           }
+          handleVerifyChannel(sData.config?.channelId || '@lomibingo_official');
         }
       }
 
@@ -266,6 +277,33 @@ export const TelegramBotDesk: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Helper to normalize channel handles or full URLs (e.g. https://t.me/lomibingo_official -> @lomibingo_official)
+  const cleanChannelInput = (val: string): string => {
+    let c = val.trim();
+    if (c.includes('t.me/')) {
+      c = c.replace(/^(?:https?:\/\/)?(?:www\.)?(?:t\.me|telegram\.me)\//i, '');
+      c = c.split('/')[0].split('?')[0];
+      return `@${c.replace(/^@+/, '')}`;
+    }
+    return val;
+  };
+
+  // Check channel posting access and administrator status
+  const handleVerifyChannel = async (customChannel?: string) => {
+    const ch = cleanChannelInput(customChannel || targetChatId || channelId || '@lomibingo_official');
+    if (!ch) return;
+    setChannelHealth({ loading: true, ok: false, canPost: false, channel: ch });
+    try {
+      const res = await apiFetch(`/admin/telegram/channel-health?channel=${encodeURIComponent(ch)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setChannelHealth({ ...data, loading: false });
+      }
+    } catch {
+      setChannelHealth({ loading: false, ok: false, canPost: false, channel: ch, description: 'Network verification error' });
+    }
+  };
 
   // Quick Apply In-Bot Promo Preset
   const handleApplyPreset = (preset: typeof PROMO_PRESETS[0]) => {
@@ -498,8 +536,9 @@ export const TelegramBotDesk: React.FC = () => {
           buttonText: adButtonText.trim() || undefined,
           buttonUrl: adButtonUrl.trim() || webAppUrl.trim() || undefined,
           targetType,
-          targetId: targetType === 'channel' ? (targetChatId || channelId) : (targetType === 'test' ? targetChatId : undefined),
-          pinMessage: pinMessage && targetType === 'channel'
+          targetId: targetType === 'channel' ? cleanChannelInput(targetChatId || channelId || '@lomibingo_official') : (targetType === 'test' ? targetChatId : undefined),
+          crossPostChannel: crossPostChannel && targetType === 'all_users',
+          pinMessage: pinMessage && (targetType === 'channel' || crossPostChannel)
         })
       });
 
@@ -1033,34 +1072,66 @@ export const TelegramBotDesk: React.FC = () => {
               {/* Target ID / Channel Username */}
               {targetType === 'channel' && (
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                      Channel Username or Chat ID (e.g. @lomibingo_official or -100xxxxxxx)
+                      Channel Username, Link, or Chat ID
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setTargetChatId('@lomibingo_official')}
-                      style={{
-                        background: '#e0f2fe',
-                        color: '#0369a1',
-                        border: '1px solid #bae6fd',
-                        borderRadius: '6px',
-                        padding: '3px 8px',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      <i className="fa-solid fa-bullhorn" style={{ fontSize: '10px' }}></i> Set to @lomibingo_official
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleVerifyChannel(targetChatId || channelId || '@lomibingo_official')}
+                        disabled={channelHealth?.loading}
+                        style={{
+                          background: '#f1f5f9',
+                          color: '#334155',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          padding: '3px 8px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <i className={`fa-solid ${channelHealth?.loading ? 'fa-spinner fa-spin' : 'fa-bolt'}`} style={{ fontSize: '10px' }}></i>
+                        {channelHealth?.loading ? 'Testing...' : '⚡ Test Connection'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTargetChatId('@lomibingo_official');
+                          handleVerifyChannel('@lomibingo_official');
+                        }}
+                        style={{
+                          background: '#e0f2fe',
+                          color: '#0369a1',
+                          border: '1px solid #bae6fd',
+                          borderRadius: '6px',
+                          padding: '3px 8px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <i className="fa-solid fa-bullhorn" style={{ fontSize: '10px' }}></i> Set to @lomibingo_official
+                      </button>
+                    </div>
                   </div>
                   <input
                     type="text"
                     value={targetChatId}
-                    onChange={(e) => setTargetChatId(e.target.value)}
+                    onChange={(e) => {
+                      const cleaned = cleanChannelInput(e.target.value);
+                      setTargetChatId(cleaned);
+                    }}
+                    onBlur={() => {
+                      if (targetChatId) handleVerifyChannel(targetChatId);
+                    }}
                     placeholder={channelId || '@lomibingo_official'}
                     style={{
                       width: '100%',
@@ -1072,6 +1143,25 @@ export const TelegramBotDesk: React.FC = () => {
                       boxSizing: 'border-box'
                     }}
                   />
+                  {/* Real-Time Channel Health Badge */}
+                  {channelHealth && (
+                    <div style={{
+                      marginTop: '6px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      background: channelHealth.ok ? '#f0fdf4' : '#fef2f2',
+                      border: `1px solid ${channelHealth.ok ? '#86efac' : '#fca5a5'}`,
+                      color: channelHealth.ok ? '#166534' : '#991b1b',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <i className={`fa-solid ${channelHealth.ok ? 'fa-circle-check' : 'fa-triangle-exclamation'}`}></i>
+                      <span>{channelHealth.description}</span>
+                    </div>
+                  )}
                   {targetChatId && /^\d+$/.test(targetChatId.trim()) && (
                     <div style={{ marginTop: '6px', color: '#dc2626', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <i className="fa-solid fa-triangle-exclamation"></i>
@@ -1374,8 +1464,10 @@ export const TelegramBotDesk: React.FC = () => {
                     : (targetType === 'test'
                         ? 'Send Test Message'
                         : (targetType === 'all_users'
-                            ? '🚀 Broadcast Promotion Inside Bot (All Players)'
-                            : 'Publish Announcement to Channel'))}
+                            ? (crossPostChannel
+                                ? `🚀 Broadcast to Players + Channel (${channelId || '@lomibingo_official'})`
+                                : '🚀 Broadcast Promotion Inside Bot (All Players)')
+                            : `Publish Announcement to Channel (${targetChatId || channelId || '@lomibingo_official'})`))}
                 </button>
 
                 {targetType === 'all_users' && (
@@ -1795,13 +1887,13 @@ export const TelegramBotDesk: React.FC = () => {
 
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-              Official Telegram Channel Username / ID
+              Official Telegram Channel Username, Link, or ID
             </label>
             <input
               type="text"
               value={channelId}
-              onChange={(e) => setChannelId(e.target.value)}
-              placeholder="@lomibingo"
+              onChange={(e) => setChannelId(cleanChannelInput(e.target.value))}
+              placeholder="@lomibingo_official"
               style={{
                 width: '100%',
                 padding: '10px 14px',
@@ -1990,7 +2082,13 @@ export const TelegramBotDesk: React.FC = () => {
             <p style={{ margin: '0 0 16px', fontSize: '14px', color: '#475569', lineHeight: 1.5 }}>
               Are you sure you want to publish <strong>"{adTitle}"</strong> to{' '}
               <span style={{ color: '#0284c7', fontWeight: 700 }}>
-                {targetType === 'channel' ? `Telegram Channel ${targetChatId || channelId}` : (targetType === 'all_users' ? 'All Registered Players' : 'Your Personal Chat')}
+                {targetType === 'channel'
+                  ? `Telegram Channel ${targetChatId || channelId || '@lomibingo_official'}`
+                  : (targetType === 'all_users'
+                      ? (crossPostChannel
+                          ? `All Registered Players AND Telegram Channel (${channelId || '@lomibingo_official'})`
+                          : 'All Registered Players (In-Bot Direct)')
+                      : 'Your Personal Chat')}
               </span>?
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>

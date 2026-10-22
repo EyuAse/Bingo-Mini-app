@@ -5,6 +5,8 @@ import { useApp } from '../../context/AppContext.tsx';
 export const PlayerAccountsDesk: React.FC = () => {
   const {
     users,
+    totalUsersCount,
+    userStats,
     adjustUserBalance,
     toggleUserStatus,
     registerBonus
@@ -28,11 +30,11 @@ export const PlayerAccountsDesk: React.FC = () => {
 
   // Calculations for KPI Cards (Filtered to genuine players)
   const playerUsers = users.filter(u => u.role !== 'admin');
-  const totalPlayers = playerUsers.length;
-  const activePlayers = playerUsers.filter(u => u.status === 'active').length;
-  const suspendedPlayers = playerUsers.filter(u => u.status === 'suspended').length;
-  const totalCashFloat = playerUsers.reduce((acc, u) => acc + (u.balance || 0), 0);
-  const totalBonusFloat = playerUsers.reduce((acc, u) => acc + (u.bonus || 0), 0);
+  const totalPlayers = totalUsersCount || userStats?.totalPlayers || playerUsers.length;
+  const activePlayers = userStats?.activePlayers ?? playerUsers.filter(u => u.status === 'active').length;
+  const suspendedPlayers = userStats?.suspendedPlayers ?? playerUsers.filter(u => u.status === 'suspended').length;
+  const totalCashFloat = userStats?.totalCashFloat ?? playerUsers.reduce((acc, u) => acc + (u.balance || 0), 0);
+  const totalBonusFloat = userStats?.totalBonusFloat ?? playerUsers.reduce((acc, u) => acc + (u.bonus || 0), 0);
   const vipPlayers = playerUsers.filter(u => (u.totalDeposited || 0) >= 1000);
 
   // Filter & Sort Logic

@@ -10,31 +10,93 @@ const router = Router();
 /**
  * Get All Real Users from Neon DB
  */
-router.get('/users', requireAdmin, async (_req, res) => {
+router.get('/users', requireAdmin, async (req, res) => {
   try {
-    const usersRes = await query(`
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 1000, 1), 2000);
+    const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+
+    const countQuery = `
       SELECT 
-        u.id,
-        u.full_name as name,
-        COALESCE(u.phone, CONCAT('09', RIGHT(CAST(u.telegram_id AS TEXT), 8))) as phone,
-        u.telegram_username,
-        u.telegram_id,
-        COALESCE(w.balance, 0.00) as balance,
-        COALESCE(w.bonus, 0.00) as bonus,
-        u.status,
-        u.role,
-        u.created_at as "createdAt",
-        COALESCE((SELECT SUM(amount) FROM deposit_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalDeposited",
-        COALESCE((SELECT SUM(amount) FROM withdrawal_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalWithdrawn",
-        COALESCE((SELECT COUNT(*) FROM referrals WHERE referrer_id = u.id), 0) as "referralCount"
+        COUNT(*) as total_count,
+        COUNT(*) FILTER (WHERE u.status = 'active') as active_count,
+        COUNT(*) FILTER (WHERE u.status = 'suspended') as suspended_count,
+        COALESCE(SUM(w.balance), 0) as total_cash_float,
+        COALESCE(SUM(w.bonus), 0) as total_bonus_float
       FROM users u
       LEFT JOIN wallets w ON u.id = w.user_id
       WHERE u.role = 'player' 
         AND (u.is_bot IS NULL OR u.is_bot = false)
         AND u.full_name NOT LIKE 'Synthetic%'
-      ORDER BY u.created_at DESC
-      LIMIT 200
-    `);
+    `;
+
+    const usersQuery = search
+      ? `
+        SELECT 
+          u.id,
+          u.full_name as name,
+          COALESCE(u.phone, CONCAT('09', RIGHT(CAST(u.telegram_id AS TEXT), 8))) as phone,
+          u.telegram_username,
+          u.telegram_id,
+          COALESCE(w.balance, 0.00) as balance,
+          COALESCE(w.bonus, 0.00) as bonus,
+          u.status,
+          u.role,
+          u.created_at as "createdAt",
+          COALESCE((SELECT SUM(amount) FROM deposit_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalDeposited",
+          COALESCE((SELECT SUM(amount) FROM withdrawal_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalWithdrawn",
+          COALESCE((SELECT COUNT(*) FROM referrals WHERE referrer_id = u.id), 0) as "referralCount"
+        FROM users u
+        LEFT JOIN wallets w ON u.id = w.user_id
+        WHERE u.role = 'player' 
+          AND (u.is_bot IS NULL OR u.is_bot = false)
+          AND u.full_name NOT LIKE 'Synthetic%'
+          AND (
+            u.full_name ILIKE $1 
+            OR u.phone ILIKE $1 
+            OR u.telegram_username ILIKE $1 
+            OR CAST(u.telegram_id AS TEXT) ILIKE $1
+          )
+        ORDER BY u.created_at DESC
+        LIMIT $2
+      `
+      : `
+        SELECT 
+          u.id,
+          u.full_name as name,
+          COALESCE(u.phone, CONCAT('09', RIGHT(CAST(u.telegram_id AS TEXT), 8))) as phone,
+          u.telegram_username,
+          u.telegram_id,
+          COALESCE(w.balance, 0.00) as balance,
+          COALESCE(w.bonus, 0.00) as bonus,
+          u.status,
+          u.role,
+          u.created_at as "createdAt",
+          COALESCE((SELECT SUM(amount) FROM deposit_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalDeposited",
+          COALESCE((SELECT SUM(amount) FROM withdrawal_requests WHERE user_id = u.id AND status = 'approved'), 0) as "totalWithdrawn",
+          COALESCE((SELECT COUNT(*) FROM referrals WHERE referrer_id = u.id), 0) as "referralCount"
+        FROM users u
+        LEFT JOIN wallets w ON u.id = w.user_id
+        WHERE u.role = 'player' 
+          AND (u.is_bot IS NULL OR u.is_bot = false)
+          AND u.full_name NOT LIKE 'Synthetic%'
+        ORDER BY u.created_at DESC
+        LIMIT $1
+      `;
+
+    const [countRes, usersRes] = await Promise.all([
+      query(countQuery),
+      search ? query(usersQuery, [`%${search}%`, limit]) : query(usersQuery, [limit])
+    ]);
+
+    const statsRow = countRes.rows[0] || {};
+    const totalCount = parseInt(statsRow.total_count || '0', 10);
+    const stats = {
+      totalPlayers: totalCount,
+      activePlayers: parseInt(statsRow.active_count || '0', 10),
+      suspendedPlayers: parseInt(statsRow.suspended_count || '0', 10),
+      totalCashFloat: parseFloat(statsRow.total_cash_float || '0'),
+      totalBonusFloat: parseFloat(statsRow.total_bonus_float || '0')
+    };
 
     const formatted = usersRes.rows.map(u => ({
       id: u.id,
@@ -52,7 +114,12 @@ router.get('/users', requireAdmin, async (_req, res) => {
       createdAt: u.createdAt
     }));
 
-    return res.json({ success: true, users: formatted });
+    return res.json({
+      success: true,
+      users: formatted,
+      totalCount,
+      stats
+    });
   } catch (error: any) {
     console.error('❌ [Admin Users Error]:', error);
     return res.status(500).json({ success: false, error: 'Failed to retrieve users' });

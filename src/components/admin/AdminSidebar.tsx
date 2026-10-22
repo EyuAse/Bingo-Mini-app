@@ -30,7 +30,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     logoutAdmin,
     transactions,
     simulatedPlayerCount,
-    users
+    users,
+    totalUsersCount
   } = useAdmin();
 
   const { showToast } = useApp();
@@ -159,7 +160,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             {!isSidebarCollapsed && (
               <>
                 <span className="light-nav-text">Player Accounts</span>
-                <span className="light-nav-badge">{users.length}</span>
+                <span className="light-nav-badge">{totalUsersCount || users.length}</span>
               </>
             )}
           </button>

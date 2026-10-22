@@ -58,6 +58,20 @@ router.get('/status', async (_req, res) => {
 });
 
 /**
+ * 1b. Check Telegram Channel Connection & Admin Permissions
+ * GET /api/admin/telegram/channel-health
+ */
+router.get('/channel-health', async (req, res) => {
+  try {
+    const channelParam = (req.query.channel as string) || undefined;
+    const status = await telegramBotService.verifyChannelStatus(channelParam);
+    return res.json(status);
+  } catch (err: any) {
+    return res.status(500).json({ ok: false, canPost: false, description: err.message });
+  }
+});
+
+/**
  * 2. Update Bot & Campaign Configuration
  * POST /api/admin/telegram/configure
  */
@@ -91,7 +105,8 @@ router.post('/configure', async (req, res) => {
     }
 
     if (typeof channelId === 'string') {
-      await upsertSetting('telegram_channel_id', channelId.trim());
+      const normalizedChannel = telegramBotService.normalizeChannelIdentifier(channelId);
+      await upsertSetting('telegram_channel_id', normalizedChannel);
     }
 
     if (typeof autoPostMegaWins === 'boolean') {
@@ -428,6 +443,7 @@ router.post('/broadcast', async (req, res) => {
       buttonUrl,
       targetType,
       targetId,
+      crossPostChannel,
       pinMessage
     } = req.body;
 
@@ -443,6 +459,7 @@ router.post('/broadcast', async (req, res) => {
       buttonUrl,
       targetType: targetType || 'all_users',
       targetId,
+      crossPostChannel: Boolean(crossPostChannel),
       pinMessage: Boolean(pinMessage)
     });
 

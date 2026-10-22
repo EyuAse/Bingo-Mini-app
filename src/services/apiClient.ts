@@ -345,12 +345,27 @@ export const apiClient = {
 
   // 3. Admin Endpoints (Guaranteed Admin Bearer Token)
   admin: {
-    async getUsers() {
+    async getUsers(params?: { limit?: number; search?: string }) {
       const adminHeaders = await getAdminAuthHeader();
-      const res = await fetch(`${API_BASE}/admin/users`, {
+      const query = new URLSearchParams();
+      if (params?.limit) query.set('limit', String(params.limit));
+      if (params?.search) query.set('search', params.search);
+      const qs = query.toString() ? `?${query.toString()}` : '';
+      const res = await fetch(`${API_BASE}/admin/users${qs}`, {
         headers: { ...adminHeaders }
       });
-      return handleResponse<{ success: boolean; users: any[] }>(res);
+      return handleResponse<{
+        success: boolean;
+        users: any[];
+        totalCount?: number;
+        stats?: {
+          totalPlayers: number;
+          activePlayers: number;
+          suspendedPlayers: number;
+          totalCashFloat: number;
+          totalBonusFloat: number;
+        };
+      }>(res);
     },
 
     async getDeposits() {

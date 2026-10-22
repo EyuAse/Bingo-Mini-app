@@ -19,6 +19,14 @@ export interface UserAccount {
   createdAt: string;
 }
 
+export interface UserStats {
+  totalPlayers: number;
+  activePlayers: number;
+  suspendedPlayers: number;
+  totalCashFloat: number;
+  totalBonusFloat: number;
+}
+
 export interface TransactionRequest {
   id: string;
   referenceNumber: string;
@@ -102,6 +110,8 @@ interface AdminContextType {
 
   // Users Management
   users: UserAccount[];
+  totalUsersCount: number;
+  userStats: UserStats | null;
   addUser: (user: Partial<UserAccount>) => void;
   adjustUserBalance: (userId: string, amount: number, isBonus?: boolean) => void;
   toggleUserStatus: (userId: string) => void;
@@ -268,6 +278,8 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Real Database-Backed Users & Transactions (Zero Mock Data)
   const [users, setUsers] = useState<UserAccount[]>([]);
+  const [totalUsersCount, setTotalUsersCount] = useState<number>(0);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [transactions, setTransactions] = useState<TransactionRequest[]>([]);
   const [totalDepositedToday, setTotalDepositedToday] = useState<number>(0);
   const [totalWithdrawnToday, setTotalWithdrawnToday] = useState<number>(0);
@@ -276,7 +288,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const refreshAdminData = useCallback(async () => {
     try {
       // 1. Fetch Real Users
-      const usersRes = await apiClient.admin.getUsers().catch(() => ({ users: [] }));
+      const usersRes = await apiClient.admin.getUsers().catch(() => ({ users: [], totalCount: 0, stats: null }));
       if (usersRes.users) {
         setUsers(usersRes.users.map((u: any) => ({
           id: u.id,
@@ -293,6 +305,10 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           role: u.role,
           createdAt: u.createdAt
         })));
+        setTotalUsersCount(usersRes.totalCount || usersRes.users.length);
+        if (usersRes.stats) {
+          setUserStats(usersRes.stats);
+        }
       }
 
       // 2. Fetch Real Deposits & Withdrawals
@@ -617,6 +633,8 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         botPool,
         cartelaPool,
         users,
+        totalUsersCount,
+        userStats,
         addUser,
         adjustUserBalance,
         toggleUserStatus,

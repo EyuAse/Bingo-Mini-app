@@ -16,6 +16,7 @@ export interface BroadcastOptions {
   buttonUrl?: string;
   targetType: 'all_users' | 'channel' | 'group' | 'test';
   targetId?: string;
+  crossPostChannel?: boolean;
   pinMessage?: boolean;
 }
 
@@ -31,6 +32,26 @@ export class TelegramBotService {
       TelegramBotService.instance = new TelegramBotService();
     }
     return TelegramBotService.instance;
+  }
+
+  /**
+   * Normalizes channel handles or full URLs (e.g. 'https://t.me/lomibingo_official' -> '@lomibingo_official')
+   */
+  public normalizeChannelIdentifier(input?: string): string {
+    if (!input) return '';
+    let cleaned = input.trim();
+    // Strip URL prefixes like https://t.me/ or t.me/ or telegram.me/
+    cleaned = cleaned.replace(/^(?:https?:\/\/)?(?:www\.)?(?:t\.me|telegram\.me)\//i, '');
+    // Take the path segment before any ? or /
+    cleaned = cleaned.split('/')[0].split('?')[0].trim();
+    // If it's already a channel numeric ID like -100xxxxxxxx, keep it
+    if (/^-100\d+$/.test(cleaned) || /^-\d+$/.test(cleaned)) {
+      return cleaned;
+    }
+    // Remove leading @ if present
+    cleaned = cleaned.replace(/^@+/, '');
+    if (!cleaned) return '';
+    return `@${cleaned}`;
   }
 
   /**
@@ -81,17 +102,18 @@ export class TelegramBotService {
       // Table might still be initializing, use env vars
     }
 
-    // In development mode, strictly prioritize local .env credentials so local testing 
-    // never interferes with or impersonates the live production bot.
+    // In development mode, prioritize local .env credentials if provided
     if (process.env.NODE_ENV === 'development') {
       if (process.env.TELEGRAM_BOT_TOKEN) token = process.env.TELEGRAM_BOT_TOKEN;
       if (process.env.TELEGRAM_WEBAPP_URL) webAppUrl = process.env.TELEGRAM_WEBAPP_URL;
     }
 
+    const normalizedChannel = this.normalizeChannelIdentifier(channelId || '@lomibingo_official');
+
     this.cachedConfig = {
       token: token.trim(),
       webAppUrl: webAppUrl.trim(),
-      channelId: channelId.trim(),
+      channelId: normalizedChannel,
       autoPostMegaWins,
       megaWinThreshold
     };
@@ -455,6 +477,72 @@ export class TelegramBotService {
   }
 
   /**
+   * Check if bot can post to a channel and return its permissions
+   */
+  public async verifyChannelStatus(channelInput?: string): Promise<{
+    ok: boolean;
+    channel: string;
+    title?: string;
+    canPost: boolean;
+    isAdministrator: boolean;
+    description: string;
+  }> {
+    const cfg = await this.getConfig();
+    const channel = this.normalizeChannelIdentifier(channelInput || cfg.channelId || '@lomibingo_official');
+    if (!channel) {
+      return { ok: false, channel: '', canPost: false, isAdministrator: false, description: 'No channel configured' };
+    }
+
+    const meRes = await this.getMe();
+    if (!meRes.ok || !meRes.result?.id) {
+      return { ok: false, channel, canPost: false, isAdministrator: false, description: 'Telegram Bot Token is invalid or disconnected' };
+    }
+
+    const botId = meRes.result.id;
+    const botUser = meRes.result.username || 'bot';
+
+    // 1. Get Chat details
+    const chatRes = await this.callApi('getChat', { chat_id: channel });
+    if (!chatRes.ok) {
+      return {
+        ok: false,
+        channel,
+        canPost: false,
+        isAdministrator: false,
+        description: `Channel ${channel} was not found. Please verify the username or link.`
+      };
+    }
+
+    // 2. Check if bot is administrator
+    const memberRes = await this.callApi('getChatMember', { chat_id: channel, user_id: botId });
+    if (!memberRes.ok) {
+      return {
+        ok: false,
+        channel,
+        title: chatRes.result?.title,
+        canPost: false,
+        isAdministrator: false,
+        description: `@${botUser} is not an administrator of ${channel}. Please add @${botUser} to Channel Administrators with 'Post Messages' enabled.`
+      };
+    }
+
+    const member = memberRes.result;
+    const isAdm = member.status === 'administrator' || member.status === 'creator';
+    const canPost = isAdm && (member.status === 'creator' || member.can_post_messages === true);
+
+    return {
+      ok: canPost,
+      channel,
+      title: chatRes.result?.title,
+      isAdministrator: isAdm,
+      canPost,
+      description: canPost
+        ? `Bot @${botUser} is an active Administrator in ${chatRes.result?.title || channel} with 'Post Messages' enabled.`
+        : `@${botUser} is an admin in ${channel} but lacks 'Post Messages' permission.`
+    };
+  }
+
+  /**
    * Execute Broadcast Campaign:
    * Supports Channel / Group posting, direct 1-on-1 player broadcasts, or test messages.
    */
@@ -465,6 +553,7 @@ export class TelegramBotService {
     sentCount: number;
     failedCount: number;
     message: string;
+    channelResult?: any;
   }> {
     const cfg = await this.getConfig();
     if (!cfg.token) {
@@ -524,7 +613,8 @@ export class TelegramBotService {
 
     // 1. Single Channel or Group Broadcast
     if (opts.targetType === 'channel' || opts.targetType === 'group') {
-      const targetChat = (opts.targetId || cfg.channelId || '').trim();
+      const rawTarget = opts.targetId || cfg.channelId || '@lomibingo_official';
+      const targetChat = this.normalizeChannelIdentifier(rawTarget);
       if (!targetChat) {
         return { success: false, totalRecipients: 0, sentCount: 0, failedCount: 0, message: 'Target channel or group username/ID is missing' };
       }
@@ -817,13 +907,64 @@ export class TelegramBotService {
       console.error('❌ [Broadcast Queue Error]:', err);
     });
 
+    // Execute concurrent channel cross-post if requested
+    let channelCrossPostResult: any = null;
+    if (opts.crossPostChannel) {
+      const channelChat = this.normalizeChannelIdentifier(cfg.channelId || '@lomibingo_official');
+      try {
+        let chanRes;
+        const channelKeyboard: any[][] = [];
+        if (opts.buttonText) {
+          let channelBtnUrl = (opts.buttonUrl || '').trim();
+          if (!channelBtnUrl || channelBtnUrl.includes('onrender.com') || channelBtnUrl === cfg.webAppUrl) {
+            channelBtnUrl = `https://t.me/${botUser}/play`;
+          } else if (channelBtnUrl.startsWith('http') && !channelBtnUrl.includes('t.me')) {
+            channelBtnUrl = this.getVersionedWebAppUrl(channelBtnUrl);
+          }
+          channelKeyboard.push([{ text: opts.buttonText, url: channelBtnUrl }]);
+        }
+
+        if (opts.photoUrl) {
+          chanRes = await this.sendPhoto(channelChat, opts.photoUrl, opts.messageText, {
+            inlineKeyboard: channelKeyboard,
+            pin: opts.pinMessage
+          });
+        } else {
+          chanRes = await this.sendMessage(channelChat, opts.messageText, {
+            inlineKeyboard: channelKeyboard,
+            pin: opts.pinMessage
+          });
+        }
+
+        channelCrossPostResult = {
+          success: chanRes.ok,
+          channel: channelChat,
+          messageId: chanRes.result?.message_id,
+          error: chanRes.ok ? undefined : chanRes.description
+        };
+      } catch (err: any) {
+        channelCrossPostResult = {
+          success: false,
+          channel: channelChat,
+          error: err.message
+        };
+      }
+    }
+
+    const chanNotice = channelCrossPostResult
+      ? (channelCrossPostResult.success
+          ? ` and announcement published to ${channelCrossPostResult.channel}!`
+          : ` (Channel cross-post note: ${channelCrossPostResult.error})`)
+      : '';
+
     return {
       success: true,
       campaignId,
       totalRecipients,
       sentCount: 0,
       failedCount: 0,
-      message: `Broadcast started to ${totalRecipients} players. Running in background.`
+      channelResult: channelCrossPostResult,
+      message: `Broadcast started to ${totalRecipients} players${chanNotice}`
     };
   }
 
