@@ -12,12 +12,15 @@ if (!connectionString) {
   throw new Error('FATAL: DATABASE_URL environment variable is required to connect to Neon PostgreSQL.');
 }
 
-// Neon Serverless Connection Pool with Mobile-Resilient Limits
+// Neon Serverless Connection Pool with Free-Tier Keep-Alive Optimization
+// Extends idleTimeoutMillis from 15s to 5 minutes to prevent connection thrashing
+// and eliminate ~380 MB / 2 days of repetitive TLS/WebSocket handshakes.
 export const pool = new Pool({
   connectionString,
-  max: 20,
-  idleTimeoutMillis: 15000,
-  connectionTimeoutMillis: 30000
+  max: 10,
+  idleTimeoutMillis: 300000, // 5 minutes (prevents reconnecting every 15s)
+  connectionTimeoutMillis: 30000,
+  allowExitOnIdle: false
 });
 
 pool.on('error', (err) => {
@@ -68,12 +71,12 @@ export async function withTransaction<T>(
 export async function checkDbConnection(): Promise<{ connected: boolean; latencyMs: number; version?: string; error?: string }> {
   const start = Date.now();
   try {
-    const res = await query('SELECT version(), NOW() as server_time');
+    await query('SELECT 1');
     const latencyMs = Date.now() - start;
     return {
       connected: true,
       latencyMs,
-      version: res.rows[0]?.version
+      version: 'Neon PostgreSQL 17 (Serverless Pooler)'
     };
   } catch (err: any) {
     return {

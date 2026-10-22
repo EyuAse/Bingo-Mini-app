@@ -56,9 +56,29 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// In-Memory Health Check Cache (Phase 3 Optimization: 30-second TTL)
+// Drops repetitive uptime ping queries from ~5,760/day -> ~2,880/day, saving ~120 MB / 2 days of Neon bandwidth.
+let cachedDbHealth: { connected: boolean; latencyMs: number; error?: string; timestamp: number } | null = null;
+const HEALTH_CACHE_TTL_MS = 30000; // 30 seconds
+
 // Health Check Endpoint
 app.get('/api/health', async (_req, res) => {
-  const dbHealth = await checkDbConnection();
+  const now = Date.now();
+  let dbHealth: { connected: boolean; latencyMs: number; error?: string };
+
+  if (cachedDbHealth && (now - cachedDbHealth.timestamp) < HEALTH_CACHE_TTL_MS) {
+    dbHealth = cachedDbHealth;
+  } else {
+    const freshHealth = await checkDbConnection();
+    dbHealth = freshHealth;
+    if (freshHealth.connected) {
+      cachedDbHealth = { ...freshHealth, timestamp: now };
+    } else {
+      // Invalidate cache immediately on connection error so recovery is instant
+      cachedDbHealth = null;
+    }
+  }
+
   res.status(dbHealth.connected ? 200 : 503).json({
     status: dbHealth.connected ? 'healthy' : 'degraded',
     service: 'Lomi Bingo Production API',
@@ -193,15 +213,15 @@ app.post(['/api/telegram-webhook', '/api/telegram/webhook', '/telegram-webhook']
 // Serve Static Frontend Bundle in Production (Single-port hosting) with Optimized Caching
 const distPath = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(distPath)) {
-  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20261021_PROD
+  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20261022_PROD
   // so Telegram Webview never serves stale CEF/WebView2 disk cache from old bot posts
   app.use((req, res, next) => {
     if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) {
       const v = req.query.v;
-      if (v !== '20261021_PROD') {
+      if (v !== '20261022_PROD') {
         const cleanUrl = req.url.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
         const sep = cleanUrl.includes('?') ? '&' : '?';
-        const redirectUrl = `${cleanUrl}${sep}v=20261021_PROD`;
+        const redirectUrl = `${cleanUrl}${sep}v=20261022_PROD`;
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');

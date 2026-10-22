@@ -132,7 +132,21 @@ router.get('/users', requireAdmin, async (req, res) => {
 router.get('/deposits', requireAdmin, async (_req, res) => {
   try {
     const depositRes = await query(`
-      SELECT d.*, u.full_name as user_name, u.phone as user_phone, u.telegram_username
+      SELECT 
+        d.id,
+        d.user_id,
+        d.amount,
+        d.payment_method,
+        d.player_phone,
+        d.transaction_ref,
+        d.status,
+        d.admin_notes,
+        d.reviewed_at,
+        d.created_at,
+        (d.receipt_image IS NOT NULL AND d.receipt_image != '' AND d.receipt_image NOT LIKE '[ARCHIVED%') as has_receipt,
+        u.full_name as user_name,
+        u.phone as user_phone,
+        u.telegram_username
       FROM deposit_requests d
       JOIN users u ON d.user_id = u.id
       ORDER BY d.created_at DESC
@@ -149,7 +163,7 @@ router.get('/deposits', requireAdmin, async (_req, res) => {
       paymentMethod: d.payment_method,
       playerPhone: d.player_phone,
       transactionRef: d.transaction_ref,
-      receiptImage: d.receipt_image,
+      receiptImage: d.has_receipt ? `/api/admin/deposits/${d.id}/receipt` : null,
       status: d.status,
       adminNotes: d.admin_notes,
       reviewedAt: d.reviewed_at,
@@ -164,6 +178,65 @@ router.get('/deposits', requireAdmin, async (_req, res) => {
 });
 
 /**
+ * Stream Single Deposit Receipt Image On-Demand
+ * Eliminates multi-megabyte payload bloat from deposit list queries.
+ */
+router.get('/deposits/:id/receipt', async (req, res) => {
+  try {
+    const depositId = req.params.id;
+
+    // UUID format validation guard
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(depositId)) {
+      return res.status(400).send('Invalid receipt ID');
+    }
+
+    const receiptRes = await query(
+      'SELECT receipt_image FROM deposit_requests WHERE id = $1',
+      [depositId]
+    );
+
+    if (receiptRes.rows.length === 0 || !receiptRes.rows[0].receipt_image) {
+      return res.status(404).send('Receipt not found');
+    }
+
+    const rawData = receiptRes.rows[0].receipt_image.trim();
+    if (rawData.startsWith('[ARCHIVED')) {
+      return res.status(404).send('Receipt image has been archived');
+    }
+
+    // Case 1: External URL
+    if (rawData.startsWith('http://') || rawData.startsWith('https://')) {
+      return res.redirect(rawData);
+    }
+
+    // Case 2: Data URI (e.g. data:image/jpeg;base64,...)
+    const dataUriMatch = rawData.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/s);
+    if (dataUriMatch) {
+      const mimeSubtype = dataUriMatch[1].toLowerCase();
+      const base64Data = dataUriMatch[2];
+      const buffer = Buffer.from(base64Data, 'base64');
+      const contentType = mimeSubtype === 'jpg' ? 'image/jpeg' : `image/${mimeSubtype}`;
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', buffer.length);
+      res.setHeader('Cache-Control', 'private, max-age=86400');
+      return res.end(buffer);
+    }
+
+    // Case 3: Raw base64 string
+    const buffer = Buffer.from(rawData, 'base64');
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    return res.end(buffer);
+  } catch (error: any) {
+    console.error('❌ [Receipt Stream Error]:', error);
+    return res.status(500).send('Failed to stream receipt');
+  }
+});
+
+/**
  * Approve Deposit & Credit User Balance Atomically
  */
 router.post('/deposits/:id/approve', requireAdmin, async (req: AuthenticatedRequest, res) => {
@@ -174,7 +247,7 @@ router.post('/deposits/:id/approve', requireAdmin, async (req: AuthenticatedRequ
     const result = await withTransaction(async (client) => {
       // 1. Lock deposit row
       const depRes = await client.query(
-        'SELECT * FROM deposit_requests WHERE id = $1 FOR UPDATE',
+        'SELECT id, user_id, amount, payment_method, transaction_ref, status FROM deposit_requests WHERE id = $1 FOR UPDATE',
         [depositId]
       );
 
@@ -352,7 +425,10 @@ router.post('/deposits/:id/reject', requireAdmin, async (req: AuthenticatedReque
     const adminId = req.user!.id;
     const { reason } = req.body;
 
-    const depRes = await query('SELECT * FROM deposit_requests WHERE id = $1', [depositId]);
+    const depRes = await query(
+      'SELECT id, user_id, amount, payment_method, transaction_ref, status FROM deposit_requests WHERE id = $1',
+      [depositId]
+    );
     if (depRes.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Deposit request not found.' });
     }

@@ -71,7 +71,7 @@ router.post('/deposit', requireAuth, async (req: AuthenticatedRequest, res) => {
     const insertRes = await query(
       `INSERT INTO deposit_requests (user_id, amount, payment_method, player_phone, transaction_ref, receipt_image, status)
        VALUES ($1, $2, $3, $4, $5, $6, 'pending')
-       RETURNING *`,
+       RETURNING id, amount, payment_method, player_phone, transaction_ref, status, created_at`,
       [userId, numAmount, paymentMethod, playerPhone.trim(), cleanRef, receiptImage || null]
     );
 
@@ -205,9 +205,11 @@ router.get('/transactions', requireAuth, async (req: AuthenticatedRequest, res) 
   try {
     const userId = req.user!.id;
 
-    // 1. Fetch deposit requests
+    // 1. Fetch deposit requests (lightweight metadata: omit heavy receipt_image)
     const depRes = await query(
-      `SELECT id, amount, payment_method, player_phone, transaction_ref, receipt_image, status, created_at, reviewed_at
+      `SELECT id, amount, payment_method, player_phone, transaction_ref, 
+              (receipt_image IS NOT NULL AND receipt_image != '' AND receipt_image NOT LIKE '[ARCHIVED%') as has_receipt,
+              status, created_at, reviewed_at
        FROM deposit_requests
        WHERE user_id = $1
        ORDER BY created_at DESC
@@ -245,7 +247,7 @@ router.get('/transactions', requireAuth, async (req: AuthenticatedRequest, res) 
       amount: parseFloat(d.amount),
       method: d.payment_method,
       referenceNumber: d.transaction_ref,
-      receiptImage: d.receipt_image,
+      receiptImage: d.has_receipt ? `/api/wallet/deposits/${d.id}/receipt` : undefined,
       status: d.status as 'pending' | 'approved' | 'rejected',
       createdAt: d.created_at,
       timestamp: d.created_at
@@ -296,6 +298,61 @@ router.get('/transactions', requireAuth, async (req: AuthenticatedRequest, res) 
   } catch (error: any) {
     console.error('❌ [Wallet Transactions Error]:', error);
     return res.status(500).json({ success: false, error: 'Failed to retrieve transaction history' });
+  }
+});
+
+/**
+ * Stream Single Deposit Receipt Image On-Demand for Player
+ */
+router.get('/deposits/:id/receipt', async (req, res) => {
+  try {
+    const depositId = req.params.id;
+
+    // UUID format validation guard
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(depositId)) {
+      return res.status(400).send('Invalid receipt ID');
+    }
+
+    const receiptRes = await query(
+      'SELECT receipt_image FROM deposit_requests WHERE id = $1',
+      [depositId]
+    );
+
+    if (receiptRes.rows.length === 0 || !receiptRes.rows[0].receipt_image) {
+      return res.status(404).send('Receipt not found');
+    }
+
+    const rawData = receiptRes.rows[0].receipt_image.trim();
+    if (rawData.startsWith('[ARCHIVED')) {
+      return res.status(404).send('Receipt image has been archived');
+    }
+
+    if (rawData.startsWith('http://') || rawData.startsWith('https://')) {
+      return res.redirect(rawData);
+    }
+
+    const dataUriMatch = rawData.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/s);
+    if (dataUriMatch) {
+      const mimeSubtype = dataUriMatch[1].toLowerCase();
+      const base64Data = dataUriMatch[2];
+      const buffer = Buffer.from(base64Data, 'base64');
+      const contentType = mimeSubtype === 'jpg' ? 'image/jpeg' : `image/${mimeSubtype}`;
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', buffer.length);
+      res.setHeader('Cache-Control', 'private, max-age=86400');
+      return res.end(buffer);
+    }
+
+    const buffer = Buffer.from(rawData, 'base64');
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    return res.end(buffer);
+  } catch (error: any) {
+    console.error('❌ [Wallet Receipt Stream Error]:', error);
+    return res.status(500).send('Failed to stream receipt');
   }
 });
 

@@ -2,7 +2,7 @@
  * Lomi Bingo Centralized API Client (Connected to Neon PostgreSQL Backend)
  */
 
-import { getApiBase } from '../config/env.ts';
+import { getApiBase, getBackendOrigin } from '../config/env.ts';
 
 const API_BASE = getApiBase();
 
@@ -268,10 +268,19 @@ export const apiClient = {
       const res = await fetch(`${API_BASE}/wallet/transactions`, {
         headers: { ...getAuthHeader() }
       });
-      return handleResponse<{
+      const data = await handleResponse<{
         success: boolean;
         transactions: any[];
       }>(res);
+      if (data && Array.isArray(data.transactions)) {
+        data.transactions = data.transactions.map((tx: any) => ({
+          ...tx,
+          receiptImage: tx.receiptImage && tx.receiptImage.startsWith('/')
+            ? `${getBackendOrigin()}${tx.receiptImage}`
+            : tx.receiptImage
+        }));
+      }
+      return data;
     },
 
     async getReferrals() {
@@ -373,7 +382,16 @@ export const apiClient = {
       const res = await fetch(`${API_BASE}/admin/deposits`, {
         headers: { ...adminHeaders }
       });
-      return handleResponse<{ success: boolean; deposits: any[] }>(res);
+      const data = await handleResponse<{ success: boolean; deposits: any[] }>(res);
+      if (data && Array.isArray(data.deposits)) {
+        data.deposits = data.deposits.map((d: any) => ({
+          ...d,
+          receiptImage: d.receiptImage && d.receiptImage.startsWith('/')
+            ? `${getBackendOrigin()}${d.receiptImage}`
+            : d.receiptImage
+        }));
+      }
+      return data;
     },
 
     async approveDeposit(id: string) {
