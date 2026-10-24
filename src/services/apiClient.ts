@@ -14,6 +14,9 @@ function getAuthHeader(): Record<string, string> {
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
+  if (res.status === 401 && typeof window !== 'undefined') {
+    localStorage.removeItem('lomi_admin_token');
+  }
   const contentType = res.headers.get('content-type') || '';
   if (!contentType.includes('application/json')) {
     if (!res.ok) {
@@ -32,6 +35,9 @@ async function fetchWithRetry(url: string, options?: RequestInit, retries = 3, d
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(url, options);
+      if (res.status === 401 && typeof window !== 'undefined') {
+        localStorage.removeItem('lomi_admin_token');
+      }
       // Never retry rate-limited responses — retrying makes it worse
       if (res.status === 429) return res;
       return res;
