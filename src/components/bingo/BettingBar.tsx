@@ -111,7 +111,7 @@ export const BettingBar: React.FC = () => {
             {waitingForPlayers ? (
               betAmount === 10 ? (
                 <span className="presence-hint ready-waiting">
-                  <i className="fa-solid fa-users"></i> {lang === 'am' ? `${Math.max(playersCount, 50)} ተጫዋቾች በመጠባበቅ ላይ! ካርቴላ ይግዙ` : `${Math.max(playersCount, 50)} players waiting · Buy ticket to start!`}
+                  <i className="fa-solid fa-users"></i> {lang === 'am' ? `${Math.max(playersCount, 50)} ተጫዋቾች ዝግጁ! ካርቴላ ይግዙ` : `${Math.max(playersCount, 50)} Players Ready · Buy ticket to start!`}
                 </span>
               ) : realPlayerCount >= 1 ? (
                 <span className="presence-hint ready-waiting">

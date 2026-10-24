@@ -213,15 +213,15 @@ app.post(['/api/telegram-webhook', '/api/telegram/webhook', '/telegram-webhook']
 // Serve Static Frontend Bundle in Production (Single-port hosting) with Optimized Caching
 const distPath = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(distPath)) {
-  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20261024_50PLAYERS
+  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20261025_RESPONSIVE_V1
   // so Telegram Webview never serves stale CEF/WebView2 disk cache from old bot posts
   app.use((req, res, next) => {
     if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) {
       const v = req.query.v;
-      if (v !== '20261024_50PLAYERS') {
+      if (v !== '20261025_RESPONSIVE_V1') {
         const cleanUrl = req.url.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
         const sep = cleanUrl.includes('?') ? '&' : '?';
-        const redirectUrl = `${cleanUrl}${sep}v=20261024_50PLAYERS`;
+        const redirectUrl = `${cleanUrl}${sep}v=20261025_RESPONSIVE_V1`;
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');

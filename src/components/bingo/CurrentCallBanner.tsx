@@ -58,7 +58,7 @@ export const CurrentCallBanner: React.FC = () => {
             ? (lang === 'am' ? 'የተጠራ ቁጥር' : 'Current Call')
             : roundPhase === 'winner'
             ? (lang === 'am' ? 'የአሸናፊ ማስታወቂያ 🏆' : 'Round Concluded 🏆')
-            : (lang === 'am' ? 'የተጫዋች ጥሪ' : 'Matchmaking')}
+            : (lang === 'am' ? 'የተጫዋች ጥሪ' : 'Lobby')}
         </div>
 
         <div className="compact-call-badge-wrap">
@@ -132,25 +132,29 @@ export const CurrentCallBanner: React.FC = () => {
           ) : roundPhase === 'lobby' ? (
             <div className="compact-recent-matchmaking-note">
               {isCountdown ? (
-                <span className="matchmaking-guide text-green">
-                  🟢 {lang === 'am' ? `ጨዋታ በ ${lobbyCountdown} ሰከንድ ይጀምራል!` : `Game starts in ${lobbyCountdown}s!`}
-                </span>
+                <div className="matchmaking-guide-lines text-green">
+                  <span className="guide-line-primary">🟢 {lang === 'am' ? `ጨዋታ በ ${lobbyCountdown}s ይጀምራል!` : `Starts in ${lobbyCountdown}s!`}</span>
+                  <span className="guide-line-secondary">{lang === 'am' ? 'ይዘጋጁ!' : 'Get ready!'}</span>
+                </div>
               ) : is1Ready ? (
-                <span className="matchmaking-guide text-amber">
-                  🟡 {lang === 'am' ? '1 ተጫዋች ዝግጁ ነው! ካርቴላ ይግዙ' : '1/2 ready · Buy ticket to start match!'}
-                </span>
+                <div className="matchmaking-guide-lines text-amber">
+                  <span className="guide-line-primary">🟡 {lang === 'am' ? '1 ተጫዋች ዝግጁ' : '1/2 Players Ready'}</span>
+                  <span className="guide-line-secondary">{lang === 'am' ? 'ካርቴላ ይግዙ እና ይጀምሩ!' : 'Buy ticket to start match!'}</span>
+                </div>
               ) : isMultipleInRoom ? (
-                <span className="matchmaking-guide text-blue">
-                  👥 {lang === 'am' ? `${activeUsersCount} ተጫዋቾች አሉ! ካርቴላ ይግዙ` : `${activeUsersCount} players in room! Buy ticket to play!`}
-                </span>
+                <div className="matchmaking-guide-lines text-blue">
+                  <span className="guide-line-primary">👥 {lang === 'am' ? `${activeUsersCount} ተጫዋቾች አሉ` : `${activeUsersCount} in Room`}</span>
+                  <span className="guide-line-secondary">{lang === 'am' ? 'ካርቴላ ይግዙ!' : 'Buy ticket to play!'}</span>
+                </div>
               ) : betAmount === 10 ? (
-                <span className="matchmaking-guide text-amber">
-                  🟡 {lang === 'am' ? `${Math.max(playersCount, 50)} ተጫዋቾች በመጠባበቅ ላይ! ካርቴላ ይግዙ` : `${Math.max(playersCount, 50)} players waiting · Buy ticket to start match!`}
-                </span>
+                <div className="matchmaking-guide-lines text-amber">
+                  <span className="guide-line-primary">👥 {lang === 'am' ? `${Math.max(playersCount, 50)} ተጫዋቾች ዝግጁ` : `${Math.max(playersCount, 50)} Players Waiting`}</span>
+                  <span className="guide-line-secondary">{lang === 'am' ? 'ካርቴላ ይግዙ እና ይጀምሩ!' : 'Buy ticket to start match!'}</span>
+                </div>
               ) : (
-                <span className="matchmaking-guide text-muted">
-                  ⏳ {lang === 'am' ? 'ተጫዋች በመጠበቅ ላይ...' : 'Waiting for players to come...'}
-                </span>
+                <div className="matchmaking-guide-lines text-muted">
+                  <span className="guide-line-primary">⏳ {lang === 'am' ? 'ተጫዋች በመጠበቅ ላይ...' : 'Waiting for players...'}</span>
+                </div>
               )}
             </div>
           ) : (
