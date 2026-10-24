@@ -589,7 +589,7 @@ export class TelegramBotService {
               const match = btnUrl.match(/startapp=([^&]+)/);
               if (match) startParam = decodeURIComponent(match[1]);
             }
-            const targetWebUrl = (!btnUrl || btnUrl.includes('t.me')) ? (cfg.webAppUrl || 'https://bingo-mini-app-30pe.onrender.com') : btnUrl;
+            const targetWebUrl = (!btnUrl || btnUrl.includes('t.me')) ? (cfg.webAppUrl || 'https://bingo-mini-app-3li9.onrender.com') : btnUrl;
             const versionedUrl = this.getVersionedWebAppUrl(targetWebUrl, startParam);
             inlineKeyboard.push([
               { text: opts.buttonText, web_app: { url: versionedUrl } }

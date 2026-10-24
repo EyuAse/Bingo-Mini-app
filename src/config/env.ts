@@ -4,7 +4,7 @@
  * Netlify, Vercel, Render, and custom domains.
  */
 
-export const LIVE_BACKEND_ORIGIN = 'https://bingo-mini-app-30pe.onrender.com';
+export const LIVE_BACKEND_ORIGIN = 'https://bingo-mini-app-3li9.onrender.com';
 
 /**
  * Returns the authoritative backend origin for Socket.IO and REST API calls.
@@ -27,6 +27,11 @@ export const getBackendOrigin = (): string => {
     hostname.includes('ngrok') ||
     hostname.includes('localtunnel')
   ) {
+    return window.location.origin;
+  }
+
+  // If running directly on any Render domain, dynamically use current origin
+  if (hostname.endsWith('.onrender.com')) {
     return window.location.origin;
   }
 
