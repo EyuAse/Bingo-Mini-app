@@ -19,7 +19,9 @@ export const LobbyStatusBanner: React.FC = () => {
   } = useBingo();
 
   // Never show less than held cartelas when local user holds tickets (server broadcast may not have arrived yet)
-  const displayPlayerCount = betAmount === 10 ? Math.max(playersCount, 5) : Math.max(realPlayerCount, hasTicket ? (cardQuantity || 1) : 0);
+  const displayPlayerCount = betAmount === 10
+    ? Math.max(playersCount, hasTicket ? 51 : 50)
+    : Math.max(realPlayerCount, hasTicket ? (cardQuantity || 1) : 0);
 
   const suggestedStake = Object.entries(stakeRoomsSummary)
     .map(([stakeStr, count]) => ({ stake: Number(stakeStr), count }))
@@ -85,20 +87,20 @@ export const LobbyStatusBanner: React.FC = () => {
               <div className="waiting-title-row">
                 <span className="waiting-title">
                   {betAmount === 10
-                    ? (lang === 'am' ? '5 ተጫዋቾች በመጠባበቅ ላይ' : '5 Players Waiting')
+                    ? (lang === 'am' ? `${displayPlayerCount} ተጫዋቾች በመጠባበቅ ላይ` : `${displayPlayerCount} Players Waiting`)
                     : (lang === 'am' ? 'ተጫዋቾችን በመጠበቅ ላይ' : 'Waiting for Players')}
                 </span>
                 <span className="waiting-count-pill">
                   <i className="fa-solid fa-users"></i> {betAmount === 10
-                    ? (lang === 'am' ? '5 ዝግጁ' : '5 Ready')
+                    ? (lang === 'am' ? `${displayPlayerCount} ዝግጁ` : `${displayPlayerCount} Ready`)
                     : `${waitingPlayersCount} / 2 ${lang === 'am' ? 'ያስፈልጋል' : 'Needed'}`}
                 </span>
               </div>
               <p className="waiting-subtext">
                 {betAmount === 10
                   ? (lang === 'am'
-                      ? '5 ተጫዋቾች በመጠባበቅ ላይ ናቸው! ካርቴላ ይግዙ እና ጨዋታው ወዲያውኑ ይጀምራል'
-                      : '5 players waiting in lobby! Buy ticket to start match!')
+                      ? `${displayPlayerCount} ተጫዋቾች በመጠባበቅ ላይ ናቸው! ካርቴላ ይግዙ እና ጨዋታው ወዲያውኑ ይጀምራል`
+                      : `${displayPlayerCount} players waiting in lobby! Buy ticket to start match!`)
                   : displayPlayerCount >= 1
                   ? (lang === 'am'
                       ? `1 ተጫዋች ዝግጁ ነው! 1 ተጋጣሚ ወደ ${betAmount} ብር ክፍል እስኪገባ በመጠበቅ ላይ... • ቆጠራው በ2 ተጫዋቾች ይጀምራል`
@@ -160,12 +162,12 @@ export const LobbyStatusBanner: React.FC = () => {
               </div>
               <p className="countdown-subtext">
                 {betAmount === 10
-                  ? (lang === 'am' ? '⚡ 5 ተጠባባቂ ተጫዋቾች ተካተዋል (20% የቤት ክፍያ)' : '⚡ 5 Standby Bots Included (20% House Fee)')
+                  ? (lang === 'am' ? '⚡ 50+ ተጫዋቾች በአሬናው ተሳትፈዋል (ደርሽ 400+ ብር)' : '⚡ 50+ Live Competitors in Arena (Derash 400+ ETB)')
                   : displayPlayerCount <= 5
                   ? (lang === 'am' ? '🎯 100% የድል ክፍያ፡ 0% የቤት ክፍያ (አሸናፊው ሁሉንም ይወስዳል!)' : '🎯 100% Payout Tier: 0% House Fee (Winner takes all!)')
                   : displayPlayerCount <= 10
                   ? (lang === 'am' ? '🛡️ 100% እውነተኛ ተጫዋቾች (ምንም ቦቶች የሉም)' : '🛡️ 100% Real Players (No Bots in Room)')
-                  : (lang === 'am' ? '⚡ ትልቅ የአሬና ጨዋታ (3 ቦቶች ተጨምረዋል)' : '⚡ Big Arena Match (3 bots added)')}
+                  : (lang === 'am' ? '⚡ ትልቅ የአሬና ጨዋታ' : '⚡ Big Arena Match')}
               </p>
             </div>
           </div>

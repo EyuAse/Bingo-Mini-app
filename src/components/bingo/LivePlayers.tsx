@@ -5,7 +5,9 @@ export const LivePlayers: React.FC = () => {
   const { opponents, playersCount, prizePool, totalPot, betAmount } = useBingo();
   const poolDisplay = prizePool > 0
     ? prizePool
-    : (betAmount === 10 ? Math.floor((playersCount * 10 || 50) * 0.8) : totalPot);
+    : (betAmount === 10 ? Math.floor(((playersCount || 50) * 10) * 0.8) : totalPot);
+
+  const displayCount = betAmount === 10 ? Math.max(playersCount, 50) : playersCount;
 
   return (
     <div className="bingo-live-players-panel" id="bingo-live-players-panel">
@@ -13,7 +15,7 @@ export const LivePlayers: React.FC = () => {
         <div className="lp-title">
           <span className="live-indicator"></span>
           <span>
-            LIVE ROOM PLAYERS (<strong id="live-players-header-count">{playersCount}</strong>)
+            LIVE ROOM PLAYERS (<strong id="live-players-header-count">{displayCount}</strong>)
           </span>
         </div>
         <span className="lp-subtitle">

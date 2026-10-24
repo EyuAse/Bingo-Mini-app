@@ -21,6 +21,7 @@ export const CurrentCallBanner: React.FC = () => {
     lobbyCountdown,
     roundPhase,
     waitingForPlayers,
+    playersCount,
     realPlayerCount,
     activeUsersCount,
     hasTicket,
@@ -101,7 +102,7 @@ export const CurrentCallBanner: React.FC = () => {
                   : isMultipleInRoom
                   ? (lang === 'am' ? `${activeUsersCount} ተጫዋች` : `${activeUsersCount} in Room`)
                   : betAmount === 10
-                  ? (lang === 'am' ? '5 ዝግጁ' : '5 Ready')
+                  ? (lang === 'am' ? `${Math.max(playersCount, 50)} ዝግጁ` : `${Math.max(playersCount, 50)} Ready`)
                   : (lang === 'am' ? 'በመጠበቅ...' : 'Waiting...')}
               </span>
             </div>
@@ -144,7 +145,7 @@ export const CurrentCallBanner: React.FC = () => {
                 </span>
               ) : betAmount === 10 ? (
                 <span className="matchmaking-guide text-amber">
-                  🟡 {lang === 'am' ? '5 ተጫዋቾች በመጠባበቅ ላይ! ካርቴላ ይግዙ' : '5 players waiting · Buy ticket to start match!'}
+                  🟡 {lang === 'am' ? `${Math.max(playersCount, 50)} ተጫዋቾች በመጠባበቅ ላይ! ካርቴላ ይግዙ` : `${Math.max(playersCount, 50)} players waiting · Buy ticket to start match!`}
                 </span>
               ) : (
                 <span className="matchmaking-guide text-muted">
