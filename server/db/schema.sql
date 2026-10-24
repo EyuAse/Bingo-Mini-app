@@ -191,6 +191,7 @@ CREATE TABLE IF NOT EXISTS telegram_broadcasts (
 );
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS bot_started BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bot_blocked BOOLEAN DEFAULT FALSE;
 CREATE INDEX IF NOT EXISTS idx_broadcasts_created ON telegram_broadcasts(created_at DESC);
 
 -- 12. Referral System (1-Time 10% First Deposit Game Bonus)

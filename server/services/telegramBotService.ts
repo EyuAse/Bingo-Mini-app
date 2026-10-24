@@ -767,13 +767,13 @@ export class TelegramBotService {
       };
     }
 
-    // 3. Mass Broadcast to all active bot players (who have opened/started chat with the bot)
+    // 3. Mass Broadcast to all active bot players (all registered players with Telegram IDs)
     const usersRes = await query(
       `SELECT DISTINCT telegram_id 
        FROM users 
        WHERE telegram_id IS NOT NULL 
          AND telegram_id > 0
-         AND bot_started = TRUE
+         AND (bot_blocked IS NULL OR bot_blocked = FALSE)
        ORDER BY telegram_id ASC`
     );
 
@@ -876,12 +876,13 @@ export class TelegramBotService {
 
               if (res.ok) {
                 sentCount++;
+                query('UPDATE users SET bot_started = TRUE, bot_blocked = FALSE WHERE telegram_id = $1', [chatId]).catch(() => { });
               } else {
                 failedCount++;
                 const desc = (res.description || '').toLowerCase();
-                // If user blocked bot or deactivated account, mark bot_started = false so future broadcasts skip them
-                if (desc.includes('bot was blocked by the user') || desc.includes('user is deactivated')) {
-                  query('UPDATE users SET bot_started = FALSE WHERE telegram_id = $1', [chatId]).catch(() => { });
+                // If user blocked bot, deactivated account, or cannot initiate conversation, mark bot_blocked = TRUE so future broadcasts skip them
+                if (desc.includes('bot was blocked by the user') || desc.includes('user is deactivated') || desc.includes("can't initiate")) {
+                  query('UPDATE users SET bot_blocked = TRUE, bot_started = FALSE WHERE telegram_id = $1', [chatId]).catch(() => { });
                 }
               }
             } catch {
@@ -1045,10 +1046,10 @@ export class TelegramBotService {
       if (chatType === 'private' && chat.id) {
         try {
           if (newStatus === 'kicked') {
-            await query('UPDATE users SET bot_started = FALSE WHERE telegram_id = $1', [chat.id]);
-            console.log(`👤 [Telegram User blocked/stopped bot]: ${chat.id} marked as bot_started=FALSE`);
+            await query('UPDATE users SET bot_blocked = TRUE, bot_started = FALSE WHERE telegram_id = $1', [chat.id]);
+            console.log(`👤 [Telegram User blocked/stopped bot]: ${chat.id} marked as bot_blocked=TRUE`);
           } else if (newStatus === 'member') {
-            await query('UPDATE users SET bot_started = TRUE WHERE telegram_id = $1', [chat.id]);
+            await query('UPDATE users SET bot_blocked = FALSE, bot_started = TRUE WHERE telegram_id = $1', [chat.id]);
             console.log(`👤 [Telegram User started/unblocked bot]: ${chat.id} marked as bot_started=TRUE`);
           }
         } catch (e) {

@@ -126,7 +126,8 @@ router.post('/telegram', async (req, res) => {
              first_name = COALESCE($2, first_name),
              last_name = COALESCE($3, last_name),
              photo_url = COALESCE($4, photo_url),
-             phone = COALESCE($5, phone)
+             phone = COALESCE($5, phone),
+             bot_started = TRUE
          WHERE id = $6`,
         [cleanUsername, firstName || null, lastName || null, photoUrl || null, phone || null, userRow.id]
       );
@@ -163,8 +164,8 @@ router.post('/telegram', async (req, res) => {
         }
 
         const newUserRes = await client.query(
-          `INSERT INTO users (telegram_id, telegram_username, first_name, last_name, full_name, photo_url, phone, role, status, referral_code, referred_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 'player', 'active', $8, $9)
+          `INSERT INTO users (telegram_id, telegram_username, first_name, last_name, full_name, photo_url, phone, role, status, referral_code, referred_by, bot_started, bot_blocked)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'player', 'active', $8, $9, TRUE, FALSE)
            RETURNING *`,
           [tgIdNum, cleanUsername, firstName || null, lastName || null, fullName, photoUrl || null, phone || null, myReferralCode, referrerId]
         );

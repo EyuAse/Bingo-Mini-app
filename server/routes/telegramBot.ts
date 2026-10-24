@@ -25,7 +25,7 @@ router.get('/status', async (_req, res) => {
     const countRes = await query(
       `SELECT 
          COUNT(*) FILTER (WHERE telegram_id IS NOT NULL AND telegram_id > 0) as total_telegram_users,
-         COUNT(*) FILTER (WHERE bot_started = TRUE) as bot_started_users
+         COUNT(*) FILTER (WHERE telegram_id IS NOT NULL AND telegram_id > 0 AND (bot_blocked IS NULL OR bot_blocked = FALSE)) as bot_started_users
        FROM users`
     );
 
