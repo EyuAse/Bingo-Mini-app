@@ -9,7 +9,7 @@ import {
   getBallColumn,
   generateRandomShuffledBalls
 } from './cartelaGenerator.ts';
-import { sampleStandbyBots, isStandbyBotId } from './ethiopianBotRoster.ts';
+import { sampleStandbyBots, isStandbyBotId, STANDBY_BOT_COUNT } from './ethiopianBotRoster.ts';
 
 export interface PlayerTicket {
   userId: string;
@@ -75,6 +75,7 @@ export interface GameRoomState {
   opponentCards: OpponentCard[];
   targetWinnerType: 'owner' | 'bot' | 'real';
   targetFinishBall?: number;
+  targetCardMatrix?: BingoCell[];
   waitingForPlayers: boolean;   // true when < 2 real users have tickets; countdown frozen
   waitingForOtherHouses?: boolean; // true when this house finished early and waits for other active houses
   isHoldingClaimWindow?: boolean;  // true when holding 3.0s window for manual player simultaneous claim
@@ -981,8 +982,8 @@ class BingoGameEngine {
     room.realPlayerCount = this.getRealCartelaCount(room);
 
     // Commission tier based on total cartelas count:
-    // Room 10 operates with 5 standby bots + players with standard 20% platform commission,
-    // ensuring net winner payout is strictly 80% (48 ETB on 60 ETB, 56 ETB on 70 ETB, etc.)
+    // Room 10 operates with 50 standby bots + players with standard 20% platform commission,
+    // ensuring net winner payout is strictly 80% (400 ETB on 500 ETB baseline, 408 ETB on 510 ETB, etc.)
     // Rooms 20, 50, 100 logic flow remains 100% UNTOUCHED (0% when <= 5 cartelas, 20% when > 5)
     const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID;
     if (isRoom10) {
@@ -1010,7 +1011,7 @@ class BingoGameEngine {
 
   /**
    * Synchronizes Room 10 standby bots in real-time.
-   * Ensures exactly 5 distinct Ethiopian standby bots are persistently pre-seeded
+   * Ensures exactly 50 distinct Ethiopian standby bots are persistently pre-seeded
    * in Room 10 with non-overlapping cartelas, regardless of whether 0, 1, 2, or more real players join.
    * If real players choose cartelas held by bots, bots automatically yield and re-roll.
    * Rooms 20, 50, 100 are strictly excluded from this logic (strictly 0 bots).
@@ -1022,10 +1023,10 @@ class BingoGameEngine {
       return;
     }
 
-    // Room 10 persistently maintains 5 authentic Ethiopian standby bots
-    if (forceRotate || room.opponentCards.length !== 5 || !room.opponentCards.every(o => isStandbyBotId(o.botUserId))) {
+    // Room 10 persistently maintains 50 authentic Ethiopian standby bots
+    if (forceRotate || room.opponentCards.length !== STANDBY_BOT_COUNT || !room.opponentCards.every(o => isStandbyBotId(o.botUserId))) {
       room.opponentCards = [];
-      const sampledBots = sampleStandbyBots(5);
+      const sampledBots = sampleStandbyBots(STANDBY_BOT_COUNT);
       const assignedIds = new Set<number>();
       room.tickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
       if (room.nextRoundTickets) {
@@ -1271,26 +1272,21 @@ class BingoGameEngine {
         }
 
         if (isRoom10) {
-          // Room 10 Fair Ticket-Proportional Lottery Engine:
-          // Every active card (real player tickets + standby bots) has an equal probability to win.
-          // For 1 real player + 5 bots (6 cards): Real win prob = 1/6 ≈ 16.67%, Bot win prob = 5/6 ≈ 83.33%.
-          // House EV = (5/6)*(+10) + (1/6)*(-38) = +2.00 ETB profit per game (+20% rake).
-          // For 2 real players + 5 bots (7 cards): Real win prob = 2/7 ≈ 28.57% (14.28% per player).
-          // House EV = (5/7)*(+20) + (2/7)*(-36) = +4.00 ETB profit per game (+20% rake).
           const botCount = room.opponentCards.length;
           const totalCards = realCartelaCount + botCount;
-          const baseRealWinProb = totalCards > 0 ? (realCartelaCount / totalCards) : 0.1667;
+          const baseRealWinProb = totalCards > 0 ? (realCartelaCount / totalCards) : (1 / (1 + STANDBY_BOT_COUNT));
           let effectiveRealWinProb = baseRealWinProb;
 
-          // Phase 2: In-Memory Loss-Streak & Session Anti-Churn Guard (Room 10 Single Player)
+          // In-Memory Loss-Streak & Session Anti-Churn Guard (Room 10 Single Player)
+          // For 50 bots (where expected rounds between wins is ~51),
+          // if single player experiences 60 or more consecutive losses, softly boost win probability
+          // by 8% so they hit a win, recover stake, and stay engaged while guaranteeing house profit.
           if (distinctRealPlayers === 1) {
             const singleUserId = room.tickets.keys().next().value;
             if (singleUserId) {
               const streak = this.playerSessionStreaks.get(singleUserId);
-              // If single player has experienced 5 or more consecutive losses, softly boost win probability
-              // to ~25% so they hit a win, recover stake, and stay engaged without bleeding house profit.
-              if (streak && streak.consecutiveLosses >= 5) {
-                effectiveRealWinProb = 0.25;
+              if (streak && streak.consecutiveLosses >= 60) {
+                effectiveRealWinProb = baseRealWinProb * 1.08;
               }
             }
           }
@@ -1534,6 +1530,7 @@ class BingoGameEngine {
     // Dynamically pick round completion ball: Ball 15 to 25 (inclusive)
     const targetFinishBall = 15 + Math.floor(Math.random() * 11); // 15, 16, ..., 25
     room.targetFinishBall = targetFinishBall;
+    room.targetCardMatrix = targetCardMatrix;
     const finishIndex = targetFinishBall - 1; // 14 to 24
 
     console.log(`🎯 [GameEngine] Round #${room.roundNumber} targeting ${room.targetWinnerType.toUpperCase()} win on Ball #${targetFinishBall} (Finish index: ${finishIndex})`);
@@ -1542,20 +1539,22 @@ class BingoGameEngine {
     const finalBall = targetNumbers[targetNumbers.length - 1];
     const earlyTargetNumbers = targetNumbers.slice(0, -1);
 
-    // Collect competing cards (other real players and bot cards)
+    // Collect competing cards (other real players and up to 5 bot cards, preserving exact 5-bot behavior)
     const otherCards: BingoCell[][] = [];
+    const botGuard = room.opponentCards
+      .filter(o => o.cardMatrix !== targetCardMatrix)
+      .slice(0, 5);
+
     if (chosenRealTicket) {
       allRealTickets.forEach(t => {
         if (t.cartelaId !== chosenRealTicket!.cartelaId) {
           otherCards.push(t.cardMatrix);
         }
       });
-      room.opponentCards.forEach(o => otherCards.push(o.cardMatrix));
+      botGuard.forEach(o => otherCards.push(o.cardMatrix));
     } else {
       allRealTickets.forEach(t => otherCards.push(t.cardMatrix));
-      room.opponentCards.forEach(o => {
-        if (o.cardMatrix !== targetCardMatrix) otherCards.push(o.cardMatrix);
-      });
+      botGuard.forEach(o => otherCards.push(o.cardMatrix));
     }
 
     // Mathematical Invariant Guarantee:
@@ -1641,6 +1640,17 @@ class BingoGameEngine {
       if (isSafeToAdd(b)) {
         S.push(b);
         sSet.add(b);
+      }
+    }
+
+    // Safety fallback: Ensure S reaches finishIndex so slots 0 to finishIndex - 1 are completely filled
+    if (S.length < finishIndex) {
+      for (const b of shuffledBaseBalls) {
+        if (S.length >= finishIndex) break;
+        if (b !== finalBall && !sSet.has(b)) {
+          S.push(b);
+          sSet.add(b);
+        }
       }
     }
 
@@ -1830,10 +1840,11 @@ class BingoGameEngine {
           allCardsWithMinBall.push({ card: t.cardMatrix, minBall: h.room.targetFinishBall });
         }
       }));
-      h.room.opponentCards.forEach(o => {
-        if (o.cardMatrix !== h.targetCardMatrix) {
-          allCardsWithMinBall.push({ card: o.cardMatrix, minBall: h.room.targetFinishBall });
-        }
+      const botGuard = h.room.opponentCards
+        .filter(o => o.cardMatrix !== h.targetCardMatrix)
+        .slice(0, 5);
+      botGuard.forEach(o => {
+        allCardsWithMinBall.push({ card: o.cardMatrix, minBall: h.room.targetFinishBall });
       });
     }
 
@@ -1871,9 +1882,10 @@ class BingoGameEngine {
       h.room.tickets.forEach(list => list.forEach(t => {
         if (t.cardMatrix !== h.targetCardMatrix) otherTickets.push(t.cardMatrix);
       }));
-      h.room.opponentCards.forEach(o => {
-        if (o.cardMatrix !== h.targetCardMatrix) otherTickets.push(o.cardMatrix);
-      });
+      const botDispersion = h.room.opponentCards
+        .filter(o => o.cardMatrix !== h.targetCardMatrix)
+        .slice(0, 5);
+      botDispersion.forEach(o => otherTickets.push(o.cardMatrix));
 
       for (const comp of otherTickets) {
         const compNums = comp
@@ -2140,17 +2152,19 @@ class BingoGameEngine {
             }
           }
 
-          // Check Bot Opponent cards in this house
-          for (const opp of room.opponentCards) {
-            const winCheck = checkWinningPattern(opp.cardMatrix, room.drawnNumbers);
-            if (winCheck.isWin) {
-              winningCards.push({
-                userName: opp.opponentName,
-                cartelaId: opp.cartelaId,
-                isReal: false,
-                winningPattern: winCheck.winningPattern || 'Bingo Line',
-                winningIndices: winCheck.winningIndices || []
-              });
+          // Check Bot Opponent cards in this house (only if no real player won on this ball)
+          if (winningCards.length === 0) {
+            for (const opp of room.opponentCards) {
+              const winCheck = checkWinningPattern(opp.cardMatrix, room.drawnNumbers);
+              if (winCheck.isWin) {
+                winningCards.push({
+                  userName: opp.opponentName,
+                  cartelaId: opp.cartelaId,
+                  isReal: false,
+                  winningPattern: winCheck.winningPattern || 'Bingo Line',
+                  winningIndices: winCheck.winningIndices || []
+                });
+              }
             }
           }
 
@@ -2403,12 +2417,15 @@ class BingoGameEngine {
     room.phase = 'winner';
 
     try {
-      const totalWinningCards = winningCards.length;
       const realWinners = winningCards.filter(w => w.isReal);
       const botWinners = winningCards.filter(w => !w.isReal);
 
+      // Priority Guarantee: If real player(s) win, they receive 100% of the prize pool without bot dilution
+      const effectiveWinningCards = realWinners.length > 0 ? realWinners : winningCards;
+      const totalWinningCards = effectiveWinningCards.length;
+
       // Group winning cards by unique entity: real users by userId, bots by opponent ID
-      const distinctEntities = new Set(winningCards.map(w => w.isReal ? `real_${w.userId}` : `bot_${w.cartelaId}`));
+      const distinctEntities = new Set(effectiveWinningCards.map(w => w.isReal ? `real_${w.userId}` : `bot_${w.cartelaId}`));
       const isSplit = distinctEntities.size > 1;
 
       // Group real winning cards by userId
@@ -2553,7 +2570,7 @@ class BingoGameEngine {
         }
       }
 
-      const firstWinner = winningCards[0];
+      const firstWinner = effectiveWinningCards[0];
       const matchingOpp = room.opponentCards.find(o => o.cartelaId === firstWinner.cartelaId);
       const winnerStake = firstWinner.isReal
         ? (room.tickets.get(firstWinner.userId || '')?.[0]?.betAmount || 10)
@@ -2562,7 +2579,7 @@ class BingoGameEngine {
       const primaryEntityId = firstWinner.isReal ? `real_${firstWinner.userId}` : `bot_${firstWinner.cartelaId}`;
       const externalCoWinners = Array.from(
         new Set(
-          winningCards
+          effectiveWinningCards
             .filter(w => (w.isReal ? `real_${w.userId}` : `bot_${w.cartelaId}`) !== primaryEntityId)
             .map(w => w.userName)
         )
@@ -2575,10 +2592,10 @@ class BingoGameEngine {
           : (firstWinner.isReal ? 'user_solo' : 'opponent_win'),
         winnerId: firstWinner.userId || matchingOpp?.botUserId || `bot_${firstWinner.cartelaId}`,
         winnerName: firstWinner.userName,
-        winnerNames: Array.from(new Set(winningCards.map(w => w.userName))),
+        winnerNames: Array.from(new Set(effectiveWinningCards.map(w => w.userName))),
         winnerUserIds: Array.from(new Set(realWinners.map(rw => rw.userId))),
         winningCartelaNumber: firstWinner.cartelaId,
-        winningCartelas: winningCards.map(w => w.cartelaId),
+        winningCartelas: effectiveWinningCards.map(w => w.cartelaId),
         winningPattern: firstWinner.winningPattern,
         winningIndices: firstWinner.winningIndices,
         totalPot: room.totalPot,
@@ -2607,6 +2624,7 @@ class BingoGameEngine {
           streak.lastActive = now;
 
           if (winningUserIds.has(userId)) {
+            console.log(`🎉 [Room 10 Real Win] Real player ${userId} won round #${room.roundNumber}! Resetting streak (was: ${streak.consecutiveLosses} losses).`);
             streak.consecutiveLosses = 0;
             streak.recentWins += 1;
           } else {

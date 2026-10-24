@@ -221,15 +221,20 @@ export const ETHIOPIAN_200_BOT_ROSTER: ReadonlyArray<StandbyBotProfile> = Object
 ]);
 
 /**
+ * Standby Bot Pool Size for Room 10
+ */
+export const STANDBY_BOT_COUNT = 50;
+
+/**
  * Uniformly samples N distinct bots from the 200-bot roster.
  * Uses Fisher-Yates true random shuffle to guarantee dynamic rotation
  * so players never see the same bots repeatedly.
  *
- * @param count Number of bots to sample (default 5 for Room 10)
+ * @param count Number of bots to sample (default 50 for Room 10)
  * @param excludeIds Optional set of bot IDs to exclude from this round
  * @returns Array of StandbyBotProfile
  */
-export function sampleStandbyBots(count: number = 5, excludeIds?: Set<string>): StandbyBotProfile[] {
+export function sampleStandbyBots(count: number = STANDBY_BOT_COUNT, excludeIds?: Set<string>): StandbyBotProfile[] {
   const eligible = excludeIds && excludeIds.size > 0
     ? ETHIOPIAN_200_BOT_ROSTER.filter(b => !excludeIds.has(b.id))
     : [...ETHIOPIAN_200_BOT_ROSTER];
