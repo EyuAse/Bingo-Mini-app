@@ -2,6 +2,8 @@ async function checkBundle() {
   const res = await fetch('https://bingo-mini-app-3li9.onrender.com');
   const html = await res.text();
   console.log('HTML length:', html.length);
+  const vm = html.match(/LATEST_V\s*=\s*'([^']+)'/);
+  console.log('Live LATEST_V:', vm ? vm[1] : 'not found');
   const m = html.match(/src="(\/assets\/index-[^"]+\.js)"/);
   if (!m) {
     console.log('No script tag found!');
