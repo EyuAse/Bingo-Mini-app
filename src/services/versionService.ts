@@ -3,7 +3,7 @@
  * Ensures Telegram Desktop and Mobile WebViews immediately synchronize
  * with the latest deployed build, invalidating any stale local storage states.
  */
-export const CLIENT_BUILD_VERSION = '20261023_PROD';
+export const CLIENT_BUILD_VERSION = '20261024_50BOTS';
 
 class VersionService {
   private static instance: VersionService;
