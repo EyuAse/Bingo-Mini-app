@@ -17,6 +17,8 @@ import {
   type BotEngineConfig,
   generateDynamicBotTarget,
   generateNextRoundBotTarget,
+  calculateRoom10TargetBots,
+  getRoom10HourlyBounds,
   getTargetBotsForElapsedSecond,
   MIN_STANDBY_BOT_COUNT,
   MAX_STANDBY_BOT_COUNT,
@@ -349,8 +351,11 @@ class BingoGameEngine {
       if (!r) return 0;
       const isRoom10 = roomId === 'room-10' || roomId === ARENA_ROOM_ID;
       if (isRoom10) {
-        if (r.opponentCards.length === 0) {
-          this.syncRoom10StandbyBots(r);
+        if (r.opponentCards.length === 0 && r.phase === 'lobby' && this.botConfig.mode !== 'disabled') {
+          const bounds = getRoom10HourlyBounds();
+          if (bounds.max > 0) {
+            this.syncRoom10StandbyBots(r);
+          }
         }
         return this.getRoomPlayersCount(r);
       }
@@ -1096,10 +1101,8 @@ class BingoGameEngine {
     } else if (this.botConfig.mode === 'fixed') {
       fullRoundTarget = Math.max(0, Math.min(50, this.botConfig.fixedCount ?? 20));
     } else {
-      const minB = this.botConfig.minBots ?? 2;
-      const maxB = this.botConfig.maxBots ?? 50;
       if (forceRotate || room.dynamicBotTarget === null || room.dynamicBotTarget === undefined) {
-        fullRoundTarget = generateNextRoundBotTarget(room.dynamicBotTarget, minB, maxB);
+        fullRoundTarget = calculateRoom10TargetBots(room.dynamicBotTarget);
       } else {
         fullRoundTarget = room.dynamicBotTarget;
       }
@@ -1258,7 +1261,7 @@ class BingoGameEngine {
           room.dynamicBotTarget = Math.max(0, Math.min(50, this.botConfig.fixedCount));
           room.targetBotsToSeed = sampleStandbyBots(room.dynamicBotTarget);
         } else {
-          room.dynamicBotTarget = generateNextRoundBotTarget(room.dynamicBotTarget, this.botConfig.minBots, this.botConfig.maxBots);
+          room.dynamicBotTarget = calculateRoom10TargetBots(room.dynamicBotTarget);
           room.targetBotsToSeed = sampleStandbyBots(room.dynamicBotTarget);
         }
 

@@ -361,6 +361,72 @@ export function generateDynamicBotTarget(min: number = 2, max: number = 50, prev
 }
 
 /**
+ * Calculates Room 10 dynamic bot target bounds strictly by East Africa Time (EAT / UTC+3):
+ * 1. 01:00 AM – 05:59 AM (after 12:59 AM cutoff): STRICTLY 0 BOTS (Sleep Mode)
+ * 2. 06:00 AM – 11:59 AM: 2 to 10 bots (Morning Casual)
+ * 3. 12:00 PM – 03:59 PM: 8 to 20 bots (Afternoon Casual)
+ * 4. 04:00 PM – 06:29 PM: 15 to 30 bots (Evening Rush / Commute)
+ * 5. 06:30 PM – 08:59 PM: 25 to 42 bots (Dinner & Relaxation)
+ * 6. 09:00 PM – 10:59 PM: 35 to 50 bots (Super Peak Bedtime - HARD CAP: 50)
+ * 7. 11:00 PM – 12:59 AM: 2 to 15 bots (Late Night Taper down to 0)
+ */
+export function getRoom10HourlyBounds(date: Date = new Date()): { min: number; max: number } {
+  // Convert to Ethiopian / East Africa Time (UTC+3)
+  const eatHour = (date.getUTCHours() + 3) % 24;
+  const eatMinute = date.getUTCMinutes();
+
+  // 1. 01:00 AM – 05:59 AM (After 12:59 AM cutoff): Strictly 0 bots
+  if (eatHour >= 1 && eatHour < 6) {
+    return { min: 0, max: 0 };
+  }
+
+  // 2. 06:00 AM – 11:59 AM: 2 to 10 bots
+  if (eatHour >= 6 && eatHour < 12) {
+    return { min: 2, max: 10 };
+  }
+
+  // 3. 12:00 PM – 03:59 PM: 8 to 20 bots
+  if (eatHour >= 12 && eatHour < 16) {
+    return { min: 8, max: 20 };
+  }
+
+  // 4. 04:00 PM – 06:29 PM: 15 to 30 bots
+  if (eatHour >= 16 && (eatHour < 18 || (eatHour === 18 && eatMinute < 30))) {
+    return { min: 15, max: 30 };
+  }
+
+  // 5. 06:30 PM – 08:59 PM: 25 to 42 bots
+  if ((eatHour === 18 && eatMinute >= 30) || (eatHour >= 19 && eatHour < 21)) {
+    return { min: 25, max: 42 };
+  }
+
+  // 6. 09:00 PM – 10:59 PM: 35 to 50 bots (Super Peak - MAX 50)
+  if (eatHour >= 21 && eatHour < 23) {
+    return { min: 35, max: 50 };
+  }
+
+  // 7. 11:00 PM – 12:59 AM: 2 to 15 bots (Tapering before 12:59 AM cutoff)
+  return { min: 2, max: 15 };
+}
+
+/**
+ * Calculates Room 10's target bot count for the upcoming round:
+ * - 0 bots between 01:00 AM and 06:00 AM (sleep mode)
+ * - 2 to 20 bots between 06:00 AM and 04:00 PM
+ * - 15 to 50 bots between 04:00 PM and 11:00 PM (hard-capped at 50)
+ * - Seamless Markovian retention between consecutive rounds (|next - prev| <= 5)
+ */
+export function calculateRoom10TargetBots(previousTarget?: number, customDate?: Date): number {
+  const bounds = getRoom10HourlyBounds(customDate);
+  if (bounds.max === 0) {
+    return 0; // Absolute 0 bots during late night sleep
+  }
+
+  // Generate target using Markovian retention within hourly bounds
+  return generateNextRoundBotTarget(previousTarget, bounds.min, bounds.max);
+}
+
+/**
  * Calculates the target cumulative bot count that should be present in Room 10
  * at elapsed second `elapsedSeconds` (0 to 45, where elapsedSeconds = 45 - remainingSeconds),
  * mimicking authentic human player arrivals across a 45-second lobby countdown.
