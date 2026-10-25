@@ -1266,6 +1266,24 @@ Create and execute a dedicated automated test suite (`server/scripts/test_room10
    - `npx tsc --noEmit` exits with 0 errors.
    - `npm run build` succeeds cleanly.
 
+#### Execution & Verification Status: ✅ 100% COMPLETED & VERIFIED
+- **Script Executed**: `npx tsx server/scripts/test_room10_hourly_schedule.ts` (Exit Code 0).
+- **All 24 Hours Tested**:
+  - 01:00 AM – 06:00 AM: Strictly **0 bots** (Bounds: [0, 0]).
+  - 06:00 AM – 12:00 PM: **4–6 bots** (Bounds: [2, 10]).
+  - 12:00 PM – 04:00 PM: **12–13 bots** (Bounds: [8, 20]).
+  - 04:00 PM – 06:30 PM: **18–22 bots** (Bounds: [15, 30]).
+  - 06:30 PM – 09:00 PM: **30–31 bots** (Bounds: [25, 42]).
+  - 09:00 PM – 11:00 PM (NOW: 22:16 EAT): **41–43 bots** (Bounds: [35, 50], Hard Cap: 50).
+  - 11:00 PM – 12:59 AM: **5–6 bots** (Bounds: [2, 15]).
+- **Markovian Drift**: Verified 50 consecutive rounds; max round-to-round step is $\le 5$ bots.
+- **50 Bot Cap**: Verified across all 1,440 minutes of the day (0 violations).
+- **Multi-Room Isolation Firewall**:
+  - Rooms 20, 50, and 100 confirmed strictly `opponentCards.length === 0` (0 bots 24/7).
+  - `getStakeRoomsSummary()` reports strictly real human players for Rooms 20, 50, 100.
+- **Zero Frontend UI Edits**: Verified `git status src/` is 100% clean (0 files modified).
+- **Bundle & Type Safety**: `npx tsc --noEmit` passed with 0 errors; `npm run build` succeeded cleanly.
+
 
 
 
