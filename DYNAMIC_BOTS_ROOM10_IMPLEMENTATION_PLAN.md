@@ -1169,28 +1169,32 @@ Create and execute a dedicated automated test suite that validates the new Teleg
 
 ---
 
-### Phase 19: Room 10 Time-of-Day Traffic Engine (4:00 PM – 11:00 PM Window, Max 50 Bots)
+### Phase 19: Room 10 Time-of-Day Traffic Engine (Exact Client Hourly Specification)
 
 #### Objective
-Implement an organic time-of-day target curve for Room 10 that dynamically drives bot population up to the **50-bot maximum** during the 4:00 PM – 11:00 PM peak:
-$$B_{\text{target}}(h) = \min\left(50, B_{\text{base}} + \Delta_{\text{time}}(h) + \delta(t)\right)$$
+Implement an organic time-of-day target curve for Room 10 strictly respecting the client's rules:
+1. **01:00 AM – 06:00 AM (After 12:59 AM Night Cutoff)**: **STRICTLY 0 BOTS (NO BOT)**. Full sleep mode while players sleep.
+2. **06:00 AM – 04:00 PM (Morning & Daytime)**: **SMALL AMOUNT: 2 to 20 BOTS** ($B \in [2, 20]$).
+3. **04:00 PM – 11:00 PM (Evening Rush)**: **15 to 50 BOTS** ($B \in [15, 50]$) using organic variations.
+4. **11:00 PM – 12:59 AM (Late Night Winding Down)**: Smooth taper down ($15 \rightarrow 8 \rightarrow 2$) before 12:59 AM.
+5. **STRICTLY ROOM 10 ONLY**: Rooms 20, 50, and 100 have **STRICTLY 0 BOTS** 24/7.
 
-#### Exact Hourly Schedule for Room 10 (Max 50 Bots):
-| Time Window | Ethiopian Routine | Room 10 Bot Count ($B \le 50$) | Max Payout (Derash) |
-| :--- | :--- | :---: | :---: |
-| **02:00 – 06:30** | Late Night / Sleep | **8 – 16 bots** | ~64 – 128 ETB |
-| **07:00 – 11:30** | Morning Commute / Work | **18 – 28 bots** | ~144 – 224 ETB |
-| **12:00 – 16:00** | Lunch & Afternoon | **25 – 35 bots** | ~200 – 280 ETB |
-| **16:00 – 18:30 (4:00 PM - 6:30 PM)** | **Afternoon Rush (Leaving Work)** | **30 – 40 bots** | ~240 – 320 ETB |
-| **18:30 – 21:00 (6:30 PM - 9:00 PM)** | **Evening Dinner & Chill** | **38 – 46 bots** | ~304 – 368 ETB |
-| **21:00 – 23:00 (9:00 PM - 11:00 PM - NOW)** | **Super Peak Night (Bedtime Gaming)** | **44 – 50 bots (HARD CAP: 50)** | **~350 – 450 ETB** |
-| **23:00 – 02:00** | Winding Down | **20 – 30 bots** | ~160 – 240 ETB |
+#### Exact Client Hourly Schedule for Room 10:
+| Time Window (Western / Ethiopian) | Client Phase | Room 10 Bot Count | Mode & Experience |
+| :--- | :--- | :---: | :--- |
+| **01:00 AM – 06:00 AM**<br>*(ማታ 7:00 – 12:00 / After 12:59 AM)* | **Night Sleep (Cutoff)** | **STRICTLY 0 BOTS** | Zero bots. Only real humans if any play P2P. |
+| **06:00 AM – 12:00 PM**<br>*(ጧት 12:00 – ከሰዓት 6:00)* | **Morning Casual** | **2 – 10 bots** | Light daytime activity, quick small rounds. |
+| **12:00 PM – 04:00 PM**<br>*(ከሰዓት 6:00 – 10:00)* | **Afternoon Casual** | **8 – 20 bots** | Moderate lunchtime & afternoon tables ($B \le 20$). |
+| **04:00 PM – 06:30 PM**<br>*(ከሰዓት 10:00 – ምሽት 12:30)* | **Evening Rush (Commute)** | **15 – 30 bots** | Rush hour starts, crowd builds up ($B \in [15, 30]$). |
+| **06:30 PM – 09:00 PM**<br>*(ምሽት 12:30 – ማታ 3:00)* | **Dinner & Relaxation** | **25 – 42 bots** | Heavy evening activity, energetic lobby ($B \in [25, 42]$). |
+| **09:00 PM – 11:00 PM**<br>*(ማታ 3:00 – 5:00 - PRIME PEAK)* | **Super Peak Bedtime** | **35 – 50 bots (MAX 50)** | **Maximum crowd!** Room operates at 35–50 bots. |
+| **11:00 PM – 12:59 AM**<br>*(ማታ 5:00 – 6:59)* | **Late Night Taper** | **2 – 15 bots (tapering to 0)** | Smooth reduction before 12:59 AM cutoff. |
 
-#### Target Scope & Files
-- [server/game/BingoGameEngine.ts](file:///c:/Users/asefa/Desktop/lomi-bingo/server/game/BingoGameEngine.ts) (`syncRoom10StandbyBots`, `calculateRoom10TargetBots`)
-
-#### Strict Zero-Regression Invariant for Rooms 20, 50, 100
-- **100% EXCLUDED**: Rooms 20, 50, and 100 are strictly bypassed (`if (!isRoom10) return;`). Their bot count remains strictly **0**.
+#### Realistic Inter-Round Variations (Markovian Drift)
+- During the **4:00 PM – 11:00 PM** window ($15 \le B \le 50$):
+  - Bot count varies organically from round to round with a maximum step of $\pm 4$ to $5$ bots ($|B_t - B_{t-1}| \le 5$).
+  - Never jumps abruptly (e.g. from 48 down to 15 in a single round).
+  - Simulates natural arrival waves: $22 \rightarrow 26 \rightarrow 30 \rightarrow 35 \rightarrow 42 \rightarrow 48 \rightarrow 45 \rightarrow 50$.
 
 ---
 
