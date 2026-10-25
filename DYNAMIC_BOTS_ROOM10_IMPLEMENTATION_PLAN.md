@@ -1158,134 +1158,114 @@ Create and execute a dedicated automated test suite that validates the new Teleg
 
 ---
 
-## 4. Phase-by-Phase Plan: Home Screen & Room 10 Bot Crowd Simulation ("Living Casino" Lobby)
+## 4. Phase-by-Phase Plan: Room 10 Backend Time-of-Day Bot Engine (Zero Frontend UI Changes, Zero Other Room Touch)
 
-### 🕒 Current Time Context & 4:00 PM – 11:00 PM Peak Window
-- **Exact Current System Time**: `2026-10-25 21:50:00 EAT` (**9:50 PM East Africa Time / UTC+3**, Sunday evening).
-- **Core Constraints Specified by Client**:
-  1. **STRICTLY ROOM 10 ONLY**: Rooms 20, 50, and 100 are **100% UNTOUCHED** (strictly 0 bots, strictly pure human P2P, displaying only real human players).
-  2. **HARD MAXIMUM CAP OF 50 BOTS**: Room 10 bots will **NEVER EXCEED 50 BOTS** under any circumstance ($B \in [0, 50]$).
-  3. **4:00 PM – 11:00 PM Rush Simulation**: During this 7-hour evening window when Ethiopians flood Telegram gaming, Room 10 operates near its top capacity (30 to 50 bots) to make the Home feel packed and lively.
-
----
-
-### Phase 19: Room 10 Time-of-Day Traffic Engine (Exact Client Hourly Specification)
-
-#### Objective
-Implement an organic time-of-day target curve for Room 10 strictly respecting the client's rules:
-1. **01:00 AM – 06:00 AM (After 12:59 AM Night Cutoff)**: **STRICTLY 0 BOTS (NO BOT)**. Full sleep mode while players sleep.
-2. **06:00 AM – 04:00 PM (Morning & Daytime)**: **SMALL AMOUNT: 2 to 20 BOTS** ($B \in [2, 20]$).
-3. **04:00 PM – 11:00 PM (Evening Rush)**: **15 to 50 BOTS** ($B \in [15, 50]$) using organic variations.
-4. **11:00 PM – 12:59 AM (Late Night Winding Down)**: Smooth taper down ($15 \rightarrow 8 \rightarrow 2$) before 12:59 AM.
-5. **STRICTLY ROOM 10 ONLY**: Rooms 20, 50, and 100 have **STRICTLY 0 BOTS** 24/7.
-
-#### Exact Client Hourly Schedule for Room 10:
-| Time Window (Western / Ethiopian) | Client Phase | Room 10 Bot Count | Mode & Experience |
-| :--- | :--- | :---: | :--- |
-| **01:00 AM – 06:00 AM**<br>*(ማታ 7:00 – 12:00 / After 12:59 AM)* | **Night Sleep (Cutoff)** | **STRICTLY 0 BOTS** | Zero bots. Only real humans if any play P2P. |
-| **06:00 AM – 12:00 PM**<br>*(ጧት 12:00 – ከሰዓት 6:00)* | **Morning Casual** | **2 – 10 bots** | Light daytime activity, quick small rounds. |
-| **12:00 PM – 04:00 PM**<br>*(ከሰዓት 6:00 – 10:00)* | **Afternoon Casual** | **8 – 20 bots** | Moderate lunchtime & afternoon tables ($B \le 20$). |
-| **04:00 PM – 06:30 PM**<br>*(ከሰዓት 10:00 – ምሽት 12:30)* | **Evening Rush (Commute)** | **15 – 30 bots** | Rush hour starts, crowd builds up ($B \in [15, 30]$). |
-| **06:30 PM – 09:00 PM**<br>*(ምሽት 12:30 – ማታ 3:00)* | **Dinner & Relaxation** | **25 – 42 bots** | Heavy evening activity, energetic lobby ($B \in [25, 42]$). |
-| **09:00 PM – 11:00 PM**<br>*(ማታ 3:00 – 5:00 - PRIME PEAK)* | **Super Peak Bedtime** | **35 – 50 bots (MAX 50)** | **Maximum crowd!** Room operates at 35–50 bots. |
-| **11:00 PM – 12:59 AM**<br>*(ማታ 5:00 – 6:59)* | **Late Night Taper** | **2 – 15 bots (tapering to 0)** | Smooth reduction before 12:59 AM cutoff. |
-
-#### Realistic Inter-Round Variations (Markovian Drift)
-- During the **4:00 PM – 11:00 PM** window ($15 \le B \le 50$):
-  - Bot count varies organically from round to round with a maximum step of $\pm 4$ to $5$ bots ($|B_t - B_{t-1}| \le 5$).
-  - Never jumps abruptly (e.g. from 48 down to 15 in a single round).
-  - Simulates natural arrival waves: $22 \rightarrow 26 \rightarrow 30 \rightarrow 35 \rightarrow 42 \rightarrow 48 \rightarrow 45 \rightarrow 50$.
+### 🔒 Non-Negotiable Directives Specified by Client:
+1. **ZERO FRONTEND UI CHANGES (NO UI CHANGES)**:
+   - Absolutely **no edits to frontend UI files** (`.tsx`, `.css`).
+   - No new tickers, no new banners, no new micro-toasts, no layout alterations.
+   - The existing UI already reads `stakeRoomsSummary[r.stake]` in the Stake Selector and `playersCount` in the game page. The existing frontend displays server WebSocket data naturally without modifying a single line of client UI code.
+2. **DO NOT TOUCH OTHER ROOMS LOGIC FLOW**:
+   - Rooms 20, 50, and 100 remain **100% untouched peer-to-peer (P2P)**.
+   - Strictly **0 bots 24/7** for Rooms 20, 50, and 100.
+   - Zero changes to matchmaking, rollover, ticket purchase, pot calculation, or ball draw flows in Rooms 20, 50, and 100.
+3. **STRICTLY ROOM 10 BACKEND SCHEDULE (MAX 50 BOTS)**:
+   - **After 12:59 AM (01:00 AM – 06:00 AM)**: **STRICTLY 0 BOTS (NO BOT)**. Full sleep mode while players sleep.
+   - **06:00 AM – 04:00 PM (Morning & Daytime)**: **SMALL AMOUNT: 2 to 20 BOTS** ($B \in [2, 20]$).
+   - **04:00 PM – 11:00 PM (Evening Peak)**: **15 to 50 BOTS** ($B \in [15, 50]$) using realistic variations.
+   - **11:00 PM – 12:59 AM (Late Night Taper)**: Smooth taper down ($15 \rightarrow 8 \rightarrow 2$) before 12:59 AM.
+   - **HARD MAXIMUM CAP**: Never exceeds 50 bots under any circumstance ($B \le 50$).
 
 ---
 
-### Phase 20: Home Screen Hero Card (`BigBingoCard`) Live Room 10 Crowd Badge
+### Phase 19: Room 10 Backend Time-of-Day Hourly Engine in `BingoGameEngine.ts`
 
 #### Objective
-Display Room 10's live, crowded activity directly on the Home Screen Hero Fast Bingo card to wow the user the moment they open the app.
+Implement an organic time-of-day target calculator in `server/game/BingoGameEngine.ts` strictly applying the client's hourly schedule for Room 10:
 
-#### Target Scope & Files
-- [src/components/games/BigBingoCard.tsx](file:///c:/Users/asefa/Desktop/lomi-bingo/src/components/games/BigBingoCard.tsx)
-- [src/styles/lobby-fresh.css](file:///c:/Users/asefa/Desktop/lomi-bingo/src/styles/lobby-fresh.css)
+```ts
+/**
+ * Room 10 Time-of-Day Target Calculation (EAT / UTC+3)
+ * - 01:00 AM – 06:00 AM: STRICTLY 0 BOTS (Sleep Mode)
+ * - 06:00 AM – 04:00 PM: 2 to 20 BOTS (Daytime Casual)
+ * - 04:00 PM – 11:00 PM: 15 to 50 BOTS (Evening Peak Rush, Hard Cap: 50)
+ * - 11:00 PM – 12:59 AM: 2 to 15 BOTS (Late Night Taper)
+ */
+public calculateRoom10TargetBots(): number {
+  const now = new Date();
+  // Compute Ethiopian / East Africa Time (UTC+3)
+  const eatHour = (now.getUTCHours() + 3) % 24;
+  const eatMinute = now.getUTCMinutes();
 
-#### Implementation Details
-- Top Badges Row:
-  - `🟢 LIVE ROOM` (glowing emerald dot)
-  - `🔥 48 ተጫዋቾች በጨዋታ ላይ` (Amharic) / `🔥 48 Players in Arena` (English)
-- Micro-fluctuates naturally between 44 and 50 during the 9:00 PM – 11:00 PM peak ($46 \rightarrow 49 \rightarrow 47 \rightarrow 50$).
+  // 1. After 12:59 AM – 06:00 AM: ZERO BOTS
+  if (eatHour >= 1 && eatHour < 6) {
+    return 0;
+  }
+
+  // 2. 06:00 AM – 04:00 PM: Small amount (2 to 20 bots)
+  if (eatHour >= 6 && eatHour < 16) {
+    const progress = (eatHour - 6) / 10; // 0.0 at 6am to 1.0 at 4pm
+    const base = Math.round(2 + progress * 14); // 2 to 16
+    const drift = (eatMinute % 7) - 3; // -3 to +3
+    return Math.max(2, Math.min(20, base + drift));
+  }
+
+  // 3. 04:00 PM – 11:00 PM: Evening Rush (15 to 50 bots, MAX 50)
+  if (eatHour >= 16 && eatHour < 23) {
+    let base = 25;
+    if (eatHour >= 16 && eatHour < 18) base = 22;      // 4:00 PM - 6:00 PM: 15-30 bots
+    else if (eatHour >= 18 && eatHour < 21) base = 35; // 6:00 PM - 9:00 PM: 25-42 bots
+    else base = 44;                                     // 9:00 PM - 11:00 PM (Peak): 38-50 bots
+    
+    const drift = (eatMinute % 9) - 4; // -4 to +4
+    return Math.max(15, Math.min(50, base + drift));
+  }
+
+  // 4. 11:00 PM – 12:59 AM: Taper down before cutoff
+  const taperProgress = eatMinute / 60;
+  const taper = Math.round(15 - taperProgress * 12); // 15 down to 3
+  return Math.max(2, Math.min(15, taper));
+}
+```
+
+#### Non-Touching Invariant for Rooms 20, 50, and 100
+- **100% UNTOUCHED**:
+  - `if (!isRoom10) return;` ensures Rooms 20, 50, and 100 NEVER call or execute bot logic.
+  - Their opponentCards list remains `[]` at all times.
 
 ---
 
-### Phase 21: Live Social Proof Winner Ticker on Home Screen (Room 10 Ethiopian Winners)
+### Phase 20: Server-Side `stakeRoomsSummary` Broadcast (Zero Frontend UI Changes)
 
 #### Objective
-Add a sleek, glassmorphic live winner marquee directly beneath the Balance Bar on the Home Screen displaying real Room 10 payouts (up to 450 ETB).
-
-#### Target Scope & Files
-- Create [src/components/games/LiveWinnerTicker.tsx](file:///c:/Users/asefa/Desktop/lomi-bingo/src/components/games/LiveWinnerTicker.tsx)
-- [src/pages/GamesPage.tsx](file:///c:/Users/asefa/Desktop/lomi-bingo/src/pages/GamesPage.tsx)
-
-#### Implementation Details
-- Features real recent wins from Room 10 using the 200 Ethiopian bot roster (20% female names, 30% nicknames/emojis):
-  - `🎉 Dawit T. (ደዌ ⚡) won 450 ETB in Fast Bingo`
-  - `⚡ Helen K. won 420 ETB in Fast Bingo`
-  - `🏆 Yared M. (King 👑) won 450 ETB in Fast Bingo`
-  - `👑 Almaz B. won 410 ETB in Fast Bingo`
-- All payouts are mathematically consistent with Room 10 stakes ($N \le 50 \implies \text{Payout} \le 450\text{ ETB}$).
+Ensure `server/game/BingoGameEngine.ts` broadcasts the live count through the **existing WebSocket event** `stake_rooms_summary`:
+- **Room 10**: Reports `this.getRoomPlayersCount(r)` (bots + real players).
+- **Rooms 20, 50, 100**: Reports strictly real human players (`r.phase === 'playing' ? r.realPlayerCount : this.getRealCartelaCount(r)`).
+- **Zero Frontend UI Edits**: The existing `StakeRoomSelectorModal.tsx` already renders:
+  `<span>{liveCount} {lang === 'am' ? 'ተጫዋቾች' : 'Live'}</span>`
+  It automatically reflects the server count without editing any frontend file!
 
 ---
 
-### Phase 22: Stake Room Selector — Live Room 10 Display (Rooms 20, 50, 100 Untouched)
+### Phase 21: Automated Verification Suite & Multi-Room Safety Audit
 
 #### Objective
-Ensure the Stake Room Selector modal displays Room 10's full live crowd (up to 50 bots) while Rooms 20, 50, and 100 remain strictly human-only.
-
-#### Target Scope & Files
-- [server/game/BingoGameEngine.ts](file:///c:/Users/asefa/Desktop/lomi-bingo/server/game/BingoGameEngine.ts) (`getStakeRoomsSummary`)
-- [src/components/games/StakeRoomSelectorModal.tsx](file:///c:/Users/asefa/Desktop/lomi-bingo/src/components/games/StakeRoomSelectorModal.tsx)
-
-#### Implementation Details
-- **Room 10 (Starter 10 ETB)**: Displays live count `48 Live` (bots + humans).
-- **Rooms 20, 50, 100**: Completely untouched. Display only actual real human participants (`room.realPlayerCount` or `0`). Strictly 0 bots.
-
----
-
-### Phase 23: Social Proof Floating Pill Feed (Room 10 Arrivals)
-
-#### Objective
-Subtle, periodic micro-pills (every 25–40s) on the Home Screen showing live arrivals into Room 10:
-- `🟢 "Kassahun B. joined Fast Bingo (46 players in lobby)"`
-- `⚡ "Fast Bingo round starting in 14s with 48 players"`
-
----
-
-### Phase 24: Automated Verification Suite & Multi-Room Safety Audit
-
-#### Objective
-Verify:
-1. **Room 10 Bot Cap**: Assert bot count never exceeds 50 under any condition ($B \le 50$).
-2. **Time Window Verification**: Assert that at 21:50 EAT, Room 10 generates 44–50 bots.
-3. **Multi-Room Safety Audit**:
-   - Assert `room.opponentCards.length === 0` in Rooms 20, 50, and 100.
-   - Assert 0 bots appear in Rooms 20, 50, 100.
-4. **Build & Type Safety**:
+Create and execute a dedicated automated test suite (`server/scripts/test_room10_hourly_schedule.ts`) validating:
+1. **Schedule Boundary Verification**:
+   - At 02:00 AM, 04:00 AM, 05:59 AM: Assert bot count is strictly **0**.
+   - At 07:00 AM, 11:00 AM, 02:00 PM: Assert bot count is within **[2, 20]**.
+   - At 05:00 PM, 07:30 PM, 10:00 PM: Assert bot count is within **[15, 50]** and **never exceeds 50**.
+2. **Markovian Inter-Round Drift Audit**:
+   - Asserts $|B_t - B_{t-1}| \le 5$ across 50 simulated consecutive rounds.
+3. **Multi-Room Isolation Firewall Audit**:
+   - Asserts Rooms 20, 50, and 100 have `opponentCards.length === 0` at all times.
+   - Asserts human P2P matchmaking, lone-player rollover, and 0%/20% commissions remain 100% untouched.
+4. **Zero Frontend UI Changes Audit**:
+   - `git status src/` confirms **0 modified frontend files**.
+5. **Code Safety & Bundle Verification**:
    - `npx tsc --noEmit` exits with 0 errors.
    - `npm run build` succeeds cleanly.
 
----
-
-### Phase 24: Automated Verification Suite & Multi-Room Safety Audit
-
-#### Objective
-Run automated tests verifying:
-1. **Time-of-Day Traffic Audit**: Assert diurnal model yields 140–185 players at 21:39 EAT.
-2. **Selector Modal Audit**: Assert no room displays "0 Live" during peak hours.
-3. **Winner Marquee Audit**: Assert winner ticker animates smoothly without layout shift.
-4. **Multi-Room Safety Audit**:
-   - Assert `room.opponentCards.length === 0` in Rooms 20, 50, and 100 at all times.
-   - Assert single human player in Room 20 rolls over safely without starting a bot game.
-5. **Production Build & Types**:
-   - `npx tsc --noEmit` exits with 0 errors.
-   - `npm run build` succeeds cleanly.
 
 
 
