@@ -1284,6 +1284,52 @@ Create and execute a dedicated automated test suite (`server/scripts/test_room10
 - **Zero Frontend UI Edits**: Verified `git status src/` is 100% clean (0 files modified).
 - **Bundle & Type Safety**: `npx tsc --noEmit` passed with 0 errors; `npm run build` succeeded cleanly.
 
+---
+
+## 5. Phase 22: Admin Panel UI Cleanup (BotEngineControllerDesk.tsx)
+
+### Client Objective & Directives:
+Remove legacy manual controls, presets, sliders, and static telemetry cards from the Admin Desk ([src/components/admin/BotEngineControllerDesk.tsx](file:///c:/Users/asefa/Desktop/lomi-bingo/src/components/admin/BotEngineControllerDesk.tsx)) because Room 10 is now **100% automated by the Ethiopian Time-of-Day Schedule**. **DO NOT TOUCH ANYTHING ELSE** in Admin or the rest of the application.
+
+### Exact Items to Delete from [BotEngineControllerDesk.tsx](file:///c:/Users/asefa/Desktop/lomi-bingo/src/components/admin/BotEngineControllerDesk.tsx):
+1. 🗑️ **🔒 Fixed Count Card** (`Locks Room 10 strictly to exactly 20 bots every single round.`)
+2. 🗑️ **🚫 Disabled / Real Only Card** (`Completely disables bots in Room 10 (0 bots). Requires ≥ 2 real human players to start a round.`)
+3. 🗑️ **⚡ 1-Click Bot Presets**:
+   - `🚫 Disabled (0 Bots)`
+   - `🌱 Light (2–5 Bots)`
+   - `⚖️ Medium (8–20 Bots)`
+   - `🔥 Active (15–35 Bots)`
+   - `👑 Full Arena (50 Bots)`
+4. 🗑️ **Bot Pool Range & Quantity Adjuster (0 to 50)**:
+   - `Minimum Standby Bots: 2 Bots`
+   - `Maximum Standby Bots: 50 Bots`
+5. 🗑️ **Living Casino & Autonomous Clock**:
+   - `Continuous Living Clock (Eliminates Bot Giveaway)`
+   - `Staggered Natural Bot Arrivals`
+6. 🗑️ **Real-Time Mathematical & Economics Engine**:
+   - `Player Base Odds: 1 in 27 (P = 1 / (1 + 26))`
+   - `House Net Commission: Strictly +20%`
+   - `Anti-Churn Loss Threshold: 34 Losses`
+   - `PostgreSQL Queries / Pure Bot: 0 Queries / 0 Rows`
+
+### What Remains on the Cleaned Admin Desk:
+1. **🛡️ Multi-Room Isolation Guarantee Banner**: Preserved at top (Rooms 20, 50, 100 strictly 0 bots).
+2. **📊 Live Telemetry Cards**:
+   - Active Room 10 Bots (live count from server, e.g. `42 / 50 Max`).
+   - Current Round & Phase (`#roundNumber`, `lobby` / `playing`).
+   - Estimated Net Derash & Platform Commission (+20%).
+   - Real Player Win Probability (~X%).
+3. **🕒 Automated Ethiopian Time-of-Day Schedule Status Card**:
+   - Displays live EAT time and current active window:
+     - `01:00 AM – 06:00 AM`: 0 Bots (Sleep Mode)
+     - `06:00 AM – 04:00 PM`: 2 to 20 Bots (Daytime Casual)
+     - `04:00 PM – 11:00 PM`: 15 to 50 Bots (Evening Rush - MAX 50)
+     - `11:00 PM – 12:59 AM`: 2 to 15 Bots (Late Night Taper)
+4. **🔄 Reload from Server**: Button to re-fetch live telemetry from server.
+5. **STRICT NON-TOUCH INVARIANT**:
+   - All other Admin tabs (`PlayerAccountsDesk.tsx`, `DashboardOverview.tsx`, `GameFinanceDesk.tsx`, `WithdrawalsDesk.tsx`, etc.) remain **100% untouched**.
+
+
 
 
 
