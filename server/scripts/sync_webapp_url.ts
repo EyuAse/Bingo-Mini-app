@@ -4,7 +4,7 @@ import { query, pool } from '../db.ts';
 dotenv.config();
 
 async function main() {
-  const newUrl = 'https://bingo-mini-app-3li9.onrender.com/?v=20261025_ORGANIC_BOTS_SCURVE_V3';
+  const newUrl = 'https://bingo-mini-app-3li9.onrender.com';
   console.log(`Setting telegram_webapp_url in database to: ${newUrl}`);
 
   await query(

@@ -157,19 +157,16 @@ export class TelegramBotService {
   }
 
   /**
-   * Helper to ensure all Web App URLs are properly version-busted so Telegram Webview
-   * always fetches the fresh human audio pack and code bundle identically for direct search and invitation links.
+   * Helper to ensure clean base Web App URLs for Telegram Mini App
    */
   public getVersionedWebAppUrl(baseUrl: string, param?: string): string {
-    const versionTag = 'v=20261025_DYNAMIC_BOTS_V2_DERASH_FIX';
     if (!baseUrl) return '';
-    // Strip any older version parameter if present in baseUrl
     const cleanUrl = baseUrl.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
-    const sep = cleanUrl.includes('?') ? '&' : '?';
     if (param) {
-      return `${cleanUrl}${sep}${versionTag}&startapp=${encodeURIComponent(param)}`;
+      const sep = cleanUrl.includes('?') ? '&' : '?';
+      return `${cleanUrl}${sep}startapp=${encodeURIComponent(param)}`;
     }
-    return `${cleanUrl}${sep}${versionTag}`;
+    return cleanUrl;
   }
 
   /**

@@ -14,11 +14,8 @@ async function main() {
 
   console.log(`Updating channel messages in ${channel} to native Mini App URL: ${miniAppUrl}`);
 
-  // Specifically update the 5 newly created posts (52, 53, 54, 55, 56) and all previous posts
-  const targetIds = [56, 55, 54, 53, 52, 47, 45, 43, 42, 40, 38, 37, 36, 34, 32, 30, 24, 13, 12, 11, 10, 9, 3];
-
   let successCount = 0;
-  for (const id of targetIds) {
+  for (let id = 1; id <= 80; id++) {
     try {
       const resp = await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
         method: 'POST',

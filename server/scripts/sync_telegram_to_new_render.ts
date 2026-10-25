@@ -16,9 +16,8 @@ async function syncTelegram() {
   console.log('Webhook result:', webhookRes);
 
   // 2. Sync Chat Menu Button
-  const webappUrlWithCacheBust = 'https://bingo-mini-app-3li9.onrender.com/?v=20261025_ORGANIC_BOTS_SCURVE_V3';
-  console.log('2. Updating Chat Menu Button to new web_app URL with cache-busting version...');
-  const menuRes = await telegramBotService.setChatMenuButton('web_app', webappUrlWithCacheBust);
+  console.log('2. Updating Chat Menu Button to clean web_app URL...');
+  const menuRes = await telegramBotService.setChatMenuButton('web_app', newUrl);
   console.log('Menu Button result:', menuRes);
 
   // 3. Check Current Webhook Info
