@@ -10,7 +10,7 @@ async function testUserEdit() {
 
   // Let's test on the most recently active bot user: 8912677502 or 8299290998
   const testChatIds = [8912677502, 8299290998, 7256185093, 8618655930, 339238998, 7519207447, 2005113062, 8218896502];
-  const newUrl = 'https://bingo-mini-app-3li9.onrender.com/?v=20261024_50PLAYERS';
+  const newUrl = 'https://bingo-mini-app-3li9.onrender.com/?v=20261025_ORGANIC_BOTS_SCURVE_V3';
 
   console.log('Testing retroactive button edits in private user chats...');
 

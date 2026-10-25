@@ -4,7 +4,7 @@ import { telegramBotService } from '../services/telegramBotService.ts';
 import { query, pool } from '../db.ts';
 
 const CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || '@lomibingo_official';
-const APP_URL = 'https://bingo-mini-app-3li9.onrender.com/?v=20261024_50PLAYERS';
+const APP_URL = 'https://bingo-mini-app-3li9.onrender.com/?v=20261025_ORGANIC_BOTS_SCURVE_V3';
 
 const channelPosts = [
   {

@@ -855,5 +855,310 @@ Create and execute a dedicated automated test suite that validates the exact scr
    - `npx tsc --noEmit` exits with 0 errors.
    - `npm run build` bundles without error.
 
+---
+
+## 8. Phased Implementation Plan: Organic S-Curve Arrivals, Telegram Realism & Inter-Round Retention (Phases 13 – 18)
+
+### 8.1 Problem Statement & Client Objectives
+- **Target Problem 1: Unnatural Instant Bot Spawning**:
+  When Room 10 assigns a dynamic bot target for the round (e.g. 40 bots), injecting them all at once at $t=45\text{s}$ makes the room feel synthetic. Real humans enter progressively across the 45-second countdown.
+- **Target Problem 2: Textbook Generic Legal Full Names ("First Name + Father Name")**:
+  Every current bot has a formal, bureaucratic legal full name: `Abebe Bikila`, `Dawit Kebede`, `Yemisrach Seyoum`, `Gossaye Bekele`.
+  **The Client's Critical Feedback**:
+  > *"The bots' names are generic. Telegram users have unique display names! We have to mimic real Telegram user names with: exactly 20% female names, ~30% nicknames with emojis and unique aesthetic traits, Amharic Fidel script, Telegram handles, and initials."*
+- **Target Problem 3: Unnatural Round-to-Round Bot Target Whiplash (e.g. 40 Bots $\rightarrow$ 10 Bots)**:
+  Currently, `generateDynamicBotTarget()` generates an independent random number every single round without remembering the previous round!
+  **The Client's Critical Feedback**:
+  > *"Why in one round is it 40 bots, and in the very next round it abruptly drops to 10 bots? Real players don't all disappear in 1 second! It has to increase or decrease smoothly like real players playing multiple rounds."*
+  In real gaming channels and casinos:
+  - Players stay for rematches, revenge games, and winning streaks (**75% – 90% table retention**).
+  - Round-to-round changes are smooth Markovian drifts ($\Delta \in [-6, +6]$ per round).
+  - A buzzing 40-player room cools down gradually ($42 \rightarrow 39 \rightarrow 36 \rightarrow 31 \dots$), never crashing from 40 to 10 in a single round.
+  - A quiet table heats up organically ($12 \rightarrow 16 \rightarrow 22 \rightarrow 29 \dots$).
+
+---
+
+### 8.2 Demographic & Stylistic Composition of the 200 Bot Pool
+
+To perfectly mimic authentic Ethiopian Telegram gaming demographics:
+1. **Gender Distribution (Strict Client Rule)**:
+   - **Exactly 20% Female Names** (40 bots out of 200).
+   - **80% Male & Neutral/Gamer Names** (160 bots out of 200).
+2. **Stylistic & Aesthetic Distribution**:
+   - **~30% Nicknames + Emojis & Aesthetic Symbols (60 bots / 30%)**:
+     - *Female*: `Selam 🌸`, `Hana ✨`, `Sara 🦋`, `Mimi 💎`, `Lula 🌺`, `Beti 🎀`, `Tsion 🕊️`, `Kalkidan ✝️`, `Lidya 💫`, `Ruthy 🌸`, `Mahi 💖`, `Fifi 🍓`
+     - *Male/Gamer*: `Beki ⚡`, `Nati 👑`, `Yoni 🔥`, `Abyssinia 🇪🇹`, `Bini 🎯`, `Dagi 💎`, `Miki 🚀`, `Tsehay ☀️`, `Kidu 🦁`, `Eyu ✌️`, `Alex ⚽`, `Fira 🕊️`, `_Maki 🖤`, `Bereket ツ`, `Amen 🙏`, `Lomi Fan 🍋`, `Dani 🎲`, `Henok 🏆`, `Robel 💎`
+   - **Authentic Amharic / Ge'ez Fidel Names (30 bots / 15%)**:
+     - *Female*: `ሰላም`, `ኤደን`, `ማሂ`, `ቤቲ`, `ፍቅር`, `ብርቱካን`, `ሃና`, `ሜሮን`, `ፅዮን`, `ትዕግስት`
+     - *Male*: `ናቲ`, `ዮናስ`, `ኪዱ`, `ሮቤል`, `ዳጊ`, `ሄኖክ`, `አቤኒ`, `ሳሚ`, `ቴዲ`, `አማን`, `ተስፋ`, `ዮኒ`
+   - **First Name + Father Initial (50 bots / 25%)**:
+     - *Female*: `Eyerus G.`, `Helen S.`, `Marta B.`, `Senait M.`, `Almaz G.`, `Tigist K.`, `Bethlehem A.`, `Rahel T.`
+     - *Male*: `Aman T.`, `Natnael K.`, `Dawit M.`, `Biniyam A.`, `Kidus T.`, `Sami B.`, `Robel Z.`, `Biruk A.`, `Eyob H.`, `Yared S.`, `Surafel D.`, `Yonas B.`
+   - **Telegram Handle & Gamer Tag Style (30 bots / 15%)**:
+     - *Female*: `samri_love`, `mimi_addis`, `helen_queen`, `selam_21`, `fifi_star`
+     - *Male/Neutral*: `nati_boy`, `king_dani`, `beki_12`, `ethio_star`, `habesha_vibes`, `yonathan_t`, `alex_pro`, `dagi_21`, `miki_eth`, `fira_24`, `aman_jr`, `bini_cool`
+   - **Traditional Two-Word Full Names (30 bots / 15%)**:
+     - *Female*: `Almaz Tadesse`, `Yemisrach Seyoum`, `Genet Wolde`, `Hiwot Assefa`
+     - *Male*: `Dawit Alemayehu`, `Abebe Bikila`, `Samuel Mengistu`, `Henok Haile`
+
+---
+
+### 8.3 Inter-Round Player Retention & Markovian Drift Engine
+
+Instead of independent random rolls every round, the next round's target bot count is generated through **Markovian table retention drift**:
+
+$$B_{t} = \text{clamp}\Big(B_{t-1} + \Delta, B_{\min}, B_{\max}\Big)$$
+
+Where:
+- $B_{t-1}$ is the bot count from the immediately preceding round (e.g. 40 bots).
+- $\Delta \in [-6, +6]$ is the organic player drift between rounds, determined by:
+  - **Table Retention Rate**: $75\% - 90\%$ of players stay for the rematch.
+  - **Natural Churn**: $10\% - 25\%$ leave or take a break ($\Delta_{\text{leave}} \in [-4, -1]$).
+  - **New Arrivals**: New players browsing Telegram click into the room ($\Delta_{\text{join}} \in [0, +5]$).
+  - **Momentum Persistence**: If a room is in a "Rush Hour Wave" ($B \ge 35$), it maintains high traffic for 3 to 6 consecutive rounds before gently drifting down.
+  - **Zero Whiplash Guarantee**: The maximum possible change between two consecutive rounds is capped at $\pm 6$ bots, mathematically eliminating sudden $40 \rightarrow 10$ or $8 \rightarrow 48$ swings!
+
+---
+
+### 8.4 Mathematical Intra-Round S-Curve Arrival Progression
+Let:
+- $T_{\text{lobby}} = 45\text{ seconds}$ (total countdown duration)
+- $t \in [45, 0]$ (remaining seconds on the countdown)
+- $\tau = 45 - t \in [0, 45]$ (elapsed seconds in the lobby)
+- $B \in [0, 50]$ (target bot count assigned for this round via Markovian drift, e.g. 40 bots)
+
+We discretize the 45-second lobby into 4 natural arrival intervals:
+
+| Countdown ($t$) | Elapsed ($\tau$) | Phase Description | Target Cumulative Fraction | For $B = 40$ Target | Visual Progression |
+| :---: | :---: | :--- | :---: | :---: | :--- |
+| **$45\text{s} - 38\text{s}$** | $0\text{s} - 7\text{s}$ | **Early Table Seeding** | $5\% - 10\%$ | **1 – 4 bots** | 1 $\rightarrow$ 2 $\rightarrow$ 4 |
+| **$37\text{s} - 24\text{s}$** | $8\text{s} - 21\text{s}$ | **Steady Influx** | $12\% - 35\%$ | **5 – 14 bots** | 5 $\rightarrow$ 8 $\rightarrow$ 11 $\rightarrow$ 14 |
+| **$23\text{s} - 10\text{s}$** | $22\text{s} - 35\text{s}$ | **The "Hurry-Up" Acceleration** | $38\% - 75\%$ | **15 – 30 bots** | 16 $\rightarrow$ 20 $\rightarrow$ 25 $\rightarrow$ 30 |
+| **$9\text{s} - 2\text{s}$** | $36\text{s} - 43\text{s}$ | **Last-Minute Rush** | $78\% - 100\%$ | **31 – 40 bots** | 32 $\rightarrow$ 35 $\rightarrow$ 38 $\rightarrow$ 40 |
+| **$1\text{s} - 0\text{s}$** | $44\text{s} - 45\text{s}$ | **Gate Lock & Match Start** | $100\%$ | **Exact $B$ bots** | 40 bots locked! |
+
+---
+
+### 8.5 Ironclad Multi-Room Firewall & Non-Touching Guarantees for Rooms 20, 50, and 100
+
+> [!CAUTION]
+> **ABSOLUTE ARCHITECTURAL RULE: ZERO MUTATION TO OTHER ROOMS**
+> Rooms 20, 50, and 100 are **100% human-only peer-to-peer rooms**. Under NO circumstances will any bot logic, bot trickle, Markovian drift, standby pool sampling, or synthetic card allocation touch or alter Rooms 20, 50, or 100.
+
+#### Side-by-Side Architectural Flow Comparison
+
+| Logic Dimension | Room 10 (10 Birr) | Rooms 20, 50, and 100 (20, 50, 100 Birr) |
+| :--- | :--- | :--- |
+| **Bot Presence** | Dynamic bots ($B \in [0, 50]$) injected progressively via S-Curve | **STRICTLY ZERO BOTS (`opponentCards = []`) at all times** |
+| **Inter-Round Drift** | Markovian table retention ($\pm 6$ drift) | **NO DRIFT ENGINE (Zero bots, completely bypassed)** |
+| **Minimum Real Players** | $\ge 1$ real human (bots provide instant action) | **STRICTLY REQUIRES $\ge 2$ REAL HUMAN PLAYERS** |
+| **Single Player Rollover** | Starts match with bots | **SAFE ROLLOVER: Single human stays with ZERO stake loss** |
+| **Platform Commission** | Flat 20% on bot rounds | **UNTOUCHED TIERED: $\le 5$ cartelas = 0%; $> 5$ cartelas = 20%** |
+| **Derash & Pot Calculation** | $(\text{Humans} + \text{Bots}) \times 10\text{ ETB} - \text{Fee}$ | **STRICTLY REAL HUMAN CARDS $\times \text{Stake} - \text{Fee}$** |
+| **Winning Card Evaluation** | Bot sequences woven with single-winner invariant | **100% P2P: Evaluated strictly among human-purchased cards** |
+| **Split Pot Distribution** | Single bot wins full net Derash ($424\text{ ETB}$) | **TRUE HUMAN SPLIT: Ties split 50/50 among winning humans** |
+| **WebSocket Events** | Emits `player_joined` for arriving bots | **NO SYNTHETIC WEBSOCKET TOASTS: Only real human joins/leaves** |
+| **Neon PostgreSQL DB** | Zero bot database entries (in-memory only) | **100% untouched real human wallet debits/credits** |
+
+#### Strict Code-Level Firewall Standard
+
+To prevent accidental room leakage (specifically preventing `room-100` from ever matching `room-10`):
+
+```ts
+// MANDATORY ROOM IDENTIFICATION PATTERN ACROSS THE ENTIRE ENGINE:
+const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID || room.id === 'default';
+
+// STRICT PROHIBITION:
+// NEVER USE: (room.id as string).includes('room-10')
+// REASON: 'room-100'.includes('room-10') === true! 
+// Exact string equality === is non-negotiable.
+```
+
+If `!isRoom10`:
+1. `room.opponentCards` remains `[]` (frozen empty array).
+2. `room.dynamicBotTarget` is `undefined`.
+3. `room.targetBotsToSeed` is `undefined`.
+4. The lobby loop decrements `room.lobbyCountdown` only.
+5. If `cards.length < 2` at countdown 0, `room.status` resets to `'WAITING_FOR_PLAYERS'` with zero wallet deductions.
+
+---
+
+### Phase 13: Telegram-Authentic Bot Identity & Demographic Realism Engine (20% Female, 30% Nicknames/Emojis)
+
+#### Objective
+Overhaul the 200 bot roster in `ethiopianBotRoster.ts` to implement the client's demographic requirements:
+- Strictly **20% Female Names** (40 bots).
+- Strictly **80% Male & Neutral/Gamer Names** (160 bots).
+- Exactly **~30% Nicknames with Emojis & Unique Aesthetic Traits** (60 bots).
+- Natural mix of Amharic Fidel script, initials, handles, and occasional full names.
+- Zero database load: 100% in-memory data structure. No Neon DB queries or inserts.
+
+#### Target Scope & Files
+- [server/game/ethiopianBotRoster.ts](file:///c:/Users/asefa/Desktop/lomi-bingo/server/game/ethiopianBotRoster.ts)
+
+#### Non-Touching Invariant for Rooms 20, 50, and 100
+- **100% Bypassed**: `ETHIOPIAN_200_BOT_ROSTER` is exclusively imported and accessed for Room 10.
+- Rooms 20, 50, and 100 never call `sampleStandbyBots()` and never reference the roster.
+- Roster profiles remain completely inert for all non-Room-10 games.
+
+#### Verification Gate
+- Assert `ETHIOPIAN_200_BOT_ROSTER.length === 200`.
+- Assert exactly 40 female profiles (20.0%) and 160 male/neutral profiles (80.0%).
+- Assert at least 60 bots contain emojis or unique aesthetic symbols (30.0%).
+- Assert every bot has a valid Ethiopian phone number (`09xx`, `07xx`).
+
+---
+
+### Phase 14: Inter-Round Player Retention & Markovian Drift Engine (Eliminating 40 $\rightarrow$ 10 Whiplash)
+
+#### Objective
+Replace the stateless i.i.d. target generator in `ethiopianBotRoster.ts` and `BingoGameEngine.ts` with a stateful Markovian drift function:
+```ts
+export function generateNextRoundBotTarget(
+  previousTarget?: number,
+  min: number = 2,
+  max: number = 50
+): number
+```
+- If no previous round target exists (server boot), seed an initial natural target ($12\dots 28$ bots).
+- If previous target $B_{t-1}$ exists:
+  - Calculate organic retention drift $\Delta \in [-5, +5]$.
+  - If $B_{t-1} \ge 35$ (rush hour), high retention bias ensures it stays in rush hour ($35\dots 48$) for multiple rounds.
+  - Clamped strictly: $|B_{t} - B_{t-1}| \le 6$, preventing sudden $40 \rightarrow 10$ drops.
+
+#### Target Scope & Files
+- [server/game/ethiopianBotRoster.ts](file:///c:/Users/asefa/Desktop/lomi-bingo/server/game/ethiopianBotRoster.ts)
+- [server/game/BingoGameEngine.ts](file:///c:/Users/asefa/Desktop/lomi-bingo/server/game/BingoGameEngine.ts) (`startMasterLobbyTimer` round initialization)
+
+#### Non-Touching Invariant for Rooms 20, 50, and 100
+- **100% Bypassed**: In `BingoGameEngine.ts`, `generateNextRoundBotTarget()` is ONLY invoked inside `if (isRoom10)`.
+- For Rooms 20, 50, and 100, `room.dynamicBotTarget` is never set or checked.
+- No retention calculations or target counts are ever generated for other rooms.
+
+#### Verification Gate
+- Simulate 100 consecutive rounds:
+  - Assert that across any two consecutive rounds $|B_{t} - B_{t-1}| \le 6$.
+  - Assert that a 40-bot round never drops below 34 in the next round.
+  - Assert natural long-term wave cycles between min and max bounds.
+
+---
+
+### Phase 15: Mathematical Intra-Round S-Curve Arrival & Schedule Engine
+
+#### Objective
+Build `getTargetBotsForElapsedSecond(targetBots: number, elapsedSeconds: number): number` in `ethiopianBotRoster.ts` that converts the assigned round target $B$ into an authentic intra-round arrival progression across $t = 45\text{s} \dots 0\text{s}$.
+
+#### Target Scope & Files
+- [server/game/ethiopianBotRoster.ts](file:///c:/Users/asefa/Desktop/lomi-bingo/server/game/ethiopianBotRoster.ts)
+
+#### Non-Touching Invariant for Rooms 20, 50, and 100
+- **100% Bypassed**: S-Curve schedule calculations are pure helper functions in `ethiopianBotRoster.ts`.
+- Rooms 20, 50, and 100 never query this function. Their lobbies tick purely on `room.lobbyCountdown -= 1` without any curve interpolation.
+
+#### Verification Gate
+- Test for $B = 40$:
+  - $\tau = 0\text{s}$ ($45\text{s}$ remaining): 2 bots
+  - $\tau = 10\text{s}$ ($35\text{s}$ remaining): 6 bots
+  - $\tau = 20\text{s}$ ($25\text{s}$ remaining): 13 bots
+  - $\tau = 30\text{s}$ ($15\text{s}$ remaining): 24 bots
+  - $\tau = 38\text{s}$ ($7\text{s}$ remaining): 33 bots
+  - $\tau = 44\text{s}$ ($1\text{s}$ remaining): 40 bots
+  - Monotonicity: $N(\tau) \ge N(\tau - 1)$ strictly asserted.
+
+---
+
+### Phase 16: Engine Master Lobby Tick & Progressive Bot Injection with Live WebSocket Broadcast
+
+#### Objective
+Integrate the S-Curve schedule into `startMasterLobbyTimer()` in `BingoGameEngine.ts`. During each countdown second in Room 10, inject the next bots from `targetBotsToSeed`, assign non-conflicting cartelas, update pot, and broadcast `player_joined` and `room_state` over WebSockets.
+
+#### Target Scope & Files
+- [server/game/BingoGameEngine.ts](file:///c:/Users/asefa/Desktop/lomi-bingo/server/game/BingoGameEngine.ts) (`startMasterLobbyTimer` lines 1200–1400)
+
+#### Non-Touching Invariant for Rooms 20, 50, and 100
+- **100% Guarded & Isolated**:
+  ```ts
+  if (isRoom10) {
+    // S-Curve injection, pot recalculation for bots, toast emission
+  } else {
+    // ROOMS 20, 50, 100: ABSOLUTELY ZERO CODE EXECUTED
+    // room.opponentCards remains strictly []
+    // No pot recalculation, no phantom WebSockets
+  }
+  ```
+- For Rooms 20, 50, and 100, `room.opponentCards` remains `[]` at every second tick ($45, 44 \dots 0$).
+- At $t=0$, if real human `room.cards.length < 2`, Room 20, 50, or 100 resets safely to `'WAITING_FOR_PLAYERS'` with zero deductions.
+
+#### Verification Gate
+- Assert that during a 45s countdown in Room 10, `player_joined` events are emitted progressively across all intervals.
+- Assert that at $t = 0\text{s}$, `room10.opponentCards.length === B`.
+- Assert that Rooms 20, 50, and 100 have `opponentCards.length === 0` at every second ($t = 45, 30, 15, 0$).
+
+---
+
+### Phase 17: Mid-Countdown Joiner State Resolver & Cartela Auto-Yielding Safety
+
+#### Objective
+Ensure that if a real human player opens the app or joins Room 10 mid-countdown (e.g. at second 25 or second 12):
+1. **Seamless Rehydration**: The player immediately receives the exact number of bots scheduled for that second (e.g. 18 bots at second 25), not 0 and not 40.
+2. **Continued Live Arrivals**: As the player watches the screen, the remaining bots (19 through 40) continue trickling in live before their eyes!
+3. **Cartela Auto-Yielding**: If the real player picks a lucky cartela (e.g. Cartela #88) already held by one of the bots that arrived earlier, that bot automatically yields Cartela #88 and re-rolls to a new distinct cartela without disrupting the trickle.
+
+#### Target Scope & Files
+- [server/game/BingoGameEngine.ts](file:///c:/Users/asefa/Desktop/lomi-bingo/server/game/BingoGameEngine.ts) (`handleJoinRoom`, `syncRoom10StandbyBots`, and pre-betting activation)
+
+#### Non-Touching Invariant for Rooms 20, 50, and 100
+- **100% Bypassed**:
+  - `handleJoinRoom` executes original P2P human join logic for non-Room-10 rooms.
+  - `syncRoom10StandbyBots` contains an explicit early exit: `if (!isRoom10) return;`.
+  - In Rooms 20, 50, and 100, card purchasing is exclusively human vs human: no bot card exists to yield or re-roll.
+
+#### Verification Gate
+- Simulate human user joining at second 25:
+  - Assert room state contains ~18 bots.
+  - Advance countdown to second 0: assert bot count climbs to 40.
+  - Human selects cartela held by bot: assert bot yields immediately.
+- Test Room 20 human join at second 25:
+  - Assert `room.opponentCards.length === 0`.
+
+---
+
+### Phase 18: Automated Verification Suite, Demographic/Drift Validation & Multi-Room Safety Audit
+
+#### Objective
+Create and execute a dedicated automated test suite that validates the new Telegram-authentic bot roster diversity (20% female, 30% nicknames/emojis), verifies the Markovian inter-round drift (no 40 $\rightarrow$ 10 crashes), simulates the full 45-second lobby countdown second-by-second, logs the progressive human arrival sequence, asserts exact final count, and audits Rooms 20, 50, and 100 for 100% isolation.
+
+#### Target Test Script
+- `server/scripts/test_phase13_organic_bot_arrivals.ts`
+
+#### Verification Scenarios
+1. **Scenario 1: Demographic & Stylistic Audit**:
+   - Asserts exactly 40 female bots (20%) and 160 male/neutral bots (80%).
+   - Asserts $\ge 60$ bots with nicknames + emojis/symbols ($\ge 30\%$).
+   - Confirms valid Ethiopian phone numbers and 200 unique IDs.
+2. **Scenario 2: Markovian Inter-Round Drift Audit**:
+   - Simulates 50 consecutive rounds; verifies $|B_t - B_{t-1}| \le 6$ across all rounds.
+   - Verifies 40-bot round never abruptly drops to 10 in the next round.
+3. **Scenario 3: Intra-Round S-Curve Arrival Progression (40 Bots Target)**:
+   - Run countdown from $45\text{s} \rightarrow 0\text{s}$.
+   - Verify second-by-second bot counts match the human arrival curve.
+   - Distinct cartelas: all 40 bots have distinct cartela IDs.
+4. **Scenario 4: Real Player Mid-Lobby Join & Auto-Yield**:
+   - Player joins at $t = 20\text{s}$, buys Cartela #150 (held by Bot).
+   - Bot auto-yields Cartela #150 $\rightarrow$ re-rolls to unique card.
+   - Remaining bots continue trickling in until $t = 0\text{s}$.
+5. **Scenario 5: Multi-Room Isolation Firewall Audit (Rooms 20, 50, 100)**:
+   - Asserts `room.opponentCards.length === 0` at $t = 45\text{s}, 30\text{s}, 15\text{s}, 0\text{s}$ for Rooms 20, 50, and 100.
+   - Asserts tiered commissions ($0\% \le 5, 20\% > 5$) remain untouched.
+   - Asserts safe single-player rollover (0 stake loss).
+   - Asserts true human split pot if 2 real players win on the same ball in Room 20.
+6. **TypeScript & Production Bundle**:
+   - `npx tsc --noEmit` exits with 0 errors.
+   - `npm run build` succeeds cleanly.
+
+
+
+
+
 
 

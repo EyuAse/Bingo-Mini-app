@@ -9,7 +9,7 @@ async function main() {
   }
 
   const channel = '@lomibingo_official';
-  const newUrl = 'https://bingo-mini-app-3li9.onrender.com/?v=20261024_50PLAYERS';
+  const newUrl = 'https://bingo-mini-app-3li9.onrender.com/?v=20261025_ORGANIC_BOTS_SCURVE_V3';
   console.log(`Checking messages 1 to 100 in channel ${channel}...`);
 
   let updated = 0;

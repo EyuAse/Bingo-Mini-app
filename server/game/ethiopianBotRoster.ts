@@ -15,209 +15,234 @@ export interface StandbyBotProfile {
   id: string;
   name: string;
   phone: string;
+  gender?: 'female' | 'male';
 }
 
 export const ETHIOPIAN_200_BOT_ROSTER: ReadonlyArray<StandbyBotProfile> = Object.freeze([
-  { id: 'bot_standby_001', name: 'Abebe Bikila', phone: '0911100000' },
-  { id: 'bot_standby_002', name: 'Dawit Kebede', phone: '0912103821' },
-  { id: 'bot_standby_003', name: 'Yohannes Tadesse', phone: '0913107642' },
-  { id: 'bot_standby_004', name: 'Henok Haile', phone: '0920111463' },
-  { id: 'bot_standby_005', name: 'Yared Assefa', phone: '0921115284' },
-  { id: 'bot_standby_006', name: 'Tewodros Girma', phone: '0922119105' },
-  { id: 'bot_standby_007', name: 'Ermias Mengistu', phone: '0929122926' },
-  { id: 'bot_standby_008', name: 'Samuel Alemayehu', phone: '0930126747' },
-  { id: 'bot_standby_009', name: 'Natnael Worku', phone: '0935130568' },
-  { id: 'bot_standby_010', name: 'Biruk Tefera', phone: '0940134389' },
-  { id: 'bot_standby_011', name: 'Solomon Tesfaye', phone: '0944138210' },
-  { id: 'bot_standby_012', name: 'Daniel Wolde', phone: '0952142031' },
-  { id: 'bot_standby_013', name: 'Nahom Desta', phone: '0970145852' },
-  { id: 'bot_standby_014', name: 'Abel Berhanu', phone: '0711149673' },
-  { id: 'bot_standby_015', name: 'Bereket Fikadu', phone: '0712153494' },
-  { id: 'bot_standby_016', name: 'Eyob Getachew', phone: '0777157315' },
-  { id: 'bot_standby_017', name: 'Surafel Kassahun', phone: '0911161136' },
-  { id: 'bot_standby_018', name: 'Mikiyas Mulugeta', phone: '0912164957' },
-  { id: 'bot_standby_019', name: 'Biniyam Zenebe', phone: '0913168778' },
-  { id: 'bot_standby_020', name: 'Robel Fisseha', phone: '0920172599' },
-  { id: 'bot_standby_021', name: 'Fikadu Negash', phone: '0921176420' },
-  { id: 'bot_standby_022', name: 'Getachew Seyoum', phone: '0922180241' },
-  { id: 'bot_standby_023', name: 'Girma Tekle', phone: '0929184062' },
-  { id: 'bot_standby_024', name: 'Kassahun Yilma', phone: '0930187883' },
-  { id: 'bot_standby_025', name: 'Mulugeta Tariku', phone: '0935191704' },
-  { id: 'bot_standby_026', name: 'Tadesse Teshome', phone: '0940195525' },
-  { id: 'bot_standby_027', name: 'Worku Belete', phone: '0944199346' },
-  { id: 'bot_standby_028', name: 'Zenebe Tamirat', phone: '0952203167' },
-  { id: 'bot_standby_029', name: 'Alemayehu Eshetu', phone: '0970206988' },
-  { id: 'bot_standby_030', name: 'Assefa Gizachew', phone: '0711210809' },
-  { id: 'bot_standby_031', name: 'Berhanu Melaku', phone: '0712214630' },
-  { id: 'bot_standby_032', name: 'Desta Mesfin', phone: '0777218451' },
-  { id: 'bot_standby_033', name: 'Fisseha Endale', phone: '0911222272' },
-  { id: 'bot_standby_034', name: 'Haile Dereje', phone: '0912226093' },
-  { id: 'bot_standby_035', name: 'Kebede Zelalem', phone: '0913229914' },
-  { id: 'bot_standby_036', name: 'Mengistu Abiy', phone: '0920233735' },
-  { id: 'bot_standby_037', name: 'Negash Ephrem', phone: '0921237556' },
-  { id: 'bot_standby_038', name: 'Seyoum Fitsum', phone: '0922241377' },
-  { id: 'bot_standby_039', name: 'Tekle Matiwos', phone: '0929245198' },
-  { id: 'bot_standby_040', name: 'Tesfaye Samson', phone: '0930249019' },
-  { id: 'bot_standby_041', name: 'Tariku Temesgen', phone: '0935252840' },
-  { id: 'bot_standby_042', name: 'Teshome Wondimu', phone: '0940256661' },
-  { id: 'bot_standby_043', name: 'Belete Yonas', phone: '0944260482' },
-  { id: 'bot_standby_044', name: 'Tamirat Zerihun', phone: '0952264303' },
-  { id: 'bot_standby_045', name: 'Eshetu Anteneh', phone: '0970268124' },
-  { id: 'bot_standby_046', name: 'Gizachew Bisrat', phone: '0711271945' },
-  { id: 'bot_standby_047', name: 'Melaku Chala', phone: '0712275766' },
-  { id: 'bot_standby_048', name: 'Mesfin Demeke', phone: '0777279587' },
-  { id: 'bot_standby_049', name: 'Endale Elias', phone: '0911283408' },
-  { id: 'bot_standby_050', name: 'Dereje Fantahun', phone: '0912287229' },
-  { id: 'bot_standby_051', name: 'Zelalem Gashaw', phone: '0913291050' },
-  { id: 'bot_standby_052', name: 'Senay Habtamu', phone: '0920294871' },
-  { id: 'bot_standby_053', name: 'Kirubel Lemma', phone: '0921298692' },
-  { id: 'bot_standby_054', name: 'Abiy Sileshi', phone: '0922302513' },
-  { id: 'bot_standby_055', name: 'Ephrem Tolosa', phone: '0929306334' },
-  { id: 'bot_standby_056', name: 'Fitsum Zewdu', phone: '0930310155' },
-  { id: 'bot_standby_057', name: 'Gossaye Bekele', phone: '0935313976' },
-  { id: 'bot_standby_058', name: 'Jemberu Molla', phone: '0940317797' },
-  { id: 'bot_standby_059', name: 'Matiwos Ayalew', phone: '0944321618' },
-  { id: 'bot_standby_060', name: 'Samson Mekonnen', phone: '0952325439' },
-  { id: 'bot_standby_061', name: 'Temesgen Bogale', phone: '0970329260' },
-  { id: 'bot_standby_062', name: 'Wondimu Belay', phone: '0711333081' },
-  { id: 'bot_standby_063', name: 'Yonas Abera', phone: '0712336902' },
-  { id: 'bot_standby_064', name: 'Zerihun Negussie', phone: '0777340723' },
-  { id: 'bot_standby_065', name: 'Anteneh Ayele', phone: '0911344544' },
-  { id: 'bot_standby_066', name: 'Bisrat Hailu', phone: '0912348365' },
-  { id: 'bot_standby_067', name: 'Chala Kassa', phone: '0913352186' },
-  { id: 'bot_standby_068', name: 'Demeke Desalegn', phone: '0920356007' },
-  { id: 'bot_standby_069', name: 'Elias Shiferaw', phone: '0921359828' },
-  { id: 'bot_standby_070', name: 'Fantahun Chekol', phone: '0922363649' },
-  { id: 'bot_standby_071', name: 'Gashaw Baye', phone: '0929367470' },
-  { id: 'bot_standby_072', name: 'Habtamu Gebeyehu', phone: '0930371291' },
-  { id: 'bot_standby_073', name: 'Lemma Mamo', phone: '0935375112' },
-  { id: 'bot_standby_074', name: 'Sileshi Regassa', phone: '0940378933' },
-  { id: 'bot_standby_075', name: 'Tolosa Tolera', phone: '0944382754' },
-  { id: 'bot_standby_076', name: 'Wendesen Feyisa', phone: '0952386575' },
-  { id: 'bot_standby_077', name: 'Yabsira Tulu', phone: '0970390396' },
-  { id: 'bot_standby_078', name: 'Zewdu Gemechu', phone: '0711394217' },
-  { id: 'bot_standby_079', name: 'Bekele Bedada', phone: '0712398038' },
-  { id: 'bot_standby_080', name: 'Molla Dejene', phone: '0777401859' },
-  { id: 'bot_standby_081', name: 'Ayalew Woldemariam', phone: '0911405680' },
-  { id: 'bot_standby_082', name: 'Mekonnen Gebremariam', phone: '0912409501' },
-  { id: 'bot_standby_083', name: 'Bogale Weldegebriel', phone: '0913413322' },
-  { id: 'bot_standby_084', name: 'Belay Gebremeskel', phone: '0920417143' },
-  { id: 'bot_standby_085', name: 'Abera Gidey', phone: '0921420964' },
-  { id: 'bot_standby_086', name: 'Negussie Tesema', phone: '0922424785' },
-  { id: 'bot_standby_087', name: 'Ayele Kidanemariam', phone: '0929428606' },
-  { id: 'bot_standby_088', name: 'Hailu Lulseged', phone: '0930432427' },
-  { id: 'bot_standby_089', name: 'Kassa Gossaye', phone: '0935436248' },
-  { id: 'bot_standby_090', name: 'Desalegn Jemberu', phone: '0940440069' },
-  { id: 'bot_standby_091', name: 'Shiferaw Senay', phone: '0944443890' },
-  { id: 'bot_standby_092', name: 'Chekol Kirubel', phone: '0952447711' },
-  { id: 'bot_standby_093', name: 'Baye Wendesen', phone: '0970451532' },
-  { id: 'bot_standby_094', name: 'Gebeyehu Yabsira', phone: '0711455353' },
-  { id: 'bot_standby_095', name: 'Mamo Nega', phone: '0712459174' },
-  { id: 'bot_standby_096', name: 'Regassa Petros', phone: '0777462995' },
-  { id: 'bot_standby_097', name: 'Tolera Umer', phone: '0911466816' },
-  { id: 'bot_standby_098', name: 'Feyisa Rashid', phone: '0912470637' },
-  { id: 'bot_standby_099', name: 'Tulu Mahder', phone: '0913474458' },
-  { id: 'bot_standby_100', name: 'Gemechu Nuredin', phone: '0920478279' },
-  { id: 'bot_standby_101', name: 'Selamawit Bikila', phone: '0921482100' },
-  { id: 'bot_standby_102', name: 'Tigist Kebede', phone: '0922485921' },
-  { id: 'bot_standby_103', name: 'Meron Tadesse', phone: '0929489742' },
-  { id: 'bot_standby_104', name: 'Bethlehem Haile', phone: '0930493563' },
-  { id: 'bot_standby_105', name: 'Almaz Assefa', phone: '0935497384' },
-  { id: 'bot_standby_106', name: 'Aster Girma', phone: '0940501205' },
-  { id: 'bot_standby_107', name: 'Rahel Mengistu', phone: '0944505026' },
-  { id: 'bot_standby_108', name: 'Hiwot Alemayehu', phone: '0952508847' },
-  { id: 'bot_standby_109', name: 'Meseret Worku', phone: '0970512668' },
-  { id: 'bot_standby_110', name: 'Tsion Tefera', phone: '0711516489' },
-  { id: 'bot_standby_111', name: 'Hana Tesfaye', phone: '0712520310' },
-  { id: 'bot_standby_112', name: 'Senait Wolde', phone: '0777524131' },
-  { id: 'bot_standby_113', name: 'Emebet Desta', phone: '0911527952' },
-  { id: 'bot_standby_114', name: 'Frehiwot Berhanu', phone: '0912531773' },
-  { id: 'bot_standby_115', name: 'Kidist Fikadu', phone: '0913535594' },
-  { id: 'bot_standby_116', name: 'Lensa Getachew', phone: '0920539415' },
-  { id: 'bot_standby_117', name: 'Mahlet Kassahun', phone: '0921543236' },
-  { id: 'bot_standby_118', name: 'Netsanet Mulugeta', phone: '0922547057' },
-  { id: 'bot_standby_119', name: 'Roman Zenebe', phone: '0929550878' },
-  { id: 'bot_standby_120', name: 'Sara Fisseha', phone: '0930554699' },
-  { id: 'bot_standby_121', name: 'Tsedey Negash', phone: '0935558520' },
-  { id: 'bot_standby_122', name: 'Yemisrach Seyoum', phone: '0940562341' },
-  { id: 'bot_standby_123', name: 'Zewditu Tekle', phone: '0944566162' },
-  { id: 'bot_standby_124', name: 'Aberash Yilma', phone: '0952569983' },
-  { id: 'bot_standby_125', name: 'Bizunesh Tariku', phone: '0970573804' },
-  { id: 'bot_standby_126', name: 'Chaltu Teshome', phone: '0711577625' },
-  { id: 'bot_standby_127', name: 'Derartu Belete', phone: '0712581446' },
-  { id: 'bot_standby_128', name: 'Etsegenet Tamirat', phone: '0777585267' },
-  { id: 'bot_standby_129', name: 'Fantu Eshetu', phone: '0911589088' },
-  { id: 'bot_standby_130', name: 'Genet Gizachew', phone: '0912592909' },
-  { id: 'bot_standby_131', name: 'Hawi Melaku', phone: '0913596730' },
-  { id: 'bot_standby_132', name: 'Konjit Mesfin', phone: '0920600551' },
-  { id: 'bot_standby_133', name: 'Lemlem Endale', phone: '0921604372' },
-  { id: 'bot_standby_134', name: 'Martha Dereje', phone: '0922608193' },
-  { id: 'bot_standby_135', name: 'Nigist Zelalem', phone: '0929612014' },
-  { id: 'bot_standby_136', name: 'Rekik Abiy', phone: '0930615835' },
-  { id: 'bot_standby_137', name: 'Samrawit Ephrem', phone: '0935619656' },
-  { id: 'bot_standby_138', name: 'Tirhas Fitsum', phone: '0940623477' },
-  { id: 'bot_standby_139', name: 'Wubit Matiwos', phone: '0944627298' },
-  { id: 'bot_standby_140', name: 'Yetnayet Samson', phone: '0952631119' },
-  { id: 'bot_standby_141', name: 'Birtukan Temesgen', phone: '0970634940' },
-  { id: 'bot_standby_142', name: 'Danawit Wondimu', phone: '0711638761' },
-  { id: 'bot_standby_143', name: 'Emnet Yonas', phone: '0712642582' },
-  { id: 'bot_standby_144', name: 'Feven Zerihun', phone: '0777646403' },
-  { id: 'bot_standby_145', name: 'Gelila Anteneh', phone: '0911650224' },
-  { id: 'bot_standby_146', name: 'Helina Bisrat', phone: '0912654045' },
-  { id: 'bot_standby_147', name: 'Kalkidan Chala', phone: '0913657866' },
-  { id: 'bot_standby_148', name: 'Lidya Demeke', phone: '0920661687' },
-  { id: 'bot_standby_149', name: 'Mehret Elias', phone: '0921665508' },
-  { id: 'bot_standby_150', name: 'Nardos Fantahun', phone: '0922669329' },
-  { id: 'bot_standby_151', name: 'Ruth Gashaw', phone: '0929673150' },
-  { id: 'bot_standby_152', name: 'Saron Habtamu', phone: '0930676971' },
-  { id: 'bot_standby_153', name: 'Tinbit Lemma', phone: '0935680792' },
-  { id: 'bot_standby_154', name: 'Weynshet Sileshi', phone: '0940684613' },
-  { id: 'bot_standby_155', name: 'Yeabsira Tolosa', phone: '0944688434' },
-  { id: 'bot_standby_156', name: 'Asnakech Zewdu', phone: '0952692255' },
-  { id: 'bot_standby_157', name: 'Bilen Bekele', phone: '0970696076' },
-  { id: 'bot_standby_158', name: 'Dagmawit Molla', phone: '0711699897' },
-  { id: 'bot_standby_159', name: 'Eden Ayalew', phone: '0712703718' },
-  { id: 'bot_standby_160', name: 'Hermela Mekonnen', phone: '0777707539' },
-  { id: 'bot_standby_161', name: 'Lewam Bogale', phone: '0911711360' },
-  { id: 'bot_standby_162', name: 'Mihret Belay', phone: '0912715181' },
-  { id: 'bot_standby_163', name: 'Nuhamin Abera', phone: '0913719002' },
-  { id: 'bot_standby_164', name: 'Rediet Negussie', phone: '0920722823' },
-  { id: 'bot_standby_165', name: 'Sifen Ayele', phone: '0921726644' },
-  { id: 'bot_standby_166', name: 'Tihitina Hailu', phone: '0922730465' },
-  { id: 'bot_standby_167', name: 'Winta Kassa', phone: '0929734286' },
-  { id: 'bot_standby_168', name: 'Yordanos Desalegn', phone: '0930738107' },
-  { id: 'bot_standby_169', name: 'Zena Shiferaw', phone: '0935741928' },
-  { id: 'bot_standby_170', name: 'Ayantu Chekol', phone: '0940745749' },
-  { id: 'bot_standby_171', name: 'Blen Baye', phone: '0944749570' },
-  { id: 'bot_standby_172', name: 'Dina Gebeyehu', phone: '0952753391' },
-  { id: 'bot_standby_173', name: 'Eleni Mamo', phone: '0970757212' },
-  { id: 'bot_standby_174', name: 'Feker Regassa', phone: '0711761033' },
-  { id: 'bot_standby_175', name: 'Haimanot Tolera', phone: '0712764854' },
-  { id: 'bot_standby_176', name: 'Ililli Feyisa', phone: '0777768675' },
-  { id: 'bot_standby_177', name: 'Kemer Tulu', phone: '0911772496' },
-  { id: 'bot_standby_178', name: 'Luwam Gemechu', phone: '0912776317' },
-  { id: 'bot_standby_179', name: 'Mizan Bedada', phone: '0913780138' },
-  { id: 'bot_standby_180', name: 'Ruhama Dejene', phone: '0920783959' },
-  { id: 'bot_standby_181', name: 'Tsige Woldemariam', phone: '0921787780' },
-  { id: 'bot_standby_182', name: 'Zufan Gebremariam', phone: '0922791601' },
-  { id: 'bot_standby_183', name: 'Metadel Weldegebriel', phone: '0929795422' },
-  { id: 'bot_standby_184', name: 'Edom Gebremeskel', phone: '0930799243' },
-  { id: 'bot_standby_185', name: 'Kiya Gidey', phone: '0935803064' },
-  { id: 'bot_standby_186', name: 'Saba Tesema', phone: '0940806885' },
-  { id: 'bot_standby_187', name: 'Marta Kidanemariam', phone: '0944810706' },
-  { id: 'bot_standby_188', name: 'Selam Lulseged', phone: '0952814527' },
-  { id: 'bot_standby_189', name: 'Beti Gossaye', phone: '0970818348' },
-  { id: 'bot_standby_190', name: 'Hermi Jemberu', phone: '0711822169' },
-  { id: 'bot_standby_191', name: 'Kiddy Senay', phone: '0712825990' },
-  { id: 'bot_standby_192', name: 'Mimi Kirubel', phone: '0777829811' },
-  { id: 'bot_standby_193', name: 'Lili Wendesen', phone: '0911833632' },
-  { id: 'bot_standby_194', name: 'Titi Yabsira', phone: '0912837453' },
-  { id: 'bot_standby_195', name: 'Fifi Nega', phone: '0913841274' },
-  { id: 'bot_standby_196', name: 'Sosina Petros', phone: '0920845095' },
-  { id: 'bot_standby_197', name: 'Kokeb Umer', phone: '0921848916' },
-  { id: 'bot_standby_198', name: 'Enat Rashid', phone: '0922852737' },
-  { id: 'bot_standby_199', name: 'Fenet Mahder', phone: '0929856558' },
-  { id: 'bot_standby_200', name: 'Hirut Nuredin', phone: '0930860379' }
+  // --- 1 to 62: NICKNAMES + EMOJIS & UNIQUE SYMBOLS (~30% / 62 bots) ---
+  // Female with Emojis (12 bots)
+  { id: 'bot_standby_001', name: 'Selam 🌸', phone: '0911100001', gender: 'female' },
+  { id: 'bot_standby_002', name: 'Hana ✨', phone: '0912103822', gender: 'female' },
+  { id: 'bot_standby_003', name: 'Sara 🦋', phone: '0913107643', gender: 'female' },
+  { id: 'bot_standby_004', name: 'Mimi 💎', phone: '0920111464', gender: 'female' },
+  { id: 'bot_standby_005', name: 'Lula 🌺', phone: '0921115285', gender: 'female' },
+  { id: 'bot_standby_006', name: 'Beti 🎀', phone: '0922119106', gender: 'female' },
+  { id: 'bot_standby_007', name: 'Tsion 🕊️', phone: '0929122927', gender: 'female' },
+  { id: 'bot_standby_008', name: 'Kalkidan ✝️', phone: '0930126748', gender: 'female' },
+  { id: 'bot_standby_009', name: 'Lidya 💫', phone: '0935130569', gender: 'female' },
+  { id: 'bot_standby_010', name: 'Ruthy 🌸', phone: '0940134390', gender: 'female' },
+  { id: 'bot_standby_011', name: 'Mahi 💖', phone: '0944138211', gender: 'female' },
+  { id: 'bot_standby_012', name: 'Fifi 🍓', phone: '0952142032', gender: 'female' },
+
+  // Male / Neutral with Emojis (50 bots)
+  { id: 'bot_standby_013', name: 'Beki ⚡', phone: '0970145853', gender: 'male' },
+  { id: 'bot_standby_014', name: 'Nati 👑', phone: '0711149674', gender: 'male' },
+  { id: 'bot_standby_015', name: 'Yoni 🔥', phone: '0712153495', gender: 'male' },
+  { id: 'bot_standby_016', name: 'Abyssinia 🇪🇹', phone: '0777157316', gender: 'male' },
+  { id: 'bot_standby_017', name: 'Bini 🎯', phone: '0911161137', gender: 'male' },
+  { id: 'bot_standby_018', name: 'Dagi 💎', phone: '0912164958', gender: 'male' },
+  { id: 'bot_standby_019', name: 'Miki 🚀', phone: '0913168779', gender: 'male' },
+  { id: 'bot_standby_020', name: 'Tsehay ☀️', phone: '0920172600', gender: 'male' },
+  { id: 'bot_standby_021', name: 'Kidu 🦁', phone: '0921176421', gender: 'male' },
+  { id: 'bot_standby_022', name: 'Eyu ✌️', phone: '0922180242', gender: 'male' },
+  { id: 'bot_standby_023', name: 'Alex ⚽', phone: '0929184063', gender: 'male' },
+  { id: 'bot_standby_024', name: 'Fira 🕊️', phone: '0930187884', gender: 'male' },
+  { id: 'bot_standby_025', name: '_Maki 🖤', phone: '0935191705', gender: 'male' },
+  { id: 'bot_standby_026', name: 'Bereket ツ', phone: '0940195526', gender: 'male' },
+  { id: 'bot_standby_027', name: 'Amen 🙏', phone: '0944199347', gender: 'male' },
+  { id: 'bot_standby_028', name: 'Lomi Fan 🍋', phone: '0952203168', gender: 'male' },
+  { id: 'bot_standby_029', name: 'Dani 🎲', phone: '0970206989', gender: 'male' },
+  { id: 'bot_standby_030', name: 'Henok 🏆', phone: '0711210810', gender: 'male' },
+  { id: 'bot_standby_031', name: 'Robel 💎', phone: '0712214631', gender: 'male' },
+  { id: 'bot_standby_032', name: 'Sami ⚡', phone: '0777218452', gender: 'male' },
+  { id: 'bot_standby_033', name: 'Biruk 🌟', phone: '0911222273', gender: 'male' },
+  { id: 'bot_standby_034', name: 'Fraol 🦁', phone: '0912226094', gender: 'male' },
+  { id: 'bot_standby_035', name: 'Abuki 🎯', phone: '0913229915', gender: 'male' },
+  { id: 'bot_standby_036', name: 'Temu 🔥', phone: '0920233736', gender: 'male' },
+  { id: 'bot_standby_037', name: 'Chalu ⚡', phone: '0921237557', gender: 'male' },
+  { id: 'bot_standby_038', name: 'Barok 🙏', phone: '0922241378', gender: 'male' },
+  { id: 'bot_standby_039', name: 'Tinsae ☀️', phone: '0929245199', gender: 'male' },
+  { id: 'bot_standby_040', name: 'Habesha 🇪🇹', phone: '0930249020', gender: 'male' },
+  { id: 'bot_standby_041', name: 'Sol 👑', phone: '0935252841', gender: 'male' },
+  { id: 'bot_standby_042', name: 'Eyob 🚀', phone: '0940256662', gender: 'male' },
+  { id: 'bot_standby_043', name: 'Surafel ⚽', phone: '0944260483', gender: 'male' },
+  { id: 'bot_standby_044', name: 'Miki_G 💎', phone: '0952264304', gender: 'male' },
+  { id: 'bot_standby_045', name: 'Zack 🔥', phone: '0970268125', gender: 'male' },
+  { id: 'bot_standby_046', name: 'Bini_A ⚡', phone: '0711271946', gender: 'male' },
+  { id: 'bot_standby_047', name: 'Dagmawi 👑', phone: '0712275767', gender: 'male' },
+  { id: 'bot_standby_048', name: 'Kidus_T ✝️', phone: '0777279588', gender: 'male' },
+  { id: 'bot_standby_049', name: 'Aman 🎯', phone: '0911283409', gender: 'male' },
+  { id: 'bot_standby_050', name: 'Tedi 🎸', phone: '0912287230', gender: 'male' },
+  { id: 'bot_standby_051', name: 'Yared 🎵', phone: '0913291051', gender: 'male' },
+  { id: 'bot_standby_052', name: 'Ermias 🌟', phone: '0920294872', gender: 'male' },
+  { id: 'bot_standby_053', name: 'Nahom ⚡', phone: '0921298693', gender: 'male' },
+  { id: 'bot_standby_054', name: 'Jemberu ☀️', phone: '0922302514', gender: 'male' },
+  { id: 'bot_standby_055', name: 'Senay 🍀', phone: '0929306335', gender: 'male' },
+  { id: 'bot_standby_056', name: 'Kirubel 🕊️', phone: '0930310156', gender: 'male' },
+  { id: 'bot_standby_057', name: 'Tolosa 🦁', phone: '0935313977', gender: 'male' },
+  { id: 'bot_standby_058', name: 'Gashaw 💎', phone: '0940317798', gender: 'male' },
+  { id: 'bot_standby_059', name: 'Fikadu 🎯', phone: '0944321619', gender: 'male' },
+  { id: 'bot_standby_060', name: 'Mati ⚡', phone: '0952325440', gender: 'male' },
+  { id: 'bot_standby_061', name: 'Gossaye 👑', phone: '0970329261', gender: 'male' },
+  { id: 'bot_standby_062', name: 'Bisrat 🌟', phone: '0711333082', gender: 'male' },
+
+  // --- 63 to 92: AUTHENTIC AMHARIC / GE'EZ FIDEL NAMES (30 bots / 15%) ---
+  // Female Fidel (8 bots)
+  { id: 'bot_standby_063', name: 'ሰላም', phone: '0712336903', gender: 'female' },
+  { id: 'bot_standby_064', name: 'ኤደን', phone: '0777340724', gender: 'female' },
+  { id: 'bot_standby_065', name: 'ማሂ', phone: '0911344545', gender: 'female' },
+  { id: 'bot_standby_066', name: 'ቤቲ', phone: '0912348366', gender: 'female' },
+  { id: 'bot_standby_067', name: 'ፍቅር', phone: '0913352187', gender: 'female' },
+  { id: 'bot_standby_068', name: 'ብርቱካን', phone: '0920356008', gender: 'female' },
+  { id: 'bot_standby_069', name: 'ሃና', phone: '0921359829', gender: 'female' },
+  { id: 'bot_standby_070', name: 'ሜሮን', phone: '0922363650', gender: 'female' },
+
+  // Male Fidel (22 bots)
+  { id: 'bot_standby_071', name: 'ናቲ', phone: '0929367471', gender: 'male' },
+  { id: 'bot_standby_072', name: 'ዮናስ', phone: '0930371292', gender: 'male' },
+  { id: 'bot_standby_073', name: 'ኪዱ', phone: '0935375113', gender: 'male' },
+  { id: 'bot_standby_074', name: 'ሮቤል', phone: '0940378934', gender: 'male' },
+  { id: 'bot_standby_075', name: 'ዳጊ', phone: '0944382755', gender: 'male' },
+  { id: 'bot_standby_076', name: 'ሄኖክ', phone: '0952386576', gender: 'male' },
+  { id: 'bot_standby_077', name: 'አቤኒ', phone: '0970390397', gender: 'male' },
+  { id: 'bot_standby_078', name: 'ሳሚ', phone: '0711394218', gender: 'male' },
+  { id: 'bot_standby_079', name: 'ቴዲ', phone: '0712398039', gender: 'male' },
+  { id: 'bot_standby_080', name: 'አማን', phone: '0777401860', gender: 'male' },
+  { id: 'bot_standby_081', name: 'ተስፋ', phone: '0911405681', gender: 'male' },
+  { id: 'bot_standby_082', name: 'ዮኒ', phone: '0912409502', gender: 'male' },
+  { id: 'bot_standby_083', name: 'ብርሃኑ', phone: '0913413323', gender: 'male' },
+  { id: 'bot_standby_084', name: 'ታደለ', phone: '0920417144', gender: 'male' },
+  { id: 'bot_standby_085', name: 'ሙሉጌታ', phone: '0921420965', gender: 'male' },
+  { id: 'bot_standby_086', name: 'ደስታ', phone: '0922424786', gender: 'male' },
+  { id: 'bot_standby_087', name: 'ግርማ', phone: '0929428607', gender: 'male' },
+  { id: 'bot_standby_088', name: 'ሰለሞን', phone: '0930432428', gender: 'male' },
+  { id: 'bot_standby_089', name: 'ዳንኤል', phone: '0935436249', gender: 'male' },
+  { id: 'bot_standby_090', name: 'በቀለ', phone: '0940440070', gender: 'male' },
+  { id: 'bot_standby_091', name: 'ኤርሚያስ', phone: '0944443891', gender: 'male' },
+  { id: 'bot_standby_092', name: 'ፋሲል', phone: '0952447712', gender: 'male' },
+
+  // --- 93 to 142: FIRST NAME + INITIAL (50 bots / 25%) ---
+  // Female First + Initial (10 bots)
+  { id: 'bot_standby_093', name: 'Eyerus G.', phone: '0970451533', gender: 'female' },
+  { id: 'bot_standby_094', name: 'Helen S.', phone: '0711455354', gender: 'female' },
+  { id: 'bot_standby_095', name: 'Marta B.', phone: '0712459175', gender: 'female' },
+  { id: 'bot_standby_096', name: 'Senait M.', phone: '0777462996', gender: 'female' },
+  { id: 'bot_standby_097', name: 'Almaz G.', phone: '0911466817', gender: 'female' },
+  { id: 'bot_standby_098', name: 'Tigist K.', phone: '0912470638', gender: 'female' },
+  { id: 'bot_standby_099', name: 'Bethlehem A.', phone: '0913474459', gender: 'female' },
+  { id: 'bot_standby_100', name: 'Rahel T.', phone: '0920478280', gender: 'female' },
+  { id: 'bot_standby_101', name: 'Kidist F.', phone: '0921482101', gender: 'female' },
+  { id: 'bot_standby_102', name: 'Genet Z.', phone: '0922485922', gender: 'female' },
+
+  // Male First + Initial (40 bots)
+  { id: 'bot_standby_103', name: 'Aman T.', phone: '0929489743', gender: 'male' },
+  { id: 'bot_standby_104', name: 'Natnael K.', phone: '0930493564', gender: 'male' },
+  { id: 'bot_standby_105', name: 'Dawit M.', phone: '0935497385', gender: 'male' },
+  { id: 'bot_standby_106', name: 'Biniyam A.', phone: '0940501206', gender: 'male' },
+  { id: 'bot_standby_107', name: 'Kidus T.', phone: '0944505027', gender: 'male' },
+  { id: 'bot_standby_108', name: 'Sami B.', phone: '0952508848', gender: 'male' },
+  { id: 'bot_standby_109', name: 'Robel Z.', phone: '0970512669', gender: 'male' },
+  { id: 'bot_standby_110', name: 'Biruk A.', phone: '0711516490', gender: 'male' },
+  { id: 'bot_standby_111', name: 'Eyob H.', phone: '0712520311', gender: 'male' },
+  { id: 'bot_standby_112', name: 'Yared S.', phone: '0777524132', gender: 'male' },
+  { id: 'bot_standby_113', name: 'Surafel D.', phone: '0911527953', gender: 'male' },
+  { id: 'bot_standby_114', name: 'Yonas B.', phone: '0912531774', gender: 'male' },
+  { id: 'bot_standby_115', name: 'Henok W.', phone: '0913535595', gender: 'male' },
+  { id: 'bot_standby_116', name: 'Solomon G.', phone: '0920539416', gender: 'male' },
+  { id: 'bot_standby_117', name: 'Daniel T.', phone: '0921543237', gender: 'male' },
+  { id: 'bot_standby_118', name: 'Nahom K.', phone: '0922547058', gender: 'male' },
+  { id: 'bot_standby_119', name: 'Abel M.', phone: '0929550879', gender: 'male' },
+  { id: 'bot_standby_120', name: 'Bereket F.', phone: '0930554700', gender: 'male' },
+  { id: 'bot_standby_121', name: 'Mikiyas E.', phone: '0935558521', gender: 'male' },
+  { id: 'bot_standby_122', name: 'Fikadu N.', phone: '0940562342', gender: 'male' },
+  { id: 'bot_standby_123', name: 'Getachew S.', phone: '0944566163', gender: 'male' },
+  { id: 'bot_standby_124', name: 'Girma T.', phone: '0952569984', gender: 'male' },
+  { id: 'bot_standby_125', name: 'Kassahun Y.', phone: '0970573805', gender: 'male' },
+  { id: 'bot_standby_126', name: 'Mulugeta B.', phone: '0711577626', gender: 'male' },
+  { id: 'bot_standby_127', name: 'Tadesse H.', phone: '0712581447', gender: 'male' },
+  { id: 'bot_standby_128', name: 'Worku L.', phone: '0777585268', gender: 'male' },
+  { id: 'bot_standby_129', name: 'Zenebe T.', phone: '0911589089', gender: 'male' },
+  { id: 'bot_standby_130', name: 'Alemayehu E.', phone: '0912592910', gender: 'male' },
+  { id: 'bot_standby_131', name: 'Assefa G.', phone: '0913596731', gender: 'male' },
+  { id: 'bot_standby_132', name: 'Berhanu M.', phone: '0920600552', gender: 'male' },
+  { id: 'bot_standby_133', name: 'Desta M.', phone: '0921604373', gender: 'male' },
+  { id: 'bot_standby_134', name: 'Fisseha E.', phone: '0922608194', gender: 'male' },
+  { id: 'bot_standby_135', name: 'Haile D.', phone: '0929612015', gender: 'male' },
+  { id: 'bot_standby_136', name: 'Kebede Z.', phone: '0930615836', gender: 'male' },
+  { id: 'bot_standby_137', name: 'Mengistu A.', phone: '0935619657', gender: 'male' },
+  { id: 'bot_standby_138', name: 'Negash E.', phone: '0940623478', gender: 'male' },
+  { id: 'bot_standby_139', name: 'Seyoum F.', phone: '0944627299', gender: 'male' },
+  { id: 'bot_standby_140', name: 'Tekle M.', phone: '0952631120', gender: 'male' },
+  { id: 'bot_standby_141', name: 'Tesfaye S.', phone: '0970634941', gender: 'male' },
+  { id: 'bot_standby_142', name: 'Tariku T.', phone: '0711638762', gender: 'male' },
+
+  // --- 143 to 172: TELEGRAM HANDLE & GAMER TAG STYLE (30 bots / 15%) ---
+  // Female Handles (5 bots)
+  { id: 'bot_standby_143', name: 'samri_love', phone: '0712642583', gender: 'female' },
+  { id: 'bot_standby_144', name: 'mimi_addis', phone: '0777646404', gender: 'female' },
+  { id: 'bot_standby_145', name: 'helen_queen', phone: '0911650225', gender: 'female' },
+  { id: 'bot_standby_146', name: 'selam_21', phone: '0912654046', gender: 'female' },
+  { id: 'bot_standby_147', name: 'fifi_star', phone: '0913657867', gender: 'female' },
+
+  // Male / Neutral Handles (25 bots)
+  { id: 'bot_standby_148', name: 'nati_boy', phone: '0920661688', gender: 'male' },
+  { id: 'bot_standby_149', name: 'king_dani', phone: '0921665509', gender: 'male' },
+  { id: 'bot_standby_150', name: 'beki_12', phone: '0922669330', gender: 'male' },
+  { id: 'bot_standby_151', name: 'ethio_star', phone: '0929673151', gender: 'male' },
+  { id: 'bot_standby_152', name: 'habesha_vibes', phone: '0930676972', gender: 'male' },
+  { id: 'bot_standby_153', name: 'yonathan_t', phone: '0935680793', gender: 'male' },
+  { id: 'bot_standby_154', name: 'alex_pro', phone: '0940684614', gender: 'male' },
+  { id: 'bot_standby_155', name: 'dagi_21', phone: '0944688435', gender: 'male' },
+  { id: 'bot_standby_156', name: 'miki_eth', phone: '0952692256', gender: 'male' },
+  { id: 'bot_standby_157', name: 'fira_24', phone: '0970696077', gender: 'male' },
+  { id: 'bot_standby_158', name: 'aman_jr', phone: '0711699898', gender: 'male' },
+  { id: 'bot_standby_159', name: 'bini_cool', phone: '0712703719', gender: 'male' },
+  { id: 'bot_standby_160', name: 'chala_king', phone: '0777707540', gender: 'male' },
+  { id: 'bot_standby_161', name: 'habesha_king', phone: '0911711361', gender: 'male' },
+  { id: 'bot_standby_162', name: 'ethio_gamer', phone: '0912715182', gender: 'male' },
+  { id: 'bot_standby_163', name: 'kidu_07', phone: '0913719003', gender: 'male' },
+  { id: 'bot_standby_164', name: 'robel_pro', phone: '0920722824', gender: 'male' },
+  { id: 'bot_standby_165', name: 'sam_the_man', phone: '0921726645', gender: 'male' },
+  { id: 'bot_standby_166', name: 'dani_boy', phone: '0922730466', gender: 'male' },
+  { id: 'bot_standby_167', name: 'teddy_b', phone: '0929734287', gender: 'male' },
+  { id: 'bot_standby_168', name: 'yoni_star', phone: '0930738108', gender: 'male' },
+  { id: 'bot_standby_169', name: 'bek_addis', phone: '0935741929', gender: 'male' },
+  { id: 'bot_standby_170', name: 'jerry_eth', phone: '0940745750', gender: 'male' },
+  { id: 'bot_standby_171', name: 'abuki_pro', phone: '0944749571', gender: 'male' },
+  { id: 'bot_standby_172', name: 'fidel_gamer', phone: '0952753392', gender: 'male' },
+
+  // --- 173 to 200: TRADITIONAL FULL NAMES / MONONYMS (28 bots / 14%) ---
+  // Female Traditional (5 bots)
+  { id: 'bot_standby_173', name: 'Almaz Tadesse', phone: '0970757213', gender: 'female' },
+  { id: 'bot_standby_174', name: 'Yemisrach Seyoum', phone: '0711761034', gender: 'female' },
+  { id: 'bot_standby_175', name: 'Genet Wolde', phone: '0712764855', gender: 'female' },
+  { id: 'bot_standby_176', name: 'Hiwot Assefa', phone: '0777768676', gender: 'female' },
+  { id: 'bot_standby_177', name: 'Frehiwot Berhanu', phone: '0911772497', gender: 'female' },
+
+  // Male Traditional (23 bots)
+  { id: 'bot_standby_178', name: 'Dawit Alemayehu', phone: '0912776318', gender: 'male' },
+  { id: 'bot_standby_179', name: 'Abebe Bikila', phone: '0913780139', gender: 'male' },
+  { id: 'bot_standby_180', name: 'Samuel Mengistu', phone: '0920783960', gender: 'male' },
+  { id: 'bot_standby_181', name: 'Henok Haile', phone: '0921787781', gender: 'male' },
+  { id: 'bot_standby_182', name: 'Yohannes Tadesse', phone: '0922791602', gender: 'male' },
+  { id: 'bot_standby_183', name: 'Tewodros Girma', phone: '0929795423', gender: 'male' },
+  { id: 'bot_standby_184', name: 'Ermias Mengistu', phone: '0930799244', gender: 'male' },
+  { id: 'bot_standby_185', name: 'Natnael Worku', phone: '0935803065', gender: 'male' },
+  { id: 'bot_standby_186', name: 'Biruk Tefera', phone: '0940806886', gender: 'male' },
+  { id: 'bot_standby_187', name: 'Solomon Tesfaye', phone: '0944810707', gender: 'male' },
+  { id: 'bot_standby_188', name: 'Nahom Desta', phone: '0952814528', gender: 'male' },
+  { id: 'bot_standby_189', name: 'Abel Berhanu', phone: '0970818349', gender: 'male' },
+  { id: 'bot_standby_190', name: 'Bereket Fikadu', phone: '0711822170', gender: 'male' },
+  { id: 'bot_standby_191', name: 'Eyob Getachew', phone: '0712825991', gender: 'male' },
+  { id: 'bot_standby_192', name: 'Mikiyas Mulugeta', phone: '0777829812', gender: 'male' },
+  { id: 'bot_standby_193', name: 'Biniyam Zenebe', phone: '0911833633', gender: 'male' },
+  { id: 'bot_standby_194', name: 'Getachew Seyoum', phone: '0912837454', gender: 'male' },
+  { id: 'bot_standby_195', name: 'Girma Tekle', phone: '0913841275', gender: 'male' },
+  { id: 'bot_standby_196', name: 'Mulugeta Tariku', phone: '0920845096', gender: 'male' },
+  { id: 'bot_standby_197', name: 'Tadesse Teshome', phone: '0921848917', gender: 'male' },
+  { id: 'bot_standby_198', name: 'Tamirat Zerihun', phone: '0922852738', gender: 'male' },
+  { id: 'bot_standby_199', name: 'Gizachew Bisrat', phone: '0929856559', gender: 'male' },
+  { id: 'bot_standby_200', name: 'Melaku Chala', phone: '0930860380', gender: 'male' }
 ]);
 
 /**
@@ -240,29 +265,156 @@ export interface BotEngineConfig {
 }
 
 /**
- * Organic traffic curve generator for dynamic bot target counts.
- * Simulates quiet tables, average rooms, and peak rush-hours organically.
+ * Markovian table retention drift engine for dynamic bot target counts across consecutive rounds.
+ * 
+ * In real casinos and gaming mini-apps:
+ * 1. 75% to 90% of players stay for the rematch / revenge game ("one more round!").
+ * 2. Natural churn is gradual: a few players leave, a few new ones join.
+ * 3. Round-to-round delta is strictly bounded: |B_t - B_{t-1}| <= 6 bots.
+ * 4. High traffic rooms (e.g. 35 to 48 bots) maintain "Rush Hour" momentum across multiple
+ *    consecutive rounds before drifting down smoothly.
+ * 5. Low traffic tables warm up progressively (e.g. 12 -> 16 -> 21 -> 27).
+ * 6. Sudden unnatural crashes (e.g. 40 -> 10) are MATHEMATICALLY IMPOSSIBLE.
+ * 
+ * @param previousTarget The bot target count from the previous round (undefined on server boot)
+ * @param min Minimum bots configured by admin (default 2, bounded in [0, 50])
+ * @param max Maximum bots configured by admin (default 50, bounded in [0, 50])
+ * @returns Next round's target bot count (guaranteeing |next - prev| <= 6)
  */
-export function generateDynamicBotTarget(min: number = 2, max: number = 50): number {
+export function generateNextRoundBotTarget(
+  previousTarget?: number,
+  min: number = 2,
+  max: number = 50
+): number {
   const safeMin = Math.max(MIN_STANDBY_BOT_COUNT, Math.min(min, MAX_STANDBY_BOT_COUNT));
   const safeMax = Math.max(safeMin, Math.min(max, MAX_STANDBY_BOT_COUNT));
   if (safeMin >= safeMax) return safeMin;
 
-  const rand = Math.random();
-  if (rand < 0.15) {
-    // 15% chance: Quiet table (e.g. 2 to 9 bots)
-    const quietCap = Math.min(safeMax, Math.max(safeMin, 9));
-    return Math.floor(safeMin + Math.random() * (quietCap - safeMin + 1));
-  } else if (rand < 0.75) {
-    // 60% chance: Normal bustling room (e.g. 10 to 30 bots)
-    const low = Math.min(safeMax, Math.max(safeMin, 10));
-    const high = Math.min(safeMax, Math.max(low, 30));
-    return Math.floor(low + Math.random() * (high - low + 1));
-  } else {
-    // 25% chance: Peak mega pot (e.g. 31 to 50 bots)
-    const low = Math.min(safeMax, Math.max(safeMin, 31));
-    return Math.floor(low + Math.random() * (safeMax - low + 1));
+  // If no previous round exists (server startup or fresh room), seed a natural initial table
+  if (previousTarget === undefined || previousTarget === null || isNaN(previousTarget)) {
+    // Initial room baseline: healthy moderate traffic (e.g. 15 to 28 bots, clamped to [safeMin, safeMax])
+    const initialMid = Math.floor(safeMin + (safeMax - safeMin) * 0.4);
+    const initialSpread = Math.max(2, Math.floor((safeMax - safeMin) * 0.2));
+    const raw = initialMid + Math.floor((Math.random() * 2 - 1) * initialSpread);
+    return Math.max(safeMin, Math.min(safeMax, raw));
   }
+
+  const prev = Math.max(safeMin, Math.min(safeMax, previousTarget));
+
+  // Determine drift direction and magnitude based on current traffic zone and natural retention
+  const rand = Math.random();
+  let delta: number;
+
+  if (prev >= 35) {
+    // HIGH TRAFFIC / RUSH HOUR MOMENTUM:
+    // In peak rounds, table retention is high (75%-90% stay).
+    // 40% chance: Table stays roughly same size (+- 2)
+    // 35% chance: Small churn (-3 to -5)
+    // 25% chance: More players pile in (+1 to +5)
+    if (rand < 0.40) {
+      delta = Math.floor(Math.random() * 5) - 2; // -2, -1, 0, 1, 2
+    } else if (rand < 0.75) {
+      delta = -(Math.floor(Math.random() * 3) + 3); // -3, -4, -5
+    } else {
+      delta = Math.floor(Math.random() * 5) + 1; // +1, +2, +3, +4, +5
+    }
+  } else if (prev <= 12) {
+    // QUIET / WARMING-UP TABLE:
+    // Table tends to attract more players as lobby countdown ticks.
+    // 50% chance: Gains players (+2 to +5)
+    // 35% chance: Steady (+- 1)
+    // 15% chance: Drops 1 or 2
+    if (rand < 0.50) {
+      delta = Math.floor(Math.random() * 4) + 2; // +2, +3, +4, +5
+    } else if (rand < 0.85) {
+      delta = Math.floor(Math.random() * 3) - 1; // -1, 0, 1
+    } else {
+      delta = -(Math.floor(Math.random() * 2) + 1); // -1, -2
+    }
+  } else {
+    // NORMAL BUSTLING ROOM (13 to 34 bots):
+    // Balanced random walk with mean-reversion drift
+    // 35% chance: Slight increase (+1 to +4)
+    // 35% chance: Slight decrease (-1 to -4)
+    // 30% chance: Flat (+- 1)
+    if (rand < 0.35) {
+      delta = Math.floor(Math.random() * 4) + 1; // +1 to +4
+    } else if (rand < 0.70) {
+      delta = -(Math.floor(Math.random() * 4) + 1); // -1 to -4
+    } else {
+      delta = Math.floor(Math.random() * 3) - 1; // -1, 0, 1
+    }
+  }
+
+  // Strictly enforce max step bound of +/- 6 bots to guarantee ZERO WHIPLASH
+  const clampedDelta = Math.max(-6, Math.min(6, delta));
+  const nextTarget = Math.max(safeMin, Math.min(safeMax, prev + clampedDelta));
+  return nextTarget;
+}
+
+/**
+ * Organic traffic curve generator for dynamic bot target counts.
+ * Supports optional previousTarget to preserve inter-round table retention.
+ */
+export function generateDynamicBotTarget(min: number = 2, max: number = 50, previousTarget?: number): number {
+  return generateNextRoundBotTarget(previousTarget, min, max);
+}
+
+/**
+ * Calculates the target cumulative bot count that should be present in Room 10
+ * at elapsed second `elapsedSeconds` (0 to 45, where elapsedSeconds = 45 - remainingSeconds),
+ * mimicking authentic human player arrivals across a 45-second lobby countdown.
+ *
+ * S-Curve Arrival Intervals:
+ * - tau = 0-7s: Early Table Seeding (5% - 10%, baseline 1-2 bots)
+ * - tau = 8-21s: Steady Influx (10% - 35%)
+ * - tau = 22-35s: The "Hurry-Up" Acceleration (35% - 75%)
+ * - tau = 36-43s: Last-Minute Rush (75% - 100%)
+ * - tau = 44-45s: Gate Lock (100% exact targetBots)
+ *
+ * GUARANTEES:
+ * 1. Monotonic non-decreasing: N(tau) >= N(tau - 1) for all tau.
+ * 2. Bounds guarantee: 0 <= N(tau) <= targetBots.
+ * 3. Exact target at gate lock: N(44) === targetBots and N(45) === targetBots.
+ * 4. Room Isolation: Pure stateless helper function; zero effect on other rooms.
+ *
+ * @param targetBots Total bots assigned for the round (e.g. 40)
+ * @param elapsedSeconds Seconds elapsed in lobby (0 to 45)
+ * @returns Cumulative bot count that should have arrived by this second
+ */
+export function getTargetBotsForElapsedSecond(targetBots: number, elapsedSeconds: number): number {
+  if (targetBots <= 0) return 0;
+  if (elapsedSeconds <= 0) {
+    // At second 0 (45s remaining): Seed initial baseline of 1-2 players
+    return Math.min(targetBots, Math.max(1, Math.min(2, Math.floor(targetBots * 0.05) || 1)));
+  }
+  if (targetBots <= 2) {
+    return Math.min(targetBots, elapsedSeconds >= 1 ? targetBots : 1);
+  }
+  if (elapsedSeconds >= 44) {
+    return targetBots; // 100% sealed at gate closure
+  }
+
+  const tau = Math.max(0, Math.min(45, elapsedSeconds));
+  let fraction: number;
+
+  if (tau <= 7) {
+    // Early birds (5% to 10%)
+    fraction = 0.05 + (tau / 7) * 0.05;
+  } else if (tau <= 21) {
+    // Steady trickle (10% to 35%)
+    fraction = 0.10 + ((tau - 7) / 14) * 0.25;
+  } else if (tau <= 35) {
+    // The "Hurry-Up" influx (35% to 75%)
+    fraction = 0.35 + ((tau - 21) / 14) * 0.40;
+  } else {
+    // Last minute rush (75% to 100%)
+    fraction = 0.75 + ((tau - 35) / 9) * 0.25;
+  }
+
+  const targetAtSecond = Math.floor(targetBots * fraction);
+  // Ensure at least baseline 1-2 bots and never exceed targetBots
+  return Math.min(targetBots, Math.max(1, targetAtSecond));
 }
 
 /**

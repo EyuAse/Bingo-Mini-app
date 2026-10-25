@@ -16,6 +16,8 @@ import {
   type StandbyBotProfile,
   type BotEngineConfig,
   generateDynamicBotTarget,
+  generateNextRoundBotTarget,
+  getTargetBotsForElapsedSecond,
   MIN_STANDBY_BOT_COUNT,
   MAX_STANDBY_BOT_COUNT,
   DEFAULT_STANDBY_BOT_COUNT
@@ -428,7 +430,7 @@ class BingoGameEngine {
     const activeInRoom = Math.max(room.activeUsers.size, room.activeSockets.size);
     const cartelasCount = this.getRealCartelaCount(room);
     room.realPlayerCount = cartelasCount;
-    const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID;
+    const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID || room.id === 'default';
     if (isRoom10) {
       this.syncRoom10StandbyBots(room);
     }
@@ -1073,48 +1075,61 @@ class BingoGameEngine {
 
   /**
    * Synchronizes Room 10 standby bots in real-time.
-   * Ensures exactly 50 distinct Ethiopian standby bots are persistently pre-seeded
+   * Ensures dynamic Ethiopian standby bots are persistently pre-seeded
    * in Room 10 with non-overlapping cartelas, regardless of whether 0, 1, 2, or more real players join.
    * If real players choose cartelas held by bots, bots automatically yield and re-roll.
+   * Mid-countdown joiners seamlessly receive the exact S-Curve bot count corresponding
+   * to elapsed lobby time without resetting existing bots or jumping straight to the full target.
    * Rooms 20, 50, 100 are strictly excluded from this logic (strictly 0 bots).
    */
   private syncRoom10StandbyBots(room: GameRoomState, forceRotate: boolean = false) {
-    const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID;
+    const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID || room.id === 'default';
     if (!isRoom10) {
       room.opponentCards = []; // Strictly ensure Rooms 20, 50, 100 maintain 0 bots
       return;
     }
 
     // Determine target bot count for Room 10 based on Admin BotEngineConfig
-    let targetCount = 0;
+    let fullRoundTarget = 0;
     if (this.botConfig.mode === 'disabled') {
-      targetCount = 0;
+      fullRoundTarget = 0;
     } else if (this.botConfig.mode === 'fixed') {
-      targetCount = Math.max(0, Math.min(50, this.botConfig.fixedCount ?? 20));
+      fullRoundTarget = Math.max(0, Math.min(50, this.botConfig.fixedCount ?? 20));
     } else {
       const minB = this.botConfig.minBots ?? 2;
       const maxB = this.botConfig.maxBots ?? 50;
       if (forceRotate || room.dynamicBotTarget === null || room.dynamicBotTarget === undefined) {
-        targetCount = generateDynamicBotTarget(minB, maxB);
+        fullRoundTarget = generateNextRoundBotTarget(room.dynamicBotTarget, minB, maxB);
       } else {
-        targetCount = room.dynamicBotTarget;
+        fullRoundTarget = room.dynamicBotTarget;
       }
     }
-    room.dynamicBotTarget = targetCount;
+    room.dynamicBotTarget = fullRoundTarget;
 
-    if (targetCount === 0) {
+    if (fullRoundTarget === 0) {
       room.opponentCards = [];
       this.recalculatePot(room);
       return;
     }
 
+    // Determine expected bot count at this exact moment (respecting S-Curve during lobby countdown)
+    const isLobbyStaggered = Boolean(this.botConfig.staggeredJoin && room.phase === 'lobby' && !forceRotate);
+    const elapsedSeconds = Math.max(0, Math.min(45, 45 - (room.lobbyCountdown ?? 45)));
+    const targetCount = isLobbyStaggered
+      ? getTargetBotsForElapsedSecond(fullRoundTarget, elapsedSeconds)
+      : fullRoundTarget;
+
+    // Ensure standby roster pool is pre-sampled for this round
+    if (forceRotate || !room.targetBotsToSeed || room.targetBotsToSeed.length < fullRoundTarget) {
+      room.targetBotsToSeed = sampleStandbyBots(fullRoundTarget);
+    }
+
     // Room 10 maintains dynamic Ethiopian standby bots
-    if (forceRotate || room.opponentCards.length !== targetCount || !room.opponentCards.every(o => isStandbyBotId(o.botUserId))) {
+    const needsFullReset = forceRotate || !room.opponentCards.every(o => isStandbyBotId(o.botUserId));
+
+    if (needsFullReset) {
       room.opponentCards = [];
-      const sampledBots = (room.targetBotsToSeed && room.targetBotsToSeed.length >= targetCount)
-        ? room.targetBotsToSeed.slice(0, targetCount)
-        : sampleStandbyBots(targetCount);
-      room.targetBotsToSeed = sampledBots;
+      const sampledBots = room.targetBotsToSeed.slice(0, targetCount);
 
       const assignedIds = new Set<number>();
       room.tickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
@@ -1124,8 +1139,10 @@ class BingoGameEngine {
 
       for (let i = 0; i < sampledBots.length; i++) {
         let botCartelaId = Math.floor(1 + Math.random() * 400);
-        while (assignedIds.has(botCartelaId)) {
+        let attempts = 0;
+        while (assignedIds.has(botCartelaId) && attempts < 1000) {
           botCartelaId = Math.floor(1 + Math.random() * 400);
+          attempts++;
         }
         assignedIds.add(botCartelaId);
         const botProfile = sampledBots[i];
@@ -1139,7 +1156,43 @@ class BingoGameEngine {
         });
       }
     } else {
-      // Standby bots are already present; ensure none of their cartela IDs conflict with real player tickets
+      // Incremental synchronization:
+      // 1. If currently fewer bots than targetCount, append missing bots without disturbing existing bots
+      if (room.opponentCards.length < targetCount) {
+        const assignedIds = new Set<number>();
+        room.tickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
+        if (room.nextRoundTickets) {
+          room.nextRoundTickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
+        }
+        room.opponentCards.forEach(o => assignedIds.add(o.cartelaId));
+
+        const existingBotIds = new Set(room.opponentCards.map(o => o.botUserId));
+        const missingBots = (room.targetBotsToSeed || [])
+          .filter(b => !existingBotIds.has(b.id))
+          .slice(0, targetCount - room.opponentCards.length);
+
+        for (const botProfile of missingBots) {
+          let botCartelaId = Math.floor(1 + Math.random() * 400);
+          let attempts = 0;
+          while (assignedIds.has(botCartelaId) && attempts < 1000) {
+            botCartelaId = Math.floor(1 + Math.random() * 400);
+            attempts++;
+          }
+          assignedIds.add(botCartelaId);
+          room.opponentCards.push({
+            botUserId: botProfile.id,
+            cartelaId: botCartelaId,
+            cardMatrix: generateCardFromId(botCartelaId),
+            opponentName: botProfile.name,
+            stakeAmount: room.stakeAmount,
+            isHouseBot: room.opponentCards.length === 0
+          });
+        }
+      } else if (room.opponentCards.length > targetCount) {
+        room.opponentCards = room.opponentCards.slice(0, targetCount);
+      }
+
+      // 2. Standby bot auto-yield: ensure none of their cartela IDs conflict with real player tickets
       const assignedIds = new Set<number>();
       room.tickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
       if (room.nextRoundTickets) {
@@ -1149,8 +1202,13 @@ class BingoGameEngine {
       for (const bot of room.opponentCards) {
         if (assignedIds.has(bot.cartelaId)) {
           let newBotCartelaId = Math.floor(1 + Math.random() * 400);
-          while (assignedIds.has(newBotCartelaId) || room.opponentCards.some(o => o !== bot && o.cartelaId === newBotCartelaId)) {
+          let attempts = 0;
+          while (
+            (assignedIds.has(newBotCartelaId) || room.opponentCards.some(o => o !== bot && o.cartelaId === newBotCartelaId)) &&
+            attempts < 1000
+          ) {
             newBotCartelaId = Math.floor(1 + Math.random() * 400);
+            attempts++;
           }
           console.log(`🤝 [Room 10 Bot Auto-Yield] Bot "${bot.opponentName}" yielded colliding Cartela #${bot.cartelaId} -> new Cartela #${newBotCartelaId}`);
           bot.cartelaId = newBotCartelaId;
@@ -1200,13 +1258,13 @@ class BingoGameEngine {
           room.dynamicBotTarget = Math.max(0, Math.min(50, this.botConfig.fixedCount));
           room.targetBotsToSeed = sampleStandbyBots(room.dynamicBotTarget);
         } else {
-          room.dynamicBotTarget = generateDynamicBotTarget(this.botConfig.minBots, this.botConfig.maxBots);
+          room.dynamicBotTarget = generateNextRoundBotTarget(room.dynamicBotTarget, this.botConfig.minBots, this.botConfig.maxBots);
           room.targetBotsToSeed = sampleStandbyBots(room.dynamicBotTarget);
         }
 
-        // If staggered join is enabled and target > 2, seed an initial baseline of 2 bots
+        // If staggered join is enabled and target > 2, seed an initial baseline of 1-2 bots via S-Curve
         if (this.botConfig.staggeredJoin && (room.dynamicBotTarget || 0) > 2) {
-          const baselineCount = Math.min(2, room.dynamicBotTarget || 0);
+          const baselineCount = getTargetBotsForElapsedSecond(room.dynamicBotTarget || 0, 0);
           room.opponentCards = [];
           const baselineBots = (room.targetBotsToSeed || []).slice(0, baselineCount);
           const assignedIds = new Set<number>();
@@ -1336,19 +1394,22 @@ class BingoGameEngine {
         return;
       }
 
-      // Staggered bot arrivals in Room 10 during countdown
+      // Progressive S-Curve bot arrivals in Room 10 during countdown
+      const isRoom10Active = room10 && (room10.id === 'room-10' || room10.id === ARENA_ROOM_ID || room10.id === 'default');
       if (
-        room10 &&
+        isRoom10Active &&
         this.botConfig.staggeredJoin &&
         this.botConfig.mode !== 'disabled' &&
         room10.targetBotsToSeed &&
-        room10.opponentCards.length < (room10.dynamicBotTarget || 0) &&
-        currentLobbyCountdown % 3 === 0 &&
-        currentLobbyCountdown > 5
+        room10.targetBotsToSeed.length > 0
       ) {
-        const nextBotIdx = room10.opponentCards.length;
-        if (nextBotIdx < room10.targetBotsToSeed.length) {
-          const nextBot = room10.targetBotsToSeed[nextBotIdx];
+        const elapsedSeconds = 45 - currentLobbyCountdown;
+        const totalTarget = room10.dynamicBotTarget || 0;
+        const desiredBotCount = getTargetBotsForElapsedSecond(totalTarget, elapsedSeconds);
+
+        if (room10.opponentCards.length < desiredBotCount) {
+          // Allow smooth bursts of 1 to 3 bots per second tick to match the arrival curve
+          const botsToAdd = Math.min(desiredBotCount - room10.opponentCards.length, 3);
           const assignedIds = new Set<number>();
           room10.tickets.forEach(list => list.forEach(t => assignedIds.add(t.cartelaId)));
           if (room10.nextRoundTickets) {
@@ -1356,40 +1417,47 @@ class BingoGameEngine {
           }
           room10.opponentCards.forEach(o => assignedIds.add(o.cartelaId));
 
-          let botCartelaId = Math.floor(1 + Math.random() * 400);
-          while (assignedIds.has(botCartelaId)) {
-            botCartelaId = Math.floor(1 + Math.random() * 400);
+          let injectedCount = 0;
+          for (let b = 0; b < botsToAdd; b++) {
+            const nextBotIdx = room10.opponentCards.length;
+            if (nextBotIdx >= room10.targetBotsToSeed.length) break;
+
+            const nextBot = room10.targetBotsToSeed[nextBotIdx];
+
+            let botCartelaId = Math.floor(1 + Math.random() * 400);
+            while (assignedIds.has(botCartelaId)) {
+              botCartelaId = Math.floor(1 + Math.random() * 400);
+            }
+            assignedIds.add(botCartelaId);
+
+            room10.opponentCards.push({
+              botUserId: nextBot.id,
+              cartelaId: botCartelaId,
+              cardMatrix: generateCardFromId(botCartelaId),
+              opponentName: nextBot.name,
+              stakeAmount: room10.stakeAmount,
+              isHouseBot: false
+            });
+            injectedCount++;
+
+            this.recalculatePot(room10);
+
+            // Emit live player_joined toast for authentic casino buzz
+            const joinPayload = {
+              roomId: room10.id,
+              userName: nextBot.name,
+              playersCount: this.getRoomPlayersCount(room10),
+              totalPot: room10.totalPot,
+              winnerPayout: room10.winnerPayout,
+              isBot: true
+            };
+            io.to('room-10').emit('player_joined', joinPayload);
+            io.to(ARENA_ROOM_ID).emit('player_joined', joinPayload);
           }
-          assignedIds.add(botCartelaId);
 
-          room10.opponentCards.push({
-            botUserId: nextBot.id,
-            cartelaId: botCartelaId,
-            cardMatrix: generateCardFromId(botCartelaId),
-            opponentName: nextBot.name,
-            stakeAmount: room10.stakeAmount,
-            isHouseBot: false
-          });
-
-          this.recalculatePot(room10);
-
-          io.to('room-10').emit('player_joined', {
-            roomId: 'room-10',
-            userName: nextBot.name,
-            playersCount: this.getRoomPlayersCount(room10),
-            totalPot: room10.totalPot,
-            winnerPayout: room10.winnerPayout,
-            isBot: true
-          });
-          io.to(ARENA_ROOM_ID).emit('player_joined', {
-            roomId: ARENA_ROOM_ID,
-            userName: nextBot.name,
-            playersCount: this.getRoomPlayersCount(room10),
-            totalPot: room10.totalPot,
-            winnerPayout: room10.winnerPayout,
-            isBot: true
-          });
-          this.broadcastRoomState(room10);
+          if (injectedCount > 0) {
+            this.broadcastRoomState(room10);
+          }
         }
       }
 
