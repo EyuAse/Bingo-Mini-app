@@ -105,6 +105,72 @@ export const AdminPage: React.FC = () => {
           </div>
         </header>
 
+        {/* Quick Tab Switcher Ribbon (Instant 1-Click Access on all devices) */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '10px 1.5rem',
+          backgroundColor: '#ffffff',
+          borderBottom: '1px solid #e2e8f0',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none'
+        }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+            Quick Nav:
+          </span>
+          {[
+            { id: 'overview', label: '📊 Dashboard' },
+            { id: 'bot-engine', label: '🎚️ Bot Engine (0-50)', highlight: true },
+            { id: 'cashier', label: '📥 Cashier Queue' },
+            { id: 'cashflow', label: '⚖️ Cash Flow' },
+            { id: 'users', label: '👥 Players' },
+            { id: 'bots', label: '🤖 200 Bots' },
+            { id: 'telegram-bot', label: '📢 Telegram Bot' },
+            { id: 'cartelas', label: '🗂️ 400 Cards' }
+          ].map(t => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setActiveTab(t.id as AdminTab)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                border: activeTab === t.id
+                  ? '2px solid #10b981'
+                  : (t.highlight ? '1px dashed #10b981' : '1px solid #e2e8f0'),
+                backgroundColor: activeTab === t.id
+                  ? '#ecfdf5'
+                  : (t.highlight ? '#f0fdf4' : '#f8fafc'),
+                color: activeTab === t.id
+                  ? '#065f46'
+                  : (t.highlight ? '#047857' : '#334155'),
+                fontSize: '0.8125rem',
+                fontWeight: activeTab === t.id || t.highlight ? 700 : 500,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {t.label}
+              {t.highlight && activeTab !== 'bot-engine' && (
+                <span style={{
+                  backgroundColor: '#10b981',
+                  color: '#ffffff',
+                  fontSize: '0.625rem',
+                  padding: '1px 5px',
+                  borderRadius: '10px',
+                  fontWeight: 800
+                }}>HOT</span>
+              )}
+            </button>
+          ))}
+        </div>
+
         {/* Tab Content Panes */}
         <main className="admin-tab-content">
           {/* TAB 1: OVERVIEW & ANALYTICS */}

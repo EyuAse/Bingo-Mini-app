@@ -97,6 +97,30 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           <div className="dash-hero-action-buttons">
             <button
               type="button"
+              className="btn-dash-hero-bot-engine"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 18px',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '10px',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
+                transition: 'all 0.2s ease'
+              }}
+              onClick={() => onNavigateTab('bot-engine')}
+            >
+              <i className="fa-solid fa-sliders"></i>
+              <span>🎚️ Bot Engine (0-50 Bots) ➔</span>
+            </button>
+
+            <button
+              type="button"
               className="btn-dash-hero-cashier"
               onClick={() => onNavigateTab('cashier')}
             >
@@ -107,8 +131,40 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         </div>
       </div>
 
-      {/* 2. 4 Hero Metric KPI Cards */}
+      {/* 2. Hero Metric KPI Cards */}
       <div className="dashboard-kpi-grid">
+        {/* Card: Room 10 Bot Engine Controls */}
+        <div
+          className="dashboard-kpi-card purple"
+          style={{ cursor: 'pointer', border: '1px solid rgba(139, 92, 246, 0.3)' }}
+          onClick={() => onNavigateTab('bot-engine')}
+        >
+          <div className="kpi-card-header">
+            <span className="kpi-card-title">Room 10 Bot Engine</span>
+            <div className="kpi-card-icon-box purple" style={{ background: '#f5f3ff', color: '#7c3aed' }}>
+              <i className="fa-solid fa-sliders"></i>
+            </div>
+          </div>
+          <div className="kpi-card-value purple" style={{ color: '#6d28d9' }}>
+            0 – 50 <span className="kpi-unit">Bots & Toggles</span>
+          </div>
+          <div className="kpi-card-footer">
+            <span className="kpi-badge green">
+              <i className="fa-solid fa-bolt"></i>
+              Living Casino & Sliders
+            </span>
+            <button
+              type="button"
+              className="kpi-card-link-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigateTab('bot-engine');
+              }}
+            >
+              Configure ➔
+            </button>
+          </div>
+        </div>
         {/* Card 1: House Profit */}
         <div className="dashboard-kpi-card gold">
           <div className="kpi-card-header">
