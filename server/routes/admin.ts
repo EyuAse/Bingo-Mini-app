@@ -743,6 +743,94 @@ router.post('/fairness-config', requireAdmin, async (req: AuthenticatedRequest, 
 });
 
 /**
+ * GET /api/admin/bot-config
+ * Returns current standby bot configuration (0-50), living clock state, and live Room 10 telemetry
+ */
+router.get('/bot-config', requireAdmin, async (_req, res) => {
+  try {
+    const botConfig = gameEngine.getBotConfig();
+    const room10 = gameEngine.getRoom('room-10');
+    return res.json({
+      success: true,
+      botConfig,
+      telemetry: {
+        activeBotCount: room10 ? room10.opponentCards.length : 0,
+        roundNumber: room10 ? room10.roundNumber : 1,
+        phase: room10 ? room10.phase : 'lobby',
+        totalPot: room10 ? room10.totalPot : 0,
+        winnerPayout: room10 ? room10.winnerPayout : 0,
+        realPlayerCount: room10 ? room10.realPlayerCount : 0
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ [Admin Bot Config GET Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to retrieve bot config' });
+  }
+});
+
+/**
+ * POST /api/admin/bot-config
+ * Updates Room 10 bot pool settings (0 to 50 bots), mode, living clock, etc.
+ * Broadcasts bot_config_updated event via Socket.IO
+ */
+router.post('/bot-config', requireAdmin, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { mode, minBots, maxBots, fixedCount, staggeredJoin, livingClock } = req.body;
+
+    // Validate mode if provided
+    if (mode !== undefined && !['dynamic', 'fixed', 'disabled'].includes(mode)) {
+      return res.status(400).json({ success: false, error: "Invalid mode. Allowed: 'dynamic', 'fixed', 'disabled'" });
+    }
+
+    // Validate bounds (0 to 50)
+    if (minBots !== undefined && (typeof minBots !== 'number' || minBots < 0 || minBots > 50)) {
+      return res.status(400).json({ success: false, error: "minBots must be between 0 and 50" });
+    }
+    if (maxBots !== undefined && (typeof maxBots !== 'number' || maxBots < 0 || maxBots > 50)) {
+      return res.status(400).json({ success: false, error: "maxBots must be between 0 and 50" });
+    }
+    if (minBots !== undefined && maxBots !== undefined && minBots > maxBots) {
+      return res.status(400).json({ success: false, error: "minBots cannot be greater than maxBots" });
+    }
+    if (fixedCount !== undefined && (typeof fixedCount !== 'number' || fixedCount < 0 || fixedCount > 50)) {
+      return res.status(400).json({ success: false, error: "fixedCount must be between 0 and 50" });
+    }
+
+    gameEngine.setBotConfig({
+      mode,
+      minBots,
+      maxBots,
+      fixedCount,
+      staggeredJoin: typeof staggeredJoin === 'boolean' ? staggeredJoin : undefined,
+      livingClock: typeof livingClock === 'boolean' ? livingClock : undefined
+    });
+
+    const updatedConfig = gameEngine.getBotConfig();
+    const room10 = gameEngine.getRoom('room-10');
+
+    // Broadcast update over WebSockets
+    io.emit('bot_config_updated', {
+      botConfig: updatedConfig,
+      roomId: 'room-10',
+      activeBotCount: room10 ? room10.opponentCards.length : 0
+    });
+
+    return res.json({
+      success: true,
+      botConfig: updatedConfig,
+      telemetry: {
+        activeBotCount: room10 ? room10.opponentCards.length : 0,
+        roundNumber: room10 ? room10.roundNumber : 1,
+        phase: room10 ? room10.phase : 'lobby'
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ [Admin Bot Config POST Error]:', error);
+    return res.status(500).json({ success: false, error: 'Failed to update bot config' });
+  }
+});
+
+/**
  * Live Neon PostgreSQL Health & Storage Quota Monitor
  */
 router.get('/database-health', requireAdmin, async (_req, res) => {

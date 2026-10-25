@@ -525,6 +525,24 @@ export const apiClient = {
         headers: { ...adminHeaders }
       });
       return handleResponse<{ success: boolean; message: string; prunedCount: number; stats: any }>(res);
+    },
+
+    async getBotConfig() {
+      const adminHeaders = await getAdminAuthHeader();
+      const res = await fetch(`${API_BASE}/admin/bot-config`, {
+        headers: { ...adminHeaders }
+      });
+      return handleResponse<{ success: boolean; botConfig: any; telemetry: any }>(res);
+    },
+
+    async updateBotConfig(cfg: any) {
+      const adminHeaders = await getAdminAuthHeader();
+      const res = await fetch(`${API_BASE}/admin/bot-config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify(cfg)
+      });
+      return handleResponse<{ success: boolean; botConfig: any; telemetry: any }>(res);
     }
   }
 };

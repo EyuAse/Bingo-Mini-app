@@ -8,6 +8,7 @@ export type AdminTab =
   | 'cashflow'
   | 'users'
   | 'bots'
+  | 'bot-engine'
   | 'cartelas'
   | 'telegram-bot';
 
@@ -179,6 +180,24 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <>
                 <span className="light-nav-text">Bot Player Accounts</span>
                 <span className="light-nav-badge">200</span>
+              </>
+            )}
+          </button>
+
+          {/* 5b. Bot Engine (0-50 Control Desk) */}
+          <button
+            type="button"
+            className={`light-nav-item ${activeTab === 'bot-engine' ? 'active' : ''}`}
+            onClick={() => handleSelectTab('bot-engine')}
+            title="Bot Engine (0-50)"
+          >
+            <div className="light-nav-icon">
+              <i className="fa-solid fa-sliders"></i>
+            </div>
+            {!isSidebarCollapsed && (
+              <>
+                <span className="light-nav-text">Bot Engine (0-50)</span>
+                <span className="light-nav-badge green-badge">Room 10</span>
               </>
             )}
           </button>

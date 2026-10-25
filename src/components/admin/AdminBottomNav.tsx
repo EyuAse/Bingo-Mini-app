@@ -58,6 +58,12 @@ export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({
       iconClass: 'fa-solid fa-robot'
     },
     {
+      id: 'bot-engine',
+      label: 'Bot Engine',
+      amharicLabel: 'ቦት ሞተር',
+      iconClass: 'fa-solid fa-sliders'
+    },
+    {
       id: 'cartelas',
       label: '400 Cards',
       amharicLabel: 'ካርቴላዎች',

@@ -221,20 +221,64 @@ export const ETHIOPIAN_200_BOT_ROSTER: ReadonlyArray<StandbyBotProfile> = Object
 ]);
 
 /**
- * Standby Bot Pool Size for Room 10
+ * Standby Bot Pool Configuration & Range Bounds
  */
+export const MIN_STANDBY_BOT_COUNT = 0;
+export const MAX_STANDBY_BOT_COUNT = 50;
+export const DEFAULT_STANDBY_BOT_COUNT = 20;
+
+// Legacy backwards compatibility alias
 export const STANDBY_BOT_COUNT = 50;
+
+export interface BotEngineConfig {
+  mode: 'dynamic' | 'fixed' | 'disabled';
+  minBots: number;        // 0 to 50 (default 2)
+  maxBots: number;        // 0 to 50 (default 50)
+  fixedCount: number;     // 0 to 50 (default 20)
+  staggeredJoin: boolean; // trickle bots in lobby countdown
+  livingClock: boolean;   // continuous autonomous game loop
+}
+
+/**
+ * Organic traffic curve generator for dynamic bot target counts.
+ * Simulates quiet tables, average rooms, and peak rush-hours organically.
+ */
+export function generateDynamicBotTarget(min: number = 2, max: number = 50): number {
+  const safeMin = Math.max(MIN_STANDBY_BOT_COUNT, Math.min(min, MAX_STANDBY_BOT_COUNT));
+  const safeMax = Math.max(safeMin, Math.min(max, MAX_STANDBY_BOT_COUNT));
+  if (safeMin >= safeMax) return safeMin;
+
+  const rand = Math.random();
+  if (rand < 0.15) {
+    // 15% chance: Quiet table (e.g. 2 to 9 bots)
+    const quietCap = Math.min(safeMax, Math.max(safeMin, 9));
+    return Math.floor(safeMin + Math.random() * (quietCap - safeMin + 1));
+  } else if (rand < 0.75) {
+    // 60% chance: Normal bustling room (e.g. 10 to 30 bots)
+    const low = Math.min(safeMax, Math.max(safeMin, 10));
+    const high = Math.min(safeMax, Math.max(low, 30));
+    return Math.floor(low + Math.random() * (high - low + 1));
+  } else {
+    // 25% chance: Peak mega pot (e.g. 31 to 50 bots)
+    const low = Math.min(safeMax, Math.max(safeMin, 31));
+    return Math.floor(low + Math.random() * (safeMax - low + 1));
+  }
+}
 
 /**
  * Uniformly samples N distinct bots from the 200-bot roster.
  * Uses Fisher-Yates true random shuffle to guarantee dynamic rotation
  * so players never see the same bots repeatedly.
  *
- * @param count Number of bots to sample (default 50 for Room 10)
+ * @param count Number of bots to sample (default 20, supports 0 to 50)
  * @param excludeIds Optional set of bot IDs to exclude from this round
  * @returns Array of StandbyBotProfile
  */
-export function sampleStandbyBots(count: number = STANDBY_BOT_COUNT, excludeIds?: Set<string>): StandbyBotProfile[] {
+export function sampleStandbyBots(count: number = DEFAULT_STANDBY_BOT_COUNT, excludeIds?: Set<string>): StandbyBotProfile[] {
+  if (count <= 0) {
+    return [];
+  }
+
   const eligible = excludeIds && excludeIds.size > 0
     ? ETHIOPIAN_200_BOT_ROSTER.filter(b => !excludeIds.has(b.id))
     : [...ETHIOPIAN_200_BOT_ROSTER];

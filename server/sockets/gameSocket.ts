@@ -162,6 +162,17 @@ export function setupGameSockets(io: Server) {
       gameEngine.setWinRates(data.ownerRate, data.botRate, data.realRate);
     });
 
+    socket.on('admin_set_bot_config', (data: any) => {
+      gameEngine.setBotConfig(data);
+      const updatedConfig = gameEngine.getBotConfig();
+      const room10 = gameEngine.getRoom('room-10');
+      io.emit('bot_config_updated', {
+        botConfig: updatedConfig,
+        roomId: 'room-10',
+        activeBotCount: room10 ? room10.opponentCards.length : 0
+      });
+    });
+
     // 2. Buy Ticket Event
     socket.on(
       'buy_ticket',

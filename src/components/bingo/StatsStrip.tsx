@@ -24,18 +24,20 @@ export const StatsStrip: React.FC = () => {
 
   const isSpectatingHouse = roomMode === 'spectating' && !hasTicket;
   const currentPlayers = betAmount === 10
-    ? Math.max(playersCount, 50)
+    ? playersCount
     : (realPlayerCount > 0 ? realPlayerCount : playersCount);
 
-  // Effective player count — in Room 10, user adds ticketed cartela(s) on top of the 50 standby competitors
-  const effectivePlayerCount = betAmount === 10
-    ? (hasTicket ? Math.max(currentPlayers, 50 + (cardQuantity || 1)) : currentPlayers)
-    : (hasTicket ? Math.max(currentPlayers, cardQuantity || 1) : currentPlayers);
+  // Effective player count — reflects live active players in room plus locally held tickets if pending sync
+  const effectivePlayerCount = hasTicket
+    ? Math.max(currentPlayers, cardQuantity || 1)
+    : currentPlayers;
 
   // Dynamic Real-Flow Derash Calculation:
   // Computes the expected pot from confirmed ticketed cartelas across any stake room (10, 20, 50, 100 ETB)
   const expectedPot = effectivePlayerCount * betAmount;
-  const calculatedPrize = effectivePlayerCount <= 5 ? (betAmount === 10 ? Math.floor(expectedPot * 0.8) : expectedPot) : Math.floor(expectedPot * 0.8);
+  const calculatedPrize = betAmount === 10
+    ? Math.floor(expectedPot * 0.8)
+    : (effectivePlayerCount <= 5 ? expectedPot : Math.floor(expectedPot * 0.8));
 
   // Derash strictly displays the net prize pool after platform commission (e.g. 408 ETB on 510 ETB pot)
   const currentPrize = prizePool > 0 ? prizePool : calculatedPrize;

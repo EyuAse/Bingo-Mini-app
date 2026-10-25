@@ -58,6 +58,15 @@ export interface BotPlayer {
   isBot: true;
 }
 
+export interface AdminBotEngineConfig {
+  mode: 'dynamic' | 'fixed' | 'disabled';
+  minBots: number;
+  maxBots: number;
+  fixedCount: number;
+  staggeredJoin: boolean;
+  livingClock: boolean;
+}
+
 export interface CartelaCard {
   id: number;
   serialNumber: string;
@@ -104,6 +113,19 @@ interface AdminContextType {
   ownerWinTarget: number;
   setOwnerWinTarget: (rate: number) => void;
   botPool: BotPlayer[];
+
+  // Room 10 Dynamic Bot Engine (0-50)
+  botConfig: AdminBotEngineConfig;
+  updateBotConfig: (cfg: Partial<AdminBotEngineConfig>) => Promise<boolean>;
+  refreshBotConfig: () => Promise<void>;
+  botTelemetry: {
+    activeBotCount: number;
+    roundNumber: number;
+    phase: string;
+    totalPot?: number;
+    winnerPayout?: number;
+    realPlayerCount?: number;
+  } | null;
 
   // 400 Cartelas
   cartelaPool: CartelaCard[];
@@ -279,6 +301,51 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     socketService.getSocket().emit('admin_set_win_rates', { ownerRate: rate, botRate: botWinRate, realRate: real });
   };
 
+  // Room 10 Dynamic Bot Engine (0-50) State
+  const [botConfig, setBotConfig] = useState<AdminBotEngineConfig>({
+    mode: 'dynamic',
+    minBots: 2,
+    maxBots: 50,
+    fixedCount: 20,
+    staggeredJoin: true,
+    livingClock: true
+  });
+  const [botTelemetry, setBotTelemetry] = useState<{
+    activeBotCount: number;
+    roundNumber: number;
+    phase: string;
+    totalPot?: number;
+    winnerPayout?: number;
+    realPlayerCount?: number;
+  } | null>(null);
+
+  const refreshBotConfig = useCallback(async () => {
+    try {
+      const res = await apiClient.admin.getBotConfig();
+      if (res.success && res.botConfig) {
+        setBotConfig(res.botConfig);
+        if (res.telemetry) setBotTelemetry(res.telemetry);
+      }
+    } catch (err) {
+      console.warn('⚠️ Bot config fetch notice:', err);
+    }
+  }, []);
+
+  const updateBotConfig = useCallback(async (cfg: Partial<AdminBotEngineConfig>): Promise<boolean> => {
+    try {
+      const res = await apiClient.admin.updateBotConfig(cfg);
+      if (res.success && res.botConfig) {
+        setBotConfig(res.botConfig);
+        if (res.telemetry) setBotTelemetry(res.telemetry);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update bot config:', err);
+      return false;
+    }
+  }, []);
+
   // Real Database-Backed Users & Transactions (Zero Mock Data)
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [totalUsersCount, setTotalUsersCount] = useState<number>(0);
@@ -400,10 +467,14 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // Auto-login with backend if admin session exists
     if (sessionStorage.getItem('lomibingo_admin_auth') === 'true') {
       apiClient.auth.adminLogin('1234')
-        .then(() => refreshAdminData())
+        .then(() => {
+          refreshAdminData();
+          refreshBotConfig();
+        })
         .catch(() => {});
     } else {
       refreshAdminData();
+      refreshBotConfig();
     }
 
     // 1. Listen to real-time events on Socket.IO
@@ -412,11 +483,28 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       refreshAdminData();
     };
 
+    const handleBotConfigUpdated = (data: any) => {
+      if (data?.botConfig) {
+        setBotConfig(data.botConfig);
+        if (typeof data.activeBotCount === 'number') {
+          setBotTelemetry(prev => ({
+            activeBotCount: data.activeBotCount,
+            roundNumber: prev?.roundNumber || 1,
+            phase: prev?.phase || 'lobby',
+            totalPot: prev?.totalPot,
+            winnerPayout: prev?.winnerPayout,
+            realPlayerCount: prev?.realPlayerCount
+          }));
+        }
+      }
+    };
+
     socket.on('admin_new_user', handleAdminEvent);
     socket.on('admin_new_deposit', handleAdminEvent);
     socket.on('admin_new_withdrawal', handleAdminEvent);
     socket.on('deposit_status_updated', handleAdminEvent);
     socket.on('withdrawal_status_updated', handleAdminEvent);
+    socket.on('bot_config_updated', handleBotConfigUpdated);
 
     // Real-time Event-Driven Architecture: Rely on WebSocket push events.
     return () => {
@@ -425,6 +513,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       socket.off('admin_new_withdrawal', handleAdminEvent);
       socket.off('deposit_status_updated', handleAdminEvent);
       socket.off('withdrawal_status_updated', handleAdminEvent);
+      socket.off('bot_config_updated', handleBotConfigUpdated);
     };
   }, [refreshAdminData]);
 
@@ -669,7 +758,11 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         todayGamesPlayed,
         todayNetCashProfit,
         pendingTransactionsCount,
-        refreshAdminData
+        refreshAdminData,
+        botConfig,
+        updateBotConfig,
+        refreshBotConfig,
+        botTelemetry
       }}
     >
       {children}

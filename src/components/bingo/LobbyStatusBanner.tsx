@@ -20,7 +20,7 @@ export const LobbyStatusBanner: React.FC = () => {
 
   // Never show less than held cartelas when local user holds tickets (server broadcast may not have arrived yet)
   const displayPlayerCount = betAmount === 10
-    ? Math.max(playersCount, hasTicket ? 51 : 50)
+    ? Math.max(playersCount, hasTicket ? (cardQuantity || 1) : 0)
     : Math.max(realPlayerCount, hasTicket ? (cardQuantity || 1) : 0);
 
   const suggestedStake = Object.entries(stakeRoomsSummary)
@@ -162,7 +162,7 @@ export const LobbyStatusBanner: React.FC = () => {
               </div>
               <p className="countdown-subtext">
                 {betAmount === 10
-                  ? (lang === 'am' ? '⚡ 50+ ተጫዋቾች በአሬናው ተሳትፈዋል (ደርሽ 400+ ብር)' : '⚡ 50+ Live Competitors in Arena (Derash 400+ ETB)')
+                  ? (lang === 'am' ? `⚡ ${displayPlayerCount} ተጫዋቾች በአሬናው ተሳትፈዋል` : `⚡ ${displayPlayerCount} Live Competitors in Arena`)
                   : displayPlayerCount <= 5
                   ? (lang === 'am' ? '🎯 100% የድል ክፍያ፡ 0% የቤት ክፍያ (አሸናፊው ሁሉንም ይወስዳል!)' : '🎯 100% Payout Tier: 0% House Fee (Winner takes all!)')
                   : displayPlayerCount <= 10

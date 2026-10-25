@@ -274,6 +274,9 @@ export const WinModal: React.FC = () => {
       ? Number((safeWinResult as any).netPrizePot) || 0
       : Math.max(0, grossPot - houseFee);
     const isFeeCharged = houseFee > 0;
+    const effectiveOpponentPayout = isOpponentWin
+      ? (netPrizePool > 0 ? netPrizePool : (winnerPayout > 0 ? winnerPayout : grossPot - houseFee))
+      : winnerPayout;
 
     return (
       <div className="fresh-victory-modal-backdrop" onClick={closeWinModalAndRestart}>
@@ -365,8 +368,8 @@ export const WinModal: React.FC = () => {
             </span>
             <strong className={`victory-prize-amount ${isOpponentWin ? 'gold' : 'green'}`}>
               {isOpponentWin
-                ? `${safeLocale(winnerPayout)} ETB`
-                : `+${safeLocale(userShare)} ETB`}
+                ? `${safeLocale(effectiveOpponentPayout)} ETB`
+                : `+${safeLocale(userShare > 0 ? userShare : netPrizePool)} ETB`}
             </strong>
 
             {/* Pot & Commission Transparency Breakdown */}
@@ -396,13 +399,19 @@ export const WinModal: React.FC = () => {
               </div>
               {isTrueMultiplayerSplit && (
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Net Prize Pot:</span>
+                  <span>Total Net Prize Pot:</span>
                   <strong style={{ color: '#0f172a' }}>{safeLocale(netPrizePool)} ETB</strong>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #cbd5e1', paddingTop: '4px' }}>
-                <span>{isTrueMultiplayerSplit ? 'Your Split Share (50/50):' : 'Net Winner Payout:'}</span>
-                <strong style={{ color: '#16a34a' }}>{safeLocale(winnerPayout)} ETB</strong>
+                <span>{isTrueMultiplayerSplit ? `Your Split Share (1 of ${otherCoWinners.length + 1}):` : 'Net Winner Payout:'}</span>
+                <strong style={{ color: '#16a34a' }}>
+                  {isOpponentWin
+                    ? `${safeLocale(effectiveOpponentPayout)} ETB`
+                    : isTrueMultiplayerSplit
+                    ? `${safeLocale(userShare)} ETB`
+                    : `${safeLocale(userShare > 0 ? userShare : netPrizePool)} ETB`}
+                </strong>
               </div>
             </div>
 

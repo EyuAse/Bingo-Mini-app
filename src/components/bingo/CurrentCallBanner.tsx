@@ -102,7 +102,7 @@ export const CurrentCallBanner: React.FC = () => {
                   : isMultipleInRoom
                   ? (lang === 'am' ? `${activeUsersCount} ተጫዋች` : `${activeUsersCount} in Room`)
                   : betAmount === 10
-                  ? (lang === 'am' ? `${Math.max(playersCount, 50)} ዝግጁ` : `${Math.max(playersCount, 50)} Ready`)
+                  ? (lang === 'am' ? `${playersCount} ዝግጁ` : `${playersCount} Ready`)
                   : (lang === 'am' ? 'በመጠበቅ...' : 'Waiting...')}
               </span>
             </div>
@@ -148,7 +148,7 @@ export const CurrentCallBanner: React.FC = () => {
                 </div>
               ) : betAmount === 10 ? (
                 <div className="matchmaking-guide-lines text-amber">
-                  <span className="guide-line-primary">👥 {lang === 'am' ? `${Math.max(playersCount, 50)} ተጫዋቾች ዝግጁ` : `${Math.max(playersCount, 50)} Players Waiting`}</span>
+                  <span className="guide-line-primary">👥 {lang === 'am' ? `${playersCount} ተጫዋቾች ዝግጁ` : `${playersCount} Players Waiting`}</span>
                   <span className="guide-line-secondary">{lang === 'am' ? 'ካርቴላ ይግዙ እና ይጀምሩ!' : 'Buy ticket to start match!'}</span>
                 </div>
               ) : (

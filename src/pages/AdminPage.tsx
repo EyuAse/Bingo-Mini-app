@@ -12,6 +12,7 @@ import { BotsSimulatorDesk } from '../components/admin/BotsSimulatorDesk.tsx';
 import { BotAccountsDesk } from '../components/admin/BotAccountsDesk.tsx';
 import { CartelasDesk } from '../components/admin/CartelasDesk.tsx';
 import { TelegramBotDesk } from '../components/admin/TelegramBotDesk.tsx';
+import { BotEngineControllerDesk } from '../components/admin/BotEngineControllerDesk.tsx';
 import '../styles/admin.css';
 
 export const AdminPage: React.FC = () => {
@@ -55,6 +56,7 @@ export const AdminPage: React.FC = () => {
                 {activeTab === 'cashflow' && 'Cash Flow & Revenue Analytics'}
                 {activeTab === 'users' && 'Player Accounts & Wallets Directory'}
                 {activeTab === 'bots' && '200 Bot Player Accounts & Wallets'}
+                {activeTab === 'bot-engine' && 'Room 10 Dynamic Bot Engine (0-50 Control Desk)'}
                 {activeTab === 'cartelas' && '400 Serial Cartela Cards Library'}
                 {activeTab === 'telegram-bot' && 'Telegram Bot & Ads Broadcast Center'}
               </h2>
@@ -64,6 +66,7 @@ export const AdminPage: React.FC = () => {
                 {activeTab === 'cashflow' && 'የቀን ተቀማጭ፣ የክፍያ ወጪ እና የተጣራ የሎሚ ቢንጎ ገቢ ዝርዝር'}
                 {activeTab === 'users' && 'የተመዘገቡ ተጫዋቾች፣ የዋሌት ቀሪ ሂሳብ እና የቦነስ ማበረታቻዎች'}
                 {activeTab === 'bots' && 'እውነተኛ የውሂብ ጎታ ያላቸው 200 የቦቶች ዋሌቶች፣ ራስ-ሰር ተወራራጅነት እና የቀጥታ አሸናፊነት መዝገብ'}
+                {activeTab === 'bot-engine' && 'የክፍል 10 ተለዋዋጭ ቦቶች ቁጥጥር ማዕከል - ከ 0 እስከ 50 ቦቶች በቀጥታ ያስተካክሉ'}
                 {activeTab === 'cartelas' && '400 የቢንጎ ካርቴላ ካርዶች ቤተ-መጽሐፍት'}
                 {activeTab === 'telegram-bot' && 'የቴሌግራም ቦት ማስተዋወቂያ፣ የቻናል ልጥፎች እና የተጠቃሚዎች ማስታወቂያ ማዕከል'}
               </p>
@@ -118,6 +121,9 @@ export const AdminPage: React.FC = () => {
 
           {/* TAB 5: 200 BOT PLAYER ACCOUNTS & WALLETS */}
           {activeTab === 'bots' && <BotAccountsDesk />}
+
+          {/* TAB 5b: ROOM 10 DYNAMIC BOT ENGINE (0-50) */}
+          {activeTab === 'bot-engine' && <BotEngineControllerDesk />}
 
           {/* TAB 6: 400 SERIAL CARTELA CARDS LIBRARY */}
           {activeTab === 'cartelas' && <CartelasDesk />}

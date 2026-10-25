@@ -5,9 +5,9 @@ export const LivePlayers: React.FC = () => {
   const { opponents, playersCount, prizePool, totalPot, betAmount } = useBingo();
   const poolDisplay = prizePool > 0
     ? prizePool
-    : (betAmount === 10 ? Math.floor(((playersCount || 50) * 10) * 0.8) : totalPot);
+    : (betAmount === 10 ? Math.floor(((playersCount || 0) * 10) * 0.8) : totalPot);
 
-  const displayCount = betAmount === 10 ? Math.max(playersCount, 50) : playersCount;
+  const displayCount = playersCount;
 
   return (
     <div className="bingo-live-players-panel" id="bingo-live-players-panel">
