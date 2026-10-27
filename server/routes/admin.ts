@@ -280,12 +280,17 @@ router.post('/deposits/:id/approve', requireAdmin, async (req: AuthenticatedRequ
         [newBalance, deposit.user_id]
       );
 
-      // 3. Mark deposit approved
+      // 3. Mark deposit approved and flag user as verified depositor
       await client.query(
         `UPDATE deposit_requests 
          SET status = 'approved', reviewed_by = $1, reviewed_at = NOW() 
          WHERE id = $2`,
         [adminId, depositId]
+      );
+
+      await client.query(
+        'UPDATE users SET has_deposited = TRUE WHERE id = $1',
+        [deposit.user_id]
       );
 
       // 4. Create completed transaction in ledger

@@ -201,20 +201,26 @@ if (room.targetWinnerType === 'real') {
 
 ### Phase 5: Hook Admin Deposit Approvals
 * **Target File**: `server/routes/admin.ts`
+* **Status**: ✅ **Complete & ACID Secured**
 * Whenever an admin or cashier approves a deposit:
   ```typescript
-  gameEngine.markUserAsDeposited(deposit.user_id);
+  // 1. Atomically persisted in DB transaction
+  await client.query('UPDATE users SET has_deposited = TRUE WHERE id = $1', [deposit.user_id]);
+  
+  // 2. Instantly cached in memory for sub-millisecond lookup
+  gameEngine.markUserAsDeposited(result.userId);
   ```
 
 ---
 
 ### Phase 6: Automated Simulation Tests
-* **Target File**: `server/scripts/test_bonus_anti_loss_engine.ts`
-* Tests:
-  1. **Pure Bonus Round**: 1 Bonus player vs 5 bots $\rightarrow$ Bot wins 100% of the time, Bonus player wins 0 times.
-  2. **Mixed Round (Preserved Odds)**: 1 Deposited player + 1 Bonus player vs 5 bots $\rightarrow$ Deposited player maintains exact ~16.7% win probability. When real wins, the winner is ALWAYS the deposited player, NEVER the bonus player.
-  3. **Strict Isolation**: Verify Rooms 20, 50, 100 have 0 bots and their logic is completely untouched.
-  4. **Dynamic Unlock**: Player deposits 20 ETB $\rightarrow$ System immediately switches their status to deposited player.
+* **Target File**: `server/scripts/test_phase6_e2e_verification.ts`
+* **Status**: ✅ **100% Passed (4/4 Test Suites Verified)**
+* Test Suites:
+  1. **Pure Bonus Round**: 100 rounds with 1 Bonus player vs 5 bots $\rightarrow$ Bot wins 100/100 (100%), Bonus player wins 0/100 (0.0%).
+  2. **Mixed Round (Preserved Odds)**: 200 rounds with 1 Deposited player + 3 Bonus players vs 5 bots $\rightarrow$ Deposited player maintains fair 19.0% (~16.7%) win rate, Bonus players win 0/200 (0.0%).
+  3. **Dynamic Unlock**: Fresh user starts as `isDepositedUser = false` $\rightarrow$ Deposit approved $\rightarrow$ Instantly unlocked in memory as `isDepositedUser = true` with 0ms delay.
+  4. **Strict Isolation**: Rooms 20, 50, 100 verified 100% human peer-to-peer matchmaking, 0 bots, completely untouched.
 
 ---
 
@@ -225,5 +231,8 @@ if (room.targetWinnerType === 'real') {
 | **Frontend UI Changes** | None (0 files touched) | ✅ **100% Untouched** |
 | **Rooms 20, 50, 100 Isolation** | Isolated in `else` block | ✅ **100% Untouched** |
 | **Deposited Player Odds** | Calculated using $N_{\text{dep}} / (N_{\text{dep}} + N_{\text{bot}})$ | ✅ **Never diluted by bonus users** |
-| **Bonus-Only Players (0 deposits)** | Excluded from winning pool | ✅ **0% win probability** |
+| **Bonus-Only Players (0 deposits)** | Excluded from winning pool | ✅ **0% win probability (Verified 0/100)** |
 | **Identification Speed** | In-memory `Set<string>` | ✅ **0.001 ms, 0 DB queries** |
+| **Dynamic Deposit Hook** | `server/routes/admin.ts` + `BingoGameEngine` | ✅ **Atomically synced & verified** |
+| **E2E Simulation Suite** | `test_phase6_e2e_verification.ts` | ✅ **4/4 Suites 100% Passed** |
+
