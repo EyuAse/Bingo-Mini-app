@@ -10,7 +10,7 @@
   Content-Type: text/css; charset=utf-8
 
 /*
-  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: frame-ancestors 'self' https://web.telegram.org https://*.telegram.org https://*.t.me
   X-XSS-Protection: 1; mode=block
 
 /*.html
