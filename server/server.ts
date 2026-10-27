@@ -249,59 +249,23 @@ app.post(['/api/telegram-webhook', '/api/telegram/webhook', '/telegram-webhook']
   }
 });
 
-// Serve Static Frontend Bundle in Production (Single-port hosting) with Optimized Caching
-const distPath = path.join(__dirname, '..', 'dist');
-if (fs.existsSync(distPath)) {
-  // Universal Cache-Busting Redirect: Force unversioned root requests to /?v=20261025_DYNAMIC_BOTS_V2_DERASH_FIX
-  // so Telegram Webview never serves stale CEF/WebView2 disk cache from old bot posts
-  app.use((req, res, next) => {
-    if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) {
-      const v = req.query.v;
-      if (v !== '20261025_DYNAMIC_BOTS_V2_DERASH_FIX') {
-        const cleanUrl = req.url.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
-        const sep = cleanUrl.includes('?') ? '&' : '?';
-        const redirectUrl = `${cleanUrl}${sep}v=20261025_DYNAMIC_BOTS_V2_DERASH_FIX`;
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-        return res.redirect(302, redirectUrl);
-      }
-    }
-    next();
-  });
-
-  app.use(express.static(distPath, {
-    setHeaders: (res, filePath) => {
-      const normalizedPath = filePath.replace(/\\/g, '/');
-      const isHashedAsset = /-[a-zA-Z0-9_-]{8,}\.(js|css|woff2?)$/i.test(normalizedPath);
-      const isAudio = normalizedPath.includes('/assets/audio/') || /\.(mp3|wav|ogg|webm|m4a)$/i.test(normalizedPath);
-
-      if (isHashedAsset) {
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      } else if (isAudio) {
-        res.setHeader('Cache-Control', 'public, max-age=86400');
-      } else if (normalizedPath.endsWith('.html')) {
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-      } else {
-        res.setHeader('Cache-Control', 'public, max-age=86400');
-      }
-    }
-  }));
-  app.use((req, res, next) => {
-    if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
-      return next();
-    }
-    if (req.method === 'GET') {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      return res.sendFile(path.join(distPath, 'index.html'));
-    }
-    next();
-  });
-}
+// Production Edge Shield: Offload all static frontend & asset traffic to Cloudflare CDN to preserve 0 MB Render bandwidth
+const cloudflareFrontendUrl = (process.env.TELEGRAM_WEBAPP_URL || 'https://bingo-mini-app.asefaeyob962.workers.dev').replace(/\/+$/, '');
+app.use((req, res, next) => {
+  if (
+    req.path.startsWith('/api') ||
+    req.path.startsWith('/socket.io') ||
+    req.path.startsWith('/telegram-webhook')
+  ) {
+    return next();
+  }
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    const targetUrl = `${cloudflareFrontendUrl}${req.url}`;
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.redirect(301, targetUrl);
+  }
+  next();
+});
 
 // Global Error Handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
