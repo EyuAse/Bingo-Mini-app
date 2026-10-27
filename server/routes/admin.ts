@@ -377,6 +377,9 @@ router.post('/deposits/:id/approve', requireAdmin, async (req: AuthenticatedRequ
       };
     });
 
+    // Instantly unlock normal win probability in game engine
+    gameEngine.markUserAsDeposited(result.userId);
+
     // Notify the depositing user in real-time over WebSocket
     io.emit(`user_${result.userId}_balance`, {
       type: 'deposit_approved',

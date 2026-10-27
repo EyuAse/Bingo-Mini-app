@@ -998,7 +998,7 @@ class BingoGameEngine {
         cardMatrix: generateCardFromId(id),
         betAmount: stakePerCard,
         socketId,
-        isBonus: false,
+        isBonus: !this.isDepositedUser(userId),
         isAutoPlay: resolvedAutoPlay
       }));
 
@@ -1612,31 +1612,44 @@ class BingoGameEngine {
 
         if (isRoom10) {
           const botCount = room.opponentCards.length;
-          const totalCards = realCartelaCount + botCount;
-          const baseRealWinProb = totalCards > 0 ? (realCartelaCount / totalCards) : 0;
-          let effectiveRealWinProb = baseRealWinProb;
 
-          // Dynamically Scaled Anti-Churn Guard (Room 10 Single Player)
-          // Scales dynamically with table size: T = min(60, max(6, ceil(totalCards * 1.25)))
-          // For 4 bots + 1 player (N=5): threshold is 7 losses
-          // For 15 bots + 1 player (N=16): threshold is 20 losses
-          // For 50 bots + 1 player (N=51): threshold is 60 losses
-          if (distinctRealPlayers === 1 && botCount > 0) {
-            const singleUserId = room.tickets.keys().next().value;
-            if (singleUserId) {
-              const streak = this.playerSessionStreaks.get(singleUserId);
-              const dynamicLossThreshold = Math.min(60, Math.max(6, Math.ceil(totalCards * 1.25)));
-              if (streak && streak.consecutiveLosses >= dynamicLossThreshold) {
-                // Softly elevate win chance by 10% to prevent churn while preserving platform margin
-                effectiveRealWinProb = Math.min(0.50, baseRealWinProb * 1.10);
-              }
+          // 1. Partition real tickets into Deposited vs Bonus-Only
+          let depositedTicketCount = 0;
+          let firstDepositedUserId: string | null = null;
+          let distinctDepositedPlayers = 0;
+
+          for (const [uid, tList] of room.tickets.entries()) {
+            if (this.isDepositedUser(uid)) {
+              depositedTicketCount += tList.length;
+              distinctDepositedPlayers++;
+              if (!firstDepositedUserId) firstDepositedUserId = uid;
             }
-          } else if (botCount === 0 && realCartelaCount > 0) {
-            // Pure human game in Room 10 (when admin disables bots)
-            effectiveRealWinProb = 1.0;
           }
 
-          room.targetWinnerType = Math.random() < effectiveRealWinProb ? 'real' : 'bot';
+          // 2. If ZERO deposited tickets exist (all real players are playing on bonus 10 ETB)
+          // -> Real win probability is strictly 0.00%, bot wins 100%
+          if (depositedTicketCount === 0 && botCount > 0) {
+            room.targetWinnerType = 'bot';
+          } else {
+            // 3. Deposited players exist: Calculate probability using strictly deposited tickets
+            // This guarantees the deposited player's odds are NEVER diluted by bonus players
+            const totalEligibleCards = depositedTicketCount + botCount;
+            const baseRealWinProb = totalEligibleCards > 0 ? (depositedTicketCount / totalEligibleCards) : 0;
+            let effectiveRealWinProb = baseRealWinProb;
+
+            // Loss-streak anti-churn applies ONLY to verified deposited players
+            if (distinctDepositedPlayers === 1 && botCount > 0 && firstDepositedUserId) {
+              const streak = this.playerSessionStreaks.get(firstDepositedUserId);
+              const dynamicLossThreshold = Math.min(60, Math.max(6, Math.ceil(totalEligibleCards * 1.25)));
+              if (streak && streak.consecutiveLosses >= dynamicLossThreshold) {
+                effectiveRealWinProb = Math.min(0.50, baseRealWinProb * 1.10);
+              }
+            } else if (botCount === 0 && depositedTicketCount > 0) {
+              effectiveRealWinProb = 1.0;
+            }
+
+            room.targetWinnerType = Math.random() < effectiveRealWinProb ? 'real' : 'bot';
+          }
         } else {
           // Rooms 20, 50, 100 logic flow and odds remain 100% UNTOUCHED
           room.targetWinnerType = room.opponentCards.length > 0
@@ -1832,8 +1845,13 @@ class BingoGameEngine {
     const allRealTickets: PlayerTicket[] = [];
     room.tickets.forEach(list => allRealTickets.push(...list));
 
-    if (room.targetWinnerType === 'real' && allRealTickets.length > 0) {
-      chosenRealTicket = allRealTickets[Math.floor(Math.random() * allRealTickets.length)];
+    const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID;
+    const eligibleRealTickets = isRoom10
+      ? allRealTickets.filter(t => this.isDepositedUser(t.userId))
+      : allRealTickets;
+
+    if (room.targetWinnerType === 'real' && eligibleRealTickets.length > 0) {
+      chosenRealTicket = eligibleRealTickets[Math.floor(Math.random() * eligibleRealTickets.length)];
       targetCardMatrix = chosenRealTicket.cardMatrix;
     } else if (room.opponentCards.length > 0) {
       if (room.targetWinnerType === 'owner') {
@@ -1851,8 +1869,8 @@ class BingoGameEngine {
         const randomOpponent = pool[Math.floor(Math.random() * pool.length)];
         targetCardMatrix = randomOpponent.cardMatrix;
       }
-    } else if (allRealTickets.length > 0) {
-      chosenRealTicket = allRealTickets[0];
+    } else if (eligibleRealTickets.length > 0) {
+      chosenRealTicket = eligibleRealTickets[0];
       targetCardMatrix = chosenRealTicket.cardMatrix;
     }
 
