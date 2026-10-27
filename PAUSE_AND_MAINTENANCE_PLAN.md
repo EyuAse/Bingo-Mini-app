@@ -116,3 +116,40 @@ If you want to notify all channel subscribers at once, you can post this message
 >  
 > ስለ ትዕግስታችሁ እናመሰግናለን! 🙏  
 > 🇪🇹 **ሎሚ ቢንጎ**
+
+---
+
+## 5. How to Display "Under Maintenance" Even When Render is 100% DOWN / Suspended (Zero Render Bandwidth)
+
+If Render hits its 5 GB limit or if you click **Suspend Service**, Render's server will not run. Here is how to show the Under Maintenance notice without using ANY Render bandwidth:
+
+### Method A: Direct in Telegram via @BotFather (Takes 30 Seconds, Zero Servers)
+Telegram's own servers can display the maintenance message directly to every user, completely bypassing Render:
+1. Open Telegram and message **`@BotFather`**.
+2. Run `/setdescription` $\rightarrow$ Select **`@LomiBingobot`**.
+   * Enter:
+     ```text
+     🛠️ ሎሚ ቢንጎ በጊዜያዊ ጥገና ላይ ነው / Lomi Bingo Under Maintenance
+
+     ውድ ደንበኞቻችን፣ ስርዓታችንን እያሻሻልን ስለሆነ ጨዋታው ለጊዜው ቆሟል።
+     🔒 የእርስዎ ቀሪ ሂሳብ እና ገንዘብ 100% ደህንነቱ የተጠበቀ ነው!
+
+     Our platform is undergoing scheduled server upgrades. All player wallet balances are 100% safe. We will be back online shortly!
+
+     📢 የቻናል ዝመናዎች: @lomibingo_official
+     ```
+   * *Effect*: Any player who opens the bot chat immediately sees this message displayed by Telegram before they can do anything.
+3. Run `/setabouttext` $\rightarrow$ Select **`@LomiBingobot`**.
+   * Enter: `🛠️ Lomi Bingo is currently under scheduled maintenance. All balances are safe!`
+4. Run `/setmenubutton` $\rightarrow$ Change Menu Button URL to your Telegram Channel:
+   * URL: `https://t.me/lomibingo_official`
+   * *Effect*: When players tap the button, instead of hitting a dead Render page, it takes them to your official Telegram announcement channel!
+
+### Method B: Host `maintenance.html` on GitHub Pages (100% Free, 100 GB Bandwidth, Zero Render Usage)
+Because your GitHub repository is public:
+1. On GitHub, go to your repository: `https://github.com/EyuAse/Bingo-Mini-app` $\rightarrow$ **Settings** $\rightarrow$ **Pages**.
+2. Under **Branch**, select `main` and folder `/public` (or root).
+3. GitHub gives you a free URL: `https://eyuase.github.io/Bingo-Mini-app/maintenance.html`.
+4. In `@BotFather`, set the Menu Button URL to that GitHub Pages link.
+5. *Effect*: The Telegram Webview opens your beautiful Lomi Bingo maintenance screen with 100% uptime, zero Render bandwidth, and zero server costs.
+
