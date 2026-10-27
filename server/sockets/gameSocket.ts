@@ -12,6 +12,14 @@ function isAuthorizedSession(socketId: string, userId?: string): boolean {
 
 export function setupGameSockets(io: Server) {
   io.on('connection', (socket: Socket) => {
+    if (process.env.MAINTENANCE_MODE === 'true') {
+      socket.emit('maintenance_mode', {
+        message: 'ሎሚ ቢንጎ በጊዜያዊ ጥገና ላይ ነው። ጨዋታዎች ለጊዜው ቆመዋል (Lomi Bingo is under scheduled maintenance).'
+      });
+      socket.disconnect(true);
+      return;
+    }
+
     let currentRoomId: string | null = null;
     let authUserId: string | null = null;
     let authUserName: string = 'Lomi Player';

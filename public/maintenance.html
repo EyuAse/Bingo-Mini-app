@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lomi Bingo - Under Maintenance | በጊዜያዊ ጥገና ላይ ነን</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 36px 24px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 40px rgba(234, 179, 8, 0.1);
+    }
+    .icon-container {
+      width: 88px;
+      height: 88px;
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%);
+      border: 2px solid rgba(234, 179, 8, 0.4);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 42px;
+      animation: pulse 2.5s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
+      50% { transform: scale(1.06); box-shadow: 0 0 30px rgba(234, 179, 8, 0.4); }
+    }
+    .logo-badge {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #facc15;
+      background: rgba(234, 179, 8, 0.15);
+      border: 1px solid rgba(234, 179, 8, 0.3);
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #ffffff;
+    }
+    .subtitle {
+      font-size: 15px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
+    .message-box {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .amharic-msg {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #e2e8f0;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    .english-msg {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #94a3b8;
+    }
+    .safety-notice {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #34d399;
+      margin-bottom: 24px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .btn-channel {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
+      margin-bottom: 10px;
+    }
+    .btn-channel:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+    .btn-close {
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+    }
+    .btn-close:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-container">
+      🛠️
+    </div>
+    <div class="logo-badge">LOMI BINGO 🍋</div>
+    <h1>በጊዜያዊ ጥገና ላይ ነን</h1>
+    <div class="subtitle">System Maintenance in Progress</div>
+
+    <div class="message-box">
+      <div class="amharic-msg">
+        ውድ ደንበኞቻችን፣ ስርዓታችንን ለማሻሻል እና የተሻለ የጨዋታ ልምድ ለማቅረብ ጨዋታው ለጥቂት ጊዜ በጊዜያዊ ጥገና ላይ ይቆያል።
+      </div>
+      <div class="english-msg">
+        We are currently upgrading our servers to handle high traffic and deliver a smoother gaming experience. Games are temporarily paused.
+      </div>
+    </div>
+
+    <div class="safety-notice">
+      🔒 <span>የእርስዎ ቀሪ ሂሳብ 100% ደህንነቱ የተጠበቀ ነው (All funds are safe)</span>
+    </div>
+
+    <a href="https://t.me/lomibingo_official" target="_blank" class="btn btn-channel">
+      📢 የቴሌግራም ቻናላችንን ይቀላቀሉ
+    </a>
+
+    <button onclick="if (window.Telegram?.WebApp) { window.Telegram.WebApp.close(); } else { window.close(); }" class="btn btn-close">
+      ዝጋ (Close)
+    </button>
+  </div>
+
+  <script>
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
+  </script>
+</body>
+</html>

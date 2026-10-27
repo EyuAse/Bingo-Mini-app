@@ -1081,6 +1081,21 @@ export class TelegramBotService {
     }
 
     if (text.startsWith('/start') || text === '/play') {
+      if (process.env.MAINTENANCE_MODE === 'true') {
+        const maintenanceMsg =
+          `🛠️ <b>ውድ ደንበኞቻችን፣ ሎሚ ቢንጎ በጊዜያዊ ጥገና ላይ ነው!</b> 🍋\n\n` +
+          `ስርዓታችንን ለማሻሻል እና የተሻለ አገልግሎት ለመስጠት ጨዋታው ለጥቂት ሰዓታት በጊዜያዊ ጥገና ላይ ይቆያል።\n\n` +
+          `🔒 <b>የእርስዎ ቀሪ ሂሳብ እና ገንዘብ 100% ደህንነቱ የተጠበቀ ነው!</b>\n` +
+          `በቅርቡ በታላቅ ማሻሻያ እንመለሳለን።\n\n` +
+          `📢 <i>ዝርዝር መረጃ ለማግኘት ቻናላችንን ይከታተሉ: @lomibingo_official</i>\n\n` +
+          `────────────────\n` +
+          `🛠️ <b>Lomi Bingo is under scheduled maintenance.</b>\n` +
+          `All player wallet balances are 100% safe. We will be back online shortly!`;
+
+        await this.sendMessage(chatId, maintenanceMsg);
+        return true;
+      }
+
       const parts = text.split(' ');
       const startParam = parts.length > 1 ? parts[1].trim() : '';
       const playAppUrl = this.getVersionedWebAppUrl(webAppUrl, startParam);

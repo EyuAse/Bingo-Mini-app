@@ -93,6 +93,45 @@ app.get('/api/health', async (_req, res) => {
   });
 });
 
+// Maintenance Mode Guard (Can be toggled via MAINTENANCE_MODE=true in Render)
+app.use((req, res, next) => {
+  if (process.env.MAINTENANCE_MODE !== 'true') {
+    return next();
+  }
+
+  // Bypass for Admin Desk, Health Check, and Telegram Inbound Webhooks
+  if (
+    req.path.startsWith('/api/health') ||
+    req.path.startsWith('/api/admin') ||
+    req.path.startsWith('/admin') ||
+    req.path.startsWith('/api/telegram-webhook') ||
+    req.path.startsWith('/api/telegram/webhook') ||
+    req.path.startsWith('/telegram-webhook')
+  ) {
+    return next();
+  }
+
+  // API Requests: Return 503 Maintenance JSON
+  if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+    return res.status(503).json({
+      success: false,
+      maintenance: true,
+      error: 'ሎሚ ቢንጎ በጊዜያዊ ጥገና ላይ ነው። ጨዋታዎች ለጊዜው ቆመዋል (Lomi Bingo is under scheduled maintenance).'
+    });
+  }
+
+  // Browser / Telegram Webview Requests: Serve public/maintenance.html
+  const maintenanceFile = path.join(__dirname, '..', 'public', 'maintenance.html');
+  if (fs.existsSync(maintenanceFile)) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    return res.sendFile(maintenanceFile);
+  }
+
+  return res.status(503).send('Lomi Bingo is under scheduled maintenance. We will be back soon.');
+});
+
 // Network Health & Diagnostics Endpoint (Open for Admin and Client Status)
 app.get('/api/network-health', (_req, res) => {
   res.json({

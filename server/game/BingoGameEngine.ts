@@ -747,6 +747,13 @@ class BingoGameEngine {
     remainingBalance?: number;
     preBoughtForNextRound?: boolean;
   }> {
+    if (process.env.MAINTENANCE_MODE === 'true') {
+      return {
+        success: false,
+        error: 'ሎሚ ቢንጎ በጊዜያዊ ጥገና ላይ ነው። ውርርድ ለጊዜው ቆሟል (Lomi Bingo is under maintenance. Betting is paused).'
+      };
+    }
+
     // Resolve target room based on customStake or requestedRoomId
     let targetRoomId = requestedRoomId;
     if (customStake === 20) targetRoomId = 'room-20';
