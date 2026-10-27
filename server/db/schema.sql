@@ -32,11 +32,13 @@ ALTER TABLE users ALTER COLUMN phone DROP NOT NULL;
 ALTER TABLE users ALTER COLUMN pin_hash DROP NOT NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_bot BOOLEAN DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS attached_accounts JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS has_deposited BOOLEAN DEFAULT false;
 
 CREATE INDEX IF NOT EXISTS idx_users_tg_id ON users(telegram_id);
 CREATE INDEX IF NOT EXISTS idx_users_tg_username ON users(telegram_username);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_has_deposited ON users(has_deposited);
 
 -- 2. Wallets Table (Strict Decimal Precision & ACID Safe)
 CREATE TABLE IF NOT EXISTS wallets (
