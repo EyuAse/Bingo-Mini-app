@@ -211,9 +211,59 @@ class BingoGameEngine {
     return this.playerSessionStreaks.get(userId);
   }
 
+  // Verified Deposited Users Cache (Anti-Loss Guard for 10 ETB Welcome Bonus)
+  // Ensures O(1) microsecond checks with 0 database queries during fast 1s ball draws.
+  private depositedUsers: Set<string> = new Set<string>();
+
+  /**
+   * Load all verified depositors into memory on server boot.
+   * Pulls users where has_deposited = true OR with approved deposit requests.
+   */
+  public async loadDepositedUsers(): Promise<void> {
+    try {
+      const res = await query(
+        `SELECT id FROM users WHERE has_deposited = true
+         UNION
+         SELECT DISTINCT user_id as id FROM deposit_requests WHERE status = 'approved'`
+      );
+      this.depositedUsers = new Set(res.rows.map(r => String(r.id)));
+      console.log(`🛡️ [Bonus Anti-Loss Engine] Loaded ${this.depositedUsers.size} verified deposited players into memory`);
+    } catch (err) {
+      console.warn('⚠️ [GameEngine] Deferred loading deposited users:', err);
+    }
+  }
+
+  /**
+   * Instantly flag a player as a verified depositor in memory (and persist to DB).
+   * Called immediately when cashier/admin approves deposit or payment webhook fires.
+   */
+  public markUserAsDeposited(userId: string): void {
+    if (!userId) return;
+    const strId = String(userId);
+    this.depositedUsers.add(strId);
+    console.log(`💎 [Bonus Anti-Loss Engine] User ${strId} marked as verified depositor. Normal win probability unlocked.`);
+    query('UPDATE users SET has_deposited = true WHERE id = $1', [strId]).catch(err => {
+      console.warn('⚠️ [GameEngine] Failed to persist has_deposited to DB:', err);
+    });
+  }
+
+  /**
+   * Returns true if user has ever made an approved real-money deposit.
+   * Used by Room 10 win probability engine to ensure bonus-only players never win real cash pot.
+   */
+  public isDepositedUser(userId: string): boolean {
+    if (!userId) return false;
+    return this.depositedUsers.has(String(userId));
+  }
+
+  public getDepositedUserCount(): number {
+    return this.depositedUsers.size;
+  }
+
   private constructor() {
     this.initializeUnifiedArena();
     this.loadBotAccounts();
+    this.loadDepositedUsers();
   }
 
   public static getInstance(): BingoGameEngine {
