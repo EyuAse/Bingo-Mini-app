@@ -266,8 +266,8 @@ export class TelegramBotService {
    * Register Webhook with Telegram API
    */
   public async setWebhook(customWebhookUrl?: string): Promise<{ success: boolean; message: string }> {
-    const cfg = await this.getConfig();
-    let rawUrl = customWebhookUrl || (cfg.webAppUrl ? `${cfg.webAppUrl}/api/telegram-webhook` : '');
+    const defaultBackendOrigin = process.env.TELEGRAM_WEBHOOK_URL || process.env.RENDER_EXTERNAL_URL || 'https://bingo-mini-app-hp80.onrender.com';
+    let rawUrl = customWebhookUrl || (defaultBackendOrigin ? `${defaultBackendOrigin}/api/telegram-webhook` : (cfg.webAppUrl ? `${cfg.webAppUrl}/api/telegram-webhook` : ''));
     if (!rawUrl) {
       return { success: false, message: 'Webhook URL is required (configure TELEGRAM_WEBAPP_URL in Admin Desk or .env)' };
     }
