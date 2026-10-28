@@ -360,9 +360,10 @@ export const apiClient = {
 
   // 3. Admin Endpoints (Guaranteed Admin Bearer Token)
   admin: {
-    async getUsers(params?: { limit?: number; search?: string }) {
+    async getUsers(params?: { page?: number; limit?: number | 'all'; search?: string }) {
       const adminHeaders = await getAdminAuthHeader();
       const query = new URLSearchParams();
+      if (params?.page) query.set('page', String(params.page));
       if (params?.limit) query.set('limit', String(params.limit));
       if (params?.search) query.set('search', params.search);
       const qs = query.toString() ? `?${query.toString()}` : '';
@@ -372,7 +373,11 @@ export const apiClient = {
       return handleResponse<{
         success: boolean;
         users: any[];
-        totalCount?: number;
+        totalCount: number;
+        totalPlayers?: number;
+        page?: number;
+        limit?: number;
+        totalPages?: number;
         stats?: {
           totalPlayers: number;
           activePlayers: number;

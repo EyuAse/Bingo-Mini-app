@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAdmin, UserAccount } from '../../context/AdminContext.tsx';
 import { useApp } from '../../context/AppContext.tsx';
 
@@ -7,6 +7,12 @@ export const PlayerAccountsDesk: React.FC = () => {
     users,
     totalUsersCount,
     userStats,
+    usersPage,
+    usersLimit,
+    usersTotalPages,
+    isUsersLoading,
+    usersSearchQuery,
+    fetchUsers,
     adjustUserBalance,
     toggleUserStatus,
     registerBonus
@@ -15,7 +21,7 @@ export const PlayerAccountsDesk: React.FC = () => {
   const { showToast } = useApp();
 
   // Search, Segment & Sort states
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState(usersSearchQuery || '');
   const [segmentFilter, setSegmentFilter] = useState<'all' | 'active' | 'suspended' | 'vip' | 'bonus'>('all');
   const [sortBy, setSortBy] = useState<'balance-desc' | 'deposit-desc' | 'referrals-desc' | 'newest'>('balance-desc');
 
@@ -28,6 +34,21 @@ export const PlayerAccountsDesk: React.FC = () => {
   const [adjustAmount, setAdjustAmount] = useState('100');
   const [adjustReason, setAdjustReason] = useState('Manual Cashier Credit');
 
+  // Debounced server-side database search across all 1,305+ users (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== usersSearchQuery) {
+        fetchUsers({ page: 1, limit: usersLimit, search: searchInput.trim() });
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, usersLimit, usersSearchQuery, fetchUsers]);
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    fetchUsers({ page: 1, limit: usersLimit, search: '' });
+  };
+
   // Calculations for KPI Cards (Filtered to genuine players)
   const playerUsers = users.filter(u => u.role !== 'admin');
   const totalPlayers = totalUsersCount || userStats?.totalPlayers || playerUsers.length;
@@ -37,22 +58,13 @@ export const PlayerAccountsDesk: React.FC = () => {
   const totalBonusFloat = userStats?.totalBonusFloat ?? playerUsers.reduce((acc, u) => acc + (u.bonus || 0), 0);
   const vipPlayers = playerUsers.filter(u => (u.totalDeposited || 0) >= 1000);
 
-  // Filter & Sort Logic
+  // Filter Logic (In addition to server-side search, segment filters refine current view)
   const filteredUsers = playerUsers.filter(user => {
     // Segment filter
     if (segmentFilter === 'active' && user.status !== 'active') return false;
     if (segmentFilter === 'suspended' && user.status !== 'suspended') return false;
     if (segmentFilter === 'vip' && (user.totalDeposited || 0) < 1000) return false;
     if (segmentFilter === 'bonus' && (user.bonus || 0) <= 0) return false;
-
-    // Search query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchName = (user.name || '').toLowerCase().includes(q);
-      const matchPhone = (user.phone || '').includes(q);
-      const matchId = (user.id || '').toLowerCase().includes(q);
-      if (!matchName && !matchPhone && !matchId) return false;
-    }
     return true;
   });
 
@@ -61,6 +73,7 @@ export const PlayerAccountsDesk: React.FC = () => {
     if (sortBy === 'balance-desc') return (b.balance || 0) - (a.balance || 0);
     if (sortBy === 'deposit-desc') return (b.totalDeposited || 0) - (a.totalDeposited || 0);
     if (sortBy === 'referrals-desc') return (b.referralCount || 0) - (a.referralCount || 0);
+    if (sortBy === 'newest') return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     return b.id.localeCompare(a.id);
   });
 
@@ -260,6 +273,22 @@ export const PlayerAccountsDesk: React.FC = () => {
               )}
             </div>
 
+            {/* Page Size Selector */}
+            <select
+              className="player-page-size-select"
+              value={usersLimit}
+              onChange={e => {
+                const newLimit = parseInt(e.target.value, 10);
+                fetchUsers({ page: 1, limit: newLimit, search: searchInput.trim() });
+              }}
+              title="Items per page"
+            >
+              <option value="25">25 per page</option>
+              <option value="50">50 per page</option>
+              <option value="100">100 per page</option>
+              <option value="250">250 per page</option>
+            </select>
+
             {/* Sort Selector */}
             <select
               className="player-sort-select"
@@ -272,15 +301,29 @@ export const PlayerAccountsDesk: React.FC = () => {
               <option value="newest">Newest Account</option>
             </select>
 
-            {/* Search Input */}
+            {/* Search Input (Searches across full Neon DB) */}
             <div className="player-search-box">
-              <i className="fa-solid fa-magnifying-glass search-icon"></i>
+              {isUsersLoading ? (
+                <i className="fa-solid fa-spinner fa-spin search-icon"></i>
+              ) : (
+                <i className="fa-solid fa-magnifying-glass search-icon"></i>
+              )}
               <input
                 type="text"
-                placeholder="Search player name or ID..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search player name, phone, @username, ID..."
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
               />
+              {searchInput && (
+                <button
+                  type="button"
+                  className="player-search-clear-btn"
+                  onClick={handleClearSearch}
+                  title="Clear Search"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -402,6 +445,68 @@ export const PlayerAccountsDesk: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Bar */}
+        <div className="player-pagination-bar">
+          <div className="pagination-info">
+            {isUsersLoading ? (
+              <span className="pagination-loading">
+                <i className="fa-solid fa-spinner fa-spin"></i> Loading players from Neon DB...
+              </span>
+            ) : (
+              <span>
+                Showing <strong>{totalPlayers === 0 ? 0 : (usersPage - 1) * usersLimit + 1}</strong> – <strong>{Math.min(usersPage * usersLimit, totalPlayers)}</strong> of <strong>{totalPlayers.toLocaleString()}</strong> Players
+                {searchInput.trim() && (
+                  <span className="search-filter-tag"> (Database Search Match)</span>
+                )}
+              </span>
+            )}
+          </div>
+
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="btn-pagination"
+              disabled={usersPage <= 1 || isUsersLoading}
+              onClick={() => fetchUsers({ page: 1, limit: usersLimit, search: searchInput.trim() })}
+              title="First Page"
+            >
+              <i className="fa-solid fa-angles-left"></i> First
+            </button>
+            <button
+              type="button"
+              className="btn-pagination"
+              disabled={usersPage <= 1 || isUsersLoading}
+              onClick={() => fetchUsers({ page: usersPage - 1, limit: usersLimit, search: searchInput.trim() })}
+              title="Previous Page"
+            >
+              <i className="fa-solid fa-chevron-left"></i> Prev
+            </button>
+
+            <span className="pagination-page-indicator">
+              Page <strong>{usersPage}</strong> of <strong>{usersTotalPages || 1}</strong>
+            </span>
+
+            <button
+              type="button"
+              className="btn-pagination"
+              disabled={usersPage >= usersTotalPages || isUsersLoading}
+              onClick={() => fetchUsers({ page: usersPage + 1, limit: usersLimit, search: searchInput.trim() })}
+              title="Next Page"
+            >
+              Next <i className="fa-solid fa-chevron-right"></i>
+            </button>
+            <button
+              type="button"
+              className="btn-pagination"
+              disabled={usersPage >= usersTotalPages || isUsersLoading}
+              onClick={() => fetchUsers({ page: usersTotalPages, limit: usersLimit, search: searchInput.trim() })}
+              title="Last Page"
+            >
+              Last <i className="fa-solid fa-angles-right"></i>
+            </button>
+          </div>
         </div>
       </div>
 

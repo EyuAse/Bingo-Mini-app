@@ -7877,6 +7877,116 @@ input:checked + .slider-round:before {
   color: #334155;
 }
 
+/* ============================================================
+   PLAYER ACCOUNTS DESK PAGINATION & LIVE SEARCH STYLES
+   ============================================================ */
+.player-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
 
+.pagination-info {
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-weight: 600;
+}
 
+.pagination-info strong {
+  color: #0f172a;
+}
 
+.pagination-loading {
+  color: #ca8a04;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.search-filter-tag {
+  background: #fef08a;
+  color: #854d0e;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  margin-left: 6px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-pagination {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  background: #fefce8;
+  border-color: #facc15;
+  color: #854d0e;
+}
+
+.btn-pagination:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f1f5f9;
+}
+
+.pagination-page-indicator {
+  font-size: 0.8125rem;
+  color: #475569;
+  padding: 0 6px;
+}
+
+.player-page-size-select {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.player-page-size-select:focus {
+  border-color: #eab308;
+}
+
+.player-search-clear-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.player-search-clear-btn:hover {
+  color: #ef4444;
+}

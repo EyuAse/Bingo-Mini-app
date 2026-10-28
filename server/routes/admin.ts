@@ -12,7 +12,15 @@ const router = Router();
  */
 router.get('/users', requireAdmin, async (req, res) => {
   try {
-    const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 1000, 1), 2000);
+    const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
+    const limitParam = req.query.limit as string;
+    let limit = 50;
+    if (limitParam === 'all') {
+      limit = 5000;
+    } else if (limitParam) {
+      limit = Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 2000);
+    }
+    const offset = (page - 1) * limit;
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
 
     const countQuery = `
@@ -27,6 +35,20 @@ router.get('/users', requireAdmin, async (req, res) => {
       WHERE u.role = 'player' 
         AND (u.is_bot IS NULL OR u.is_bot = false)
         AND u.full_name NOT LIKE 'Synthetic%'
+    `;
+
+    const searchCountQuery = `
+      SELECT COUNT(*) as filtered_count
+      FROM users u
+      WHERE u.role = 'player' 
+        AND (u.is_bot IS NULL OR u.is_bot = false)
+        AND u.full_name NOT LIKE 'Synthetic%'
+        AND (
+          u.full_name ILIKE $1 
+          OR u.phone ILIKE $1 
+          OR u.telegram_username ILIKE $1 
+          OR CAST(u.telegram_id AS TEXT) ILIKE $1
+        )
     `;
 
     const usersQuery = search
@@ -57,7 +79,7 @@ router.get('/users', requireAdmin, async (req, res) => {
             OR CAST(u.telegram_id AS TEXT) ILIKE $1
           )
         ORDER BY u.created_at DESC
-        LIMIT $2
+        LIMIT $2 OFFSET $3
       `
       : `
         SELECT 
@@ -80,16 +102,19 @@ router.get('/users', requireAdmin, async (req, res) => {
           AND (u.is_bot IS NULL OR u.is_bot = false)
           AND u.full_name NOT LIKE 'Synthetic%'
         ORDER BY u.created_at DESC
-        LIMIT $1
+        LIMIT $1 OFFSET $2
       `;
 
-    const [countRes, usersRes] = await Promise.all([
+    const [countRes, searchCountRes, usersRes] = await Promise.all([
       query(countQuery),
-      search ? query(usersQuery, [`%${search}%`, limit]) : query(usersQuery, [limit])
+      search ? query(searchCountQuery, [`%${search}%`]) : Promise.resolve({ rows: [] } as any),
+      search ? query(usersQuery, [`%${search}%`, limit, offset]) : query(usersQuery, [limit, offset])
     ]);
 
     const statsRow = countRes.rows[0] || {};
     const totalCount = parseInt(statsRow.total_count || '0', 10);
+    const filteredCount = search ? parseInt(searchCountRes.rows[0]?.filtered_count || '0', 10) : totalCount;
+
     const stats = {
       totalPlayers: totalCount,
       activePlayers: parseInt(statsRow.active_count || '0', 10),
@@ -117,7 +142,11 @@ router.get('/users', requireAdmin, async (req, res) => {
     return res.json({
       success: true,
       users: formatted,
-      totalCount,
+      totalCount: filteredCount,
+      totalPlayers: totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(filteredCount / limit) || 1,
       stats
     });
   } catch (error: any) {

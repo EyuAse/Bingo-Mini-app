@@ -1,12 +1,9 @@
 import adminRouter from '../routes/admin.ts';
 
-async function testPhase1() {
-  console.log('🧪 [Test Phase 1]: Testing /api/admin/users route logic directly...');
-
-  // Mock Request & Response for Express
+async function executeMockRequest(query: any) {
   let resData: any = null;
   const mockReq: any = {
-    query: {},
+    query,
     user: { id: 'admin-id', role: 'admin' }
   };
   const mockRes: any = {
@@ -16,34 +13,59 @@ async function testPhase1() {
     json: (data: any) => { resData = { code: 200, ...data }; return resData; }
   };
 
-  // Find the /users route handler
   const routeLayer = (adminRouter as any).stack.find((layer: any) => layer.route && layer.route.path === '/users');
-  if (!routeLayer) {
-    throw new Error('Could not find /users route on adminRouter');
-  }
-
-  // The last handler in stack is the main route handler
+  if (!routeLayer) throw new Error('Could not find /users route on adminRouter');
   const handler = routeLayer.route.stack[routeLayer.route.stack.length - 1].handle;
-
-  // Run handler
   await handler(mockReq, mockRes);
+  return resData;
+}
 
-  console.log('\n--- Route Execution Results ---');
-  console.log('Success:', resData.success);
-  console.log('Total Count from DB:', resData.totalCount);
-  console.log('Users Array Length:', resData.users?.length);
-  console.log('Platform Stats:', resData.stats);
+async function testPhase1() {
+  console.log('🧪 [Test Phase 1]: Verifying Paginated & Searchable /api/admin/users API...\n');
 
-  if (resData.totalCount > 200 && resData.users?.length > 200) {
-    console.log(`\n🎉 SUCCESS! Count is ${resData.totalCount} (NO LONGER STUCK AT 200).`);
-  } else {
-    console.error('\n❌ FAILURE: Users count is still capped.');
+  // Test 1: Default Page 1 (limit 50)
+  console.log('1️⃣ Testing Default Call (Page 1, Limit 50)...');
+  const page1 = await executeMockRequest({});
+  console.log(`   ✓ Success: ${page1.success}`);
+  console.log(`   ✓ Users returned: ${page1.users?.length} (Expected 50)`);
+  console.log(`   ✓ Total Registered Players: ${page1.totalPlayers}`);
+  console.log(`   ✓ Total Pages: ${page1.totalPages}`);
+  console.log(`   ✓ Page: ${page1.page}, Limit: ${page1.limit}`);
+  if (page1.users?.length !== 50 || page1.totalPlayers < 1300) {
+    throw new Error('Default pagination failed');
   }
+
+  // Test 2: Search for 'Eyu' across whole database
+  console.log('\n2️⃣ Testing Database-Wide Search for "Eyu"...');
+  const searchEyu = await executeMockRequest({ search: 'Eyu' });
+  console.log(`   ✓ Matching count: ${searchEyu.totalCount}`);
+  console.log(`   ✓ Total platform players: ${searchEyu.totalPlayers}`);
+  const eyuUser = searchEyu.users.find((u: any) => u.name.toLowerCase().includes('eyu'));
+  console.log(`   ✓ Found target user: ${eyuUser?.name} (ID: ${eyuUser?.id})`);
+  if (!eyuUser) throw new Error('Failed to find Eyu via database search');
+
+  // Test 3: Search for 'Bleach' across whole database
+  console.log('\n3️⃣ Testing Database-Wide Search for "Bleach"...');
+  const searchBleach = await executeMockRequest({ search: 'Bleach' });
+  console.log(`   ✓ Matching count: ${searchBleach.totalCount}`);
+  const bleachUser = searchBleach.users.find((u: any) => u.name.toLowerCase().includes('bleach'));
+  console.log(`   ✓ Found target user: ${bleachUser?.name} (ID: ${bleachUser?.id})`);
+  if (!bleachUser) throw new Error('Failed to find Bleach via database search');
+
+  // Test 4: Jump to Last Page (Page 27)
+  console.log(`\n4️⃣ Testing Jump to Last Page (${page1.totalPages})...`);
+  const lastPage = await executeMockRequest({ page: page1.totalPages, limit: 50 });
+  console.log(`   ✓ Users on last page: ${lastPage.users?.length}`);
+  console.log(`   ✓ Oldest user on last page: ${lastPage.users[lastPage.users.length - 1]?.name} (Joined: ${lastPage.users[lastPage.users.length - 1]?.createdAt})`);
+
+  console.log('\n══════════════════════════════════════════════════════════════════════════════');
+  console.log('✅ ALL PHASE 1 TESTS PASSED! Backend pagination and database search verified.');
+  console.log('══════════════════════════════════════════════════════════════════════════════\n');
 
   process.exit(0);
 }
 
 testPhase1().catch(err => {
-  console.error('Test error:', err);
+  console.error('❌ Phase 1 test error:', err);
   process.exit(1);
 });

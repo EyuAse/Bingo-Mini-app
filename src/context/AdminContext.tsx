@@ -134,6 +134,12 @@ interface AdminContextType {
   users: UserAccount[];
   totalUsersCount: number;
   userStats: UserStats | null;
+  usersPage: number;
+  usersLimit: number;
+  usersTotalPages: number;
+  isUsersLoading: boolean;
+  usersSearchQuery: string;
+  fetchUsers: (params?: { page?: number; limit?: number; search?: string }) => Promise<void>;
   addUser: (user: Partial<UserAccount>) => void;
   adjustUserBalance: (userId: string, amount: number, isBonus?: boolean) => void;
   toggleUserStatus: (userId: string) => void;
@@ -350,6 +356,11 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [totalUsersCount, setTotalUsersCount] = useState<number>(0);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [usersPage, setUsersPage] = useState<number>(1);
+  const [usersLimit, setUsersLimit] = useState<number>(50);
+  const [usersTotalPages, setUsersTotalPages] = useState<number>(1);
+  const [isUsersLoading, setIsUsersLoading] = useState<boolean>(false);
+  const [usersSearchQuery, setUsersSearchQuery] = useState<string>('');
   const [transactions, setTransactions] = useState<TransactionRequest[]>([]);
   const [totalDepositedToday, setTotalDepositedToday] = useState<number>(0);
   const [totalWithdrawnToday, setTotalWithdrawnToday] = useState<number>(0);
@@ -358,11 +369,25 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [todayGamesPlayed, setTodayGamesPlayed] = useState<number>(0);
   const [todayNetCashProfit, setTodayNetCashProfit] = useState<number>(0);
 
-  // Fetch Live Real Data from Neon PostgreSQL
-  const refreshAdminData = useCallback(async () => {
+  // Dedicated Paginated & Searchable User Fetch
+  const fetchUsers = useCallback(async (params?: { page?: number; limit?: number; search?: string }) => {
+    setIsUsersLoading(true);
     try {
-      // 1. Fetch Real Users
-      const usersRes = await apiClient.admin.getUsers().catch(() => ({ users: [], totalCount: 0, stats: null }));
+      const page = params?.page ?? usersPage;
+      const limit = params?.limit ?? usersLimit;
+      const search = params?.search !== undefined ? params.search : usersSearchQuery;
+
+      const usersRes = await apiClient.admin.getUsers({ page, limit, search }).catch(() => ({
+        success: false,
+        users: [],
+        totalCount: 0,
+        totalPlayers: 0,
+        page: 1,
+        limit: 50,
+        totalPages: 1,
+        stats: null
+      }));
+
       if (usersRes.users) {
         setUsers(usersRes.users.map((u: any) => ({
           id: u.id,
@@ -372,18 +397,34 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           telegramId: u.telegramId,
           balance: parseFloat(u.balance || 0),
           bonus: parseFloat(u.bonus || 0),
-          referralCount: 0,
+          referralCount: u.referralCount || 0,
           totalDeposited: parseFloat(u.totalDeposited || 0),
           totalWithdrawn: parseFloat(u.totalWithdrawn || 0),
           status: u.status || 'active',
           role: u.role,
           createdAt: u.createdAt
         })));
-        setTotalUsersCount(usersRes.totalCount || usersRes.users.length);
+        setTotalUsersCount(usersRes.totalPlayers || usersRes.totalCount || usersRes.users.length);
+        if (usersRes.page) setUsersPage(usersRes.page);
+        if (usersRes.limit) setUsersLimit(usersRes.limit);
+        if (usersRes.totalPages) setUsersTotalPages(usersRes.totalPages);
+        if (params?.search !== undefined) setUsersSearchQuery(params.search);
         if (usersRes.stats) {
           setUserStats(usersRes.stats);
         }
       }
+    } catch (err) {
+      console.error('Failed to fetch admin users:', err);
+    } finally {
+      setIsUsersLoading(false);
+    }
+  }, [usersPage, usersLimit, usersSearchQuery]);
+
+  // Fetch Live Real Data from Neon PostgreSQL
+  const refreshAdminData = useCallback(async () => {
+    try {
+      // 1. Fetch Real Users (Preserving current page, limit & search filter)
+      await fetchUsers();
 
       // 2. Fetch Real Deposits & Withdrawals
       const [depRes, wdRes, statsRes] = await Promise.all([
@@ -743,6 +784,12 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         users,
         totalUsersCount,
         userStats,
+        usersPage,
+        usersLimit,
+        usersTotalPages,
+        isUsersLoading,
+        usersSearchQuery,
+        fetchUsers,
         addUser,
         adjustUserBalance,
         toggleUserStatus,
