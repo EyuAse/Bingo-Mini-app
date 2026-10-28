@@ -489,8 +489,9 @@ class BingoGameEngine {
     if (isRoom10) {
       this.syncRoom10StandbyBots(room);
     }
-    const isRoom10Autonomous = isRoom10 && this.botConfig.livingClock && this.botConfig.mode !== 'disabled';
-    room.waitingForPlayers = isRoom10 ? (!isRoom10Autonomous && room.tickets.size < 1) : room.tickets.size < 2;
+    const room10HasBots = isRoom10 && (room.dynamicBotTarget ?? 0) > 0 && this.botConfig.mode !== 'disabled';
+    const isRoom10Autonomous = isRoom10 && room10HasBots && this.botConfig.livingClock;
+    room.waitingForPlayers = isRoom10 ? (room10HasBots ? (!isRoom10Autonomous && room.tickets.size < 1) : room.tickets.size < 2) : room.tickets.size < 2;
     this.broadcastRoomState(room);
 
     // Notify other players in the room that a player entered the room
@@ -528,7 +529,8 @@ class BingoGameEngine {
     // The lobby interval's own freeze logic handles keeping the timer paused.
     // Hard-resetting to 45 here causes visible jumps when a user briefly disconnects/reconnects.
     const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID;
-    if (isRoom10 ? room.tickets.size < 1 : room.tickets.size < 2) {
+    const room10HasBots = isRoom10 && (room.dynamicBotTarget ?? 0) > 0 && this.botConfig.mode !== 'disabled';
+    if (room10HasBots ? room.tickets.size < 1 : room.tickets.size < 2) {
       room.waitingForPlayers = true;
       // lobbyCountdown intentionally NOT reset here — the interval freeze handles it
     }
@@ -1411,22 +1413,28 @@ class BingoGameEngine {
       }
       const isEcoSleeping = totalConnectedClients === 0 && (Date.now() - this.lastClientActivityTimestamp > 10 * 60 * 1000);
 
-      // Living Casino Autonomy: Room 10 runs continuously unless disabled or in eco-sleep
+      // Living Casino Autonomy: Room 10 runs continuously ONLY if bots are active (> 0) and not disabled or in eco-sleep
       const room10 = this.rooms.get('room-10');
+      const room10HasBots = Boolean(
+        room10 &&
+        (room10.dynamicBotTarget ?? 0) > 0 &&
+        this.botConfig.mode !== 'disabled'
+      );
       const isRoom10Autonomous = Boolean(
         room10 &&
+        room10HasBots &&
         this.botConfig.livingClock &&
-        this.botConfig.mode !== 'disabled' &&
         !isEcoSleeping
       );
 
-      // Check: Does AT LEAST ONE house have confirmed tickets ready or living clock active?
-      // Rooms 20, 50, 100 strictly require >= 2 real human players.
+      // Check: Does AT LEAST ONE house have confirmed tickets ready or living clock active with bots?
+      // When Room 10 has bots: 1 player or living clock is enough.
+      // When Room 10 has 0 bots: it strictly requires >= 2 real human players (like Rooms 20, 50, 100).
       const anyHouseReady = isRoom10Autonomous || STAKE_ROOM_IDS.some(id => {
         const r = this.rooms.get(id);
         if (!r) return false;
         const isR10 = id === 'room-10' || id === ARENA_ROOM_ID;
-        return isR10 ? r.tickets.size >= 1 : r.tickets.size >= 2;
+        return isR10 ? (room10HasBots ? r.tickets.size >= 1 : r.tickets.size >= 2) : r.tickets.size >= 2;
       });
 
       for (const roomId of STAKE_ROOM_IDS) {
@@ -1442,8 +1450,10 @@ class BingoGameEngine {
           room.lobbyCountdown = 45;
           this.broadcastRoomState(room);
         } else {
-          // If clock is ticking, Room 10 is active/ready; Rooms 20, 50, 100 strictly require tickets.size >= 2
-          room.waitingForPlayers = isR10 ? (!isRoom10Autonomous && room.tickets.size < 1) : room.tickets.size < 2;
+          // If bots are present and clock is ticking, Room 10 is active/ready; if bots = 0 or Rooms 20, 50, 100, strictly require tickets.size >= 2
+          room.waitingForPlayers = isR10
+            ? (room10HasBots ? (!isRoom10Autonomous && room.tickets.size < 1) : room.tickets.size < 2)
+            : room.tickets.size < 2;
           room.lobbyCountdown = Math.max(0, currentLobbyCountdown - 1);
           this.broadcastRoomState(room);
         }
@@ -1569,8 +1579,9 @@ class BingoGameEngine {
       const isRoom10 = room.id === 'room-10' || room.id === ARENA_ROOM_ID;
       const realCartelaCount = this.getRealCartelaCount(room);
       const distinctRealPlayers = room.tickets.size;
+      const room10HasBots = isRoom10 && (room.dynamicBotTarget ?? 0) > 0 && this.botConfig.mode !== 'disabled';
       const isEligibleForActivePlay = isRoom10
-        ? (distinctRealPlayers >= 1 || (this.botConfig.livingClock && this.botConfig.mode !== 'disabled'))
+        ? (room10HasBots ? (distinctRealPlayers >= 1 || this.botConfig.livingClock) : distinctRealPlayers >= 2)
         : distinctRealPlayers >= 2;
 
       if (isEligibleForActivePlay) {
