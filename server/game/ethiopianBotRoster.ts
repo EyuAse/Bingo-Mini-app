@@ -361,59 +361,57 @@ export function generateDynamicBotTarget(min: number = 2, max: number = 50, prev
 }
 
 /**
- * Calculates Room 10 dynamic bot target bounds strictly by East Africa Time (EAT / UTC+3):
- * 1. 01:00 AM – 05:59 AM (after 12:59 AM cutoff): STRICTLY 0 BOTS (Sleep Mode)
- * 2. 06:00 AM – 11:59 AM: 2 to 10 bots (Morning Casual)
- * 3. 12:00 PM – 03:59 PM: 8 to 20 bots (Afternoon Casual)
- * 4. 04:00 PM – 06:29 PM: 15 to 30 bots (Evening Rush / Commute)
- * 5. 06:30 PM – 08:59 PM: 25 to 42 bots (Dinner & Relaxation)
- * 6. 09:00 PM – 10:59 PM: 35 to 50 bots (Super Peak Bedtime - HARD CAP: 50)
- * 7. 11:00 PM – 12:59 AM: 2 to 15 bots (Late Night Taper down to 0)
+ * Calculates Room 10 dynamic bot target bounds strictly by Ethiopian 12-hour Clock (East Africa Time / UTC+3):
+ * 1. ከ ሌሊቱ 7 ሰዓት – እስከ ንጋቱ 12:00 ሰዓት (01:00 AM – 05:59 AM): 0 bots (Sleep Mode)
+ * 2. ከ ንጋት 12:00 ሰዓት – እስከ ጠዋቱ 2:00 ሰዓት (06:00 AM – 07:59 AM): 10 to 15 bots (Morning Warmup)
+ * 3. ከ ጠዋቱ 2:00 ሰዓት – እስከ ረፋዱ 5:00 ሰዓት (08:00 AM – 10:59 AM): 15 to 20 bots (Morning Traffic)
+ * 4. ከ ረፋዱ 5:00 ሰዓት – እስከ ከሰዓቱ 7:00 ሰዓት (11:00 AM – 12:59 PM): 20 to 30 bots (Lunchtime Casual)
+ * 5. ከ ከሰዓቱ 7:00 ሰዓት በኋላ – እስከ 9:00 ሰዓት (01:00 PM – 02:59 PM): 35 to 40 bots (Afternoon Rush)
+ * 6. ከ ከሰዓቱ 9:00 ሰዓት በኋላ – እስከ ምሽቱ 5:00 ሰዓት (03:00 PM – 10:59 PM): 40 to 50 bots (Super Peak Evening)
+ * 7. ከ ምሽቱ 5:00 ሰዓት በኋላ – እስከ ሌሊቱ 7:00 ሰዓት (11:00 PM – 12:59 AM): 20 to 25 bots (Late Night Taper)
  */
 export function getRoom10HourlyBounds(date: Date = new Date()): { min: number; max: number } {
   // Convert to Ethiopian / East Africa Time (UTC+3)
   const eatHour = (date.getUTCHours() + 3) % 24;
-  const eatMinute = date.getUTCMinutes();
 
-  // 1. 01:00 AM – 05:59 AM (After 12:59 AM cutoff): Strictly 0 bots
+  // 1. ከ ሌሊቱ 7 ሰዓት – እስከ ንጋቱ 12:00 ሰዓት (01:00 AM – 05:59 AM): 0 bots (Sleep Mode)
   if (eatHour >= 1 && eatHour < 6) {
     return { min: 0, max: 0 };
   }
 
-  // 2. 06:00 AM – 11:59 AM: 2 to 10 bots
-  if (eatHour >= 6 && eatHour < 12) {
-    return { min: 2, max: 10 };
+  // 2. ከ ንጋት 12:00 ሰዓት – እስከ ጠዋቱ 2:00 ሰዓት (06:00 AM – 07:59 AM): 10 to 15 bots
+  if (eatHour >= 6 && eatHour < 8) {
+    return { min: 10, max: 15 };
   }
 
-  // 3. 12:00 PM – 03:59 PM: 8 to 20 bots
-  if (eatHour >= 12 && eatHour < 16) {
-    return { min: 8, max: 20 };
+  // 3. ከ ጠዋቱ 2:00 ሰዓት – እስከ ረፋዱ 5:00 ሰዓት (08:00 AM – 10:59 AM): 15 to 20 bots
+  if (eatHour >= 8 && eatHour < 11) {
+    return { min: 15, max: 20 };
   }
 
-  // 4. 04:00 PM – 06:29 PM: 15 to 30 bots
-  if (eatHour >= 16 && (eatHour < 18 || (eatHour === 18 && eatMinute < 30))) {
-    return { min: 15, max: 30 };
+  // 4. ከ ረፋዱ 5:00 ሰዓት – እስከ ከሰዓቱ 7:00 ሰዓት (11:00 AM – 12:59 PM): 20 to 30 bots
+  if (eatHour >= 11 && eatHour < 13) {
+    return { min: 20, max: 30 };
   }
 
-  // 5. 06:30 PM – 08:59 PM: 25 to 42 bots
-  if ((eatHour === 18 && eatMinute >= 30) || (eatHour >= 19 && eatHour < 21)) {
-    return { min: 25, max: 42 };
+  // 5. ከ ከሰዓቱ 7:00 ሰዓት በኋላ – እስከ 9:00 ሰዓት (01:00 PM – 02:59 PM): 35 to 40 bots
+  if (eatHour >= 13 && eatHour < 15) {
+    return { min: 35, max: 40 };
   }
 
-  // 6. 09:00 PM – 10:59 PM: 35 to 50 bots (Super Peak - MAX 50)
-  if (eatHour >= 21 && eatHour < 23) {
-    return { min: 35, max: 50 };
+  // 6. ከ ከሰዓቱ 9:00 ሰዓት በኋላ – እስከ ምሽቱ 5:00 ሰዓት (03:00 PM – 10:59 PM): 40 to 50 bots
+  if (eatHour >= 15 && eatHour < 23) {
+    return { min: 40, max: 50 };
   }
 
-  // 7. 11:00 PM – 12:59 AM: 2 to 15 bots (Tapering before 12:59 AM cutoff)
-  return { min: 2, max: 15 };
+  // 7. ከ ምሽቱ 5:00 ሰዓት በኋላ – እስከ ሌሊቱ 7:00 ሰዓት (11:00 PM – 12:59 AM): 20 to 25 bots
+  return { min: 20, max: 25 };
 }
 
 /**
  * Calculates Room 10's target bot count for the upcoming round:
  * - 0 bots between 01:00 AM and 06:00 AM (sleep mode)
- * - 2 to 20 bots between 06:00 AM and 04:00 PM
- * - 15 to 50 bots between 04:00 PM and 11:00 PM (hard-capped at 50)
+ * - 10 to 50 bots across daytime and evening hours based on Ethiopian clock
  * - Seamless Markovian retention between consecutive rounds (|next - prev| <= 5)
  */
 export function calculateRoom10TargetBots(previousTarget?: number, customDate?: Date): number {

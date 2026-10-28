@@ -19,42 +19,40 @@ async function runTests() {
   console.log('🧪 ROOM 10 HOURLY SCHEDULE & MULTI-ROOM ISOLATION VERIFICATION');
   console.log('===============================================================\n');
 
-  // Test 1: Hourly Bounds Verification (All 24 Hours)
-  console.log('1️⃣ Testing Hourly Bounds Across 24 Hours:');
+  // Test 1: Hourly Bounds Verification (All 7 Ethiopian Time Intervals Across 24 Hours)
+  console.log('1️⃣ Testing Hourly Bounds Across 24 Hours (Ethiopian Clock Schedule):');
   const testCases = [
-    // 01:00 AM – 06:00 AM: STRICTLY 0 BOTS
-    { hour: 1, min: 0, expMin: 0, expMax: 0, label: '01:00 AM (Night Cutoff)' },
-    { hour: 3, min: 30, expMin: 0, expMax: 0, label: '03:30 AM (Deep Night)' },
-    { hour: 5, min: 59, expMin: 0, expMax: 0, label: '05:59 AM (Pre-Dawn)' },
+    // 1. ከ ሌሊቱ 7 ሰዓት – እስከ ንጋቱ 12:00 ሰዓት (01:00 AM – 05:59 AM): 0 bots (Sleep Mode)
+    { hour: 1, min: 0, expMin: 0, expMax: 0, label: '01:00 AM (ከ ሌሊቱ 7:00 ሰዓት - Sleep Mode)' },
+    { hour: 3, min: 30, expMin: 0, expMax: 0, label: '03:30 AM (ሌሊቱ 9:30 ሰዓት - Deep Night)' },
+    { hour: 5, min: 59, expMin: 0, expMax: 0, label: '05:59 AM (እስከ ንጋቱ 12:00 ሰዓት - Pre-Dawn)' },
 
-    // 06:00 AM – 12:00 PM: 2 to 10 bots
-    { hour: 6, min: 0, expMin: 2, expMax: 10, label: '06:00 AM (Morning Wakeup)' },
-    { hour: 9, min: 15, expMin: 2, expMax: 10, label: '09:15 AM (Morning Commute)' },
-    { hour: 11, min: 45, expMin: 2, expMax: 10, label: '11:45 AM (Late Morning)' },
+    // 2. ከ ንጋት 12:00 ሰዓት – እስከ ጠዋቱ 2:00 ሰዓት (06:00 AM – 07:59 AM): 10 to 15 bots
+    { hour: 6, min: 0, expMin: 10, expMax: 15, label: '06:00 AM (ከ ንጋቱ 12:00 ሰዓት - Sunrise)' },
+    { hour: 7, min: 30, expMin: 10, expMax: 15, label: '07:30 AM (ጠዋቱ 1:30 ሰዓት - Morning Warmup)' },
 
-    // 12:00 PM – 04:00 PM: 8 to 20 bots
-    { hour: 12, min: 0, expMin: 8, expMax: 20, label: '12:00 PM (Lunchtime)' },
-    { hour: 14, min: 30, expMin: 8, expMax: 20, label: '02:30 PM (Mid-Afternoon)' },
-    { hour: 15, min: 50, expMin: 8, expMax: 20, label: '03:50 PM (Late Afternoon)' },
+    // 3. ከ ጠዋቱ 2:00 ሰዓት – እስከ ረፋዱ 5:00 ሰዓት (08:00 AM – 10:59 AM): 15 to 20 bots
+    { hour: 8, min: 0, expMin: 15, expMax: 20, label: '08:00 AM (ከ 2:00 ሰዓት - Morning Traffic)' },
+    { hour: 9, min: 30, expMin: 15, expMax: 20, label: '09:30 AM (3:30 ሰዓት - Morning Traffic)' },
+    { hour: 10, min: 59, expMin: 15, expMax: 20, label: '10:59 AM (እስከ 5:00 ሰዓት - Late Morning)' },
 
-    // 04:00 PM – 06:30 PM: 15 to 30 bots
-    { hour: 16, min: 0, expMin: 15, expMax: 30, label: '04:00 PM (Evening Rush Starts)' },
-    { hour: 17, min: 30, expMin: 15, expMax: 30, label: '05:30 PM (Commute Peak)' },
-    { hour: 18, min: 20, expMin: 15, expMax: 30, label: '06:20 PM (Rush Taper)' },
+    // 4. ከ ረፋዱ 5:00 ሰዓት – እስከ ከሰዓቱ 7:00 ሰዓት (11:00 AM – 12:59 PM): 20 to 30 bots
+    { hour: 11, min: 0, expMin: 20, expMax: 30, label: '11:00 AM (ከ 5:00 ሰዓት - Lunchtime Starts)' },
+    { hour: 12, min: 30, expMin: 20, expMax: 30, label: '12:30 PM (6:30 ሰዓት - Lunchtime Peak)' },
 
-    // 06:30 PM – 09:00 PM: 25 to 42 bots
-    { hour: 18, min: 30, expMin: 25, expMax: 42, label: '06:30 PM (Dinner & Relaxation)' },
-    { hour: 19, min: 45, expMin: 25, expMax: 42, label: '07:45 PM (Prime Evening)' },
-    { hour: 20, min: 50, expMin: 25, expMax: 42, label: '08:50 PM (Pre-Peak Evening)' },
+    // 5. ከ ከሰዓቱ 7:00 ሰዓት በኋላ – እስከ 9:00 ሰዓት (01:00 PM – 02:59 PM): 35 to 40 bots
+    { hour: 13, min: 0, expMin: 35, expMax: 40, label: '01:00 PM (ከ 7:00 ሰዓት በኋላ - Afternoon Rush)' },
+    { hour: 14, min: 45, expMin: 35, expMax: 40, label: '02:45 PM (እስከ 9:00 ሰዓት - Pre-Evening)' },
 
-    // 09:00 PM – 11:00 PM: 35 to 50 bots (MAX 50)
-    { hour: 21, min: 0, expMin: 35, expMax: 50, label: '09:00 PM (Super Prime Peak Night)' },
-    { hour: 21, min: 50, expMin: 35, expMax: 50, label: '09:50 PM (Peak Bedtime Gaming - RIGHT NOW)' },
-    { hour: 22, min: 30, expMin: 35, expMax: 50, label: '10:30 PM (Peak Bedtime Gaming)' },
+    // 6. ከ ከሰዓቱ 9:00 ሰዓት በኋላ – እስከ ምሽቱ 5:00 ሰዓት (03:00 PM – 10:59 PM): 40 to 50 bots (MAX 50)
+    { hour: 15, min: 0, expMin: 40, expMax: 50, label: '03:00 PM (ከ 9:00 ሰዓት በኋላ - Peak Rush Starts)' },
+    { hour: 18, min: 30, expMin: 40, expMax: 50, label: '06:30 PM (ምሽቱ 12:30 ሰዓት - Evening Gaming)' },
+    { hour: 20, min: 0, expMin: 40, expMax: 50, label: '08:00 PM (ምሽቱ 2:00 ሰዓት - Prime Time)' },
+    { hour: 22, min: 45, expMin: 40, expMax: 50, label: '10:45 PM (እስከ ምሽቱ 5:00 ሰዓት - Bedtime Peak)' },
 
-    // 11:00 PM – 12:59 AM: 2 to 15 bots (Tapering)
-    { hour: 23, min: 0, expMin: 2, expMax: 15, label: '11:00 PM (Late Night Taper)' },
-    { hour: 0, min: 30, expMin: 2, expMax: 15, label: '12:30 AM (Midnight Winding Down)' }
+    // 7. ከ ምሽቱ 5:00 ሰዓት በኋላ – እስከ ሌሊቱ 7:00 ሰዓት (11:00 PM – 12:59 AM): 20 to 25 bots
+    { hour: 23, min: 0, expMin: 20, expMax: 25, label: '11:00 PM (ከ ምሽቱ 5:00 ሰዓት በኋላ - Late Night Taper)' },
+    { hour: 0, min: 30, expMin: 20, expMax: 25, label: '12:30 AM (እስከ ሌሊቱ 7:00 ሰዓት - Midnight Taper)' }
   ];
 
   for (const tc of testCases) {
@@ -71,13 +69,13 @@ async function runTests() {
         throw new Error(`❌ Target ${target} out of range [${tc.expMin}, ${tc.expMax}] for ${tc.label}`);
       }
     }
-    console.log(`   ✓ ${tc.label.padEnd(42)} -> Target: ${target} bots (Bounds: [${bounds.min}, ${bounds.max}])`);
+    console.log(`   ✓ ${tc.label.padEnd(52)} -> Target: ${target} bots (Bounds: [${bounds.min}, ${bounds.max}])`);
   }
   console.log('✅ All 24-hour schedule bounds verified successfully!\n');
 
-  // Test 2: Markovian Drift Stability in Evening Peak (21:00 - 23:00)
-  console.log('2️⃣ Testing Markovian Drift Stability Across 50 Consecutive Rounds (Peak Hours):');
-  const peakDate = createDateAtEATHour(22, 0); // 10:00 PM
+  // Test 2: Markovian Drift Stability in Evening Super Peak (15:00 - 23:00 EAT -> 40 to 50 bots)
+  console.log('2️⃣ Testing Markovian Drift Stability Across 50 Consecutive Rounds (Peak Hours 40-50 Bots):');
+  const peakDate = createDateAtEATHour(20, 0); // 08:00 PM EAT
   let currentTarget = calculateRoom10TargetBots(undefined, peakDate);
   console.log(`   • Initial Round 1 Target: ${currentTarget} bots`);
 
@@ -87,8 +85,8 @@ async function runTests() {
     if (delta > 5) {
       throw new Error(`❌ Excessive drift in Round ${round}: previous=${currentTarget}, next=${nextTarget}, delta=${delta}`);
     }
-    if (nextTarget < 35 || nextTarget > 50) {
-      throw new Error(`❌ Peak bounds violated in Round ${round}: target=${nextTarget} (expected [35, 50])`);
+    if (nextTarget < 40 || nextTarget > 50) {
+      throw new Error(`❌ Peak bounds violated in Round ${round}: target=${nextTarget} (expected [40, 50])`);
     }
     currentTarget = nextTarget;
   }
