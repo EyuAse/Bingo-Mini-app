@@ -235,7 +235,7 @@ export const TelegramBotDesk: React.FC = () => {
           if (!targetChatId && sData.config?.channelId) {
             setTargetChatId(sData.config.channelId);
           }
-          const defaultUrl = sData.config?.webAppUrl || (sData.bot?.username ? `https://t.me/${sData.bot.username}/play` : window.location.origin);
+          const defaultUrl = sData.bot?.username ? `https://t.me/${sData.bot.username}/play` : (sData.config?.webAppUrl || window.location.origin);
           if (!adButtonUrl) {
             setAdButtonUrl(defaultUrl);
           }
@@ -311,8 +311,8 @@ export const TelegramBotDesk: React.FC = () => {
     setAdText(preset.text);
     setAdPhoto(preset.photo);
     setAdButtonText(preset.buttonText);
-    const activeUrl = webAppUrl || (status?.bot?.username ? `https://t.me/${status.bot.username}/play` : '');
-    setAdButtonUrl(activeUrl);
+    const botUser = status?.bot?.username || 'LomiBingobot';
+    setAdButtonUrl(`https://t.me/${botUser}/play`);
     setTargetType('all_users');
     showToast(`✨ Loaded preset: ${preset.name}`);
   };
@@ -1341,40 +1341,38 @@ export const TelegramBotDesk: React.FC = () => {
                   <div style={{ display: 'flex', gap: '4px' }}>
                     <button
                       type="button"
-                      onClick={() => setAdButtonUrl(webAppUrl)}
+                      onClick={() => setAdButtonUrl(`https://t.me/${status?.bot?.username || 'LomiBingobot'}/play`)}
                       style={{
                         background: '#f0fdf4',
                         color: '#166534',
                         border: '1px solid #bbf7d0',
                         borderRadius: '6px',
-                        padding: '2px 6px',
+                        padding: '2px 8px',
                         fontSize: '11px',
                         fontWeight: 700,
                         cursor: 'pointer'
                       }}
-                      title="Set to Cloudflare WebApp URL"
+                      title="Direct Mini App Link (Opens directly inside Telegram without browser prompt)"
                     >
-                      🌐 Cloudflare URL
+                      🚀 t.me/play (Direct In-App)
                     </button>
-                    {status?.bot?.username && (
-                      <button
-                        type="button"
-                        onClick={() => setAdButtonUrl(`https://t.me/${status?.bot?.username || 'LomiBingobot'}/play`)}
-                        style={{
-                          background: '#f0f9ff',
-                          color: '#0369a1',
-                          border: '1px solid #bae6fd',
-                          borderRadius: '6px',
-                          padding: '2px 6px',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          cursor: 'pointer'
-                        }}
-                        title="Set to Telegram Direct Mini App Link"
-                      >
-                        🤖 t.me/play
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setAdButtonUrl(webAppUrl)}
+                      style={{
+                        background: '#f8fafc',
+                        color: '#475569',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        padding: '2px 8px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                      title="Cloudflare WebApp URL"
+                    >
+                      🌐 Cloudflare Web URL
+                    </button>
                   </div>
                 </div>
                 <input

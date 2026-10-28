@@ -566,13 +566,11 @@ export class TelegramBotService {
       const btnUrl = opts.buttonUrl || cfg.webAppUrl;
       if (btnUrl) {
         if (opts.targetType === 'channel' || opts.targetType === 'group') {
-          // In channels/groups, prioritize the versioned Cloudflare WebApp URL or custom destination
+          // In Telegram channels/groups, Telegram requires a Direct Mini App link (https://t.me/<bot>/<app>)
+          // so Telegram natively opens the in-app Mini App modal instead of prompting an external browser link.
           let channelBtnUrl = (opts.buttonUrl || '').trim();
-          if (!channelBtnUrl || channelBtnUrl.includes('onrender.com')) {
-            channelBtnUrl = cfg.webAppUrl || `https://t.me/${botUser}/play`;
-          }
-          if (channelBtnUrl.startsWith('http') && !channelBtnUrl.includes('t.me')) {
-            channelBtnUrl = this.getVersionedWebAppUrl(channelBtnUrl);
+          if (!channelBtnUrl || channelBtnUrl.includes('onrender.com') || channelBtnUrl.includes('workers.dev') || channelBtnUrl.includes('pages.dev') || channelBtnUrl === cfg.webAppUrl) {
+            channelBtnUrl = `https://t.me/${botUser}/play`;
           }
           inlineKeyboard.push([
             { text: opts.buttonText, url: channelBtnUrl }
@@ -915,11 +913,8 @@ export class TelegramBotService {
         const channelKeyboard: any[][] = [];
         if (opts.buttonText) {
           let channelBtnUrl = (opts.buttonUrl || '').trim();
-          if (!channelBtnUrl || channelBtnUrl.includes('onrender.com')) {
-            channelBtnUrl = cfg.webAppUrl || `https://t.me/${botUser}/play`;
-          }
-          if (channelBtnUrl.startsWith('http') && !channelBtnUrl.includes('t.me')) {
-            channelBtnUrl = this.getVersionedWebAppUrl(channelBtnUrl);
+          if (!channelBtnUrl || channelBtnUrl.includes('onrender.com') || channelBtnUrl.includes('workers.dev') || channelBtnUrl.includes('pages.dev') || channelBtnUrl === cfg.webAppUrl) {
+            channelBtnUrl = `https://t.me/${botUser}/play`;
           }
           channelKeyboard.push([{ text: opts.buttonText, url: channelBtnUrl }]);
         }
@@ -993,9 +988,7 @@ export class TelegramBotService {
 
     const meRes = await this.getMe();
     const botUser = meRes.result?.username || 'LomiBingobot';
-    const channelPlayUrl = cfg.webAppUrl
-      ? this.getVersionedWebAppUrl(cfg.webAppUrl)
-      : `https://t.me/${botUser}/play`;
+    const channelPlayUrl = `https://t.me/${botUser}/play`;
 
     const inlineKeyboard = [
       [{ text: '🎯 Play Bingo Now & Win!', url: channelPlayUrl }]

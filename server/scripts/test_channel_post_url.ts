@@ -47,10 +47,10 @@ async function testChannelPostUrlResolution() {
   if (btnUrl1.includes('onrender.com')) {
     throw new Error(`CRITICAL: Channel post button contains old render link: ${btnUrl1}`);
   }
-  if (!btnUrl1.includes('workers.dev') && !btnUrl1.includes('pages.dev')) {
-    throw new Error(`Expected Cloudflare URL in channel button, got: ${btnUrl1}`);
+  if (!btnUrl1.includes('t.me') || !btnUrl1.includes('/play')) {
+    throw new Error(`Expected native direct Mini App link (https://t.me/<bot>/play) so Telegram opens in-app, got: ${btnUrl1}`);
   }
-  console.log('   ✓ PASS: Default channel post successfully generates Cloudflare URL with 0 render links!\n');
+  console.log('   ✓ PASS: Default channel post successfully generates native in-app Mini App link (https://t.me/<bot>/play) with 0 render links!\n');
 
   // ---------------------------------------------------------------------------
   // TEST SCENARIO 2: Channel post where admin accidentally entered an old onrender link
@@ -72,18 +72,18 @@ async function testChannelPostUrlResolution() {
   if (btnUrl2.includes('onrender.com')) {
     throw new Error(`CRITICAL: Legacy onrender.com URL was not sanitized: ${btnUrl2}`);
   }
-  if (!btnUrl2.includes('workers.dev') && !btnUrl2.includes('pages.dev')) {
-    throw new Error(`Expected Cloudflare URL after sanitizing onrender link, got: ${btnUrl2}`);
+  if (!btnUrl2.includes('t.me') || !btnUrl2.includes('/play')) {
+    throw new Error(`Expected native direct link after sanitizing onrender link, got: ${btnUrl2}`);
   }
-  console.log('   ✓ PASS: Accidental onrender.com URL automatically replaced with Cloudflare WebApp URL!\n');
+  console.log('   ✓ PASS: Accidental onrender.com URL automatically replaced with native direct Mini App link!\n');
 
   // ---------------------------------------------------------------------------
-  // TEST SCENARIO 3: Channel post with explicit valid Cloudflare link
+  // TEST SCENARIO 3: Channel post with raw Cloudflare URL converts to native in-app link
   // ---------------------------------------------------------------------------
-  console.log('4️⃣ [Test 3] Channel Post with explicit Cloudflare workers.dev URL...');
+  console.log('4️⃣ [Test 3] Channel Post with raw Cloudflare workers.dev URL converts to in-app link...');
   capturedPayload = null;
   await telegramBotService.broadcast({
-    title: 'Test Explicit Cloudflare URL',
+    title: 'Test Cloudflare In-App Conversion',
     messageText: 'Test message body',
     buttonText: '🎮 Play Bingo Now',
     buttonUrl: 'https://bingo-mini-app.asefaeyob962.workers.dev',
@@ -97,10 +97,10 @@ async function testChannelPostUrlResolution() {
   if (btnUrl3.includes('onrender.com')) {
     throw new Error(`CRITICAL: Old render link appeared: ${btnUrl3}`);
   }
-  if (!btnUrl3.startsWith('https://bingo-mini-app.asefaeyob962.workers.dev')) {
-    throw new Error(`Expected explicit Cloudflare URL preserved, got: ${btnUrl3}`);
+  if (!btnUrl3.includes('t.me') || !btnUrl3.includes('/play')) {
+    throw new Error(`Expected native direct link so Telegram opens in-app, got: ${btnUrl3}`);
   }
-  console.log('   ✓ PASS: Explicit Cloudflare link preserved with versioning!\n');
+  console.log('   ✓ PASS: Cloudflare URL automatically mapped to native in-app link (https://t.me/<bot>/play) so Telegram opens the native Mini App without external browser prompt!\n');
 
   // ---------------------------------------------------------------------------
   // TEST SCENARIO 4: Restore callApi and finish
