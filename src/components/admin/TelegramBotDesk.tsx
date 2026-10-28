@@ -235,9 +235,9 @@ export const TelegramBotDesk: React.FC = () => {
           if (!targetChatId && sData.config?.channelId) {
             setTargetChatId(sData.config.channelId);
           }
-          const botUsername = sData.bot?.username || 'LomiBingobot';
+          const defaultUrl = sData.config?.webAppUrl || (sData.bot?.username ? `https://t.me/${sData.bot.username}/play` : window.location.origin);
           if (!adButtonUrl) {
-            setAdButtonUrl(`https://t.me/${botUsername}/play`);
+            setAdButtonUrl(defaultUrl);
           }
           handleVerifyChannel(sData.config?.channelId || '@lomibingo_official');
         }
@@ -311,8 +311,8 @@ export const TelegramBotDesk: React.FC = () => {
     setAdText(preset.text);
     setAdPhoto(preset.photo);
     setAdButtonText(preset.buttonText);
-    const botUser = status?.bot?.username || 'LomiBingobot';
-    setAdButtonUrl(`https://t.me/${botUser}/play`);
+    const activeUrl = webAppUrl || (status?.bot?.username ? `https://t.me/${status.bot.username}/play` : '');
+    setAdButtonUrl(activeUrl);
     setTargetType('all_users');
     showToast(`✨ Loaded preset: ${preset.name}`);
   };
@@ -1334,9 +1334,49 @@ export const TelegramBotDesk: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Button URL (Defaults to Mini App)
-                </label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                    Button URL (Mini App Destination)
+                  </label>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setAdButtonUrl(webAppUrl)}
+                      style={{
+                        background: '#f0fdf4',
+                        color: '#166534',
+                        border: '1px solid #bbf7d0',
+                        borderRadius: '6px',
+                        padding: '2px 6px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                      title="Set to Cloudflare WebApp URL"
+                    >
+                      🌐 Cloudflare URL
+                    </button>
+                    {status?.bot?.username && (
+                      <button
+                        type="button"
+                        onClick={() => setAdButtonUrl(`https://t.me/${status?.bot?.username || 'LomiBingobot'}/play`)}
+                        style={{
+                          background: '#f0f9ff',
+                          color: '#0369a1',
+                          border: '1px solid #bae6fd',
+                          borderRadius: '6px',
+                          padding: '2px 6px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                        title="Set to Telegram Direct Mini App Link"
+                      >
+                        🤖 t.me/play
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <input
                   type="text"
                   value={adButtonUrl}
@@ -1352,6 +1392,12 @@ export const TelegramBotDesk: React.FC = () => {
                     boxSizing: 'border-box'
                   }}
                 />
+                {adButtonUrl && adButtonUrl.includes('onrender.com') && (
+                  <div style={{ marginTop: '4px', fontSize: '11px', color: '#b45309', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <i className="fa-solid fa-triangle-exclamation"></i>
+                    Render URL detected: The system will automatically use Cloudflare to protect your Render bandwidth.
+                  </div>
+                )}
               </div>
             </div>
 

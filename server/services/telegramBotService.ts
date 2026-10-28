@@ -566,11 +566,12 @@ export class TelegramBotService {
       const btnUrl = opts.buttonUrl || cfg.webAppUrl;
       if (btnUrl) {
         if (opts.targetType === 'channel' || opts.targetType === 'group') {
-          // In channels/groups, use native Telegram Mini App direct link https://t.me/<bot>/play
+          // In channels/groups, prioritize the versioned Cloudflare WebApp URL or custom destination
           let channelBtnUrl = (opts.buttonUrl || '').trim();
-          if (!channelBtnUrl || channelBtnUrl.includes('onrender.com') || channelBtnUrl === cfg.webAppUrl) {
-            channelBtnUrl = `https://t.me/${botUser}/play`;
-          } else if (channelBtnUrl.startsWith('http') && !channelBtnUrl.includes('t.me')) {
+          if (!channelBtnUrl || channelBtnUrl.includes('onrender.com')) {
+            channelBtnUrl = cfg.webAppUrl || `https://t.me/${botUser}/play`;
+          }
+          if (channelBtnUrl.startsWith('http') && !channelBtnUrl.includes('t.me')) {
             channelBtnUrl = this.getVersionedWebAppUrl(channelBtnUrl);
           }
           inlineKeyboard.push([
@@ -586,7 +587,7 @@ export class TelegramBotService {
               const match = btnUrl.match(/startapp=([^&]+)/);
               if (match) startParam = decodeURIComponent(match[1]);
             }
-            const targetWebUrl = (!btnUrl || btnUrl.includes('t.me')) ? (cfg.webAppUrl || 'https://bingo-mini-app-3li9.onrender.com') : btnUrl;
+            const targetWebUrl = (!btnUrl || btnUrl.includes('t.me')) ? (cfg.webAppUrl || 'https://bingo-mini-app.asefaeyob962.workers.dev') : btnUrl;
             const versionedUrl = this.getVersionedWebAppUrl(targetWebUrl, startParam);
             inlineKeyboard.push([
               { text: opts.buttonText, web_app: { url: versionedUrl } }
@@ -784,8 +785,8 @@ export class TelegramBotService {
     // Persist as active in-bot promotion for /promo
     try {
       let activeBtnUrl = (opts.buttonUrl || '').trim();
-      if (!activeBtnUrl || activeBtnUrl.includes('onrender.com') || activeBtnUrl === cfg.webAppUrl) {
-        activeBtnUrl = `https://t.me/${botUser}/play`;
+      if (!activeBtnUrl || activeBtnUrl.includes('onrender.com')) {
+        activeBtnUrl = cfg.webAppUrl || `https://t.me/${botUser}/play`;
       }
       await query(
         `INSERT INTO admin_settings (key, value, updated_at)
@@ -914,9 +915,10 @@ export class TelegramBotService {
         const channelKeyboard: any[][] = [];
         if (opts.buttonText) {
           let channelBtnUrl = (opts.buttonUrl || '').trim();
-          if (!channelBtnUrl || channelBtnUrl.includes('onrender.com') || channelBtnUrl === cfg.webAppUrl) {
-            channelBtnUrl = `https://t.me/${botUser}/play`;
-          } else if (channelBtnUrl.startsWith('http') && !channelBtnUrl.includes('t.me')) {
+          if (!channelBtnUrl || channelBtnUrl.includes('onrender.com')) {
+            channelBtnUrl = cfg.webAppUrl || `https://t.me/${botUser}/play`;
+          }
+          if (channelBtnUrl.startsWith('http') && !channelBtnUrl.includes('t.me')) {
             channelBtnUrl = this.getVersionedWebAppUrl(channelBtnUrl);
           }
           channelKeyboard.push([{ text: opts.buttonText, url: channelBtnUrl }]);
@@ -991,7 +993,9 @@ export class TelegramBotService {
 
     const meRes = await this.getMe();
     const botUser = meRes.result?.username || 'LomiBingobot';
-    const channelPlayUrl = `https://t.me/${botUser}/play`;
+    const channelPlayUrl = cfg.webAppUrl
+      ? this.getVersionedWebAppUrl(cfg.webAppUrl)
+      : `https://t.me/${botUser}/play`;
 
     const inlineKeyboard = [
       [{ text: '🎯 Play Bingo Now & Win!', url: channelPlayUrl }]
