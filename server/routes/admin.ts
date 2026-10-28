@@ -22,12 +22,37 @@ router.get('/users', requireAdmin, async (req, res) => {
     }
     const offset = (page - 1) * limit;
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    const sortBy = typeof req.query.sortBy === 'string' ? req.query.sortBy.trim() : 'newest';
+    const segment = typeof req.query.segment === 'string' ? req.query.segment.trim() : 'all';
+
+    // Map allowed sort orders to secure SQL expressions
+    const SORT_MAP: Record<string, string> = {
+      'balance-desc': 'COALESCE(w.balance, 0) DESC, u.created_at DESC',
+      'deposit-desc': '"totalDeposited" DESC, u.created_at DESC',
+      'referrals-desc': '"referralCount" DESC, u.created_at DESC',
+      'newest': 'u.created_at DESC'
+    };
+    const orderClause = SORT_MAP[sortBy] || SORT_MAP['newest'];
+
+    // Map segment filters to secure SQL conditions
+    let segmentCondition = '';
+    if (segment === 'active') {
+      segmentCondition = " AND u.status = 'active'";
+    } else if (segment === 'suspended') {
+      segmentCondition = " AND u.status = 'suspended'";
+    } else if (segment === 'vip') {
+      segmentCondition = " AND COALESCE((SELECT SUM(amount) FROM deposit_requests WHERE user_id = u.id AND status = 'approved'), 0) >= 1000";
+    } else if (segment === 'bonus') {
+      segmentCondition = " AND COALESCE(w.bonus, 0) > 0";
+    }
 
     const countQuery = `
       SELECT 
         COUNT(*) as total_count,
         COUNT(*) FILTER (WHERE u.status = 'active') as active_count,
         COUNT(*) FILTER (WHERE u.status = 'suspended') as suspended_count,
+        COUNT(*) FILTER (WHERE COALESCE((SELECT SUM(amount) FROM deposit_requests WHERE user_id = u.id AND status = 'approved'), 0) >= 1000) as vip_count,
+        COUNT(*) FILTER (WHERE COALESCE(w.bonus, 0) > 0) as bonus_count,
         COALESCE(SUM(w.balance), 0) as total_cash_float,
         COALESCE(SUM(w.bonus), 0) as total_bonus_float
       FROM users u
@@ -37,19 +62,33 @@ router.get('/users', requireAdmin, async (req, res) => {
         AND u.full_name NOT LIKE 'Synthetic%'
     `;
 
-    const searchCountQuery = `
-      SELECT COUNT(*) as filtered_count
-      FROM users u
-      WHERE u.role = 'player' 
-        AND (u.is_bot IS NULL OR u.is_bot = false)
-        AND u.full_name NOT LIKE 'Synthetic%'
-        AND (
-          u.full_name ILIKE $1 
-          OR u.phone ILIKE $1 
-          OR u.telegram_username ILIKE $1 
-          OR CAST(u.telegram_id AS TEXT) ILIKE $1
-        )
-    `;
+    const hasFilter = Boolean(search || segmentCondition);
+
+    const filterCountQuery = search
+      ? `
+        SELECT COUNT(*) as filtered_count
+        FROM users u
+        LEFT JOIN wallets w ON u.id = w.user_id
+        WHERE u.role = 'player' 
+          AND (u.is_bot IS NULL OR u.is_bot = false)
+          AND u.full_name NOT LIKE 'Synthetic%'
+          ${segmentCondition}
+          AND (
+            u.full_name ILIKE $1 
+            OR u.phone ILIKE $1 
+            OR u.telegram_username ILIKE $1 
+            OR CAST(u.telegram_id AS TEXT) ILIKE $1
+          )
+      `
+      : `
+        SELECT COUNT(*) as filtered_count
+        FROM users u
+        LEFT JOIN wallets w ON u.id = w.user_id
+        WHERE u.role = 'player' 
+          AND (u.is_bot IS NULL OR u.is_bot = false)
+          AND u.full_name NOT LIKE 'Synthetic%'
+          ${segmentCondition}
+      `;
 
     const usersQuery = search
       ? `
@@ -72,13 +111,14 @@ router.get('/users', requireAdmin, async (req, res) => {
         WHERE u.role = 'player' 
           AND (u.is_bot IS NULL OR u.is_bot = false)
           AND u.full_name NOT LIKE 'Synthetic%'
+          ${segmentCondition}
           AND (
             u.full_name ILIKE $1 
             OR u.phone ILIKE $1 
             OR u.telegram_username ILIKE $1 
             OR CAST(u.telegram_id AS TEXT) ILIKE $1
           )
-        ORDER BY u.created_at DESC
+        ORDER BY ${orderClause}
         LIMIT $2 OFFSET $3
       `
       : `
@@ -101,24 +141,33 @@ router.get('/users', requireAdmin, async (req, res) => {
         WHERE u.role = 'player' 
           AND (u.is_bot IS NULL OR u.is_bot = false)
           AND u.full_name NOT LIKE 'Synthetic%'
-        ORDER BY u.created_at DESC
+          ${segmentCondition}
+        ORDER BY ${orderClause}
         LIMIT $1 OFFSET $2
       `;
 
-    const [countRes, searchCountRes, usersRes] = await Promise.all([
+    const [countRes, filterCountRes, usersRes] = await Promise.all([
       query(countQuery),
-      search ? query(searchCountQuery, [`%${search}%`]) : Promise.resolve({ rows: [] } as any),
-      search ? query(usersQuery, [`%${search}%`, limit, offset]) : query(usersQuery, [limit, offset])
+      hasFilter
+        ? (search ? query(filterCountQuery, [`%${search}%`]) : query(filterCountQuery))
+        : Promise.resolve({ rows: [] } as any),
+      search
+        ? query(usersQuery, [`%${search}%`, limit, offset])
+        : query(usersQuery, [limit, offset])
     ]);
 
     const statsRow = countRes.rows[0] || {};
     const totalCount = parseInt(statsRow.total_count || '0', 10);
-    const filteredCount = search ? parseInt(searchCountRes.rows[0]?.filtered_count || '0', 10) : totalCount;
+    const filteredCount = hasFilter
+      ? parseInt(filterCountRes.rows[0]?.filtered_count || '0', 10)
+      : totalCount;
 
     const stats = {
       totalPlayers: totalCount,
       activePlayers: parseInt(statsRow.active_count || '0', 10),
       suspendedPlayers: parseInt(statsRow.suspended_count || '0', 10),
+      vipPlayers: parseInt(statsRow.vip_count || '0', 10),
+      bonusPlayers: parseInt(statsRow.bonus_count || '0', 10),
       totalCashFloat: parseFloat(statsRow.total_cash_float || '0'),
       totalBonusFloat: parseFloat(statsRow.total_bonus_float || '0')
     };
@@ -147,6 +196,8 @@ router.get('/users', requireAdmin, async (req, res) => {
       page,
       limit,
       totalPages: Math.ceil(filteredCount / limit) || 1,
+      sortBy,
+      segment,
       stats
     });
   } catch (error: any) {

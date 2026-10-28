@@ -23,6 +23,8 @@ export interface UserStats {
   totalPlayers: number;
   activePlayers: number;
   suspendedPlayers: number;
+  vipPlayers?: number;
+  bonusPlayers?: number;
   totalCashFloat: number;
   totalBonusFloat: number;
 }
@@ -139,7 +141,9 @@ interface AdminContextType {
   usersTotalPages: number;
   isUsersLoading: boolean;
   usersSearchQuery: string;
-  fetchUsers: (params?: { page?: number; limit?: number; search?: string }) => Promise<void>;
+  usersSortBy: string;
+  usersSegment: string;
+  fetchUsers: (params?: { page?: number; limit?: number; search?: string; sortBy?: string; segment?: string }) => Promise<void>;
   addUser: (user: Partial<UserAccount>) => void;
   adjustUserBalance: (userId: string, amount: number, isBonus?: boolean) => void;
   toggleUserStatus: (userId: string) => void;
@@ -361,6 +365,8 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [usersTotalPages, setUsersTotalPages] = useState<number>(1);
   const [isUsersLoading, setIsUsersLoading] = useState<boolean>(false);
   const [usersSearchQuery, setUsersSearchQuery] = useState<string>('');
+  const [usersSortBy, setUsersSortBy] = useState<string>('balance-desc');
+  const [usersSegment, setUsersSegment] = useState<string>('all');
   const [transactions, setTransactions] = useState<TransactionRequest[]>([]);
   const [totalDepositedToday, setTotalDepositedToday] = useState<number>(0);
   const [totalWithdrawnToday, setTotalWithdrawnToday] = useState<number>(0);
@@ -370,14 +376,22 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [todayNetCashProfit, setTodayNetCashProfit] = useState<number>(0);
 
   // Dedicated Paginated & Searchable User Fetch
-  const fetchUsers = useCallback(async (params?: { page?: number; limit?: number; search?: string }) => {
+  const fetchUsers = useCallback(async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    segment?: string;
+  }) => {
     setIsUsersLoading(true);
     try {
       const page = params?.page ?? usersPage;
       const limit = params?.limit ?? usersLimit;
       const search = params?.search !== undefined ? params.search : usersSearchQuery;
+      const sortBy = params?.sortBy !== undefined ? params.sortBy : usersSortBy;
+      const segment = params?.segment !== undefined ? params.segment : usersSegment;
 
-      const usersRes = await apiClient.admin.getUsers({ page, limit, search }).catch(() => ({
+      const usersRes = await apiClient.admin.getUsers({ page, limit, search, sortBy, segment }).catch(() => ({
         success: false,
         users: [],
         totalCount: 0,
@@ -385,6 +399,8 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         page: 1,
         limit: 50,
         totalPages: 1,
+        sortBy: 'newest',
+        segment: 'all',
         stats: null
       }));
 
@@ -409,6 +425,8 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (usersRes.limit) setUsersLimit(usersRes.limit);
         if (usersRes.totalPages) setUsersTotalPages(usersRes.totalPages);
         if (params?.search !== undefined) setUsersSearchQuery(params.search);
+        if (params?.sortBy !== undefined) setUsersSortBy(params.sortBy);
+        if (params?.segment !== undefined) setUsersSegment(params.segment);
         if (usersRes.stats) {
           setUserStats(usersRes.stats);
         }
@@ -418,7 +436,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } finally {
       setIsUsersLoading(false);
     }
-  }, [usersPage, usersLimit, usersSearchQuery]);
+  }, [usersPage, usersLimit, usersSearchQuery, usersSortBy, usersSegment]);
 
   // Fetch Live Real Data from Neon PostgreSQL
   const refreshAdminData = useCallback(async () => {
@@ -789,6 +807,8 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         usersTotalPages,
         isUsersLoading,
         usersSearchQuery,
+        usersSortBy,
+        usersSegment,
         fetchUsers,
         addUser,
         adjustUserBalance,

@@ -12,6 +12,8 @@ export const PlayerAccountsDesk: React.FC = () => {
     usersTotalPages,
     isUsersLoading,
     usersSearchQuery,
+    usersSortBy,
+    usersSegment,
     fetchUsers,
     adjustUserBalance,
     toggleUserStatus,
@@ -20,10 +22,8 @@ export const PlayerAccountsDesk: React.FC = () => {
 
   const { showToast } = useApp();
 
-  // Search, Segment & Sort states
+  // Search state (synced with usersSearchQuery)
   const [searchInput, setSearchInput] = useState(usersSearchQuery || '');
-  const [segmentFilter, setSegmentFilter] = useState<'all' | 'active' | 'suspended' | 'vip' | 'bonus'>('all');
-  const [sortBy, setSortBy] = useState<'balance-desc' | 'deposit-desc' | 'referrals-desc' | 'newest'>('balance-desc');
 
   // Modal states
   const [adjustTargetUser, setAdjustTargetUser] = useState<UserAccount | null>(null);
@@ -38,44 +38,35 @@ export const PlayerAccountsDesk: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchInput !== usersSearchQuery) {
-        fetchUsers({ page: 1, limit: usersLimit, search: searchInput.trim() });
+        fetchUsers({ page: 1, limit: usersLimit, search: searchInput.trim(), sortBy: usersSortBy, segment: usersSegment });
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchInput, usersLimit, usersSearchQuery, fetchUsers]);
+  }, [searchInput, usersLimit, usersSearchQuery, usersSortBy, usersSegment, fetchUsers]);
 
   const handleClearSearch = () => {
     setSearchInput('');
-    fetchUsers({ page: 1, limit: usersLimit, search: '' });
+    fetchUsers({ page: 1, limit: usersLimit, search: '', sortBy: usersSortBy, segment: usersSegment });
   };
 
-  // Calculations for KPI Cards (Filtered to genuine players)
-  const playerUsers = users.filter(u => u.role !== 'admin');
-  const totalPlayers = totalUsersCount || userStats?.totalPlayers || playerUsers.length;
-  const activePlayers = userStats?.activePlayers ?? playerUsers.filter(u => u.status === 'active').length;
-  const suspendedPlayers = userStats?.suspendedPlayers ?? playerUsers.filter(u => u.status === 'suspended').length;
-  const totalCashFloat = userStats?.totalCashFloat ?? playerUsers.reduce((acc, u) => acc + (u.balance || 0), 0);
-  const totalBonusFloat = userStats?.totalBonusFloat ?? playerUsers.reduce((acc, u) => acc + (u.bonus || 0), 0);
-  const vipPlayers = playerUsers.filter(u => (u.totalDeposited || 0) >= 1000);
+  const handleSegmentChange = (newSegment: 'all' | 'active' | 'suspended' | 'vip' | 'bonus') => {
+    fetchUsers({ page: 1, limit: usersLimit, search: searchInput.trim(), sortBy: usersSortBy, segment: newSegment });
+  };
 
-  // Filter Logic (In addition to server-side search, segment filters refine current view)
-  const filteredUsers = playerUsers.filter(user => {
-    // Segment filter
-    if (segmentFilter === 'active' && user.status !== 'active') return false;
-    if (segmentFilter === 'suspended' && user.status !== 'suspended') return false;
-    if (segmentFilter === 'vip' && (user.totalDeposited || 0) < 1000) return false;
-    if (segmentFilter === 'bonus' && (user.bonus || 0) <= 0) return false;
-    return true;
-  });
+  const handleSortChange = (newSort: string) => {
+    fetchUsers({ page: 1, limit: usersLimit, search: searchInput.trim(), sortBy: newSort, segment: usersSegment });
+  };
 
-  // Sorting
-  filteredUsers.sort((a, b) => {
-    if (sortBy === 'balance-desc') return (b.balance || 0) - (a.balance || 0);
-    if (sortBy === 'deposit-desc') return (b.totalDeposited || 0) - (a.totalDeposited || 0);
-    if (sortBy === 'referrals-desc') return (b.referralCount || 0) - (a.referralCount || 0);
-    if (sortBy === 'newest') return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    return b.id.localeCompare(a.id);
-  });
+  // Platform-wide calculations from Neon DB stats
+  const displayUsers = users.filter(u => u.role !== 'admin');
+  const totalPlayers = userStats?.totalPlayers ?? totalUsersCount;
+  const currentViewTotal = totalUsersCount;
+  const activePlayers = userStats?.activePlayers ?? 0;
+  const suspendedPlayers = userStats?.suspendedPlayers ?? 0;
+  const totalCashFloat = userStats?.totalCashFloat ?? 0;
+  const totalBonusFloat = userStats?.totalBonusFloat ?? 0;
+  const vipPlayersCount = userStats?.vipPlayers ?? 0;
+  const bonusPlayersCount = userStats?.bonusPlayers ?? 0;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -209,7 +200,7 @@ export const PlayerAccountsDesk: React.FC = () => {
               <i className="fa-solid fa-crown"></i>
             </div>
           </div>
-          <div className="pkpi-value gold">{vipPlayers.length} <span className="pkpi-unit">VIPs</span></div>
+          <div className="pkpi-value gold">{vipPlayersCount} <span className="pkpi-unit">VIPs</span></div>
           <div className="pkpi-footer">
             <span className="pkpi-badge gold">&gt;1,000 ETB Deposits</span>
             <span className="pkpi-micro-text">100% Verified</span>
@@ -236,37 +227,37 @@ export const PlayerAccountsDesk: React.FC = () => {
             <div className="player-filter-pills-group">
               <button
                 type="button"
-                className={`btn-player-pill ${segmentFilter === 'all' ? 'active' : ''}`}
-                onClick={() => setSegmentFilter('all')}
+                className={`btn-player-pill ${usersSegment === 'all' ? 'active' : ''}`}
+                onClick={() => handleSegmentChange('all')}
               >
                 All ({totalPlayers})
               </button>
               <button
                 type="button"
-                className={`btn-player-pill ${segmentFilter === 'active' ? 'active' : ''}`}
-                onClick={() => setSegmentFilter('active')}
+                className={`btn-player-pill ${usersSegment === 'active' ? 'active' : ''}`}
+                onClick={() => handleSegmentChange('active')}
               >
                 Active ({activePlayers})
               </button>
               <button
                 type="button"
-                className={`btn-player-pill ${segmentFilter === 'vip' ? 'active' : ''}`}
-                onClick={() => setSegmentFilter('vip')}
+                className={`btn-player-pill ${usersSegment === 'vip' ? 'active' : ''}`}
+                onClick={() => handleSegmentChange('vip')}
               >
-                VIP High-Rollers ({vipPlayers.length})
+                VIP High-Rollers ({vipPlayersCount})
               </button>
               <button
                 type="button"
-                className={`btn-player-pill ${segmentFilter === 'bonus' ? 'active' : ''}`}
-                onClick={() => setSegmentFilter('bonus')}
+                className={`btn-player-pill ${usersSegment === 'bonus' ? 'active' : ''}`}
+                onClick={() => handleSegmentChange('bonus')}
               >
-                With Bonus
+                With Bonus ({bonusPlayersCount})
               </button>
               {suspendedPlayers > 0 && (
                 <button
                   type="button"
-                  className={`btn-player-pill ${segmentFilter === 'suspended' ? 'active' : ''}`}
-                  onClick={() => setSegmentFilter('suspended')}
+                  className={`btn-player-pill ${usersSegment === 'suspended' ? 'active' : ''}`}
+                  onClick={() => handleSegmentChange('suspended')}
                 >
                   Suspended ({suspendedPlayers})
                 </button>
@@ -279,7 +270,7 @@ export const PlayerAccountsDesk: React.FC = () => {
               value={usersLimit}
               onChange={e => {
                 const newLimit = parseInt(e.target.value, 10);
-                fetchUsers({ page: 1, limit: newLimit, search: searchInput.trim() });
+                fetchUsers({ page: 1, limit: newLimit, search: searchInput.trim(), sortBy: usersSortBy, segment: usersSegment });
               }}
               title="Items per page"
             >
@@ -292,8 +283,8 @@ export const PlayerAccountsDesk: React.FC = () => {
             {/* Sort Selector */}
             <select
               className="player-sort-select"
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value as any)}
+              value={usersSortBy}
+              onChange={e => handleSortChange(e.target.value)}
             >
               <option value="balance-desc">Highest Cash Balance</option>
               <option value="deposit-desc">Highest Lifetime Deposits</option>
@@ -343,7 +334,7 @@ export const PlayerAccountsDesk: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length === 0 ? (
+              {displayUsers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="empty-player-cell">
                     <div className="empty-player-wrap">
@@ -353,7 +344,7 @@ export const PlayerAccountsDesk: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map(user => {
+                displayUsers.map(user => {
                   const isVip = (user.totalDeposited || 0) >= 1000;
                   const isActive = user.status === 'active';
                   const totalIn = user.totalDeposited || 0;
@@ -456,9 +447,12 @@ export const PlayerAccountsDesk: React.FC = () => {
               </span>
             ) : (
               <span>
-                Showing <strong>{totalPlayers === 0 ? 0 : (usersPage - 1) * usersLimit + 1}</strong> – <strong>{Math.min(usersPage * usersLimit, totalPlayers)}</strong> of <strong>{totalPlayers.toLocaleString()}</strong> Players
+                Showing <strong>{currentViewTotal === 0 ? 0 : (usersPage - 1) * usersLimit + 1}</strong> – <strong>{Math.min(usersPage * usersLimit, currentViewTotal)}</strong> of <strong>{currentViewTotal.toLocaleString()}</strong> Players
                 {searchInput.trim() && (
                   <span className="search-filter-tag"> (Database Search Match)</span>
+                )}
+                {usersSegment !== 'all' && (
+                  <span className="search-filter-tag"> (Segment: {usersSegment.toUpperCase()})</span>
                 )}
               </span>
             )}
@@ -469,7 +463,7 @@ export const PlayerAccountsDesk: React.FC = () => {
               type="button"
               className="btn-pagination"
               disabled={usersPage <= 1 || isUsersLoading}
-              onClick={() => fetchUsers({ page: 1, limit: usersLimit, search: searchInput.trim() })}
+              onClick={() => fetchUsers({ page: 1, limit: usersLimit, search: searchInput.trim(), sortBy: usersSortBy, segment: usersSegment })}
               title="First Page"
             >
               <i className="fa-solid fa-angles-left"></i> First
@@ -478,7 +472,7 @@ export const PlayerAccountsDesk: React.FC = () => {
               type="button"
               className="btn-pagination"
               disabled={usersPage <= 1 || isUsersLoading}
-              onClick={() => fetchUsers({ page: usersPage - 1, limit: usersLimit, search: searchInput.trim() })}
+              onClick={() => fetchUsers({ page: usersPage - 1, limit: usersLimit, search: searchInput.trim(), sortBy: usersSortBy, segment: usersSegment })}
               title="Previous Page"
             >
               <i className="fa-solid fa-chevron-left"></i> Prev
@@ -492,7 +486,7 @@ export const PlayerAccountsDesk: React.FC = () => {
               type="button"
               className="btn-pagination"
               disabled={usersPage >= usersTotalPages || isUsersLoading}
-              onClick={() => fetchUsers({ page: usersPage + 1, limit: usersLimit, search: searchInput.trim() })}
+              onClick={() => fetchUsers({ page: usersPage + 1, limit: usersLimit, search: searchInput.trim(), sortBy: usersSortBy, segment: usersSegment })}
               title="Next Page"
             >
               Next <i className="fa-solid fa-chevron-right"></i>
@@ -501,7 +495,7 @@ export const PlayerAccountsDesk: React.FC = () => {
               type="button"
               className="btn-pagination"
               disabled={usersPage >= usersTotalPages || isUsersLoading}
-              onClick={() => fetchUsers({ page: usersTotalPages, limit: usersLimit, search: searchInput.trim() })}
+              onClick={() => fetchUsers({ page: usersTotalPages, limit: usersLimit, search: searchInput.trim(), sortBy: usersSortBy, segment: usersSegment })}
               title="Last Page"
             >
               Last <i className="fa-solid fa-angles-right"></i>
