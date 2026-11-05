@@ -157,16 +157,18 @@ export class TelegramBotService {
   }
 
   /**
-   * Helper to ensure clean base Web App URLs for Telegram Mini App
+   * Helper to ensure clean, versioned Web App URLs for Telegram Mini App
+   * Appends version query parameter so Telegram Mini App webviews immediately bust cache.
    */
   public getVersionedWebAppUrl(baseUrl: string, param?: string): string {
+    const versionTag = 'v=20261104_1';
     if (!baseUrl) return '';
     const cleanUrl = baseUrl.replace(/([?&])v=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
+    const sep = cleanUrl.includes('?') ? '&' : '?';
     if (param) {
-      const sep = cleanUrl.includes('?') ? '&' : '?';
-      return `${cleanUrl}${sep}startapp=${encodeURIComponent(param)}`;
+      return `${cleanUrl}${sep}${versionTag}&startapp=${encodeURIComponent(param)}`;
     }
-    return cleanUrl;
+    return `${cleanUrl}${sep}${versionTag}`;
   }
 
   /**

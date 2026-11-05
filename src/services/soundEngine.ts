@@ -13,7 +13,7 @@ import { telegramService } from './telegramService.ts';
  * - Two-Stage Live Human Caller Cadence ("Letter... 220ms Pause... Number!")
  * - Automatic SpeechSynthesis fallback if custom audio file is missing
  */
-export const AUDIO_PACK_VERSION = 'v3_client_human_20260928_1';
+export const AUDIO_PACK_VERSION = 'v4_fast_caller_20261104_1';
 
 class AudioEngineService {
   private ctx: AudioContext | null = null;
@@ -32,6 +32,21 @@ class AudioEngineService {
 
   constructor() {
     this.initVoices();
+    this.clearAudioCache();
+  }
+
+  public clearAudioCache() {
+    this.audioBufferCache.clear();
+    this.voiceBufferMap.clear();
+    if (this.preloadedAudios.size > 0) {
+      for (const audio of this.preloadedAudios.values()) {
+        try {
+          audio.pause();
+          audio.src = '';
+        } catch {}
+      }
+      this.preloadedAudios.clear();
+    }
   }
 
   private initVoices() {
