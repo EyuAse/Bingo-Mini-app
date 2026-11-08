@@ -207,6 +207,7 @@ router.post('/welcome-message', async (req, res) => {
         [welcomePhoto.trim()]
       );
     }
+    telegramBotService.clearConfigCache();
     return res.json({ success: true, message: 'Bot /start welcome greeting saved successfully!' });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message || 'Failed to save welcome message' });
@@ -252,6 +253,7 @@ router.post('/update-profile', async (req, res) => {
       }
     }
 
+    telegramBotService.clearConfigCache();
     return res.json({ success: true, message: results.join(' & ') || 'Profile updated' });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message || 'Failed to update profile' });
@@ -264,20 +266,18 @@ router.post('/update-profile', async (req, res) => {
  */
 router.get('/bot-profile', async (_req, res) => {
   try {
-    const [descRes, shortRes, dbSettings] = await Promise.all([
+    const [descRes, shortRes, settings] = await Promise.all([
       telegramBotService.getMyDescription(),
       telegramBotService.getMyShortDescription(),
-      query(`SELECT key, value FROM admin_settings WHERE key IN ('telegram_bot_description', 'telegram_bot_short_description', 'telegram_bot_welcome_text', 'telegram_bot_welcome_photo')`)
+      telegramBotService.getSettings(['telegram_bot_description', 'telegram_bot_short_description', 'telegram_bot_welcome_text', 'telegram_bot_welcome_photo'])
     ]);
-
-    const settingsMap = new Map(dbSettings.rows.map((r: any) => [r.key, r.value]));
 
     return res.json({
       success: true,
-      description: descRes.ok ? descRes.description : (settingsMap.get('telegram_bot_description') || ''),
-      shortDescription: shortRes.ok ? shortRes.shortDescription : (settingsMap.get('telegram_bot_short_description') || ''),
-      welcomeText: settingsMap.get('telegram_bot_welcome_text') || '',
-      welcomePhoto: settingsMap.get('telegram_bot_welcome_photo') || ''
+      description: descRes.ok ? descRes.description : (settings['telegram_bot_description'] || ''),
+      shortDescription: shortRes.ok ? shortRes.shortDescription : (settings['telegram_bot_short_description'] || ''),
+      welcomeText: settings['telegram_bot_welcome_text'] || '',
+      welcomePhoto: settings['telegram_bot_welcome_photo'] || ''
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
@@ -320,21 +320,13 @@ router.get('/commands', async (_req, res) => {
  */
 router.get('/active-promo', async (_req, res) => {
   try {
-    const dbSettings = await query(
-      `SELECT key, value, updated_at FROM admin_settings WHERE key IN (
-        'telegram_active_promo_title',
-        'telegram_active_promo_text',
-        'telegram_active_promo_photo',
-        'telegram_active_promo_button_text',
-        'telegram_active_promo_button_url'
-      )`
-    );
-
-    const settingsMap = new Map(dbSettings.rows.map((r: any) => [r.key, r.value]));
-    let latestUpdate = null;
-    if (dbSettings.rows.length > 0) {
-      latestUpdate = dbSettings.rows[0].updated_at;
-    }
+    const settings = await telegramBotService.getSettings([
+      'telegram_active_promo_title',
+      'telegram_active_promo_text',
+      'telegram_active_promo_photo',
+      'telegram_active_promo_button_text',
+      'telegram_active_promo_button_url'
+    ]);
 
     const cfg = await telegramBotService.getConfig();
     const meRes = await telegramBotService.getMe();
@@ -343,18 +335,17 @@ router.get('/active-promo', async (_req, res) => {
     return res.json({
       success: true,
       promo: {
-        title: settingsMap.get('telegram_active_promo_title') || 'Weekend 10,000 ETB Mega Pot Tournament! 🍋🏆',
-        messageText: settingsMap.get('telegram_active_promo_text') || (
+        title: settings['telegram_active_promo_title'] || 'Weekend 10,000 ETB Mega Pot Tournament! 🍋🏆',
+        messageText: settings['telegram_active_promo_text'] || (
           '🎉 <b>ታላቅ የሳምንቱ መጨረሻ የቢንጎ ውድድር!</b>\n\n' +
           '💰 አጠቃላይ የሽልማት ፈንድ: <b>10,000 ETB!</b>\n' +
           '⚡ ፈጣን ክፍያዎች በቴሌብር እና በሲቢኢ ብር\n' +
           '🎁 አዲስ ለተመዘገቡ ተጫዋቾች <b>10 ETB ነፃ ቦነስ</b> ተዘጋጅቷል!\n\n' +
           'ካርቴላዎን አሁኑኑ ይቁረጡ እና ያሸንፉ! 👇'
         ),
-        photoUrl: settingsMap.get('telegram_active_promo_photo') || 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=800&auto=format&fit=crop&q=80',
-        buttonText: settingsMap.get('telegram_active_promo_button_text') || '🎮 Play Bingo Now & Get 10 ETB',
-        buttonUrl: settingsMap.get('telegram_active_promo_button_url') || `https://t.me/${botUser}/play`,
-        updatedAt: latestUpdate
+        photoUrl: settings['telegram_active_promo_photo'] || 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=800&auto=format&fit=crop&q=80',
+        buttonText: settings['telegram_active_promo_button_text'] || '🎮 Play Bingo Now & Get 10 ETB',
+        buttonUrl: settings['telegram_active_promo_button_url'] || `https://t.me/${botUser}/play`
       }
     });
   } catch (err: any) {
@@ -385,6 +376,7 @@ router.post('/active-promo', async (req, res) => {
        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
       [title.trim(), messageText.trim(), (photoUrl || '').trim(), (buttonText || '').trim(), (buttonUrl || '').trim()]
     );
+    telegramBotService.clearConfigCache();
 
     let broadcastResult = null;
     let channelResult = null;

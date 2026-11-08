@@ -258,18 +258,57 @@ const getActiveWinningPatternOnBall = (
   return null;
 };
 
+interface SyncCacheEntry {
+  etag: string;
+  data: any;
+}
+
+const syncCache = new Map<string, SyncCacheEntry>();
+
+export const clearRoomSyncCache = (roomId?: string) => {
+  if (roomId) {
+    for (const key of syncCache.keys()) {
+      if (key.startsWith(`${roomId}_`)) syncCache.delete(key);
+    }
+  } else {
+    syncCache.clear();
+  }
+};
+
 const fetchRoomSyncWithTimeout = async (roomId: string, timeoutMs = 6000, userId?: string): Promise<any | null> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const apiBase = getApiBase();
+    const cacheKey = `${roomId}_${userId || 'anon'}`;
+    const cached = syncCache.get(cacheKey);
+
+    const headers: Record<string, string> = {};
+    if (cached?.etag) {
+      headers['If-None-Match'] = cached.etag;
+    }
+
     const url = userId
       ? `${apiBase}/rooms/${roomId}/sync?userId=${encodeURIComponent(userId)}`
       : `${apiBase}/rooms/${roomId}/sync`;
-    const res = await fetch(url, { signal: controller.signal });
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers
+    });
     clearTimeout(timeoutId);
+
+    // HTTP 304 Not Modified: 0 payload bytes over the wire, reuse verified cached snapshot
+    if (res.status === 304 && cached) {
+      return cached.data;
+    }
+
     if (!res.ok) return null;
     const data = await res.json();
+    const etag = res.headers.get('ETag');
+    if (etag && data && data.success) {
+      syncCache.set(cacheKey, { etag, data });
+    }
     return data && data.success ? data : null;
   } catch {
     clearTimeout(timeoutId);

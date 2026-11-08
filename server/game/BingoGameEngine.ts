@@ -419,6 +419,32 @@ class BingoGameEngine {
     };
   }
 
+  // Bandwidth Optimization: State-Diffed Summary Broadcaster
+  private lastBroadcastSummaryStr: string = '';
+  private lastSummaryBroadcastTimestamp: number = 0;
+
+  /**
+   * Bandwidth-Optimized Stake Rooms Summary Broadcaster:
+   * Prevents emitting redundant identical payloads 4x/sec across rooms.
+   * Only emits if:
+   * 1. force === true (e.g., ticket buy, refund, transfer, round finish)
+   * 2. summary content has changed (diff detected)
+   * 3. heartbeat interval of 5,000ms has elapsed
+   */
+  public broadcastStakeRoomsSummary(force: boolean = false): void {
+    const summary = this.getStakeRoomsSummary();
+    const summaryStr = JSON.stringify(summary);
+    const now = Date.now();
+    const hasChanged = summaryStr !== this.lastBroadcastSummaryStr;
+    const isHeartbeatDue = now - this.lastSummaryBroadcastTimestamp >= 5000;
+
+    if (force || hasChanged || isHeartbeatDue) {
+      io.emit('stake_rooms_summary', summary);
+      this.lastBroadcastSummaryStr = summaryStr;
+      this.lastSummaryBroadcastTimestamp = now;
+    }
+  }
+
   public getAllRooms() {
     const r10 = this.getRoom('room-10');
     const r20 = this.getRoom('room-20');
@@ -621,7 +647,7 @@ class BingoGameEngine {
           refundAmount
         });
         io.emit('user_balance_updated', { userId });
-        io.emit('stake_rooms_summary', this.getStakeRoomsSummary());
+        this.broadcastStakeRoomsSummary(true);
 
         console.log(`💸 [Ticket Refund] Refunded ${refundAmount} ETB to user ${userId} from ${room.name}`);
         return { success: true, refunded: refundAmount };
@@ -764,7 +790,7 @@ class BingoGameEngine {
 
       // 5. Broadcast wallet and stake summaries
       io.emit('user_balance_updated', { userId });
-      io.emit('stake_rooms_summary', this.getStakeRoomsSummary());
+      this.broadcastStakeRoomsSummary(true);
 
       console.log(`🔄 [Lobby Transfer] Transferred ${cardCount} tickets for user ${userId} from ${oldRoom.name} to ${newRoom.name} (Net difference: ${netDifference} ETB)`);
 
@@ -1044,7 +1070,7 @@ class BingoGameEngine {
         }
       }
 
-      io.emit('stake_rooms_summary', this.getStakeRoomsSummary());
+      this.broadcastStakeRoomsSummary(true);
 
       return {
         success: true,
@@ -3467,10 +3493,15 @@ class BingoGameEngine {
 
     io.to(room.id).emit('room_state', payload);
     if (room.id === 'room-10') {
-      io.to(ARENA_ROOM_ID).emit('room_state', { ...payload, roomId: ARENA_ROOM_ID });
-      io.to('default').emit('room_state', { ...payload, roomId: 'default' });
+      const adapter = io.sockets?.adapter as any;
+      if (adapter?.rooms?.get(ARENA_ROOM_ID)?.size > 0) {
+        io.to(ARENA_ROOM_ID).emit('room_state', { ...payload, roomId: ARENA_ROOM_ID });
+      }
+      if (adapter?.rooms?.get('default')?.size > 0) {
+        io.to('default').emit('room_state', { ...payload, roomId: 'default' });
+      }
     }
-    io.emit('stake_rooms_summary', this.getStakeRoomsSummary());
+    this.broadcastStakeRoomsSummary(false);
   }
 
   // Authoritative Disconnect Protection Helpers
