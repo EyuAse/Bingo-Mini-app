@@ -194,3 +194,4 @@ If at any point during testing the new backend has an issue:
 1. Revert `LIVE_BACKEND_ORIGIN` in `src/config/env.ts` back to `https://bingo-mini-app-hp80.onrender.com`.
 2. Run `npm run build && npx wrangler deploy`.
 3. Total rollback time: **under 45 seconds**. Zero risk!
+

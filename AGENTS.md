@@ -14,7 +14,7 @@
 - **Database**: Neon Serverless PostgreSQL (`@neondatabase/serverless`).
 - **Hosting / Deployment URLs**:
   - Cloudflare Frontend: `https://bingo-mini-app.asefaeyob962.workers.dev/` (or `https://lomi-bingo.pages.dev`)
-  - Render Live Backend: `https://bingo-mini-app-30pe.onrender.com` (and `https://bingo-mini-app-hp80.onrender.com`)
+  - Render Live Backend: `https://lomi-bingo.onrender.com` (Account: `asefaeyob962@gmail.com`)
   - GitHub Primary: `https://github.com/EyuAse/Bingo-Mini-app.git` (Remote: `origin` / `new-origin`)
   - GitHub Mirror: `https://github.com/tycons9/Bingo-Mini-app.git` (Remote: `tycons-origin`)
 
