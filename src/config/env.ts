@@ -35,9 +35,9 @@ export const getBackendOrigin = (): string => {
     return window.location.origin;
   }
 
-  // Allow explicit override via environment variable if defined
+  // Allow explicit override via environment variable if defined and not obsolete legacy domain
   const envUrl = (import.meta as any).env?.VITE_BACKEND_URL;
-  if (envUrl && typeof envUrl === 'string' && envUrl.startsWith('http')) {
+  if (envUrl && typeof envUrl === 'string' && envUrl.startsWith('http') && !envUrl.includes('hp80') && !envUrl.includes('30pe') && !envUrl.includes('3li9')) {
     return envUrl.replace(/\/+$/, '');
   }
 
